@@ -1,0 +1,15 @@
+{
+  "name": "juniorconnect-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "npm run setup:backend && npm run setup:frontend",
+    "setup:backend": "cd backend && npm install",
+    "setup:frontend": "cd frontend && npm install",
+    "db:init": "cd backend && npm run db:init",
+    "db:seed": "cd backend && npm run db:seed",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "test": "cd backend && npm run test"
+  }
+}
