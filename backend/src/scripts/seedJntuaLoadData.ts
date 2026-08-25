@@ -4,14 +4,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Helper to generate JNTUA Roll Numbers (e.g., 25KF1A0501 to 25KF1A0599, 25KF1A05A1...)
-function generateJntuaRollNumbers(prefix: string, count: number): string[] {
+// Exact JNTUA Roll Number Generator (from 67 to 99, A0..A9, B0..B9, C0..C9, D0..D2)
+function generateJntuaRollNumbers(prefix: string): string[] {
   const rolls: string[] = [];
-  for (let i = 1; i <= count; i++) {
-    let numStr = i < 10 ? `0${i}` : i.toString(16).toUpperCase();
-    if (numStr.length === 1) numStr = `0${numStr}`;
-    rolls.push(`${prefix}${numStr}`);
+  // 67 to 99
+  for (let i = 67; i <= 99; i++) {
+    rolls.push(`${prefix}${i}`);
   }
+  // A0..A9, B0..B9, C0..C9
+  const letters = ['A', 'B', 'C'];
+  for (const l of letters) {
+    for (let i = 0; i <= 9; i++) {
+      rolls.push(`${prefix}${l}${i}`);
+    }
+  }
+  // D0 to D2
+  rolls.push(`${prefix}D0`);
+  rolls.push(`${prefix}D1`);
+  rolls.push(`${prefix}D2`);
   return rolls;
 }
 
@@ -49,7 +59,7 @@ async function seedJntuaLoadData() {
     console.log('Connected to PostgreSQL server.');
     console.log('Generating JNTUA Load Testing Data (Directors, Faculty, Seniors, Juniors)...');
 
-    const defaultPassHash = await bcrypt.hash('Password123!', 10);
+    const defaultPassHash = await bcrypt.hash('Password123!', 5);
 
     // 1. Departments & Directors
     const departments = [
@@ -81,7 +91,7 @@ async function seedJntuaLoadData() {
     for (const dept of departments) {
       for (let f = 1; f <= 2; f++) {
         const fEmail = `faculty.${dept.code.toLowerCase()}${f}@sseptp.org`;
-        const fPassHash = await bcrypt.hash(fEmail, 10);
+        const fPassHash = await bcrypt.hash(fEmail, 5);
         const uRes = await client.query(
           `INSERT INTO users (name, email, username, password_hash, phone, role)
            VALUES ($1, $2, $3, $4, '9876540000', 'FACULTY')
@@ -104,12 +114,12 @@ async function seedJntuaLoadData() {
 
     for (const dept of departments) {
       const codeNum = deptCodes[dept.code];
-      const seniorRolls = generateJntuaRollNumbers(`23KF1A${codeNum}`, 10); // 10 seniors per dept
+      const seniorRolls = generateJntuaRollNumbers(`23KF1A${codeNum}`); // 66 seniors per dept
 
       for (let i = 0; i < seniorRolls.length; i++) {
         const roll = seniorRolls[i];
         const email = `${roll.toLowerCase()}@sseptp.org`;
-        const passHash = await bcrypt.hash(email, 10);
+        const passHash = await bcrypt.hash(email, 5);
 
         const uRes = await client.query(
           `INSERT INTO users (name, email, username, password_hash, phone, role)
@@ -127,12 +137,12 @@ async function seedJntuaLoadData() {
       }
     }
 
-    // 4. Junior Students (JNTUA 25 series, e.g. 25KF1A0501@sseptp.org to 25KF1A0560@sseptp.org)
+    // 4. Junior Students (JNTUA 25 series, from 67 to D2)
     let totalJuniorsSeeded = 0;
 
     for (const dept of departments) {
       const codeNum = deptCodes[dept.code];
-      const juniorRolls = generateJntuaRollNumbers(`25KF1A${codeNum}`, 30); // 30 juniors per dept = 90 total juniors
+      const juniorRolls = generateJntuaRollNumbers(`25KF1A${codeNum}`); // 66 juniors per dept
 
       const deptSeniors = seniorMap[dept.code];
       const deptFaculty = facultyMap[dept.code];
@@ -141,7 +151,7 @@ async function seedJntuaLoadData() {
         const roll = juniorRolls[j];
         const email = `${roll.toLowerCase()}@sseptp.org`;
         // Password set to same email (or Roll No) e.g., 25kf1a0567@sseptp.org
-        const passHash = await bcrypt.hash(email, 10);
+        const passHash = await bcrypt.hash(email, 5);
 
         const assignedSenior = deptSeniors[j % deptSeniors.length];
         const assignedFaculty = deptFaculty[j % deptFaculty.length];
