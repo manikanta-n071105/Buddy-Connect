@@ -4,12 +4,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Exact JNTUA Roll Number Generator (from 67 to 99, A0..A9, B0..B9, C0..C9, D0..D2)
+// Full JNTUA Roll Number Generator (from 01 to 99, A0..A9, B0..B9, C0..C9, D0..D2)
 function generateJntuaRollNumbers(prefix: string): string[] {
   const rolls: string[] = [];
-  // 67 to 99
-  for (let i = 67; i <= 99; i++) {
-    rolls.push(`${prefix}${i}`);
+  // 01 to 99
+  for (let i = 1; i <= 99; i++) {
+    const numStr = i < 10 ? `0${i}` : `${i}`;
+    rolls.push(`${prefix}${numStr}`);
   }
   // A0..A9, B0..B9, C0..C9
   const letters = ['A', 'B', 'C'];
@@ -56,8 +57,40 @@ async function seedJntuaLoadData() {
 
   try {
     await client.connect();
-    console.log('Connected to PostgreSQL server.');
-    console.log('Generating JNTUA Load Testing Data (Directors, Faculty, Seniors, Juniors)...');
+    console.log('Wiping old test user accounts & related data...');
+    const safeDelete = async (table: string) => {
+      try {
+        await client.query(`DELETE FROM ${table}`);
+      } catch (err) {}
+    };
+
+    await safeDelete('mentor_messages');
+    await safeDelete('mentor_conversations');
+    await safeDelete('director_messages');
+    await safeDelete('director_conversations');
+    await safeDelete('faculty_messages');
+    await safeDelete('faculty_conversations');
+    await safeDelete('mentorship_meetings');
+    await safeDelete('issue_votes');
+    await safeDelete('issue_comments');
+    await safeDelete('issue_attachments');
+    await safeDelete('issues');
+    await safeDelete('onboarding_progress');
+    await safeDelete('question_responses');
+    await safeDelete('survey_responses');
+    await safeDelete('suggestion_votes');
+    await safeDelete('suggestions');
+    await safeDelete('notifications');
+    await safeDelete('audit_logs');
+    await safeDelete('admin_permissions');
+    await safeDelete('temporary_mentors');
+    await safeDelete('juniors');
+    await safeDelete('seniors');
+    await safeDelete('faculty');
+    await safeDelete('directors');
+    await client.query("DELETE FROM users WHERE role != 'SUPER_ADMIN'");
+
+    console.log('Generating JNTUA Load Testing Data (from 67 to D2 only)...');
 
     const defaultPassHash = await bcrypt.hash('Password123!', 5);
 
