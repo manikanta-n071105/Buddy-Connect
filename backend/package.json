@@ -10,6 +10,7 @@
     "db:init": "tsx src/scripts/initDb.ts",
     "db:seed": "tsx src/seed.ts",
     "db:clear": "tsx src/scripts/clearDemoData.ts",
+    "db:loadseed": "tsx src/scripts/seedJntuaLoadData.ts",
     "test": "vitest run"
   },
   "dependencies": {
