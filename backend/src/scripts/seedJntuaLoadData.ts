@@ -147,18 +147,17 @@ async function seedJntuaLoadData() {
 
     for (const dept of departments) {
       const codeNum = deptCodes[dept.code];
-      const seniorRolls = generateJntuaRollNumbers(`23KF1A${codeNum}`); // 66 seniors per dept
+      const seniorRolls = generateJntuaRollNumbers(`23KF1A${codeNum}`);
 
       for (let i = 0; i < seniorRolls.length; i++) {
         const roll = seniorRolls[i];
         const email = `${roll.toLowerCase()}@sseptp.org`;
-        const passHash = await bcrypt.hash(email, 5);
 
         const uRes = await client.query(
           `INSERT INTO users (name, email, username, password_hash, phone, role)
            VALUES ($1, $2, $3, $4, '9876522222', 'SENIOR')
            ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id`,
-          [`Senior ${roll}`, email, email, passHash]
+          [`Senior ${roll}`, email, email, defaultPassHash]
         );
         const sRes = await client.query(
           `INSERT INTO seniors (user_id, senior_code, director_id, department)
@@ -170,12 +169,12 @@ async function seedJntuaLoadData() {
       }
     }
 
-    // 4. Junior Students (JNTUA 25 series, from 67 to D2)
+    // 4. Junior Students (JNTUA 25 series, full range 501 to 5D2)
     let totalJuniorsSeeded = 0;
 
     for (const dept of departments) {
       const codeNum = deptCodes[dept.code];
-      const juniorRolls = generateJntuaRollNumbers(`25KF1A${codeNum}`); // 66 juniors per dept
+      const juniorRolls = generateJntuaRollNumbers(`25KF1A${codeNum}`);
 
       const deptSeniors = seniorMap[dept.code];
       const deptFaculty = facultyMap[dept.code];
@@ -183,8 +182,6 @@ async function seedJntuaLoadData() {
       for (let j = 0; j < juniorRolls.length; j++) {
         const roll = juniorRolls[j];
         const email = `${roll.toLowerCase()}@sseptp.org`;
-        // Password set to same email (or Roll No) e.g., 25kf1a0567@sseptp.org
-        const passHash = await bcrypt.hash(email, 5);
 
         const assignedSenior = deptSeniors[j % deptSeniors.length];
         const assignedFaculty = deptFaculty[j % deptFaculty.length];
@@ -193,7 +190,7 @@ async function seedJntuaLoadData() {
           `INSERT INTO users (name, email, username, password_hash, phone, role)
            VALUES ($1, $2, $3, $4, '9876533333', 'JUNIOR')
            ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash RETURNING id`,
-          [`Student ${roll}`, email, email, passHash]
+          [`Student ${roll}`, email, email, defaultPassHash]
         );
 
         await client.query(
