@@ -130,7 +130,7 @@ async function seedJntuaLoadData() {
         const sRes = await client.query(
           `INSERT INTO seniors (user_id, senior_code, director_id, department)
            VALUES ($1, $2, $3, $4)
-           ON CONFLICT (senior_code) DO UPDATE SET director_id = EXCLUDED.director_id RETURNING id`,
+           ON CONFLICT (user_id) DO UPDATE SET director_id = EXCLUDED.director_id, senior_code = EXCLUDED.senior_code RETURNING id`,
           [uRes.rows[0].id, `SEN-${roll}`, directorMap[dept.code], dept.name]
         );
         seniorMap[dept.code].push(sRes.rows[0].id);
@@ -166,7 +166,7 @@ async function seedJntuaLoadData() {
         await client.query(
           `INSERT INTO juniors (user_id, register_number, senior_id, faculty_id, department, batch, year, joining_date)
            VALUES ($1, $2, $3, $4, $5, '2025-2029', '1st Year', '2026-08-01')
-           ON CONFLICT (register_number) DO UPDATE SET senior_id = EXCLUDED.senior_id, faculty_id = EXCLUDED.faculty_id`,
+           ON CONFLICT (user_id) DO UPDATE SET senior_id = EXCLUDED.senior_id, faculty_id = EXCLUDED.faculty_id, register_number = EXCLUDED.register_number`,
           [uRes.rows[0].id, roll, assignedSenior, assignedFaculty, dept.name]
         );
 
