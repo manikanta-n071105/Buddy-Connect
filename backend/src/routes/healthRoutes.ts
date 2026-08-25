@@ -13,6 +13,7 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
+router.get('/', getHealth);
 router.get('/health', getHealth);
 router.get('/diagnosis', getPortalDiagnosis);
 router.post('/diagnosis/benchmark', authenticate, runBenchmarkTest);
