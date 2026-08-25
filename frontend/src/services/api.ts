@@ -1,7 +1,10 @@
+/// <reference types="vite/client" />
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -23,7 +26,7 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         try {
-          const res = await axios.post('/api/auth/refresh', { refreshToken });
+          const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
           const { accessToken } = res.data.data.tokens;
           localStorage.setItem('accessToken', accessToken);
           error.config.headers.Authorization = `Bearer ${accessToken}`;
