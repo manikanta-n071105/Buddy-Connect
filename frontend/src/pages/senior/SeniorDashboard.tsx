@@ -19,12 +19,15 @@ import {
   MapPin,
   Plus,
   Trash2,
-  Check
+  Check,
+  Star
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
 
 export const SeniorDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
   const [indicators, setIndicators] = useState<any[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -42,8 +45,12 @@ export const SeniorDashboard: React.FC = () => {
   const [junPassword, setJunPassword] = useState('Password123!');
   const [junPhone, setJunPhone] = useState('');
   const [junReg, setJunReg] = useState('');
-  const [junDept, setJunDept] = useState('Computer Science & Engineering');
+  const [junDept, setJunDept] = useState('CSE');
   const [junBatch, setJunBatch] = useState('2025-2029');
+  const [junResidenceStatus, setJunResidenceStatus] = useState<'DAY_SCHOLAR' | 'HOSTELLER'>('DAY_SCHOLAR');
+  const [junGender, setJunGender] = useState<'MALE' | 'FEMALE'>('MALE');
+  const [junIsCr, setJunIsCr] = useState(false);
+  const [junSuperAdminPassword, setJunSuperAdminPassword] = useState('');
 
   const fetchData = async () => {
     try {
@@ -89,8 +96,13 @@ export const SeniorDashboard: React.FC = () => {
 
   const handleCreateJunior = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!junName || !junEmail || !junUsername || !junPassword) {
-      toast.error('Please complete all required student details');
+    if (!junName || !junEmail || !junUsername || !junPassword || !junGender) {
+      toast.error('Please complete all required student details including Gender');
+      return;
+    }
+
+    if (junIsCr && !junSuperAdminPassword) {
+      toast.error('Super Admin authorization password is required to appoint Class Representative (CR).');
       return;
     }
 
@@ -101,10 +113,14 @@ export const SeniorDashboard: React.FC = () => {
         username: junUsername.trim(),
         password: junPassword.trim(),
         phone: junPhone.trim(),
+        gender: junGender,
         registerNumber: junReg.trim() || undefined,
         department: junDept,
         batch: junBatch,
-        year: '1st Year'
+        year: '1st Year',
+        residenceStatus: junResidenceStatus,
+        isCr: junIsCr,
+        superAdminPassword: junSuperAdminPassword.trim()
       });
 
       setCreatedCredential({
@@ -122,6 +138,8 @@ export const SeniorDashboard: React.FC = () => {
       setJunPassword('Password123!');
       setJunPhone('');
       setJunReg('');
+      setJunIsCr(false);
+      setJunSuperAdminPassword('');
 
       fetchData();
     } catch (err: any) {
@@ -189,11 +207,6 @@ export const SeniorDashboard: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
           <span className="text-[11px] font-extrabold text-slate-400 uppercase block">Open Issues</span>
           <p className="text-3xl font-black text-amber-600 mt-2">{stats?.openIssues || 0}</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase block">Voting Issues</span>
-          <p className="text-3xl font-black text-purple-600 mt-2">{stats?.votingIssues || 0}</p>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
@@ -366,6 +379,50 @@ export const SeniorDashboard: React.FC = () => {
                   <label className="block font-bold text-slate-700 mb-1">Mobile / Phone Number *</label>
                   <input type="text" required value={junPhone} onChange={(e) => setJunPhone(e.target.value)} placeholder="e.g. +91 9876543210" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-hidden transition-all" />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Residence Status *</label>
+                  <select value={junResidenceStatus} onChange={(e) => setJunResidenceStatus(e.target.value as any)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden">
+                    <option value="DAY_SCHOLAR">Day Scholar</option>
+                    <option value="HOSTELLER">Hosteller</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Gender Classification *</label>
+                  <select required value={junGender} onChange={(e) => setJunGender(e.target.value as any)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden cursor-pointer">
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                  </select>
+                </div>
+              </div>
+              <div className="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200 space-y-2.5">
+                <label className="flex items-center gap-2 font-black text-amber-950 text-xs cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={junIsCr}
+                    onChange={(e) => setJunIsCr(e.target.checked)}
+                    className="w-4 h-4 text-amber-600 rounded-md focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                  />
+                  <span className="flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" /> Appoint as Class Representative (CR)
+                  </span>
+                </label>
+                {junIsCr && (
+                  <div>
+                    <label className="block font-extrabold text-amber-950 text-[11px] mb-1">
+                      Super Administrator Authorization Password *
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={junSuperAdminPassword}
+                      onChange={(e) => setJunSuperAdminPassword(e.target.value)}
+                      placeholder="Enter Super Admin Password to authorize CR appointment..."
+                      className="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs font-mono outline-hidden focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex gap-2.5 justify-end pt-3 border-t border-slate-100">
                 <button type="button" onClick={() => setShowJuniorModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-bold hover:bg-slate-50 transition-colors cursor-pointer">Cancel</button>

@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Full JNTUA Roll Number Generator (from 01 to 99, A0..A9, B0..B9, C0..C9, D0..D2)
 function generateJntuaRollNumbers(prefix: string): string[] {
   const rolls: string[] = [];
   // 01 to 99
@@ -57,7 +56,9 @@ async function seedJntuaLoadData() {
 
   try {
     await client.connect();
-    console.log('Wiping old test user accounts & related data...');
+    console.log('Connected to PostgreSQL server.');
+    console.log('Wiping old test accounts & related data...');
+
     const safeDelete = async (table: string) => {
       try {
         await client.query(`DELETE FROM ${table}`);
@@ -90,7 +91,7 @@ async function seedJntuaLoadData() {
     await safeDelete('directors');
     await client.query("DELETE FROM users WHERE role != 'SUPER_ADMIN'");
 
-    console.log('Generating JNTUA Load Testing Data (from 67 to D2 only)...');
+    console.log('Generating JNTUA Load Testing Data (01 to D2)...');
 
     const defaultPassHash = await bcrypt.hash('Password123!', 5);
 
@@ -124,12 +125,11 @@ async function seedJntuaLoadData() {
     for (const dept of departments) {
       for (let f = 1; f <= 2; f++) {
         const fEmail = `faculty.${dept.code.toLowerCase()}${f}@sseptp.org`;
-        const fPassHash = await bcrypt.hash(fEmail, 5);
         const uRes = await client.query(
           `INSERT INTO users (name, email, username, password_hash, phone, role)
            VALUES ($1, $2, $3, $4, '9876540000', 'FACULTY')
            ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id`,
-          [`Prof. ${dept.code} Faculty Mentor ${f}`, fEmail, fEmail, fPassHash]
+          [`Prof. ${dept.code} Faculty Mentor ${f}`, fEmail, fEmail, defaultPassHash]
         );
         const facRes = await client.query(
           `INSERT INTO faculty (user_id, faculty_code, department)
@@ -141,7 +141,7 @@ async function seedJntuaLoadData() {
       }
     }
 
-    // 3. Senior Mentors (JNTUA 23 series, e.g. 23KF1A0501@sseptp.org to 23KF1A0515@sseptp.org)
+    // 3. Senior Mentors (JNTUA 23 series)
     const seniorMap: { [code: string]: string[] } = { CSE: [], ECE: [], EEE: [] };
     const deptCodes: { [key: string]: string } = { CSE: '05', ECE: '04', EEE: '02' };
 
@@ -149,66 +149,116 @@ async function seedJntuaLoadData() {
       const codeNum = deptCodes[dept.code];
       const seniorRolls = generateJntuaRollNumbers(`23KF1A${codeNum}`);
 
+      // Batch insert Senior Users
+      const values: string[] = [];
+      const params: any[] = [defaultPassHash];
+      let pIdx = 2;
+
       for (let i = 0; i < seniorRolls.length; i++) {
         const roll = seniorRolls[i];
         const email = `${roll.toLowerCase()}@sseptp.org`;
-
-        const uRes = await client.query(
-          `INSERT INTO users (name, email, username, password_hash, phone, role)
-           VALUES ($1, $2, $3, $4, '9876522222', 'SENIOR')
-           ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id`,
-          [`Senior ${roll}`, email, email, defaultPassHash]
-        );
-        const sRes = await client.query(
-          `INSERT INTO seniors (user_id, senior_code, director_id, department)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (user_id) DO UPDATE SET director_id = EXCLUDED.director_id, senior_code = EXCLUDED.senior_code RETURNING id`,
-          [uRes.rows[0].id, `SEN-${roll}`, directorMap[dept.code], dept.name]
-        );
-        seniorMap[dept.code].push(sRes.rows[0].id);
+        values.push(`('Senior ${roll}', $${pIdx}, $${pIdx}, $1, '9876522222', 'SENIOR')`);
+        params.push(email);
+        pIdx++;
       }
+
+      const uRes = await client.query(
+        `INSERT INTO users (name, email, username, password_hash, phone, role)
+         VALUES ${values.join(', ')}
+         ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id, email`,
+        params
+      );
+
+      // Map senior IDs
+      const userMap: { [email: string]: string } = {};
+      uRes.rows.forEach(r => { userMap[r.email] = r.id; });
+
+      const senValues: string[] = [];
+      const senParams: any[] = [directorMap[dept.code], dept.name];
+      let sIdx = 3;
+
+      for (let i = 0; i < seniorRolls.length; i++) {
+        const roll = seniorRolls[i];
+        const email = `${roll.toLowerCase()}@sseptp.org`;
+        const userId = userMap[email];
+        senValues.push(`($${sIdx}, 'SEN-${roll}', $1, $2)`);
+        senParams.push(userId);
+        sIdx++;
+      }
+
+      const sRes = await client.query(
+        `INSERT INTO seniors (user_id, senior_code, director_id, department)
+         VALUES ${senValues.join(', ')}
+         ON CONFLICT (user_id) DO UPDATE SET director_id = EXCLUDED.director_id RETURNING id`,
+        senParams
+      );
+
+      seniorMap[dept.code] = sRes.rows.map(r => r.id);
     }
 
-    // 4. Junior Students (JNTUA 25 series, full range 501 to 5D2)
-    let totalJuniorsSeeded = 0;
+    // 4. Junior Students (JNTUA 25 series)
+    let totalJuniors = 0;
 
     for (const dept of departments) {
       const codeNum = deptCodes[dept.code];
       const juniorRolls = generateJntuaRollNumbers(`25KF1A${codeNum}`);
-
       const deptSeniors = seniorMap[dept.code];
       const deptFaculty = facultyMap[dept.code];
+
+      // Batch insert Junior Users
+      const values: string[] = [];
+      const params: any[] = [defaultPassHash];
+      let pIdx = 2;
 
       for (let j = 0; j < juniorRolls.length; j++) {
         const roll = juniorRolls[j];
         const email = `${roll.toLowerCase()}@sseptp.org`;
+        values.push(`('Student ${roll}', $${pIdx}, $${pIdx}, $1, '9876533333', 'JUNIOR')`);
+        params.push(email);
+        pIdx++;
+      }
 
+      const uRes = await client.query(
+        `INSERT INTO users (name, email, username, password_hash, phone, role)
+         VALUES ${values.join(', ')}
+         ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash RETURNING id, email`,
+        params
+      );
+
+      const userMap: { [email: string]: string } = {};
+      uRes.rows.forEach(r => { userMap[r.email] = r.id; });
+
+      const junValues: string[] = [];
+      const junParams: any[] = [dept.name];
+      let jIdx = 2;
+
+      for (let j = 0; j < juniorRolls.length; j++) {
+        const roll = juniorRolls[j];
+        const email = `${roll.toLowerCase()}@sseptp.org`;
+        const userId = userMap[email];
         const assignedSenior = deptSeniors[j % deptSeniors.length];
         const assignedFaculty = deptFaculty[j % deptFaculty.length];
 
-        const uRes = await client.query(
-          `INSERT INTO users (name, email, username, password_hash, phone, role)
-           VALUES ($1, $2, $3, $4, '9876533333', 'JUNIOR')
-           ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash RETURNING id`,
-          [`Student ${roll}`, email, email, defaultPassHash]
-        );
-
-        await client.query(
-          `INSERT INTO juniors (user_id, register_number, senior_id, faculty_id, department, batch, year, joining_date)
-           VALUES ($1, $2, $3, $4, $5, '2025-2029', '1st Year', '2026-08-01')
-           ON CONFLICT (user_id) DO UPDATE SET senior_id = EXCLUDED.senior_id, faculty_id = EXCLUDED.faculty_id, register_number = EXCLUDED.register_number`,
-          [uRes.rows[0].id, roll, assignedSenior, assignedFaculty, dept.name]
-        );
-
-        totalJuniorsSeeded++;
+        junValues.push(`($${jIdx}, $${jIdx+1}, $${jIdx+2}, $${jIdx+3}, $1, '2025-2029', '1st Year', '2026-08-01')`);
+        junParams.push(userId, roll, assignedSenior, assignedFaculty);
+        jIdx += 4;
       }
+
+      await client.query(
+        `INSERT INTO juniors (user_id, register_number, senior_id, faculty_id, department, batch, year, joining_date)
+         VALUES ${junValues.join(', ')}
+         ON CONFLICT (user_id) DO UPDATE SET senior_id = EXCLUDED.senior_id, faculty_id = EXCLUDED.faculty_id`,
+        junParams
+      );
+
+      totalJuniors += juniorRolls.length;
     }
 
     console.log(`✅ JNTUA Load Test Data Populated Successfully!`);
     console.log(`- Directors: ${departments.length}`);
     console.log(`- Faculty Mentors: 6`);
-    console.log(`- Senior Mentors: 30`);
-    console.log(`- Junior Students: ${totalJuniorsSeeded} (Username/Email = Roll No e.g. 25kf1a0567@sseptp.org)`);
+    console.log(`- Senior Mentors: 396`);
+    console.log(`- Junior Students: ${totalJuniors} (01 to D2 series)`);
   } catch (err: any) {
     console.error('❌ Error generating JNTUA load data:', err.message);
   } finally {

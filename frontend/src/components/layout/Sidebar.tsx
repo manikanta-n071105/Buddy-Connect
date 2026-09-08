@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserProfileModal } from '../common/UserProfileModal';
+import { QrScannerModal } from '../common/QrScannerModal';
 import {
   LayoutDashboard,
   Users,
@@ -23,9 +24,16 @@ import {
   LogOut,
   X,
   Crown,
+  FileSpreadsheet,
   Building2,
   UserCheck,
-  GraduationCap
+  GraduationCap,
+  UtensilsCrossed,
+  Star,
+  Heart,
+  Gavel,
+  QrCode,
+  Smartphone
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,6 +44,33 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstallPwa, setCanInstallPwa] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstallPwa(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setCanInstallPwa(false);
+      }
+      setDeferredPrompt(null);
+    } else {
+      alert('📲 How to Install App on Phone:\n\n1. Open this website in Chrome (Android) or Safari (iPhone).\n2. Tap the Menu (⋮ or Share icon).\n3. Select "Add to Home Screen" or "Install App".\n\nYour app will be added directly to your mobile home screen with an app icon!');
+    }
+  };
 
   if (!user) return null;
 
@@ -46,6 +81,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
           { label: 'Hierarchy Tree', path: '/hierarchy', icon: Network },
           { label: 'User Directory', path: '/users', icon: Users },
+          { label: 'Special Roles Appointing Hub', path: '/admin/disciplinary-hub', icon: Gavel },
+          { label: 'Mental Health Counseling', path: '/counseling', icon: Heart },
           { label: 'College Events', path: '/events', icon: Calendar },
           { label: 'Announcements', path: '/announcements', icon: Megaphone },
           { label: 'Campus Polls', path: '/polls', icon: Vote },
@@ -62,6 +99,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
           { label: 'Hierarchy Tree', path: '/hierarchy', icon: Network },
           { label: 'User Directory', path: '/users', icon: Users },
+          { label: 'Special Roles Appointing Hub', path: '/admin/disciplinary-hub', icon: Gavel },
+          { label: 'Mental Health Counseling', path: '/counseling', icon: Heart },
           { label: 'College Events', path: '/events', icon: Calendar },
           { label: 'Announcements', path: '/announcements', icon: Megaphone },
           { label: 'Campus Polls', path: '/polls', icon: Vote },
@@ -74,12 +113,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           { label: 'Analytics', path: '/reports', icon: BarChart3 }
         ];
 
-      case 'DIRECTOR':
+      case 'DIRECTOR': {
+        const isFacultyDirector = Boolean(user.facultyId || user.is_faculty);
+        const isCounselor = Boolean(user.is_counselor);
         return [
-          { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Director Dashboard', path: '/dashboard', icon: LayoutDashboard },
           { label: 'Hierarchy Tree', path: '/hierarchy', icon: Network },
           { label: 'Seniors & Juniors', path: '/users', icon: Users },
-          { label: 'Director Chat', path: '/chat', icon: MessageCircle },
+          ...(isFacultyDirector ? [
+            { label: 'Faculty Meetings', path: '/meetings', icon: CalendarDays },
+            { label: 'CR Class Feedbacks', path: '/cr-feedbacks', icon: Star },
+            { label: 'Class Quizzes & Analytics', path: '/quizzes', icon: FileSpreadsheet }
+          ] : []),
+          { label: 'Chat Center', path: '/chat', icon: MessageCircle },
+          ...(isCounselor ? [{ label: 'Mental Health Counseling', path: '/counseling', icon: Heart }] : []),
           { label: 'College Events', path: '/events', icon: Calendar },
           { label: 'Announcements', path: '/announcements', icon: Megaphone },
           { label: 'Campus Polls', path: '/polls', icon: Vote },
@@ -88,36 +135,76 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           { label: 'Common Questions', path: '/questions', icon: FileQuestion },
           { label: 'Student Suggestions', path: '/suggestions', icon: Lightbulb },
           { label: 'Support Indicators', path: '/support-indicators', icon: ShieldCheck },
+          { label: 'College Guide', path: '/college-info', icon: BookOpen },
+          { label: 'Emergency Contacts', path: '/emergency', icon: Phone },
           { label: 'Analytics', path: '/reports', icon: BarChart3 }
         ];
+      }
 
-      case 'SENIOR':
+      case 'SENIOR': {
+        const isMentoringSenior = user.assigned_juniors_count && user.assigned_juniors_count > 0;
+        if (!isMentoringSenior) {
+          // Non-mentoring senior: Hide issue pages, my juniors, onboarding, FAQs, and mentor chat
+          return [
+            { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+            { label: 'Class Quizzes', path: '/quizzes', icon: FileSpreadsheet },
+            { label: 'Mental Health Counseling', path: '/counseling', icon: Heart },
+            { label: 'College Events', path: '/events', icon: Calendar },
+            { label: 'Announcements', path: '/announcements', icon: Megaphone },
+            { label: 'College Guide', path: '/college-info', icon: BookOpen },
+            { label: 'Emergency Contacts', path: '/emergency', icon: Phone }
+          ];
+        }
         return [
           { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Class Quizzes', path: '/quizzes', icon: FileSpreadsheet },
           { label: 'My Assigned Juniors', path: '/users', icon: Users },
+          { label: 'Mental Health Counseling', path: '/counseling', icon: Heart },
           { label: 'College Events', path: '/events', icon: Calendar },
           { label: 'Announcements', path: '/announcements', icon: Megaphone },
-          { label: 'Campus Polls', path: '/polls', icon: Vote },
           { label: 'Assigned Issues', path: '/issues', icon: CircleAlert },
           { label: 'Onboarding Checklist', path: '/onboarding', icon: ClipboardCheck },
           { label: 'Common Questions', path: '/questions', icon: FileQuestion },
           { label: 'Student Suggestions', path: '/suggestions', icon: Lightbulb },
           { label: 'Support Indicators', path: '/support-indicators', icon: ShieldCheck },
-          { label: 'Mentor Messages', path: '/chat', icon: MessageCircle }
+          { label: 'Mentor Messages', path: '/chat', icon: MessageCircle },
+          { label: 'College Guide', path: '/college-info', icon: BookOpen },
+          { label: 'Emergency Contacts', path: '/emergency', icon: Phone }
         ];
+      }
 
-      case 'FACULTY':
+      case 'FACULTY': {
+        const isCounselor = Boolean(user.is_counselor);
         return [
           { label: 'Faculty Dashboard', path: '/dashboard', icon: LayoutDashboard },
-          { label: 'My Assigned Juniors', path: '/users', icon: Users },
-          { label: 'Student Messages', path: '/chat', icon: MessageCircle },
-          { label: 'Student Issues', path: '/issues', icon: CircleAlert },
-          { label: 'Student Suggestions', path: '/suggestions', icon: Lightbulb }
+          { label: 'My Class Students', path: '/users', icon: Users },
+          { label: 'Faculty Meetings', path: '/meetings', icon: CalendarDays },
+          { label: 'Class Quizzes & Analytics', path: '/quizzes', icon: FileSpreadsheet },
+          ...(isCounselor ? [{ label: 'Mental Health Counseling', path: '/counseling', icon: Heart }] : []),
+          { label: 'College Guide', path: '/college-info', icon: BookOpen },
+          { label: 'Emergency Contacts', path: '/emergency', icon: Phone }
         ];
+      }
 
-      case 'JUNIOR':
+      case 'JUNIOR': {
+        const is2ndOr3rdYear = user.year && (user.year.includes('2nd') || user.year.includes('3rd'));
+        if (is2ndOr3rdYear) {
+          return [
+            { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+            { label: 'Class Quizzes', path: '/quizzes', icon: FileSpreadsheet },
+            { label: 'Mental Health Counseling', path: '/counseling', icon: Heart },
+            { label: 'College Events', path: '/events', icon: Calendar },
+            { label: 'Announcements', path: '/announcements', icon: Megaphone },
+            { label: 'Campus Polls', path: '/polls', icon: Vote },
+            { label: 'Student Suggestions', path: '/suggestions', icon: Lightbulb },
+            { label: 'College Guide', path: '/college-info', icon: BookOpen },
+            { label: 'Emergency Contacts', path: '/emergency', icon: Phone }
+          ];
+        }
         return [
           { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Class Quizzes', path: '/quizzes', icon: FileSpreadsheet },
+          { label: 'Mental Health Counseling', path: '/counseling', icon: Heart },
           { label: 'Mentorship Meetings', path: '/meetings', icon: CalendarDays },
           { label: 'College Events', path: '/events', icon: Calendar },
           { label: 'Announcements', path: '/announcements', icon: Megaphone },
@@ -130,6 +217,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           { label: 'College Guide', path: '/college-info', icon: BookOpen },
           { label: 'Emergency Contacts', path: '/emergency', icon: Phone }
         ];
+      }
+
+      case 'WARDEN':
+        return [
+          { label: 'Warden Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Hostel Mess Headcount', path: '/hostel-mess', icon: UtensilsCrossed }
+        ];
 
       default:
         return [];
@@ -138,6 +232,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const navItems = getNavItems();
   const userPerms = user.permissions || [];
+
+  // Append Hostel Mess link for any Hosteller student or Warden if not already present
+  if ((user.residence_status === 'HOSTELLER' || user.role === 'WARDEN') && !navItems.some((i) => i.path === '/hostel-mess')) {
+    const label = user.role === 'WARDEN' ? 'Hostel Mess Headcount' : 'Hostel Mess & RSVP';
+    navItems.splice(1, 0, { label, path: '/hostel-mess', icon: UtensilsCrossed });
+  }
 
   // Append items dynamically based on granted custom permissions
   if (userPerms.includes('MANAGE_EMERGENCY') && !navItems.some((i) => i.path === '/emergency')) {
@@ -148,6 +248,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   }
   if (userPerms.includes('MANAGE_SYSTEM_SETTINGS') && !navItems.some((i) => i.path === '/settings')) {
     navItems.push({ label: 'System Settings', path: '/settings', icon: Settings });
+  }
+
+  // Appointed Class Representative (CR) confidential feedback page
+  if (Boolean(user.is_cr) && !navItems.some((i) => i.path === '/cr-feedback')) {
+    navItems.push({ label: 'CR Class Feedback', path: '/cr-feedback', icon: Star });
+  }
+
+  // Super Admin CR Feedbacks Audit page
+  if (user.role === 'SUPER_ADMIN' && !navItems.some((i) => i.path === '/admin/cr-feedbacks')) {
+    navItems.push({ label: 'CR Feedbacks Audit', path: '/admin/cr-feedbacks', icon: ShieldCheck });
+  }
+
+  // Mental Health Counseling link for Juniors, Seniors, and Directors
+  if (['JUNIOR', 'SENIOR', 'DIRECTOR'].includes(user.role) && !navItems.some((i) => i.path === '/counseling')) {
+    navItems.push({ label: 'Mental Health Counseling', path: '/counseling', icon: Heart });
+  }
+
+  // Super Admin Counselors Management page
+  if (user.role === 'SUPER_ADMIN' && !navItems.some((i) => i.path === '/admin/counselors')) {
+    navItems.push({ label: 'Counselors Management', path: '/admin/counselors', icon: UserCheck });
+  }
+
+  // Appointed Disciplinary Committee Members (Faculty, Director, etc.) Hub & Infractions Log
+  if (Boolean(user.is_disciplinary_committee) && !navItems.some((i) => i.path === '/admin/disciplinary-hub')) {
+    navItems.splice(2, 0, { label: 'Disciplinary & Infractions Hub', path: '/admin/disciplinary-hub', icon: Gavel });
   }
 
   return (
@@ -168,11 +293,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Brand Header */}
         <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/90 bg-slate-950">
-          <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="flex items-center gap-2 overflow-hidden">
             <img
               src="/assets/sse-reveal.png"
               alt="Sanskrithi School of Engineering"
-              className="h-9 w-auto object-contain max-w-[175px] drop-shadow-md"
+              className="h-7 w-auto object-contain max-w-[155px] drop-shadow-md"
             />
           </div>
 
@@ -218,6 +343,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
+        {/* Scan Student QR Code Button for Admins, Directors & Faculty */}
+        {['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'FACULTY'].includes(user.role) && (
+          <div className="px-3.5 pt-2 pb-1">
+            <button
+              onClick={() => {
+                if (onClose) onClose();
+                setShowScannerModal(true);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer active:scale-98"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Scan Student QR Code</span>
+            </button>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
@@ -242,14 +383,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           })}
         </nav>
 
-        {/* Footer / Fixed Logout */}
-        <div className="p-3.5 border-t border-slate-800/90 bg-slate-950 mt-auto sticky bottom-0 z-30 shadow-2xl backdrop-blur-md">
+        {/* Footer / Fixed Install PWA & Logout */}
+        <div className="p-3.5 border-t border-slate-800/90 bg-slate-950 mt-auto sticky bottom-0 z-30 shadow-2xl backdrop-blur-md space-y-2">
+          <button
+            onClick={() => {
+              if (onClose) onClose();
+              handleInstallPWA();
+            }}
+            className="w-full flex items-center justify-center gap-2.5 px-3.5 py-2.5 text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl shadow-lg shadow-indigo-500/20 transition-all cursor-pointer border border-indigo-500/30 active:scale-98"
+          >
+            <Smartphone className="w-4 h-4 text-blue-300 animate-pulse" />
+            <span>Install Mobile App</span>
+          </button>
+
           <button
             onClick={() => {
               if (onClose) onClose();
               logout();
             }}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold text-slate-300 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl transition-all cursor-pointer border border-slate-800 hover:border-rose-900/40 bg-slate-900/60"
+            className="w-full flex items-center gap-3 px-3.5 py-2 text-xs font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl transition-all cursor-pointer border border-slate-800/80 hover:border-rose-900/40 bg-slate-900/40"
           >
             <LogOut className="w-4 h-4 shrink-0 text-rose-500" />
             <span>Sign Out / Logout</span>
@@ -260,6 +412,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <UserProfileModal
           userId={selectedProfileId}
           onClose={() => setSelectedProfileId(null)}
+        />
+
+        {/* QR Scanner Modal */}
+        <QrScannerModal
+          isOpen={showScannerModal}
+          onClose={() => setShowScannerModal(false)}
+          onStudentFound={(scannedUserId) => setSelectedProfileId(scannedUserId)}
         />
       </aside>
     </>

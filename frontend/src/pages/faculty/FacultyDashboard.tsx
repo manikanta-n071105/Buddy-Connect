@@ -20,7 +20,8 @@ import {
   ExternalLink,
   Plus,
   Trash2,
-  Check
+  Check,
+  FileSpreadsheet
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
@@ -109,8 +110,16 @@ export const FacultyDashboard: React.FC = () => {
               Welcome, Prof. {user?.name}
             </h1>
             <p className="text-emerald-100/80 text-sm max-w-xl">
-              View your assigned junior students, schedule mentorship review meetings, and provide guidance outside the main senior-director tree.
+              View your assigned junior students, schedule mentorship review meetings, and conduct class quizzes from spreadsheets.
             </p>
+            <div className="pt-1 flex flex-wrap gap-2">
+              <button
+                onClick={() => navigate('/quizzes')}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+              >
+                <FileSpreadsheet className="w-4 h-4" /> Conduct Class Quiz (Spreadsheet)
+              </button>
+            </div>
           </div>
 
           {/* Capacity Card */}

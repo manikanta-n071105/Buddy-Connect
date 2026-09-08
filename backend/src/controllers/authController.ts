@@ -51,26 +51,47 @@ export const login = async (req: Request, res: Response) => {
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
     const permissions: string[] = permRes.rows.map(r => r.permission);
 
+    let assignedJuniorsCount = 0;
+    let residenceStatus: 'DAY_SCHOLAR' | 'HOSTELLER' | undefined;
+    let studentYear: string | undefined;
+
     if (user.role === 'DIRECTOR') {
       const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
       if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
     } else if (user.role === 'SENIOR') {
-      const senRes = await query(`SELECT id, director_id FROM seniors WHERE user_id = $1`, [user.id]);
+      const senRes = await query(`SELECT id, director_id, residence_status FROM seniors WHERE user_id = $1`, [user.id]);
       if (senRes.rowCount! > 0) {
         seniorId = senRes.rows[0].id;
         directorId = senRes.rows[0].director_id;
+        residenceStatus = senRes.rows[0].residence_status;
+        const cntRes = await query(`SELECT COUNT(*) FROM juniors WHERE senior_id = $1`, [seniorId]);
+        assignedJuniorsCount = parseInt(cntRes.rows[0].count);
       }
     } else if (user.role === 'JUNIOR') {
-      const junRes = await query(`SELECT j.id, j.senior_id, s.director_id FROM juniors j JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`, [user.id]);
+      const junRes = await query(
+        `SELECT j.id, j.senior_id, j.residence_status, j.year, s.director_id 
+         FROM juniors j LEFT JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`,
+        [user.id]
+      );
       if (junRes.rowCount! > 0) {
         juniorId = junRes.rows[0].id;
         seniorId = junRes.rows[0].senior_id;
         directorId = junRes.rows[0].director_id;
+        residenceStatus = junRes.rows[0].residence_status;
+        studentYear = junRes.rows[0].year;
       }
     } else if (user.role === 'FACULTY') {
       const facRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
       if (facRes.rowCount! > 0) {
         facultyId = facRes.rows[0].id;
+      }
+    }
+
+    // Check if user also has a Faculty record (e.g. Director who is also a Faculty member)
+    if (!facultyId) {
+      const facCheck = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
+      if (facCheck.rowCount! > 0) {
+        facultyId = facCheck.rows[0].id;
       }
     }
 
@@ -87,7 +108,14 @@ export const login = async (req: Request, res: Response) => {
       directorId,
       seniorId,
       juniorId,
-      facultyId
+      facultyId,
+      assigned_juniors_count: assignedJuniorsCount,
+      residence_status: residenceStatus,
+      gender: user.gender,
+      year: studentYear,
+      is_faculty: Boolean(user.is_faculty || facultyId),
+      is_cr: user.is_cr || false,
+      is_counselor: user.is_counselor || false
     };
 
     const tokens = generateTokens(payload);
@@ -115,12 +143,32 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
   }
 
   try {
-    const uRes = await query(`SELECT must_change_password FROM users WHERE id = $1`, [req.user.id]);
+    const uRes = await query(`SELECT gender, must_change_password, COALESCE(is_cr, false) as is_cr, COALESCE(is_counselor, false) as is_counselor FROM users WHERE id = $1`, [req.user.id]);
     const mustChangePassword = uRes.rows[0]?.must_change_password || false;
+    const gender = uRes.rows[0]?.gender || req.user.gender;
+    const isCr = uRes.rows[0]?.is_cr || false;
+    const isCounselor = uRes.rows[0]?.is_counselor || false;
 
     // Load fresh permissions for the user
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [req.user.id]);
     const freshPermissions = permRes.rows.map(r => r.permission);
+
+    let assignedJuniorsCount = req.user.assigned_juniors_count || 0;
+    let residenceStatus = req.user.residence_status;
+
+    let studentYear = req.user.year;
+    if (req.user.role === 'SENIOR' && req.user.seniorId) {
+      const cntRes = await query(`SELECT COUNT(*) FROM juniors WHERE senior_id = $1`, [req.user.seniorId]);
+      assignedJuniorsCount = parseInt(cntRes.rows[0].count);
+      const senRes = await query(`SELECT residence_status FROM seniors WHERE user_id = $1`, [req.user.id]);
+      if (senRes.rowCount! > 0) residenceStatus = senRes.rows[0].residence_status;
+    } else if (req.user.role === 'JUNIOR') {
+      const junRes = await query(`SELECT residence_status, year FROM juniors WHERE user_id = $1`, [req.user.id]);
+      if (junRes.rowCount! > 0) {
+        residenceStatus = junRes.rows[0].residence_status;
+        studentYear = junRes.rows[0].year;
+      }
+    }
 
     res.json({
       success: true,
@@ -128,6 +176,13 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
         user: {
           ...req.user,
           permissions: freshPermissions,
+          assigned_juniors_count: assignedJuniorsCount,
+          residence_status: residenceStatus,
+          year: studentYear,
+          gender,
+          is_faculty: Boolean(uRes.rows[0]?.is_faculty || req.user.facultyId),
+          is_cr: isCr,
+          is_counselor: isCounselor,
           mustChangePassword
         }
       }

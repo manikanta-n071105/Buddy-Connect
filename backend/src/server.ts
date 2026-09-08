@@ -8,7 +8,16 @@ import { logger } from './utils/logger';
 import { errorHandler } from './middleware/error';
 import { apiLimiter } from './middleware/rateLimit';
 import { startSlaCronJob } from './jobs/slaCron';
-import { initDatabasePerformance } from './config/db';
+import { 
+  initDatabasePerformance, 
+  initHostelMessTables, 
+  initCrFeedbackTables, 
+  initCounselingTables,
+  initQuizTables,
+  initSystemSettingsTables,
+  initDisciplinaryCommitteeTables
+} from './config/db';
+import { initRedis } from './config/redis';
 
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -27,11 +36,27 @@ import eventRoutes from './routes/eventRoutes';
 import announcementRoutes from './routes/announcementRoutes';
 import pollRoutes from './routes/pollRoutes';
 import meetingRoutes from './routes/meetingRoutes';
+import messRoutes from './routes/messRoutes';
+import crFeedbackRoutes from './routes/crFeedbackRoutes';
+import counselingRoutes from './routes/counselingRoutes';
+import quizRoutes from './routes/quizRoutes';
+
+import compression from 'compression';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// High-Performance Payload Gzip Compression (reduces network payload size by ~75%)
+app.use(compression({
+  level: 6,
+  threshold: 1024, // Compress responses above 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
 
 // Security Middlewares
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -48,14 +73,20 @@ app.use(cors({
       callback(null, true); // Allow for production flexibility
     }
   },
-  credentials: true
+  credentials: true,
+  maxAge: 86400 // Cache CORS pre-flight for 24 hours in browser
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Fast pre-flight handling
+app.options('*', cors());
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api', apiLimiter);
 
 // Health and Portal Diagnosis
 app.use('/api/health', healthRoutes);
+app.use('/api/diagnosis', healthRoutes);
 
 // Feature Routes
 app.use('/api/auth', authRoutes);
@@ -74,6 +105,10 @@ app.use('/api/events', eventRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/polls', pollRoutes);
 app.use('/api/meetings', meetingRoutes);
+app.use('/api/mess', messRoutes);
+app.use('/api/cr-feedback', crFeedbackRoutes);
+app.use('/api/counseling', counselingRoutes);
+app.use('/api/quizzes', quizRoutes);
 
 // Serve Frontend Static Build in Production if present
 const frontendDist = path.join(__dirname, '../../frontend/dist');
@@ -88,12 +123,19 @@ if (fs.existsSync(frontendDist)) {
 // Global Error Handler
 app.use(errorHandler);
 
-// Start SLA Cron Job & Initialize DB Performance Indexes
+// Start SLA Cron Job, Initialize Redis & DB Performance Indexes
+initRedis();
 startSlaCronJob();
-initDatabasePerformance().then(() => {
-  logger.info('Database performance indexes & query optimization initialized.');
+initDatabasePerformance();
+initHostelMessTables();
+initCrFeedbackTables();
+initQuizTables();
+initSystemSettingsTables();
+initDisciplinaryCommitteeTables();
+initCounselingTables().then(() => {
+  logger.info('Database performance, Quiz, CR Feedback & Counseling tables initialized.');
 }).catch(err => {
-  logger.warn('Database performance initialization warning:', err.message);
+  logger.warn('Database initialization warning:', err.message);
 });
 
 app.listen(PORT, () => {

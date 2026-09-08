@@ -2,9 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import api from '../../services/api';
 import { LoadingState } from './LoadingState';
-import { User, ShieldCheck, Mail, Phone, Calendar, Clock, KeyRound, Building2, BookOpen, UserCheck, GraduationCap, X, Edit3, Trash2, AlertTriangle, ShieldAlert, Check } from 'lucide-react';
+import { GoogleAuthenticatorModal } from './GoogleAuthenticatorModal';
+import { QRCodeCanvas } from 'qrcode.react';
+import { User, ShieldCheck, Mail, Phone, Calendar, Clock, KeyRound, Building2, BookOpen, UserCheck, GraduationCap, X, Edit3, Trash2, AlertTriangle, ShieldAlert, Check, Lock, Bus, Home, Star, Heart, Smartphone, Gavel, QrCode, Scissors, CreditCard, UserX, FileWarning } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+
+import { getBranchShortCode, DEPARTMENT_OPTIONS } from '../../types';
+import { StudentQrCodeCard } from './StudentQrCodeModal';
+import { FileDisciplinaryComplaintModal } from './FileDisciplinaryComplaintModal';
 
 interface UserProfileModalProps {
   userId: string | null;
@@ -25,9 +31,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
 
+  // Disciplinary Complaints state
+  const [disciplinaryComplaints, setDisciplinaryComplaints] = useState<any[]>([]);
+  const [showComplaintModal, setShowComplaintModal] = useState(false);
+
   const [newPasswordVal, setNewPasswordVal] = useState('Password123!');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [superAdminPasswordVal, setSuperAdminPasswordVal] = useState('');
+  const [totpCodeVal, setTotpCodeVal] = useState('');
+  const [show2FAModal, setShow2FAModal] = useState(false);
 
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -38,6 +50,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [editCodeOrReg, setEditCodeOrReg] = useState('');
   const [editBatch, setEditBatch] = useState('');
   const [editYear, setEditYear] = useState('');
+  const [editResidenceStatus, setEditResidenceStatus] = useState<'DAY_SCHOLAR' | 'HOSTELLER'>('DAY_SCHOLAR');
+  const [editGender, setEditGender] = useState<'MALE' | 'FEMALE'>('MALE');
+  const [editIsCr, setEditIsCr] = useState(false);
+  const [editIsCounselor, setEditIsCounselor] = useState(false);
+  const [editIsDisciplinaryCommittee, setEditIsDisciplinaryCommittee] = useState(false);
+  const [editCommitteeDesignation, setEditCommitteeDesignation] = useState('Committee Member');
+  const [editSuperAdminPassword, setEditSuperAdminPassword] = useState('');
 
   const availablePermissions = [
     { key: 'MANAGE_USERS', label: 'Manage Users & Directory' },
@@ -71,6 +90,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>('');
   const [isSavingFaculty, setIsSavingFaculty] = useState(false);
 
+  const fetchDisciplinaryComplaints = async () => {
+    if (!userId) return;
+    try {
+      const res = await api.get(`/users/disciplinary-complaints/student/${userId}`);
+      setDisciplinaryComplaints(res.data.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchProfile = async () => {
     if (!userId) return;
     setIsLoading(true);
@@ -80,6 +109,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setProfile(p);
       setSelectedPermissions(p.permissions || []);
       setSelectedFacultyId(p.junior_faculty_id || p.faculty_id || '');
+
+      if (['JUNIOR', 'SENIOR'].includes(p.role)) {
+        fetchDisciplinaryComplaints();
+      }
 
       if (p.role === 'JUNIOR' && isSuperAdminOrAdmin) {
         try {
@@ -99,6 +132,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setEditCodeOrReg(p.director_code || p.senior_code || p.register_number || '');
       setEditBatch(p.batch || '');
       setEditYear(p.year || '');
+      setEditResidenceStatus(p.residence_status || 'DAY_SCHOLAR');
+      setEditGender(p.gender || 'MALE');
+      setEditIsCr(p.is_cr || false);
+      setEditIsCounselor(p.is_counselor || false);
+      setEditIsDisciplinaryCommittee(p.is_disciplinary_committee || false);
+      setEditCommitteeDesignation(p.committee_designation || 'Committee Member');
     } catch (err) {
       toast.error('Failed to load user profile');
       onClose();
@@ -108,22 +147,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   };
 
   const handleSaveFacultyAssignment = async () => {
-    if (!profile) return;
-    const juniorId = profile.junior_id || profile.id;
+    if (!userId) return;
+    setIsSavingFaculty(true);
     try {
-      setIsSavingFaculty(true);
-      if (selectedFacultyId) {
-        await api.post('/users/faculty/assign-junior', {
-          facultyId: selectedFacultyId,
-          juniorId
-        });
-        toast.success(`Faculty mentor assigned to ${profile.name} successfully!`);
-      } else {
-        await api.post('/users/faculty/unassign-junior', { juniorId });
-        toast.success(`Faculty mentor unassigned from ${profile.name}!`);
-      }
+      await api.patch(`/users/${userId}/faculty-assignment`, { facultyId: selectedFacultyId || null });
+      toast.success('Faculty assignment updated successfully');
       fetchProfile();
-      if (onProfileUpdated) onProfileUpdated();
+      onProfileUpdated?.();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to update faculty assignment');
     } finally {
@@ -141,6 +171,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!superAdminPasswordVal.trim()) {
+      toast.error('Super Administrator authorization password is required.');
+      return;
+    }
     try {
       await api.post(`/users/${userId}/reset-password`, { newPassword: newPasswordVal, adminPassword: superAdminPasswordVal });
       toast.success(`Password for @${profile.username} reset to "${newPasswordVal}"`);
@@ -167,15 +201,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
     try {
       await api.patch(`/users/${userId}/permissions`, {
         permissions: selectedPermissions,
-        superAdminPassword: superAdminPasswordVal.trim()
+        superAdminPassword: superAdminPasswordVal.trim(),
+        totpCode: totpCodeVal.trim()
       });
-      toast.success(`Permissions for @${profile.username} updated successfully!`);
+      toast.success(`Permissions for @${profile.username} updated successfully with 2FA authorization!`);
       setShowPermissionsForm(false);
       setSuperAdminPasswordVal('');
+      setTotpCodeVal('');
       fetchProfile();
       onProfileUpdated?.();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update user permissions');
+      if (err.response?.data?.requires2FA) {
+        toast.error(err.response?.data?.message || 'Google Authenticator 2FA 6-digit code required.');
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to update user permissions');
+      }
     } finally {
       setIsSavingPermissions(false);
     }
@@ -194,6 +234,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      (editIsCr !== Boolean(profile?.is_cr) || editIsCounselor !== Boolean(profile?.is_counselor)) &&
+      !editSuperAdminPassword.trim()
+    ) {
+      toast.error('Super Administrator authorization password is required to change CR or Mental Health Counselor status.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       await api.put(`/users/${userId}`, {
@@ -206,11 +254,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
         seniorCode: profile.role === 'SENIOR' ? editCodeOrReg : undefined,
         registerNumber: profile.role === 'JUNIOR' ? editCodeOrReg : undefined,
         batch: editBatch,
-        year: editYear
+        year: editYear,
+        residenceStatus: editResidenceStatus,
+        gender: editGender,
+        isCr: editIsCr,
+        isCounselor: editIsCounselor,
+        isDisciplinaryCommittee: editIsDisciplinaryCommittee,
+        committeeDesignation: editCommitteeDesignation,
+        superAdminPassword: editSuperAdminPassword.trim()
       });
 
       toast.success('User profile updated successfully!');
       setIsEditing(false);
+      setEditSuperAdminPassword('');
       fetchProfile();
       onProfileUpdated?.();
     } catch (err: any) {
@@ -251,26 +307,97 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
           <LoadingState message="Fetching detailed user profile..." />
         ) : (
           <div className="space-y-4 text-xs">
-            {/* Identity Banner */}
-            <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-600 flex items-center justify-center font-black text-base shadow-md border border-orange-400/30">
-                  {profile.name.charAt(0).toUpperCase()}
+            {/* Identity Banner with QR Code Pass (Above & Beside User Details) */}
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-900 text-white rounded-2xl flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 shadow-md border border-slate-800">
+              <div className="space-y-3 flex-1 w-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-600 flex items-center justify-center font-black text-base shadow-md border border-orange-400/30 shrink-0">
+                    {profile.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-base text-white tracking-wide">{profile.name}</h4>
+                    <p className="text-[11px] text-orange-400 font-extrabold">@{profile.username}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-white tracking-wide">{profile.name}</h4>
-                  <p className="text-[11px] text-orange-400 font-extrabold">@{profile.username}</p>
+
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  {profile.is_cr && (
+                    <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 border border-amber-300 tracking-wider uppercase shadow-xs flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-950 text-amber-950" /> CR
+                    </span>
+                  )}
+                  {profile.is_counselor && (
+                    <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-rose-500 text-white border border-rose-400 tracking-wider uppercase shadow-xs flex items-center gap-1">
+                      <Heart className="w-3.5 h-3.5 fill-white text-white" /> Counselor
+                    </span>
+                  )}
+                  {profile.is_disciplinary_committee && (
+                    <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-purple-600 text-white border border-purple-400 tracking-wider uppercase shadow-xs flex items-center gap-1">
+                      <Gavel className="w-3.5 h-3.5 fill-white text-white" /> Committee Member
+                    </span>
+                  )}
+                  <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border tracking-wider uppercase shadow-2xs ${
+                    profile.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
+                    profile.role === 'DIRECTOR' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
+                    profile.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
+                    'bg-emerald-950 text-emerald-300 border-emerald-700'
+                  }`}>
+                    {profile.role.replace('_', ' ')}
+                  </span>
                 </div>
               </div>
-              <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border tracking-wider uppercase shadow-2xs ${
-                profile.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
-                profile.role === 'DIRECTOR' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
-                profile.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
-                'bg-emerald-950 text-emerald-300 border-emerald-700'
-              }`}>
-                {profile.role.replace('_', ' ')}
-              </span>
+
+              {/* QR Code Pass Card (Positioned Above & Beside Details) */}
+              <div className="flex flex-col items-center justify-center bg-slate-900/90 p-2.5 rounded-2xl border border-slate-800 shrink-0 shadow-lg">
+                <div className="p-2 bg-white rounded-xl shadow-md border border-slate-200">
+                  <QRCodeCanvas value={profile.email} size={105} bgColor="#FFFFFF" fgColor="#000000" level="M" />
+                </div>
+                <span className="text-[9px] font-extrabold text-amber-400 mt-1 uppercase tracking-wider flex items-center gap-1">
+                  <QrCode className="w-3 h-3 text-orange-500" /> Identity QR Pass
+                </span>
+              </div>
             </div>
+
+            {/* REPEAT OFFENDER WARNING BANNER */}
+            {['JUNIOR', 'SENIOR'].includes(profile.role) && disciplinaryComplaints.length >= 2 && (
+              <div className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 shadow-md ${
+                disciplinaryComplaints.length >= 3
+                  ? 'bg-rose-950 text-white border-rose-700 animate-pulse'
+                  : 'bg-amber-950 text-white border-amber-700'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl shrink-0 ${
+                    disciplinaryComplaints.length >= 3 ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
+                  }`}>
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-xs uppercase tracking-wider">
+                        {disciplinaryComplaints.length >= 3 ? '🚨 CRITICAL REPEAT OFFENDER ALERT' : '⚠️ REPEAT OFFENDER NOTICE'}
+                      </h4>
+                      <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-white/20 text-white uppercase">
+                        {disciplinaryComplaints.length} Infractions Logged
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-200 font-medium mt-0.5">
+                      {disciplinaryComplaints.length >= 3
+                        ? 'This student has repeated conduct violations! Urgent Parent Summon & Committee Inquiry Recommended.'
+                        : 'Student has 2 recorded conduct violations. Further infractions will trigger committee escalation.'}
+                    </p>
+                  </div>
+                </div>
+                {(['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role || '') || Boolean(currentUser?.is_disciplinary_committee)) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowComplaintModal(true)}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-black rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
+                  >
+                    + File Infraction
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Inline Edit Form */}
             {isEditing ? (
@@ -284,12 +411,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Email *</label>
-                    <input type="email" required value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full p-2 bg-white border border-slate-200 rounded-xl outline-hidden" />
+                    <label className="block font-bold text-slate-700 mb-1">Email Address *</label>
+                    <input type="email" required value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold outline-hidden" />
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Username *</label>
-                    <input type="text" required value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full p-2 bg-white border border-slate-200 rounded-xl outline-hidden" />
+                    <label className="block font-bold text-slate-700 mb-1">Username (@handle) *</label>
+                    <input type="text" required value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold outline-hidden" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">
@@ -301,14 +428,60 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     <label className="block font-bold text-slate-700 mb-1">Department</label>
                     <select value={editDepartment} onChange={(e) => setEditDepartment(e.target.value)} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold outline-hidden text-xs">
                       <option value="">Select Department Branch...</option>
-                      <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
-                      <option value="Electronics & Communication Engineering">Electronics & Communication Engineering (ECE)</option>
-                      <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering (EEE)</option>
-                      <option value="Mechanical Engineering">Mechanical Engineering (MECH)</option>
-                      <option value="Civil Engineering">Civil Engineering (CIVIL)</option>
+                      {DEPARTMENT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {['SENIOR', 'JUNIOR'].includes(profile.role) && (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Residence Status</label>
+                      <select value={editResidenceStatus} onChange={(e) => setEditResidenceStatus(e.target.value as any)} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold outline-hidden text-xs">
+                        <option value="DAY_SCHOLAR">Day Scholar</option>
+                        <option value="HOSTELLER">Hosteller</option>
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Gender / Classification</label>
+                    <select value={editGender} onChange={(e) => setEditGender(e.target.value as any)} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold outline-hidden text-xs">
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                    </select>
+                  </div>
+                </div>
+                {['SENIOR', 'JUNIOR'].includes(profile.role) && (
+                  <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200 space-y-2">
+                    <label className="flex items-center gap-2 font-extrabold text-amber-950 text-xs cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={editIsCr}
+                        onChange={(e) => setEditIsCr(e.target.checked)}
+                        className="w-4 h-4 text-amber-600 rounded-md accent-amber-600 cursor-pointer"
+                      />
+                      <span className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" /> Appointed Class Representative (CR)
+                      </span>
+                    </label>
+                    {editIsCr !== Boolean(profile.is_cr) && (
+                      <div>
+                        <label className="block font-extrabold text-amber-950 text-[11px] mb-1">
+                          Super Administrator Authorization Password *
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={editSuperAdminPassword}
+                          onChange={(e) => setEditSuperAdminPassword(e.target.value)}
+                          placeholder="Enter Super Admin Password..."
+                          className="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs font-mono outline-hidden"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
                   <button type="button" onClick={() => setIsEditing(false)} className="px-3.5 py-1.5 border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
                   <button type="submit" disabled={isSaving} className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-xl shadow-md transition-all cursor-pointer">
@@ -330,7 +503,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
                       <Phone className="w-3 h-3 text-orange-600" /> Phone Number
                     </span>
-                    <span className="font-bold text-slate-900">{profile.phone || 'N/A'}</span>
+                    <span className="font-bold text-slate-900">
+                      {profile.phone === 'Hidden for privacy' ? (
+                        <span className="inline-flex items-center gap-1 text-slate-400 font-bold italic text-xs">
+                          <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" /> Hidden for privacy
+                        </span>
+                      ) : (
+                        profile.phone || 'N/A'
+                      )}
+                    </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
@@ -346,6 +527,37 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                       {profile.is_active ? 'ACTIVE' : 'DISABLED'}
                     </span>
                   </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
+                      <User className="w-3 h-3 text-orange-600" /> Gender
+                    </span>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 mt-1 text-[11px] font-black rounded-lg border ${
+                      profile.gender === 'FEMALE' ? 'bg-pink-50 text-pink-700 border-pink-200' : 'bg-slate-100 text-slate-800 border-slate-200'
+                    }`}>
+                      <User className="w-3.5 h-3.5 shrink-0" />
+                      {profile.gender === 'FEMALE' ? 'FEMALE' : 'MALE'}
+                    </span>
+                  </div>
+                  {['SENIOR', 'JUNIOR'].includes(profile.role) && (
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-orange-600" /> Residence Status
+                      </span>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 mt-1 text-[11px] font-black rounded-lg border ${
+                        profile.residence_status === 'HOSTELLER' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+                      }`}>
+                        {profile.residence_status === 'HOSTELLER' ? (
+                          <>
+                            <Home className="w-3.5 h-3.5 text-purple-600 shrink-0" /> HOSTELLER
+                          </>
+                        ) : (
+                          <>
+                            <Bus className="w-3.5 h-3.5 text-blue-600 shrink-0" /> DAY SCHOLAR
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Role Specific Entity Details */}
@@ -356,7 +568,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     </h5>
                     <div className="grid grid-cols-2 gap-2 text-slate-700 font-semibold">
                       <p>Director Code: <strong className="text-slate-900">{profile.director_code}</strong></p>
-                      <p>Department: <strong className="text-slate-900">{profile.department}</strong></p>
+                      <p>Department: <strong className="text-slate-900">{getBranchShortCode(profile.department)}</strong></p>
                     </div>
                   </div>
                 )}
@@ -368,7 +580,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     </h5>
                     <div className="grid grid-cols-2 gap-2 text-slate-700 font-semibold">
                       <p>Senior Code: <strong className="text-slate-900">{profile.senior_code}</strong></p>
-                      <p>Department: <strong className="text-slate-900">{profile.department}</strong></p>
+                      <p>Department: <strong className="text-slate-900">{getBranchShortCode(profile.department)}</strong></p>
                       <p>Assigned Director: <strong className="text-slate-900">{profile.director_name || 'N/A'}</strong></p>
                     </div>
                   </div>
@@ -381,7 +593,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     </h5>
                     <div className="grid grid-cols-2 gap-2 text-slate-700 font-semibold">
                       <p>Register Number: <strong className="text-slate-900">{profile.register_number}</strong></p>
-                      <p>Department: <strong className="text-slate-900">{profile.department}</strong></p>
+                      <p>Department: <strong className="text-slate-900">{getBranchShortCode(profile.department)}</strong></p>
                       <p>Batch / Year: <strong className="text-slate-900">{profile.batch} ({profile.year})</strong></p>
                       <p>Senior Mentor: <strong className="text-indigo-600">{profile.senior_name || 'N/A'}</strong></p>
                       <p className="col-span-2">Assigned Faculty Mentor: <strong className="text-teal-700">{profile.faculty_name ? `${profile.faculty_name} (${profile.faculty_code || 'FAC'})` : 'None (Unassigned)'}</strong></p>
@@ -440,12 +652,86 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     )}
                   </div>
                 )}
+
+                {/* Disciplinary Infractions & Complaints Section for Students */}
+                {['JUNIOR', 'SENIOR'].includes(profile.role) && (
+                  <div className="bg-rose-50/70 p-4 rounded-2xl border border-rose-200/90 space-y-2.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-extrabold text-rose-950 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                        <ShieldAlert className="w-4 h-4 text-rose-600" /> Disciplinary Infractions Record ({disciplinaryComplaints.length})
+                      </h5>
+                      {(['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role || '') || Boolean(currentUser?.is_disciplinary_committee)) && (
+                        <button
+                          type="button"
+                          onClick={() => setShowComplaintModal(true)}
+                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                        >
+                          + File Infraction
+                        </button>
+                      )}
+                    </div>
+
+                    {disciplinaryComplaints.length === 0 ? (
+                      <p className="text-slate-500 italic text-[11px]">Clean Record: No disciplinary infractions or complaints recorded.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {disciplinaryComplaints.map((c) => {
+                          const IconComp =
+                            c.complaint_type === 'LATE_COMER' ? Clock :
+                            c.complaint_type === 'UNIFORM_VIOLATION' ? UserX :
+                            c.complaint_type === 'IMPROPER_BEARD_HAIRCUT' ? Scissors :
+                            c.complaint_type === 'ID_CARD_MISSING' ? CreditCard :
+                            c.complaint_type === 'MOBILE_USAGE' ? Smartphone :
+                            c.complaint_type === 'MISBEHAVIOR' ? AlertTriangle : FileWarning;
+
+                          return (
+                            <div key={c.id} className="p-2.5 bg-white rounded-xl border border-rose-200 shadow-2xs space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-[11px] text-slate-900 flex items-center gap-1.5">
+                                  <IconComp className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                  {c.complaint_type.replace(/_/g, ' ')}
+                                  {c.offense_number && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-black rounded-md bg-slate-100 text-slate-800 border border-slate-200">
+                                      {c.offense_number === 1 ? '1st Offense' : c.offense_number === 2 ? '2nd Repeat' : c.offense_number === 3 ? '3rd Repeat' : `${c.offense_number}th Offense`}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className={`px-2 py-0.5 text-[9px] font-black rounded-full uppercase tracking-wider ${
+                                  c.severity === 'CRITICAL' ? 'bg-rose-100 text-rose-900 border border-rose-300' :
+                                  c.severity === 'HIGH' ? 'bg-orange-100 text-orange-900 border border-orange-300' :
+                                  'bg-amber-100 text-amber-900 border border-amber-300'
+                                }`}>
+                                  {c.severity}
+                                </span>
+                              </div>
+                              {c.description && <p className="text-slate-600 text-[11px] font-medium leading-tight">{c.description}</p>}
+                              {c.action_taken && <p className="text-rose-700 text-[10px] font-bold">Action Taken: {c.action_taken}</p>}
+                              <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold pt-1 border-t border-slate-100">
+                                <span>Reported by {c.complainant_name}</span>
+                                <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
             {/* Action Bar */}
             {canEditOrDelete && !isEditing && (
-              <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
+              <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
+                {(['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role || '') || Boolean(currentUser?.is_disciplinary_committee)) && ['JUNIOR', 'SENIOR'].includes(profile.role) && (
+                  <button
+                    onClick={() => setShowComplaintModal(true)}
+                    className="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl shadow-xs border border-rose-600 transition-all inline-flex items-center gap-1.5 cursor-pointer active:scale-98"
+                  >
+                    <ShieldAlert className="w-4 h-4" /> File Infraction
+                  </button>
+                )}
+
                 <button
                   onClick={() => setIsEditing(true)}
                   className="px-3 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 font-extrabold border border-orange-200 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
@@ -496,51 +782,47 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
             {showPermissionsForm && isSuperAdmin && (
               <form onSubmit={handleSavePermissions} className="p-4 bg-purple-50/90 border border-purple-200/90 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between border-b border-purple-200/80 pb-2">
-                  <h5 className="font-extrabold text-purple-950 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-purple-600" /> Super Admin: Update Permissions for @{profile.username}
+                  <h5 className="font-extrabold text-purple-950 uppercase text-xs tracking-wider flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-purple-600" /> Manage System Permissions
                   </h5>
+                  <button type="button" onClick={() => setShowPermissionsForm(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-1 text-xs">
-                  {availablePermissions.map((perm) => {
-                    const isChecked = selectedPermissions.includes(perm.key);
-                    return (
-                      <label
-                        key={perm.key}
-                        onClick={() => handleTogglePermission(perm.key)}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                          isChecked
-                            ? 'bg-purple-950 text-purple-100 border-purple-800 shadow-sm'
-                            : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        <div className={`w-4 h-4 mt-0.5 rounded-md border flex items-center justify-center shrink-0 ${isChecked ? 'bg-purple-500 text-white border-purple-400' : 'border-slate-400 bg-slate-50'}`}>
-                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[11px] font-black tracking-wide leading-tight">{perm.label}</span>
-                        </div>
-                      </label>
-                    );
-                  })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                  {availablePermissions.map((perm) => (
+                    <label key={perm.key} className="flex items-center gap-2 p-2 bg-white rounded-xl border border-purple-200/80 text-[11px] font-semibold text-slate-800 cursor-pointer hover:bg-purple-100/50">
+                      <input
+                        type="checkbox"
+                        checked={selectedPermissions.includes(perm.key)}
+                        onChange={() => {
+                          if (selectedPermissions.includes(perm.key)) {
+                            setSelectedPermissions(selectedPermissions.filter((p) => p !== perm.key));
+                          } else {
+                            setSelectedPermissions([...selectedPermissions, perm.key]);
+                          }
+                        }}
+                        className="rounded-sm border-purple-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <span>{perm.label}</span>
+                    </label>
+                  ))}
                 </div>
-                <div className="pt-2 border-t border-purple-200/80 space-y-2">
-                  <div>
-                    <label className="block font-bold text-purple-950 mb-1">Verify Super Admin Password *</label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="Enter your Super Admin Password"
-                      value={superAdminPasswordVal}
-                      onChange={(e) => setSuperAdminPasswordVal(e.target.value)}
-                      className="w-full p-2 bg-white border border-purple-300 rounded-xl font-mono text-slate-900 outline-hidden focus:ring-2 focus:ring-purple-500/20"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setShowPermissionsForm(false)} className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-100 cursor-pointer">Cancel</button>
-                    <button type="submit" disabled={isSavingPermissions} className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded-xl shadow-md cursor-pointer">
-                      {isSavingPermissions ? 'Saving...' : 'Confirm & Save Permissions'}
-                    </button>
-                  </div>
+                <div className="pt-2 border-t border-purple-200/80 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPermissionsForm(false)}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-100 text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingPermissions}
+                    className="px-4 py-1.5 bg-purple-700 hover:bg-purple-600 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer"
+                  >
+                    {isSavingPermissions ? 'Saving...' : 'Save Permissions'}
+                  </button>
                 </div>
               </form>
             )}
@@ -593,6 +875,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
             )}
           </div>
         )}
+        <GoogleAuthenticatorModal isOpen={show2FAModal} onClose={() => setShow2FAModal(false)} />
+        <FileDisciplinaryComplaintModal
+          isOpen={showComplaintModal}
+          onClose={() => setShowComplaintModal(false)}
+          targetStudent={profile}
+          onComplaintSubmitted={() => {
+            fetchDisciplinaryComplaints();
+            fetchProfile();
+          }}
+        />
       </div>
     </div>,
     document.body

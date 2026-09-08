@@ -18,7 +18,8 @@ import {
   MapPin,
   Link2,
   ExternalLink,
-  GraduationCap
+  GraduationCap,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -66,16 +67,31 @@ export const JuniorDashboard: React.FC = () => {
           <h1 className="text-2xl font-black tracking-tight text-white">Welcome back, {user?.name}</h1>
           <p className="text-xs text-slate-300">Your senior and faculty mentors are available for guidance. Check scheduled mentorship meetings below.</p>
         </div>
-        <Link
-          to="/issues/new"
-          className="relative z-10 inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-orange-600/30 transition-all shrink-0 cursor-pointer active:scale-98"
-        >
-          <PlusCircle className="w-4 h-4" /> Raise New Issue
-        </Link>
+        <div className="relative z-10 flex flex-wrap items-center gap-2">
+          <Link
+            to="/quizzes"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition-all shrink-0 cursor-pointer active:scale-98"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Class Quizzes
+          </Link>
+          <Link
+            to="/issues/new"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-orange-600/30 transition-all shrink-0 cursor-pointer active:scale-98"
+          >
+            <PlusCircle className="w-4 h-4" /> Raise New Issue
+          </Link>
+        </div>
       </div>
 
       {/* Quick Action Buttons */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+        <Link
+          to="/quizzes"
+          className="p-5 bg-white border border-indigo-200/80 rounded-2xl shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all text-center flex flex-col items-center gap-2.5 group"
+        >
+          <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl group-hover:scale-110 transition-transform"><FileSpreadsheet className="w-5 h-5" /></div>
+          <span className="text-xs font-black text-slate-900">Class Quizzes</span>
+        </Link>
         <Link
           to="/issues/new"
           className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all text-center flex flex-col items-center gap-2.5 group"

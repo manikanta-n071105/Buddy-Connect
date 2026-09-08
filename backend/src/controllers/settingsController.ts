@@ -11,7 +11,8 @@ export const getSettings = async (req: AuthenticatedRequest, res: Response) => {
       ON CONFLICT (key) DO NOTHING;
     `);
 
-    const result = await query(`SELECT key, value, description, updated_at FROM system_settings ORDER BY key`);
+    await query(`DELETE FROM system_settings WHERE key LIKE '%VOTE%' OR key LIKE '%VOTING%' OR key LIKE '%THRESHOLD%' OR key IN ('REOPEN_THRESHOLD', 'SATISFACTION_THRESHOLD')`);
+    const result = await query(`SELECT key, value, description, updated_at FROM system_settings WHERE key NOT LIKE '%VOTE%' AND key NOT LIKE '%VOTING%' AND key NOT LIKE '%THRESHOLD%' AND key NOT IN ('REOPEN_THRESHOLD', 'SATISFACTION_THRESHOLD') ORDER BY key`);
     res.json({ success: true, data: result.rows });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });

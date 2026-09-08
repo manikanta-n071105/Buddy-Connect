@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { UserProfileModal } from '../common/UserProfileModal';
-import { Bell, Search, Activity, User as UserIcon, CheckCheck, Menu } from 'lucide-react';
+import { GoogleAuthenticatorModal } from '../common/GoogleAuthenticatorModal';
+import { Bell, Search, Activity, User as UserIcon, CheckCheck, Menu, Smartphone } from 'lucide-react';
 import { Notification } from '../../types';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
@@ -16,6 +17,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMobileMenu }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [show2FAModal, setShow2FAModal] = useState(false);
 
   const fetchNotifications = async () => {
     try {
@@ -80,6 +82,18 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMobileMenu }) => {
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Google Authenticator 2FA Setup Link (Super Admin Only) */}
+        {user?.role === 'SUPER_ADMIN' && (
+          <button
+            onClick={() => setShow2FAModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100/90 rounded-xl border border-indigo-200/80 transition-all shadow-2xs cursor-pointer"
+            title="Setup or Manage Google Authenticator App 2FA"
+          >
+            <Smartphone className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="hidden sm:inline">Google 2FA</span>
+          </button>
+        )}
+
         {/* Diagnostic System Health Link (Super Admin Only) */}
         {user?.role === 'SUPER_ADMIN' && (
           <Link
@@ -196,6 +210,12 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMobileMenu }) => {
       <UserProfileModal
         userId={selectedProfileId}
         onClose={() => setSelectedProfileId(null)}
+      />
+
+      {/* Google Authenticator 2FA Modal */}
+      <GoogleAuthenticatorModal
+        isOpen={show2FAModal}
+        onClose={() => setShow2FAModal(false)}
       />
     </header>
   );

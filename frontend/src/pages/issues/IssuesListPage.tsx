@@ -77,8 +77,20 @@ export const IssuesListPage: React.FC = () => {
     fetchIssues();
   };
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, priorityFilter, categoryFilter, search]);
+
   const escalatedIssues = issues.filter(i => i.status === 'ESCALATED');
   const isDirectorOrAdmin = ['DIRECTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
+
+  const totalPages = Math.ceil(issues.length / pageSize) || 1;
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedIssues = issues.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-6">
@@ -203,7 +215,7 @@ export const IssuesListPage: React.FC = () => {
         <>
           {/* Mobile Layout: Responsive Touch Cards (< 768px) */}
           <div className="block md:hidden space-y-3">
-            {issues.map((iss) => {
+            {paginatedIssues.map((iss) => {
               const isEscalated = iss.status === 'ESCALATED';
               return (
                 <div
@@ -280,7 +292,7 @@ export const IssuesListPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  {issues.map((iss) => {
+                  {paginatedIssues.map((iss) => {
                     const isEscalated = iss.status === 'ESCALATED';
                     return (
                       <tr
@@ -331,6 +343,70 @@ export const IssuesListPage: React.FC = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Pagination Navigation Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-slate-500 font-bold">
+                Showing <span className="text-slate-900 font-black">{(safeCurrentPage - 1) * pageSize + 1}</span> to <span className="text-slate-900 font-black">{Math.min(safeCurrentPage * pageSize, issues.length)}</span> of <span className="text-slate-900 font-black">{issues.length}</span> issues
+              </span>
+              <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                <span className="text-slate-400 font-bold">Per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-900 font-black focus:outline-none focus:border-orange-500 cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 self-center sm:self-auto">
+              <button
+                disabled={safeCurrentPage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-700 disabled:hover:border-slate-200 transition-all font-black text-xs cursor-pointer"
+              >
+                Previous
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - safeCurrentPage) <= 1)
+                  .map((p, idx, arr) => {
+                    const prev = arr[idx - 1];
+                    const showEllipsis = prev && p - prev > 1;
+                    return (
+                      <React.Fragment key={p}>
+                        {showEllipsis && <span className="text-slate-400 font-bold px-1">...</span>}
+                        <button
+                          onClick={() => setCurrentPage(p)}
+                          className={`w-8 h-8 rounded-xl font-black text-xs transition-all cursor-pointer ${
+                            p === safeCurrentPage
+                              ? 'bg-orange-600 text-white shadow-xs'
+                              : 'bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+              </div>
+
+              <button
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-700 disabled:hover:border-slate-200 transition-all font-black text-xs cursor-pointer"
+              >
+                Next
+              </button>
             </div>
           </div>
         </>

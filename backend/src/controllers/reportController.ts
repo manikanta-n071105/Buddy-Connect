@@ -1,63 +1,97 @@
 import { Response } from 'express';
 import { query } from '../config/db';
 import { AuthenticatedRequest } from '../types';
+import { cache } from '../utils/cache';
 
 export const getDashboardStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // Basic counts
-    const directorsCountRes = await query(`SELECT COUNT(*) FROM directors`);
-    const seniorsCountRes = await query(`SELECT COUNT(*) FROM seniors`);
-    const juniorsCountRes = await query(`SELECT COUNT(*) FROM juniors`);
+    const userRole = req.user!.role;
+    const userId = req.user!.id;
+    const cacheKey = `dashboard_stats:${userRole}:${userId}`;
+    const cachedStats = await cache.get<any>(cacheKey);
+    if (cachedStats) {
+      return res.json({ success: true, data: cachedStats });
+    }
 
     // Scoped issue statistics
     let issueScopeSql = `WHERE 1=1`;
     const params: any[] = [];
 
-    if (req.user!.role === 'DIRECTOR') {
-      issueScopeSql += ` AND director_id = $1`;
+    if (userRole === 'DIRECTOR') {
+      issueScopeSql += ` AND i.director_id = $1`;
       params.push(req.user!.directorId);
-    } else if (req.user!.role === 'SENIOR') {
-      issueScopeSql += ` AND senior_id = $1`;
+    } else if (userRole === 'SENIOR') {
+      issueScopeSql += ` AND i.senior_id = $1`;
       params.push(req.user!.seniorId);
-    } else if (req.user!.role === 'JUNIOR') {
-      issueScopeSql += ` AND junior_id = $1`;
+    } else if (userRole === 'JUNIOR') {
+      issueScopeSql += ` AND i.junior_id = $1`;
       params.push(req.user!.juniorId);
     }
 
-    const issuesTotalRes = await query(`SELECT COUNT(*) FROM issues ${issueScopeSql}`, params);
-    const openIssuesRes = await query(`SELECT COUNT(*) FROM issues ${issueScopeSql} AND status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS')`, params);
-    const resolvedIssuesRes = await query(`SELECT COUNT(*) FROM issues ${issueScopeSql} AND status IN ('RESOLVED', 'CLOSED')`, params);
-    const escalatedIssuesRes = await query(`SELECT COUNT(*) FROM issues ${issueScopeSql} AND status = 'ESCALATED'`, params);
-    const reopenedIssuesRes = await query(`SELECT COUNT(*) FROM issues ${issueScopeSql} AND status = 'REOPENED'`, params);
-    const votingIssuesRes = await query(`SELECT COUNT(*) FROM issues ${issueScopeSql} AND status = 'VOTING'`, params);
+    // Execute basic count & issue queries in parallel using Promise.all
+    const [
+      directorsCountRes,
+      seniorsCountRes,
+      juniorsCountRes,
+      issuesTotalRes,
+      openIssuesRes,
+      resolvedIssuesRes,
+      escalatedIssuesRes,
+      reopenedIssuesRes,
+      votingIssuesRes,
+      categoryChartRes,
+      votesRes
+    ] = await Promise.all([
+      query(`SELECT COUNT(*) FROM directors`),
+      query(`SELECT COUNT(*) FROM seniors`),
+      query(`SELECT COUNT(*) FROM juniors`),
+      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql}`, params),
+      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS')`, params),
+      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status IN ('RESOLVED', 'CLOSED')`, params),
+      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status = 'ESCALATED'`, params),
+      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status = 'REOPENED'`, params),
+      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status = 'VOTING'`, params),
+      query(
+        `SELECT c.name as category, COUNT(i.id)::int as count
+         FROM issue_categories c
+         LEFT JOIN issues i ON c.id = i.category_id ${issueScopeSql.replace('WHERE 1=1', '')}
+         WHERE c.is_active = true
+         GROUP BY c.name ORDER BY count DESC, c.name ASC LIMIT 8`,
+        params
+      ),
+      query(
+        `SELECT v.vote_type, COUNT(v.id)::int as count
+         FROM issue_votes v
+         JOIN issues i ON v.issue_id = i.id ${issueScopeSql.replace('WHERE 1=1', '')}
+         GROUP BY v.vote_type`,
+        params
+      )
+    ]);
 
-    // Issues by category chart data
-    const categoryChartRes = await query(
-      `SELECT c.name as category, COUNT(i.id) as count
-       FROM issue_categories c
-       LEFT JOIN issues i ON c.id = i.category_id ${issueScopeSql.replace('WHERE', 'AND')}
-       GROUP BY c.name ORDER BY count DESC LIMIT 8`,
-      params
-    );
-
-    // 3-Color Satisfaction Voting metrics
-    const votesRes = await query(
-      `SELECT v.vote_type, COUNT(v.id) as count
-       FROM issue_votes v
-       JOIN issues i ON v.issue_id = i.id ${issueScopeSql.replace('WHERE', 'AND')}
-       GROUP BY v.vote_type`,
-      params
-    );
+    const totalIssuesCount = parseInt(issuesTotalRes.rows[0].count || '0');
+    const openCount = parseInt(openIssuesRes.rows[0].count || '0');
+    const resolvedCount = parseInt(resolvedIssuesRes.rows[0].count || '0');
+    const escalatedCount = parseInt(escalatedIssuesRes.rows[0].count || '0');
+    const reopenedCount = parseInt(reopenedIssuesRes.rows[0].count || '0');
+    const votingCount = parseInt(votingIssuesRes.rows[0].count || '0');
 
     let satisfied = 0, partiallySatisfied = 0, notSatisfied = 0;
     votesRes.rows.forEach(r => {
-      if (r.vote_type === 'SATISFIED') satisfied = parseInt(r.count);
-      else if (r.vote_type === 'PARTIALLY_SATISFIED') partiallySatisfied = parseInt(r.count);
-      else if (r.vote_type === 'NOT_SATISFIED') notSatisfied = parseInt(r.count);
+      if (r.vote_type === 'SATISFIED') satisfied = parseInt(r.count || '0');
+      else if (r.vote_type === 'PARTIALLY_SATISFIED') partiallySatisfied = parseInt(r.count || '0');
+      else if (r.vote_type === 'NOT_SATISFIED') notSatisfied = parseInt(r.count || '0');
     });
 
     const totalVotes = satisfied + partiallySatisfied + notSatisfied;
-    const satisfactionRate = totalVotes > 0 ? Math.round((satisfied / totalVotes) * 100) : 100;
+
+    // Calculate Resolution Satisfaction % dynamically based on Solved vs Total Issues
+    // If solved issues are less, the percentage is lower!
+    let satisfactionRate = 100;
+    if (totalIssuesCount > 0) {
+      satisfactionRate = Math.round((resolvedCount / totalIssuesCount) * 100);
+    } else if (totalVotes > 0) {
+      satisfactionRate = Math.round((satisfied / totalVotes) * 100);
+    }
 
     // Director / Management Aggregated Departmental Onboarding & Question Averages (No Individual Answers Exposed!)
     let overallOnboardingRate = 0;
@@ -163,29 +197,106 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
       seniorPerformance = perfRes.rows;
     }
 
+    const responseData = {
+      totalDirectors: parseInt(directorsCountRes.rows[0].count),
+      totalSeniors: parseInt(seniorsCountRes.rows[0].count),
+      totalJuniors: parseInt(juniorsCountRes.rows[0].count),
+      totalIssues: parseInt(issuesTotalRes.rows[0].count),
+      openIssues: parseInt(openIssuesRes.rows[0].count),
+      resolvedIssues: parseInt(resolvedIssuesRes.rows[0].count),
+      escalatedIssues: parseInt(escalatedIssuesRes.rows[0].count),
+      reopenedIssues: parseInt(reopenedIssuesRes.rows[0].count),
+      votingIssues: parseInt(votingIssuesRes.rows[0].count),
+      satisfactionRate,
+      overallOnboardingRate,
+      overallQuestionsRate,
+      satisfactionBreakdown: {
+        satisfied: totalVotes > 0 ? satisfied : resolvedCount,
+        partiallySatisfied: totalVotes > 0 ? partiallySatisfied : (openCount + votingCount),
+        notSatisfied: totalVotes > 0 ? notSatisfied : (escalatedCount + reopenedCount),
+        totalVotes: totalVotes > 0 ? totalVotes : totalIssuesCount,
+        resolvedCount,
+        pendingCount: openCount + escalatedCount + reopenedCount + votingCount
+      },
+      categoryBreakdown: categoryChartRes.rows,
+      seniorPerformance
+    };
+
+    await cache.set(cacheKey, responseData, 15000); // 15s TTL Cache
+
+    res.json({
+      success: true,
+      data: responseData
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });
+  }
+};
+
+// Get Detailed Solved vs Unsolved Issues Report for Super Admin
+export const getDetailedIssuesReport = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    let scopeSql = `WHERE 1=1`;
+    const params: any[] = [];
+
+    if (req.user!.role === 'DIRECTOR') {
+      scopeSql += ` AND i.director_id = $1`;
+      params.push(req.user!.directorId);
+    } else if (req.user!.role === 'SENIOR') {
+      scopeSql += ` AND i.senior_id = $1`;
+      params.push(req.user!.seniorId);
+    } else if (req.user!.role === 'JUNIOR') {
+      scopeSql += ` AND i.junior_id = $1`;
+      params.push(req.user!.juniorId);
+    }
+
+    const issuesRes = await query(
+      `SELECT i.id, i.issue_number, i.title, i.description, i.status, i.priority,
+              (CASE WHEN i.status = 'ESCALATED' THEN 1 ELSE 0 END) as escalation_level,
+              i.resolution, i.created_at, i.updated_at,
+              COALESCE(c.name, 'General') as category_name,
+              COALESCE(uj.name, 'Student') as junior_name,
+              COALESCE(uj.username, 'junior') as junior_username,
+              uj.email as junior_email,
+              COALESCE(j.department, 'Campus') as junior_department,
+              us.name as senior_name, s.senior_code,
+              ud.name as director_name, d.department as director_department
+       FROM issues i
+       LEFT JOIN issue_categories c ON i.category_id = c.id
+       LEFT JOIN juniors j ON (i.junior_id = j.id OR i.junior_id = j.user_id)
+       LEFT JOIN users uj ON (j.user_id = uj.id OR i.junior_id = uj.id)
+       LEFT JOIN seniors s ON (i.senior_id = s.id OR i.senior_id = s.user_id)
+       LEFT JOIN users us ON (s.user_id = us.id OR i.senior_id = us.id)
+       LEFT JOIN directors d ON (i.director_id = d.id OR i.director_id = d.user_id)
+       LEFT JOIN users ud ON (d.user_id = ud.id OR i.director_id = ud.id)
+       ${scopeSql}
+       ORDER BY i.created_at DESC`,
+      params
+    );
+
+    const allIssues = issuesRes.rows;
+
+    const solvedIssues = allIssues.filter((i: any) => ['RESOLVED', 'CLOSED'].includes(i.status));
+    const unsolvedIssues = allIssues.filter((i: any) => !['RESOLVED', 'CLOSED'].includes(i.status));
+
+    const totalCount = allIssues.length;
+    const solvedCount = solvedIssues.length;
+    const unsolvedCount = unsolvedIssues.length;
+    const resolutionRate = totalCount > 0 ? Math.round((solvedCount / totalCount) * 100) : 100;
+
     res.json({
       success: true,
       data: {
-        totalDirectors: parseInt(directorsCountRes.rows[0].count),
-        totalSeniors: parseInt(seniorsCountRes.rows[0].count),
-        totalJuniors: parseInt(juniorsCountRes.rows[0].count),
-        totalIssues: parseInt(issuesTotalRes.rows[0].count),
-        openIssues: parseInt(openIssuesRes.rows[0].count),
-        resolvedIssues: parseInt(resolvedIssuesRes.rows[0].count),
-        escalatedIssues: parseInt(escalatedIssuesRes.rows[0].count),
-        reopenedIssues: parseInt(reopenedIssuesRes.rows[0].count),
-        votingIssues: parseInt(votingIssuesRes.rows[0].count),
-        satisfactionRate,
-        overallOnboardingRate,
-        overallQuestionsRate,
-        satisfactionBreakdown: {
-          satisfied,
-          partiallySatisfied,
-          notSatisfied,
-          totalVotes
+        summary: {
+          totalCount,
+          solvedCount,
+          unsolvedCount,
+          resolutionRate,
+          generatedAt: new Date().toISOString()
         },
-        categoryBreakdown: categoryChartRes.rows,
-        seniorPerformance
+        solvedIssues,
+        unsolvedIssues,
+        allIssues
       }
     });
   } catch (err: any) {

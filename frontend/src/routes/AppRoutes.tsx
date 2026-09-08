@@ -9,6 +9,7 @@ import { SuperAdminDashboard } from '../pages/super-admin/SuperAdminDashboard';
 import { DirectorDashboard } from '../pages/director/DirectorDashboard';
 import { SeniorDashboard } from '../pages/senior/SeniorDashboard';
 import { JuniorDashboard } from '../pages/junior/JuniorDashboard';
+import { StudentDashboard } from '../pages/junior/StudentDashboard';
 import { FacultyDashboard } from '../pages/faculty/FacultyDashboard';
 
 import { HierarchyPage } from '../pages/hierarchy/HierarchyPage';
@@ -28,6 +29,14 @@ import { EventsPage } from '../pages/events/EventsPage';
 import { AnnouncementsPage } from '../pages/announcements/AnnouncementsPage';
 import { PollsPage } from '../pages/polls/PollsPage';
 import { MeetingsPage } from '../pages/meetings/MeetingsPage';
+import { HostelMessPage } from '../pages/mess/HostelMessPage';
+import { WardenDashboard } from '../pages/warden/WardenDashboard';
+import { CrFeedbackPage } from '../pages/cr/CrFeedbackPage';
+import { AdminCrFeedbacksPage } from '../pages/admin/AdminCrFeedbacksPage';
+import { MentalHealthPage } from '../pages/counseling/MentalHealthPage';
+import { AdminCounselorsPage } from '../pages/admin/AdminCounselorsPage';
+import { DisciplinaryAppointingPage } from '../pages/admin/DisciplinaryAppointingPage';
+import { QuizPage } from '../pages/quiz/QuizPage';
 
 const DashboardDispatcher: React.FC = () => {
   const { user } = useAuth();
@@ -43,8 +52,15 @@ const DashboardDispatcher: React.FC = () => {
       return <FacultyDashboard />;
     case 'SENIOR':
       return <SeniorDashboard />;
-    case 'JUNIOR':
+    case 'JUNIOR': {
+      const is2ndOr3rdYear = user.year && (user.year.includes('2nd') || user.year.includes('3rd'));
+      if (is2ndOr3rdYear) {
+        return <StudentDashboard />;
+      }
       return <JuniorDashboard />;
+    }
+    case 'WARDEN':
+      return <WardenDashboard />;
     default:
       return <JuniorDashboard />;
   }
@@ -77,6 +93,15 @@ export const AppRoutes: React.FC = () => {
           <Route path="/diagnosis" element={<DiagnosisHub />} />
           <Route path="/reports" element={<SuperAdminDashboard />} />
           <Route path="/support-indicators" element={<SeniorDashboard />} />
+          <Route path="/hostel-mess" element={<HostelMessPage />} />
+          <Route path="/cr-feedback" element={<CrFeedbackPage />} />
+          <Route path="/admin/cr-feedbacks" element={<AdminCrFeedbacksPage />} />
+          <Route path="/cr-feedbacks" element={<AdminCrFeedbacksPage />} />
+          <Route path="/counseling" element={<MentalHealthPage />} />
+          <Route path="/admin/counselors" element={<DisciplinaryAppointingPage />} />
+          <Route path="/admin/disciplinary-hub" element={<DisciplinaryAppointingPage />} />
+          <Route path="/admin/appointing-hub" element={<DisciplinaryAppointingPage />} />
+          <Route path="/quizzes" element={<QuizPage />} />
         </Route>
       </Route>
 

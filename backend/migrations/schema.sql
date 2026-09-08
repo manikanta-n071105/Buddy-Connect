@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS juniors (
     id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     user_id VARCHAR(36) UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     register_number VARCHAR(50) UNIQUE NOT NULL,
-    senior_id VARCHAR(36) NOT NULL REFERENCES seniors(id) ON DELETE RESTRICT,
+    senior_id VARCHAR(36) REFERENCES seniors(id) ON DELETE SET NULL,
     faculty_id VARCHAR(36) REFERENCES faculty(id) ON DELETE SET NULL,
     department VARCHAR(100) NOT NULL,
     batch VARCHAR(30) NOT NULL,

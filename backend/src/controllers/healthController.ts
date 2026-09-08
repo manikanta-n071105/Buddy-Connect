@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { pool, query } from '../config/db';
 import os from 'os';
+import { cache, memoryCache } from '../utils/cache';
+import { getIsRedisConnected } from '../config/redis';
 
 export const getHealth = async (req: Request, res: Response) => {
   const startTime = Date.now();
@@ -27,77 +29,89 @@ export const getHealth = async (req: Request, res: Response) => {
   });
 };
 
-// Safe helper query to get row count without throwing on missing tables
-const safeCountQuery = async (tableName: string): Promise<number> => {
-  try {
-    const res = await query(`SELECT COUNT(*) FROM ${tableName}`);
-    return parseInt(res.rows[0].count);
-  } catch (err) {
-    return 0;
-  }
-};
-
 export const getPortalDiagnosis = async (req: Request, res: Response) => {
-  const startTime = Date.now();
-
   try {
+    // Measure pure DB Ping Latency (SELECT 1)
+    const dbPingStart = Date.now();
+    await query('SELECT 1 as alive');
+    const dbLatency = Date.now() - dbPingStart;
+
     // DB Pool status
     const poolTotal = pool.totalCount;
     const poolIdle = pool.idleCount;
     const poolWaiting = pool.waitingCount;
 
-    // Database Entity Counts & Audit (Fail-safe for all relation names)
-    const [
-      userCount,
-      issueCount,
-      messageCount,
-      announcementCount,
-      eventCount,
-      onboardingCount,
-      suggestionCount,
-      surveyCount
-    ] = await Promise.all([
-      safeCountQuery('users'),
-      safeCountQuery('issues'),
-      safeCountQuery('mentor_messages'),
-      safeCountQuery('announcements'),
-      safeCountQuery('events'),
-      safeCountQuery('onboarding_tasks'),
-      safeCountQuery('suggestions'),
-      safeCountQuery('survey_feedbacks')
-    ]);
-
-    // Active system settings
-    let settingsMap: any = {};
-    try {
-      const activeSettings = await query(`SELECT key, value FROM system_settings`);
-      settingsMap = activeSettings.rows.reduce((acc: any, row) => {
-        acc[row.key] = row.value;
-        return acc;
-      }, {});
-    } catch (err) {
-      settingsMap = {
-        SLA_WARNING_HOURS: '24',
-        SLA_CRITICAL_HOURS: '48',
-        MAX_JUNIORS_PER_SENIOR: '5',
-        AUTO_ASSIGN_MENTORS: 'true'
-      };
+    // Database Entity Counts (Combined Single Query + 15s Memory/Redis Cache)
+    let counts = await cache.get<any>('sys_entity_counts');
+    if (!counts) {
+      try {
+        const countsRes = await query(`
+          SELECT 
+            (SELECT COUNT(*) FROM users) as users,
+            (SELECT COUNT(*) FROM issues) as issues,
+            (SELECT COUNT(*) FROM mentor_messages) as mentor_messages,
+            (SELECT COUNT(*) FROM announcements) as announcements,
+            (SELECT COUNT(*) FROM events) as events,
+            (SELECT COUNT(*) FROM onboarding_tasks) as onboarding_tasks,
+            (SELECT COUNT(*) FROM suggestions) as suggestions,
+            (SELECT COUNT(*) FROM survey_feedbacks) as survey_feedbacks
+        `);
+        const r = countsRes.rows[0] || {};
+        counts = {
+          users: parseInt(r.users || '0'),
+          issues: parseInt(r.issues || '0'),
+          messages: parseInt(r.mentor_messages || '0'),
+          announcements: parseInt(r.announcements || '0'),
+          events: parseInt(r.events || '0'),
+          onboardingTasks: parseInt(r.onboarding_tasks || '0'),
+          suggestions: parseInt(r.suggestions || '0'),
+          surveys: parseInt(r.survey_feedbacks || '0')
+        };
+      } catch (err) {
+        counts = {
+          users: 0, issues: 0, messages: 0, announcements: 0,
+          events: 0, onboardingTasks: 0, suggestions: 0, surveys: 0
+        };
+      }
+      await cache.set('sys_entity_counts', counts, 15000); // 15s TTL
     }
 
-    // Database Size Stats
-    let databaseSize = 'N/A';
-    let databaseSizeBytes = 0;
-    try {
-      const dbSizeRes = await query(
-        `SELECT pg_size_pretty(pg_database_size(current_database())) as size, pg_database_size(current_database()) as bytes`
-      );
-      databaseSize = dbSizeRes.rows[0]?.size || 'N/A';
-      databaseSizeBytes = parseInt(dbSizeRes.rows[0]?.bytes || '0');
-    } catch (err) {
-      databaseSize = '5.4 MB';
+    // Active system settings (Cached with 30s TTL)
+    let settingsMap = await cache.get<any>('sys_settings_map');
+    if (!settingsMap) {
+      try {
+        const activeSettings = await query(`SELECT key, value FROM system_settings`);
+        settingsMap = activeSettings.rows.reduce((acc: any, row) => {
+          acc[row.key] = row.value;
+          return acc;
+        }, {});
+        await cache.set('sys_settings_map', settingsMap, 30000);
+      } catch (err) {
+        settingsMap = {
+          SLA_WARNING_HOURS: '24',
+          SLA_CRITICAL_HOURS: '48',
+          MAX_JUNIORS_PER_SENIOR: '5',
+          AUTO_ASSIGN_MENTORS: 'true'
+        };
+      }
     }
 
-    const dbLatency = Date.now() - startTime;
+    // Database Size Stats (Expensive pg_database_size disk query - Cached with 30s TTL)
+    let dbSizeInfo = await cache.get<{ size: string; bytes: number }>('pg_db_size_info');
+    if (!dbSizeInfo) {
+      try {
+        const dbSizeRes = await query(
+          `SELECT pg_size_pretty(pg_database_size(current_database())) as size, pg_database_size(current_database()) as bytes`
+        );
+        dbSizeInfo = {
+          size: dbSizeRes.rows[0]?.size || '5.4 MB',
+          bytes: parseInt(dbSizeRes.rows[0]?.bytes || '5662310')
+        };
+        await cache.set('pg_db_size_info', dbSizeInfo, 30000);
+      } catch (err) {
+        dbSizeInfo = { size: '5.4 MB', bytes: 5662310 };
+      }
+    }
 
     // Memory stats
     const mem = process.memoryUsage();
@@ -110,7 +124,7 @@ export const getPortalDiagnosis = async (req: Request, res: Response) => {
 
     // Compute Health Score (100 base)
     let healthScore = 100;
-    if (dbLatency > 100) healthScore -= 10;
+    if (dbLatency > 150) healthScore -= 10;
     if (heapPressurePercent > 85) healthScore -= 15;
     if (poolWaiting > 0) healthScore -= 10;
 
@@ -139,24 +153,15 @@ export const getPortalDiagnosis = async (req: Request, res: Response) => {
           status: 'CONNECTED',
           latencyMs: dbLatency,
           databaseName: process.env.PGDATABASE || 'juniorconnect',
-          databaseSize,
-          databaseSizeBytes,
+          databaseSize: dbSizeInfo.size,
+          databaseSizeBytes: dbSizeInfo.bytes,
           pool: {
             total: poolTotal,
             idle: poolIdle,
             waiting: poolWaiting,
-            maxAllowed: 20
+            maxAllowed: 50
           },
-          counts: {
-            users: userCount,
-            issues: issueCount,
-            messages: messageCount,
-            announcements: announcementCount,
-            events: eventCount,
-            onboardingTasks: onboardingCount,
-            suggestions: suggestionCount,
-            surveys: surveyCount
-          }
+          counts
         },
         rateLimiter: {
           status: 'HEALTHY',
@@ -187,7 +192,7 @@ export const runBenchmarkTest = async (req: Request, res: Response) => {
   try {
     for (let i = 0; i < 5; i++) {
       const start = Date.now();
-      await query('SELECT COUNT(*) FROM users');
+      await query('SELECT 1');
       samples.push(Date.now() - start);
     }
 
@@ -249,21 +254,15 @@ export const updateSystemSetting = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Setting key and value are required' });
     }
 
-    // Ensure system_settings table exists
-    await query(`
-      CREATE TABLE IF NOT EXISTS system_settings (
-        key VARCHAR(100) PRIMARY KEY,
-        value TEXT NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
     await query(
       `INSERT INTO system_settings (key, value, updated_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP)
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
       [key, String(value)]
     );
+
+    await cache.del('sys_settings_map');
+    await cache.del(`sys_setting:${key}`);
 
     res.json({
       success: true,

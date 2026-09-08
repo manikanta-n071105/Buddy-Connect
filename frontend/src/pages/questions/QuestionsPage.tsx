@@ -7,6 +7,8 @@ import { FileQuestion, PlusCircle, X, BookOpen, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
+import { fetchWithCache } from '../../utils/swr';
+
 export const QuestionsPage: React.FC = () => {
   const { user } = useAuth();
   const [questions, setQuestions] = useState<any[]>([]);
@@ -32,32 +34,36 @@ export const QuestionsPage: React.FC = () => {
   // Fetch Assigned Juniors for Senior Mentor
   useEffect(() => {
     if (isSenior) {
-      api.get('/users?role=JUNIOR').then((res) => {
-        const junArr = res.data.data;
-        setJuniorsList(junArr);
-        if (junArr.length > 0) {
-          setSelectedJuniorId(junArr[0].junior_id || junArr[0].id);
+      fetchWithCache<any[]>('swr_junior_list', '/users?role=JUNIOR', (junArr) => {
+        if (junArr && junArr.length > 0) {
+          setJuniorsList(junArr);
+          if (!selectedJuniorId) {
+            setSelectedJuniorId(junArr[0].junior_id || junArr[0].id);
+          }
         }
-      }).catch(console.error);
+      });
     }
   }, [isSenior]);
 
-  const fetchQuestions = async () => {
-    setIsLoading(true);
-    try {
-      let url = '/onboarding/questions';
-      if (isSenior && selectedJuniorId) {
-        url += `?juniorId=${selectedJuniorId}`;
-      }
-      const res = await api.get(url);
-      setQuestions(res.data.data.questions);
-      setResponses(res.data.data.responses || {});
-      setOverallQuestionsPercent(res.data.data.overallQuestionsPercent || 0);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  const fetchQuestions = async (forceRefresh = false) => {
+    let url = '/onboarding/questions';
+    if (isSenior && selectedJuniorId) {
+      url += `?juniorId=${selectedJuniorId}`;
     }
+    const cacheKey = `swr_questions_${selectedJuniorId || 'my'}`;
+    await fetchWithCache<any>(
+      cacheKey,
+      url,
+      (data) => {
+        if (data) {
+          setQuestions(data.questions || []);
+          setResponses(data.responses || {});
+          setOverallQuestionsPercent(data.overallQuestionsPercent || 0);
+        }
+        setIsLoading(false);
+      },
+      { forceRefresh }
+    );
   };
 
   useEffect(() => {
@@ -110,7 +116,7 @@ export const QuestionsPage: React.FC = () => {
       setShowAddModal(false);
       setQText('');
       setQAnswerGuide('');
-      fetchQuestions();
+      fetchQuestions(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to add question');
     }

@@ -70,6 +70,19 @@ export const MeetingsPage: React.FC = () => {
   const upcomingMeetings = meetings.filter(m => m.status === 'SCHEDULED');
   const pastMeetings = meetings.filter(m => m.status !== 'SCHEDULED');
 
+  // Pagination State
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
+  const pageSize = 6;
+
+  const upcomingTotalPages = Math.ceil(upcomingMeetings.length / pageSize) || 1;
+  const safeUpcomingPage = Math.min(upcomingPage, upcomingTotalPages);
+  const paginatedUpcomingMeetings = upcomingMeetings.slice((safeUpcomingPage - 1) * pageSize, safeUpcomingPage * pageSize);
+
+  const pastTotalPages = Math.ceil(pastMeetings.length / pageSize) || 1;
+  const safePastPage = Math.min(pastPage, pastTotalPages);
+  const paginatedPastMeetings = pastMeetings.slice((safePastPage - 1) * pageSize, safePastPage * pageSize);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Top Banner */}
@@ -124,86 +137,116 @@ export const MeetingsPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {upcomingMeetings.map((m) => {
-              const mDate = new Date(m.meeting_date);
-              return (
-                <div
-                  key={m.id}
-                  className="p-5 rounded-2xl border border-amber-200/90 bg-gradient-to-br from-white to-amber-50/20 shadow-2xs hover:shadow-md transition-all space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className={`inline-block px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider mb-1 ${
-                        m.mentor_role === 'FACULTY' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
-                        m.mentor_role === 'DIRECTOR' ? 'bg-slate-900 text-white' :
-                        'bg-blue-100 text-blue-800 border border-blue-200'
-                      }`}>
-                        {m.mentor_role} MEETING • {m.mentor_name}
-                      </span>
-                      <h4 className="text-sm font-black text-slate-900">{m.title}</h4>
-                    </div>
-                    <span className="px-2.5 py-0.5 text-[9px] font-black rounded-full bg-amber-100 text-amber-900 border border-amber-300 uppercase shrink-0">
-                      SCHEDULED
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 font-semibold bg-white p-3 rounded-xl border border-slate-200/80">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                      <span>{mDate.toLocaleDateString()} @ {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-                      <span className="truncate">{m.location}</span>
-                    </div>
-                  </div>
-
-                  {m.target_junior_name && (
-                    <p className="text-[11px] font-bold text-slate-700">
-                      Target Student: <span className="text-orange-600">{m.target_junior_name}</span>
-                    </p>
-                  )}
-
-                  {m.agenda && (
-                    <p className="text-[11px] text-slate-600 italic bg-white p-2.5 rounded-xl border border-slate-100">
-                      <strong>Agenda:</strong> {m.agenda}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                    {m.meeting_link ? (
-                      <a
-                        href={m.meeting_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all"
-                      >
-                        <Link2 className="w-3.5 h-3.5" /> Join Online Meeting <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : <div />}
-
-                    {isMentor && (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleUpdateStatus(m.id, 'COMPLETED')}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center gap-1 cursor-pointer"
-                        >
-                          <Check className="w-3 h-3" /> Mark Completed
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMeeting(m.id)}
-                          className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
-                          title="Cancel Meeting"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {paginatedUpcomingMeetings.map((m) => {
+                const mDate = new Date(m.meeting_date);
+                return (
+                  <div
+                    key={m.id}
+                    className="p-5 rounded-2xl border border-amber-200/90 bg-gradient-to-br from-white to-amber-50/20 shadow-2xs hover:shadow-md transition-all space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className={`inline-block px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider mb-1 ${
+                          m.mentor_role === 'FACULTY' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
+                          m.mentor_role === 'DIRECTOR' ? 'bg-slate-900 text-white' :
+                          'bg-blue-100 text-blue-800 border border-blue-200'
+                        }`}>
+                          {m.mentor_role} MEETING • {m.mentor_name}
+                        </span>
+                        <h4 className="text-sm font-black text-slate-900">{m.title}</h4>
                       </div>
+                      <span className="px-2.5 py-0.5 text-[9px] font-black rounded-full bg-amber-100 text-amber-900 border border-amber-300 uppercase shrink-0">
+                        SCHEDULED
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 font-semibold bg-white p-3 rounded-xl border border-slate-200/80">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                        <span>{mDate.toLocaleDateString()} @ {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                        <span className="truncate">{m.location}</span>
+                      </div>
+                    </div>
+
+                    {m.target_junior_name && (
+                      <p className="text-[11px] font-bold text-slate-700">
+                        Target Student: <span className="text-orange-600">{m.target_junior_name}</span>
+                      </p>
                     )}
+
+                    {m.agenda && (
+                      <p className="text-[11px] text-slate-600 italic bg-white p-2.5 rounded-xl border border-slate-100">
+                        <strong>Agenda:</strong> {m.agenda}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                      {m.meeting_link ? (
+                        <a
+                          href={m.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all"
+                        >
+                          <Link2 className="w-3.5 h-3.5" /> Join Online Meeting <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : <div />}
+
+                      {isMentor && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleUpdateStatus(m.id, 'COMPLETED')}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] rounded-xl shadow-xs flex items-center gap-1 cursor-pointer"
+                          >
+                            <Check className="w-3 h-3" /> Mark Completed
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMeeting(m.id)}
+                            className="p-1.5 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                            title="Cancel Meeting"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination for Upcoming */}
+            {upcomingTotalPages > 1 && (
+              <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-3 flex items-center justify-between text-xs font-semibold text-slate-700">
+                <span className="text-slate-500 font-bold">
+                  Showing <span className="text-slate-900 font-black">{(safeUpcomingPage - 1) * pageSize + 1}</span> to <span className="text-slate-900 font-black">{Math.min(safeUpcomingPage * pageSize, upcomingMeetings.length)}</span> of <span className="text-slate-900 font-black">{upcomingMeetings.length}</span> upcoming meetings
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={safeUpcomingPage <= 1}
+                    onClick={() => setUpcomingPage((p) => Math.max(1, p - 1))}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-orange-500 hover:text-white disabled:opacity-40 font-black text-xs cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 py-0.5 bg-slate-200/70 rounded-md text-slate-900 font-black text-[11px]">
+                    {safeUpcomingPage} / {upcomingTotalPages}
+                  </span>
+                  <button
+                    disabled={safeUpcomingPage >= upcomingTotalPages}
+                    onClick={() => setUpcomingPage((p) => Math.min(upcomingTotalPages, p + 1))}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-orange-500 hover:text-white disabled:opacity-40 font-black text-xs cursor-pointer"
+                  >
+                    Next
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -212,30 +255,60 @@ export const MeetingsPage: React.FC = () => {
       {pastMeetings.length > 0 && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-4">
           <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Past / Completed Meetings ({pastMeetings.length})</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pastMeetings.map((m) => {
-              const mDate = new Date(m.meeting_date);
-              return (
-                <div key={m.id} className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2 opacity-80">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="inline-block px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider bg-slate-200 text-slate-700 mb-1">
-                        {m.mentor_role} MEETING • {m.mentor_name}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {paginatedPastMeetings.map((m) => {
+                const mDate = new Date(m.meeting_date);
+                return (
+                  <div key={m.id} className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/80 space-y-2 opacity-80">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="inline-block px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider bg-slate-200 text-slate-700 mb-1">
+                          {m.mentor_role} MEETING • {m.mentor_name}
+                        </span>
+                        <h4 className="text-xs font-black text-slate-900">{m.title}</h4>
+                      </div>
+                      <span className={`px-2.5 py-0.5 text-[9px] font-black rounded-full border uppercase ${
+                        m.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'
+                      }`}>
+                        {m.status}
                       </span>
-                      <h4 className="text-xs font-black text-slate-900">{m.title}</h4>
                     </div>
-                    <span className={`px-2.5 py-0.5 text-[9px] font-black rounded-full border uppercase ${
-                      m.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-rose-100 text-rose-800 border-rose-300'
-                    }`}>
-                      {m.status}
-                    </span>
+                    <p className="text-[11px] text-slate-500">
+                      {mDate.toLocaleDateString()} @ {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Venue: {m.location}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-500">
-                    {mDate.toLocaleDateString()} @ {mDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Venue: {m.location}
-                  </p>
+                );
+              })}
+            </div>
+
+            {/* Pagination for Past */}
+            {pastTotalPages > 1 && (
+              <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-3 flex items-center justify-between text-xs font-semibold text-slate-700">
+                <span className="text-slate-500 font-bold">
+                  Showing <span className="text-slate-900 font-black">{(safePastPage - 1) * pageSize + 1}</span> to <span className="text-slate-900 font-black">{Math.min(safePastPage * pageSize, pastMeetings.length)}</span> of <span className="text-slate-900 font-black">{pastMeetings.length}</span> past meetings
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={safePastPage <= 1}
+                    onClick={() => setPastPage((p) => Math.max(1, p - 1))}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-orange-500 hover:text-white disabled:opacity-40 font-black text-xs cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 py-0.5 bg-slate-200/70 rounded-md text-slate-900 font-black text-[11px]">
+                    {safePastPage} / {pastTotalPages}
+                  </span>
+                  <button
+                    disabled={safePastPage >= pastTotalPages}
+                    onClick={() => setPastPage((p) => Math.min(pastTotalPages, p + 1))}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-orange-500 hover:text-white disabled:opacity-40 font-black text-xs cursor-pointer"
+                  >
+                    Next
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
         </div>
       )}

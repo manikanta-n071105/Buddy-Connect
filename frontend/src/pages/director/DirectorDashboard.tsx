@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { LoadingState } from '../../components/common/LoadingState';
 import { CredentialSuccessModal } from '../../components/common/CredentialSuccessModal';
-import { Users, CircleAlert, CheckCircle2, Flame, ShieldCheck, UserPlus, Building2, X, ClipboardCheck, FileQuestion } from 'lucide-react';
+import { Users, CircleAlert, CheckCircle2, Flame, ShieldCheck, UserPlus, Building2, X, ClipboardCheck, FileQuestion, BarChart3 } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -21,7 +22,7 @@ export const DirectorDashboard: React.FC = () => {
   const [senPassword, setSenPassword] = useState('Password123!');
   const [senPhone, setSenPhone] = useState('');
   const [senCode, setSenCode] = useState('');
-  const [senDept, setSenDept] = useState('Computer Science & Engineering');
+  const [senDept, setSenDept] = useState('CSE');
 
   const fetchData = async () => {
     try {
@@ -79,6 +80,15 @@ export const DirectorDashboard: React.FC = () => {
   };
 
   if (isLoading || !stats) return <LoadingState message="Loading Director Workspace..." />;
+
+  const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
+  const rawPieData = [
+    { name: 'Solved Issues', value: stats?.satisfactionBreakdown?.satisfied ?? stats?.resolvedIssues ?? 0 },
+    { name: 'Pending / In-Progress', value: stats?.satisfactionBreakdown?.partiallySatisfied ?? stats?.openIssues ?? 0 },
+    { name: 'Escalated / Reopened', value: stats?.satisfactionBreakdown?.notSatisfied ?? ((stats?.escalatedIssues || 0) + (stats?.reopenedIssues || 0)) }
+  ];
+  const activePieData = rawPieData.filter(item => item.value > 0);
+  const votePieData = activePieData.length > 0 ? activePieData : [{ name: 'No Active Issues', value: 1 }];
 
   return (
     <div className="space-y-6">
@@ -148,12 +158,53 @@ export const DirectorDashboard: React.FC = () => {
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold text-slate-400 uppercase">Satisfaction</span>
+            <span className="text-[11px] font-extrabold text-slate-400 uppercase">Resolution Satisfaction</span>
             <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
               <ShieldCheck className="w-5 h-5" />
             </div>
           </div>
           <p className="text-3xl font-black text-purple-600 mt-2">{stats.satisfactionRate}%</p>
+        </div>
+      </div>
+
+      {/* Resolution Satisfaction & Category Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-orange-600" /> Department Issues by Category
+            </h3>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats?.categoryBreakdown && stats.categoryBreakdown.length > 0 ? stats.categoryBreakdown : [{ category: 'General', count: 0 }]} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+                <XAxis dataKey="category" interval={0} angle={-15} textAnchor="end" tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 800 }} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#475569', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
+                <Bar dataKey="count" fill="#ea580c" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-orange-600" /> Resolution Satisfaction Breakdown
+            </h3>
+          </div>
+          <div className="h-64 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={votePieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={85} innerRadius={45} paddingAngle={4} label>
+                  {votePieData.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 

@@ -6,6 +6,8 @@ import { LoadingState } from '../../components/common/LoadingState';
 import { Megaphone, PlusCircle, Pencil, Trash2, X, AlertTriangle, Info, BellRing, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { fetchWithCache } from '../../utils/swr';
+
 export const AnnouncementsPage: React.FC = () => {
   const { user } = useAuth();
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -24,16 +26,16 @@ export const AnnouncementsPage: React.FC = () => {
 
   const canManageAnnouncements = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_ANNOUNCEMENTS') ?? false);
 
-  const fetchAnnouncements = async () => {
-    try {
-      const res = await api.get('/announcements');
-      setAnnouncements(res.data.data);
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load announcements');
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchAnnouncements = async (forceRefresh = false) => {
+    await fetchWithCache<any[]>(
+      'swr_announcements_list',
+      '/announcements',
+      (data) => {
+        setAnnouncements(data || []);
+        setIsLoading(false);
+      },
+      { forceRefresh }
+    );
   };
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export const AnnouncementsPage: React.FC = () => {
         toast.success('Announcement published successfully!');
       }
       setShowModal(false);
-      fetchAnnouncements();
+      fetchAnnouncements(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to save announcement');
     } finally {
@@ -88,14 +90,26 @@ export const AnnouncementsPage: React.FC = () => {
     try {
       await api.delete(`/announcements/${id}`);
       toast.success('Announcement deleted');
-      fetchAnnouncements();
+      fetchAnnouncements(true);
     } catch (err: any) {
       toast.error('Failed to delete announcement');
     }
   };
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [announcements]);
+
+  const totalPages = Math.ceil(announcements.length / pageSize) || 1;
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedAnnouncements = announcements.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
+
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4 max-w-7xl mx-auto pb-8">
       {/* Sleek Banner Header - Matching Design System */}
       <div className="relative overflow-hidden bg-slate-900 p-4 sm:p-5 rounded-2xl text-white shadow-md border border-slate-800">
         <div className="absolute -right-12 -top-12 w-64 h-64 bg-orange-500/10 blur-3xl pointer-events-none rounded-full" />
@@ -133,70 +147,103 @@ export const AnnouncementsPage: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-          {announcements.map((anc) => (
-            <div
-              key={anc.id}
-              className={`bg-white rounded-2xl border shadow-2xs p-4 space-y-3 transition-all hover:shadow-md hover:border-orange-300 flex flex-col justify-between ${
-                anc.priority === 'URGENT'
-                  ? 'border-rose-300/80 bg-rose-50/20'
-                  : anc.priority === 'IMPORTANT'
-                  ? 'border-amber-300/80 bg-amber-50/20'
-                  : 'border-slate-200/90'
-              }`}
-            >
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-2">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`px-2 py-0.5 text-[10px] font-black rounded-md border uppercase tracking-wider ${
-                        anc.priority === 'URGENT'
-                          ? 'bg-rose-100 text-rose-800 border-rose-300'
-                          : anc.priority === 'IMPORTANT'
-                          ? 'bg-amber-100 text-amber-800 border-amber-300'
-                          : 'bg-orange-50 text-orange-800 border-orange-200'
-                      }`}
-                    >
-                      {anc.priority}
-                    </span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-600 rounded-md">
-                      {anc.target_audience}
-                    </span>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+            {paginatedAnnouncements.map((anc) => (
+              <div
+                key={anc.id}
+                className={`bg-white rounded-2xl border shadow-2xs p-4 space-y-3 transition-all hover:shadow-md hover:border-orange-300 flex flex-col justify-between ${
+                  anc.priority === 'URGENT'
+                    ? 'border-rose-300/80 bg-rose-50/20'
+                    : anc.priority === 'IMPORTANT'
+                    ? 'border-amber-300/80 bg-amber-50/20'
+                    : 'border-slate-200/90'
+                }`}
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-black rounded-md border uppercase tracking-wider ${
+                          anc.priority === 'URGENT'
+                            ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            : anc.priority === 'IMPORTANT'
+                            ? 'bg-amber-100 text-amber-800 border-amber-300'
+                            : 'bg-orange-50 text-orange-800 border-orange-200'
+                        }`}
+                      >
+                        {anc.priority}
+                      </span>
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-600 rounded-md">
+                        {anc.target_audience}
+                      </span>
+                    </div>
+
+                    {canManageAnnouncements && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => openEditModal(anc)}
+                          className="p-1 text-slate-600 hover:text-orange-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                          title="Edit Announcement"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(anc.id)}
+                          className="p-1 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                          title="Delete Announcement"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {canManageAnnouncements && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => openEditModal(anc)}
-                        className="p-1 text-slate-600 hover:text-orange-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="Edit Announcement"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(anc.id)}
-                        className="p-1 text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
-                        title="Delete Announcement"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
+                  <div>
+                    <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-snug">{anc.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line mt-1 line-clamp-4">{anc.description}</p>
+                  </div>
                 </div>
 
-                <div>
-                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-snug">{anc.title}</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line mt-1 line-clamp-4">{anc.description}</p>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 font-medium mt-2">
+                  <span>Broadcasted by Administration</span>
+                  <span>{new Date(anc.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
+            ))}
+          </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 font-medium mt-2">
-                <span>Broadcasted by Administration</span>
-                <span>{new Date(anc.created_at).toLocaleDateString()}</span>
-              </div>
+          {/* Clean Pagination Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-500 font-bold">
+                Showing <span className="text-slate-900 font-black">{(safeCurrentPage - 1) * pageSize + 1}</span> to <span className="text-slate-900 font-black">{Math.min(safeCurrentPage * pageSize, announcements.length)}</span> of <span className="text-slate-900 font-black">{announcements.length}</span> announcements
+              </span>
             </div>
-          ))}
-        </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={safeCurrentPage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-700 transition-all font-black text-xs cursor-pointer"
+              >
+                Previous
+              </button>
+
+              <span className="px-3 py-1 bg-slate-100 rounded-lg text-slate-900 font-black">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+
+              <button
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-700 transition-all font-black text-xs cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* CREATE / EDIT ANNOUNCEMENT MODAL */}

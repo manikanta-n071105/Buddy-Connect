@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LoadingState } from '../../components/common/LoadingState';
 import { BarChart3, Plus, Clock, CheckCircle2, Trash2, X, AlertCircle, Vote, Sparkles, Filter, RotateCw, Users, ShieldCheck, TrendingUp, Layers, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { DEPARTMENT_OPTIONS } from '../../types';
 
 interface PollOption {
   id: string;
@@ -37,6 +38,14 @@ export const PollsPage: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
+  const totalPages = Math.ceil(polls.length / pageSize) || 1;
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedPolls = polls.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
 
   // Poll creation form state
   const [title, setTitle] = useState('');
@@ -258,109 +267,142 @@ export const PollsPage: React.FC = () => {
           <p className="text-xs text-slate-500 max-w-xs mx-auto">There are currently no active polls running for your department.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-          {polls.map((poll) => {
-            const timeText = getTimeRemaining(poll.expires_at);
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+            {paginatedPolls.map((poll) => {
+              const timeText = getTimeRemaining(poll.expires_at);
 
-            return (
-              <div
-                key={poll.id}
-                className={`bg-white rounded-2xl border p-4 shadow-2xs space-y-3 transition-all hover:shadow-md relative overflow-hidden flex flex-col justify-between ${
-                  poll.isExpired ? 'border-slate-200 opacity-75 bg-slate-50/50' : 'border-slate-200/90 hover:border-orange-300'
-                }`}
-              >
-                <div className="space-y-2.5">
-                  {/* Card Header: Dept Pill & Timer */}
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 truncate">
-                      {poll.department === 'ALL' || !poll.department ? 'Campus Wide' : poll.department}
-                    </span>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                        poll.isExpired ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-orange-50 border-orange-200 text-orange-800'
-                      }`}>
-                        <Clock className="w-3 h-3 text-orange-600" /> {timeText}
+              return (
+                <div
+                  key={poll.id}
+                  className={`bg-white rounded-2xl border p-4 shadow-2xs space-y-3 transition-all hover:shadow-md relative overflow-hidden flex flex-col justify-between ${
+                    poll.isExpired ? 'border-slate-200 opacity-75 bg-slate-50/50' : 'border-slate-200/90 hover:border-orange-300'
+                  }`}
+                >
+                  <div className="space-y-2.5">
+                    {/* Card Header: Dept Pill & Timer */}
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 truncate">
+                        {poll.department === 'ALL' || !poll.department ? 'Campus Wide' : poll.department}
                       </span>
 
-                      {canCreatePoll && (
-                        <button
-                          onClick={() => handleDeletePoll(poll.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer rounded-md hover:bg-rose-50"
-                          title="Delete Poll"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                          poll.isExpired ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-orange-50 border-orange-200 text-orange-800'
+                        }`}>
+                          <Clock className="w-3 h-3 text-orange-600" /> {timeText}
+                        </span>
+
+                        {canCreatePoll && (
+                          <button
+                            onClick={() => handleDeletePoll(poll.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer rounded-md hover:bg-rose-50"
+                            title="Delete Poll"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title & Description */}
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">{poll.title}</h3>
+                      {poll.description && (
+                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{poll.description}</p>
                       )}
+                    </div>
+
+                    {/* Voting Options */}
+                    <div className="space-y-2 pt-0.5">
+                      {!isJunior && (
+                        <p className="text-[10px] text-amber-800 font-semibold bg-amber-50 p-1.5 rounded-lg border border-amber-200/80">
+                          Live Results (Only Juniors vote)
+                        </p>
+                      )}
+
+                      {poll.options.map((opt) => {
+                        const isSelected = poll.userVotedOptionId === opt.id;
+                        const isDisabled = poll.isExpired || !isJunior;
+
+                        return (
+                          <button
+                            key={opt.id}
+                            disabled={isDisabled}
+                            onClick={() => handleVote(poll.id, opt.id)}
+                            className={`w-full text-left px-3 py-2 rounded-xl border transition-all relative overflow-hidden flex items-center min-h-[38px] ${
+                              !isJunior ? 'cursor-default' : 'cursor-pointer active:scale-[0.99]'
+                            } ${
+                              isSelected
+                                ? 'border-orange-500 bg-orange-50/80 ring-1 ring-orange-500/20'
+                                : 'border-slate-200/90 bg-slate-50/60 hover:bg-slate-100 hover:border-slate-300'
+                            }`}
+                          >
+                            {/* Animated Progress Fill */}
+                            <div
+                              className={`absolute left-0 top-0 bottom-0 transition-all duration-500 opacity-20 pointer-events-none ${
+                                isSelected ? 'bg-orange-600' : 'bg-slate-600'
+                              }`}
+                              style={{ width: `${opt.percentage}%` }}
+                            />
+
+                            <div className="flex items-center justify-between w-full relative z-10 text-xs gap-2">
+                              <div className="flex items-center gap-2 font-bold text-slate-900 min-w-0 pr-1">
+                                {isSelected && <Check className="w-3.5 h-3.5 text-orange-600 shrink-0 stroke-[3]" />}
+                                <span className="truncate text-[11px] sm:text-xs">{opt.option_text}</span>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0 bg-white/90 px-1.5 py-0.5 rounded-md border border-slate-200/60 text-[10px]">
+                                <span className="font-mono font-black text-slate-900">{opt.percentage}%</span>
+                                <span className="text-slate-400">({opt.vote_count})</span>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Title & Description */}
-                  <div>
-                    <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">{poll.title}</h3>
-                    {poll.description && (
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{poll.description}</p>
-                    )}
-                  </div>
-
-                  {/* Voting Options */}
-                  <div className="space-y-2 pt-0.5">
-                    {!isJunior && (
-                      <p className="text-[10px] text-amber-800 font-semibold bg-amber-50 p-1.5 rounded-lg border border-amber-200/80">
-                        Live Results (Only Juniors vote)
-                      </p>
-                    )}
-
-                    {poll.options.map((opt) => {
-                      const isSelected = poll.userVotedOptionId === opt.id;
-                      const isDisabled = poll.isExpired || !isJunior;
-
-                      return (
-                        <button
-                          key={opt.id}
-                          disabled={isDisabled}
-                          onClick={() => handleVote(poll.id, opt.id)}
-                          className={`w-full text-left px-3 py-2 rounded-xl border transition-all relative overflow-hidden flex items-center min-h-[38px] ${
-                            !isJunior ? 'cursor-default' : 'cursor-pointer active:scale-[0.99]'
-                          } ${
-                            isSelected
-                              ? 'border-orange-500 bg-orange-50/80 ring-1 ring-orange-500/20'
-                              : 'border-slate-200/90 bg-slate-50/60 hover:bg-slate-100 hover:border-slate-300'
-                          }`}
-                        >
-                          {/* Animated Progress Fill */}
-                          <div
-                            className={`absolute left-0 top-0 bottom-0 transition-all duration-500 opacity-20 pointer-events-none ${
-                              isSelected ? 'bg-orange-600' : 'bg-slate-600'
-                            }`}
-                            style={{ width: `${opt.percentage}%` }}
-                          />
-
-                          <div className="flex items-center justify-between w-full relative z-10 text-xs gap-2">
-                            <div className="flex items-center gap-2 font-bold text-slate-900 min-w-0 pr-1">
-                              {isSelected && <Check className="w-3.5 h-3.5 text-orange-600 shrink-0 stroke-[3]" />}
-                              <span className="truncate text-[11px] sm:text-xs">{opt.option_text}</span>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 bg-white/90 px-1.5 py-0.5 rounded-md border border-slate-200/60 text-[10px]">
-                              <span className="font-mono font-black text-slate-900">{opt.percentage}%</span>
-                              <span className="text-slate-400">({opt.vote_count})</span>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
+                  {/* Footer Metadata */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 font-medium mt-2">
+                    <span className="truncate pr-1">By {poll.creator_name}</span>
+                    <span className="font-extrabold text-slate-700 shrink-0">{poll.totalVotes} votes</span>
                   </div>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Footer Metadata */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400 font-medium mt-2">
-                  <span className="truncate pr-1">By {poll.creator_name}</span>
-                  <span className="font-extrabold text-slate-700 shrink-0">{poll.totalVotes} votes</span>
-                </div>
-              </div>
-            );
-          })}
+          {/* Clean Pagination Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+            <div className="flex items-center gap-3">
+              <span className="text-slate-500 font-bold">
+                Showing <span className="text-slate-900 font-black">{(safeCurrentPage - 1) * pageSize + 1}</span> to <span className="text-slate-900 font-black">{Math.min(safeCurrentPage * pageSize, polls.length)}</span> of <span className="text-slate-900 font-black">{polls.length}</span> polls
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={safeCurrentPage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-700 transition-all font-black text-xs cursor-pointer"
+              >
+                Previous
+              </button>
+
+              <span className="px-3 py-1 bg-slate-100 rounded-lg text-slate-900 font-black">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+
+              <button
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 disabled:opacity-40 disabled:hover:bg-slate-50 disabled:hover:text-slate-700 transition-all font-black text-xs cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -410,11 +452,10 @@ export const PollsPage: React.FC = () => {
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 outline-hidden text-xs"
                   >
                     <option value="ALL">Campus Wide (All Departments)</option>
-                    <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
-                    <option value="Electronics & Communication Engineering">Electronics & Communication Engineering (ECE)</option>
-                    <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering (EEE)</option>
-                    <option value="Mechanical Engineering">Mechanical Engineering (MECH)</option>
-                    <option value="Civil Engineering">Civil Engineering (CIVIL)</option>
+                    <option value="CSE">CSE (All Sections)</option>
+                    {DEPARTMENT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
                   </select>
                 </div>
 

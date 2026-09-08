@@ -1,17 +1,31 @@
 import { Response } from 'express';
 import { query } from '../config/db';
 import { AuthenticatedRequest } from '../types';
+import { cache } from '../utils/cache';
 
 export const getNotifications = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: 'Authentication required', code: 'UNAUTHORIZED' });
+    }
+    const userId = req.user.id;
+    const cacheKey = `notifications:${userId}`;
+    const cachedNotifs = await cache.get<any>(cacheKey);
+    if (cachedNotifs) {
+      return res.json({ success: true, data: cachedNotifs });
+    }
+
     const result = await query(
       `SELECT * FROM notifications WHERE recipient_id = $1 ORDER BY created_at DESC LIMIT 50`,
-      [req.user!.id]
+      [userId]
     );
 
     const unreadCount = result.rows.filter(r => !r.is_read).length;
+    const data = { notifications: result.rows, unreadCount };
 
-    res.json({ success: true, data: { notifications: result.rows, unreadCount } });
+    await cache.set(cacheKey, data, 5000); // 5s TTL Cache
+
+    res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });
   }
@@ -21,6 +35,7 @@ export const markNotificationRead = async (req: AuthenticatedRequest, res: Respo
   const { id } = req.params;
   try {
     await query(`UPDATE notifications SET is_read = true WHERE id = $1 AND recipient_id = $2`, [id, req.user!.id]);
+    await cache.del(`notifications:${req.user!.id}`);
     res.json({ success: true, message: 'Notification marked as read' });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });
@@ -30,6 +45,7 @@ export const markNotificationRead = async (req: AuthenticatedRequest, res: Respo
 export const markAllNotificationsRead = async (req: AuthenticatedRequest, res: Response) => {
   try {
     await query(`UPDATE notifications SET is_read = true WHERE recipient_id = $1`, [req.user!.id]);
+    await cache.del(`notifications:${req.user!.id}`);
     res.json({ success: true, message: 'All notifications marked as read' });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });

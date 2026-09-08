@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest, UserRole } from '../types';
+import { AuthenticatedRequest, UserRole, UserPayload } from '../types';
 import { verifyAccessToken } from '../utils/jwt';
 import { query } from '../config/db';
+import { cache } from '../utils/cache';
 
 export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -12,57 +13,78 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
   const token = authHeader.split(' ')[1];
   try {
     const payload = verifyAccessToken(token);
-    
-    // Fetch fresh details including entity IDs (Director, Senior, Junior) and custom permissions
-    const userRes = await query(`SELECT id, name, email, username, role, is_active FROM users WHERE id = $1`, [payload.id]);
+    if (!payload || !payload.id) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired token', code: 'UNAUTHORIZED' });
+    }
+
+    // 1. Check Distributed Redis / Memory Cache first (0ms DB Latency)
+    const cacheKey = `user_auth:${payload.id}`;
+    let cachedUser = await cache.get<UserPayload>(cacheKey);
+
+    if (cachedUser) {
+      req.user = cachedUser;
+      return next();
+    }
+
+    // 2. If not cached, fetch fresh user details in single query & populate entity IDs
+    const userRes = await query(
+      `SELECT id, name, email, username, role, is_active, COALESCE(is_cr, false) as is_cr, COALESCE(is_counselor, false) as is_counselor, COALESCE(is_disciplinary_committee, false) as is_disciplinary_committee FROM users WHERE id = $1`,
+      [payload.id]
+    );
+
     if (userRes.rowCount === 0 || !userRes.rows[0].is_active) {
       return res.status(401).json({ success: false, message: 'Account disabled or user not found', code: 'UNAUTHORIZED' });
     }
 
     const user = userRes.rows[0];
-    let directorId: string | undefined;
-    let seniorId: string | undefined;
-    let juniorId: string | undefined;
-    let facultyId: string | undefined;
+    let directorId = payload.directorId;
+    let seniorId = payload.seniorId;
+    let juniorId = payload.juniorId;
+    let facultyId = payload.facultyId;
 
-    // Load custom permissions from admin_permissions table for Admins, Directors, Seniors, and Faculty
+    // Load custom permissions from admin_permissions table if needed
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
     const permissions: string[] = permRes.rows.map(r => r.permission);
 
-    if (user.role === 'DIRECTOR') {
-      const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
-      if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
-    } else if (user.role === 'FACULTY') {
-      const facRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
-      if (facRes.rowCount! > 0) facultyId = facRes.rows[0].id;
-    } else if (user.role === 'SENIOR') {
-      const senRes = await query(`SELECT id, director_id FROM seniors WHERE user_id = $1`, [user.id]);
-      if (senRes.rowCount! > 0) {
-        seniorId = senRes.rows[0].id;
-        directorId = senRes.rows[0].director_id;
-      }
-    } else if (user.role === 'JUNIOR') {
-      const junRes = await query(
-        `SELECT j.id, j.senior_id, j.faculty_id, s.director_id
-         FROM juniors j
-         LEFT JOIN seniors s ON j.senior_id = s.id
-         WHERE j.user_id = $1`,
-        [user.id]
-      );
-      if (junRes.rowCount! > 0) {
-        juniorId = junRes.rows[0].id;
-        seniorId = junRes.rows[0].senior_id;
-        directorId = junRes.rows[0].director_id;
-        facultyId = junRes.rows[0].faculty_id;
+    if (!directorId && !seniorId && !juniorId && !facultyId) {
+      if (user.role === 'DIRECTOR') {
+        const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
+        if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
+      } else if (user.role === 'FACULTY') {
+        const facRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
+        if (facRes.rowCount! > 0) facultyId = facRes.rows[0].id;
+      } else if (user.role === 'SENIOR') {
+        const senRes = await query(`SELECT id, director_id FROM seniors WHERE user_id = $1`, [user.id]);
+        if (senRes.rowCount! > 0) {
+          seniorId = senRes.rows[0].id;
+          directorId = senRes.rows[0].director_id;
+        }
+      } else if (user.role === 'JUNIOR') {
+        const junRes = await query(
+          `SELECT j.id, j.senior_id, j.faculty_id, s.director_id
+           FROM juniors j
+           LEFT JOIN seniors s ON j.senior_id = s.id
+           WHERE j.user_id = $1`,
+          [user.id]
+        );
+        if (junRes.rowCount! > 0) {
+          juniorId = junRes.rows[0].id;
+          seniorId = junRes.rows[0].senior_id;
+          directorId = junRes.rows[0].director_id;
+          facultyId = junRes.rows[0].faculty_id;
+        }
       }
     }
 
-    req.user = {
+    const authUser: UserPayload = {
       id: user.id,
       name: user.name,
       email: user.email,
       username: user.username,
       role: user.role,
+      is_cr: Boolean(user.is_cr),
+      is_counselor: Boolean(user.is_counselor),
+      is_disciplinary_committee: Boolean(user.is_disciplinary_committee),
       permissions,
       directorId,
       seniorId,
@@ -70,6 +92,10 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
       facultyId
     };
 
+    // Cache user context for 60 seconds to eliminate DB query amplification
+    await cache.set(cacheKey, authUser, 60000);
+
+    req.user = authUser;
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid or expired token', code: 'UNAUTHORIZED' });
@@ -95,7 +121,7 @@ export const authorizePermission = (permission: string) => {
       return next();
     }
 
-    // Grant access if the user (Admin, Director, or Senior) possesses the permission
+    // Grant access if the user possesses the permission
     if (req.user.permissions?.includes(permission)) {
       return next();
     }

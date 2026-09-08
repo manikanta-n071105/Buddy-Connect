@@ -7,6 +7,8 @@ import { ClipboardCheck, CheckCircle2, Circle, PlusCircle, X, Users } from 'luci
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
+import { fetchWithCache } from '../../utils/swr';
+
 export const OnboardingPage: React.FC = () => {
   const { user } = useAuth();
   const [data, setData] = useState<{ items: OnboardingItem[]; completedCount: number; totalCount: number; progressPercent: number; overallAveragePercent?: number } | null>(null);
@@ -29,30 +31,34 @@ export const OnboardingPage: React.FC = () => {
   // Fetch Assigned Juniors for Senior Mentor
   useEffect(() => {
     if (isSenior) {
-      api.get('/users?role=JUNIOR').then((res) => {
-        const junArr = res.data.data;
-        setJuniorsList(junArr);
-        if (junArr.length > 0) {
-          setSelectedJuniorId(junArr[0].junior_id || junArr[0].id);
+      fetchWithCache<any[]>('swr_junior_list', '/users?role=JUNIOR', (junArr) => {
+        if (junArr && junArr.length > 0) {
+          setJuniorsList(junArr);
+          if (!selectedJuniorId) {
+            setSelectedJuniorId(junArr[0].junior_id || junArr[0].id);
+          }
         }
-      }).catch(console.error);
+      });
     }
   }, [isSenior]);
 
-  const fetchOnboarding = async () => {
-    setIsLoading(true);
-    try {
-      let url = '/onboarding/progress';
-      if (isSenior && selectedJuniorId) {
-        url += `?juniorId=${selectedJuniorId}`;
-      }
-      const res = await api.get(url);
-      setData(res.data.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  const fetchOnboarding = async (forceRefresh = false) => {
+    let url = '/onboarding/progress';
+    if (isSenior && selectedJuniorId) {
+      url += `?juniorId=${selectedJuniorId}`;
     }
+    const cacheKey = `swr_onboarding_${selectedJuniorId || 'my'}`;
+    await fetchWithCache<any>(
+      cacheKey,
+      url,
+      (resData) => {
+        if (resData) {
+          setData(resData);
+        }
+        setIsLoading(false);
+      },
+      { forceRefresh }
+    );
   };
 
   useEffect(() => {
@@ -92,7 +98,7 @@ export const OnboardingPage: React.FC = () => {
       setShowAddModal(false);
       setItemTitle('');
       setItemDescription('');
-      fetchOnboarding();
+      fetchOnboarding(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to add onboarding item');
     }

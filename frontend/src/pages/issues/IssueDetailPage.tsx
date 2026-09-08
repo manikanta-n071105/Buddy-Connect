@@ -4,8 +4,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
-import { VotingPanel } from '../../components/issues/VotingPanel';
-import { ArrowLeft, MessageSquare, Globe, Users, Lock, Send, ShieldAlert, EyeOff, Zap, CheckCircle2, ShieldX } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Send, ShieldAlert, Zap, CheckCircle2, ShieldX, Flame, Calendar, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const IssueDetailPage: React.FC = () => {
@@ -18,9 +17,7 @@ export const IssueDetailPage: React.FC = () => {
   const [commentText, setCommentText] = useState('');
   const [resolutionText, setResolutionText] = useState('');
   const [statusUpdate, setStatusUpdate] = useState<string>('');
-  const [votingScopeUpdate, setVotingScopeUpdate] = useState<string>('NONE');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUpdatingScope, setIsUpdatingScope] = useState(false);
 
   const fetchDetail = async () => {
     try {
@@ -28,7 +25,6 @@ export const IssueDetailPage: React.FC = () => {
       setData(res.data.data);
       setStatusUpdate(res.data.data.issue.status);
       setResolutionText(res.data.data.issue.resolution || '');
-      setVotingScopeUpdate(res.data.data.issue.voting_scope || 'NONE');
     } catch (err) {
       console.error(err);
     } finally {
@@ -57,22 +53,6 @@ export const IssueDetailPage: React.FC = () => {
     }
   };
 
-  const handleScopeChange = async (newScope: string) => {
-    setIsUpdatingScope(true);
-    try {
-      await api.patch(`/issues/${id}/voting-scope`, {
-        votingScope: newScope
-      });
-      setVotingScopeUpdate(newScope);
-      toast.success(`Voting permissions updated to ${newScope.replace('_', ' ')}`);
-      fetchDetail();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update voting scope');
-    } finally {
-      setIsUpdatingScope(false);
-    }
-  };
-
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -87,235 +67,107 @@ export const IssueDetailPage: React.FC = () => {
 
   if (isLoading || !data) return <LoadingState message="Fetching issue detail & audit history..." />;
 
-  const { issue, comments, voteSummary, isEligibleToVote, isReporter } = data;
+  const { issue, comments, isReporter } = data;
 
-  // STRICT RULE 1: Only Department Director and Super Admin can configure who can vote
-  const canManageVotingScope = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '');
+  const canManageStatus = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR', 'FACULTY'].includes(user?.role || '');
   const isSeniorMentor = user?.role === 'SENIOR';
   const isEscalatedToDirector = issue.status === 'ESCALATED';
 
-  // STRICT RULE 2: Senior Mentor CANNOT change status if issue is escalated to Director
-  const canUpdateStatus = (canManageVotingScope || isSeniorMentor) && !(isSeniorMentor && isEscalatedToDirector);
+  // Senior Mentor CANNOT change status if issue is escalated to Director
+  const canUpdateStatus = canManageStatus && !(isSeniorMentor && isEscalatedToDirector);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <button
-        onClick={() => navigate('/issues')}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to Issue Registry
-      </button>
+    <div className="space-y-5 max-w-5xl mx-auto pb-8">
+      {/* Top Header & Navigation */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate('/issues')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs transition-all cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-orange-600" /> Back to All Issues
+        </button>
+
+        <span className="text-xs font-mono font-bold text-slate-400">Ticket ID: #{issue.issue_number}</span>
+      </div>
 
       {/* Main Issue Header Card */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <span className="text-xs font-black text-orange-600 tracking-wider uppercase">{issue.issue_number} • {issue.category_name}</span>
-            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">{issue.title}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <StatusBadge status={issue.priority} type="priority" />
-            
-            {/* STRICT RULE: Only the reporting student (or mentors/admin) can view the issue status! */}
-            {isReporter ? (
-              <StatusBadge status={issue.status} type="issue" />
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-300" title="Status visible strictly to reporting student and mentor">
-                <EyeOff className="w-3 h-3 text-slate-500" /> Protected Ticket
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-xs font-black tracking-wider">
+                {issue.issue_number}
               </span>
+              <span className="text-xs text-slate-500 font-bold bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                {issue.category_name}
+              </span>
+            </div>
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{issue.title}</h1>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <StatusBadge status={issue.priority} type="priority" />
+            {isEscalatedToDirector ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md animate-pulse">
+                <Flame className="w-3.5 h-3.5 text-amber-300" /> ESCALATED TO DIRECTOR
+              </span>
+            ) : (
+              <StatusBadge status={issue.status} type="issue" />
             )}
           </div>
         </div>
 
-        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">{issue.description}</p>
+        {/* Issue Description */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Issue Description</h3>
+          <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-800 whitespace-pre-wrap leading-relaxed">
+            {issue.description}
+          </div>
+        </div>
 
-        {/* Metadata Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 text-xs border-t border-slate-100 font-medium">
+        {/* Metadata Details */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs font-semibold border-t border-slate-100">
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Reported Student</span>
-            <span className="text-slate-900 font-bold">{issue.junior_name}</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Reported Student</span>
+            <p className="text-slate-900 font-extrabold flex items-center gap-1 mt-0.5">
+              <User className="w-3.5 h-3.5 text-orange-600" /> {issue.junior_name}
+            </p>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Assigned Senior</span>
-            <span className="text-slate-900 font-bold">{issue.senior_name}</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Assigned Senior Mentor</span>
+            <p className="text-slate-900 font-extrabold mt-0.5">{issue.senior_name}</p>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Department Director</span>
-            <span className="text-slate-900 font-bold">{issue.director_name}</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Department Director</span>
+            <p className="text-slate-900 font-extrabold mt-0.5">{issue.director_name}</p>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Date Reported</span>
-            <span className="text-slate-900 font-bold">{new Date(issue.created_at).toLocaleString()}</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Date Logged</span>
+            <p className="text-slate-900 font-extrabold mt-0.5 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" /> {new Date(issue.created_at).toLocaleDateString()}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Escalation Lock Warning for Senior Mentors */}
-      {isSeniorMentor && isEscalatedToDirector && (
-        <div className="bg-rose-950 text-rose-100 border-2 border-rose-600 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center gap-3">
-          <ShieldX className="w-6 h-6 text-rose-400 shrink-0" />
-          <div className="text-xs font-medium">
-            <h4 className="font-black uppercase tracking-wider text-rose-200">Escalated to Department Director</h4>
-            <p className="text-rose-300 mt-0.5">This issue ticket has been escalated to the Department Director. Status modification is restricted to the Director and Super Admin.</p>
-          </div>
-        </div>
-      )}
-
-      {/* First-Time Senior Mentor Quick Action Banner for Newly Raised Issues */}
-      {isSeniorMentor && issue.status === 'OPEN' && (
-        <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/10 border-2 border-orange-500/40 rounded-2xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-orange-600 flex items-center gap-2">
-              <Zap className="w-4 h-4 text-orange-600 animate-pulse" /> Senior Mentor First-Time Status Update
-            </h3>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-orange-600 text-white uppercase">Newly Raised Issue</span>
-          </div>
-
-          <p className="text-xs text-slate-700 font-semibold">
-            This student issue is newly raised. As assigned Senior Mentor, choose an initial action to update its status for the first time:
+      {/* Resolution Details Card (If Resolved/Closed) */}
+      {issue.resolution && (
+        <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5 shadow-2xs space-y-2">
+          <h3 className="text-xs font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Official Resolution Details
+          </h3>
+          <p className="text-xs text-emerald-950 font-bold whitespace-pre-wrap leading-relaxed">
+            {issue.resolution}
           </p>
-
-          <div className="flex flex-wrap gap-2.5 pt-1">
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={async () => {
-                setIsSubmitting(true);
-                try {
-                  await api.patch(`/issues/${id}/status`, { status: 'UNDER_REVIEW', resolution: 'Senior mentor acknowledged the issue and started initial review.' });
-                  toast.success('Issue acknowledged and set to UNDER REVIEW');
-                  fetchDetail();
-                } catch (err) {
-                  toast.error('Failed to update status');
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer inline-flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" /> Acknowledge & Set Under Review
-            </button>
-
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={async () => {
-                setIsSubmitting(true);
-                try {
-                  await api.patch(`/issues/${id}/status`, { status: 'IN_PROGRESS', resolution: 'Senior mentor has actively started working on resolving the issue.' });
-                  toast.success('Issue status set to IN PROGRESS');
-                  fetchDetail();
-                } catch (err) {
-                  toast.error('Failed to update status');
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              className="px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer inline-flex items-center gap-1.5"
-            >
-              <Zap className="w-3.5 h-3.5" /> Start Working (In Progress)
-            </button>
-          </div>
+          {issue.resolution_notes && (
+            <p className="text-[11px] text-emerald-700 font-semibold italic border-t border-emerald-200/60 pt-2 mt-2">
+              Note: {issue.resolution_notes}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Voting Scope Management (Strictly Department Director & Super Admin Control) */}
-      {canManageVotingScope && (
-        <div className="bg-slate-900 text-slate-100 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-orange-400 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-orange-500" /> Director Voting Access Permission Controls
-            </h3>
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Department Director / Admin Only</span>
-          </div>
-
-          <p className="text-xs text-slate-300">
-            By default, voting is locked for raised issues until Department Director explicitly grants access:
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
-            <button
-              type="button"
-              disabled={isUpdatingScope}
-              onClick={() => handleScopeChange('NONE')}
-              className={`p-3 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
-                votingScopeUpdate === 'NONE'
-                  ? 'bg-rose-600 text-white border-rose-500 shadow-md'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              <Lock className="w-4 h-4 text-rose-400 shrink-0" />
-              <div className="text-left">
-                <p className="font-extrabold">Voting Locked</p>
-                <p className="text-[10px] font-normal opacity-80">Default: No voting</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              disabled={isUpdatingScope}
-              onClick={() => handleScopeChange('ALL')}
-              className={`p-3 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
-                votingScopeUpdate === 'ALL'
-                  ? 'bg-orange-600 text-white border-orange-500 shadow-md'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              <Globe className="w-4 h-4 text-orange-400 shrink-0" />
-              <div className="text-left">
-                <p className="font-extrabold">All Students</p>
-                <p className="text-[10px] font-normal opacity-80">Campus-wide voting</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              disabled={isUpdatingScope}
-              onClick={() => handleScopeChange('MENTOR_SCOPE')}
-              className={`p-3 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
-                votingScopeUpdate === 'MENTOR_SCOPE'
-                  ? 'bg-orange-600 text-white border-orange-500 shadow-md'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              <Users className="w-4 h-4 text-amber-400 shrink-0" />
-              <div className="text-left">
-                <p className="font-extrabold">Mentor Circle</p>
-                <p className="text-[10px] font-normal opacity-80">Assigned juniors only</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              disabled={isUpdatingScope}
-              onClick={() => handleScopeChange('REPORTER_ONLY')}
-              className={`p-3 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
-                votingScopeUpdate === 'REPORTER_ONLY'
-                  ? 'bg-orange-600 text-white border-orange-500 shadow-md'
-                  : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-              <div className="text-left">
-                <p className="font-extrabold">Reporter Only</p>
-                <p className="text-[10px] font-normal opacity-80">Only student who raised</p>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Resolution & Voting Section */}
-      <VotingPanel
-        issueId={issue.id}
-        isEligibleToVote={isEligibleToVote}
-        issueStatus={issue.status}
-        votingScope={issue.voting_scope || 'NONE'}
-        voteSummary={voteSummary}
-        onVoteSubmitted={fetchDetail}
-      />
-
-      {/* Mentor Action / Status Update Form (Guarded against Escalated lock for Seniors) */}
+      {/* Mentor Action / Status Update Form */}
       {canUpdateStatus && (
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4">
           <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Update Issue Status & Add Resolution</h3>
@@ -329,8 +181,8 @@ export const IssueDetailPage: React.FC = () => {
                 <option value="OPEN">OPEN</option>
                 <option value="UNDER_REVIEW">UNDER REVIEW</option>
                 <option value="IN_PROGRESS">IN PROGRESS</option>
-                <option value="RESOLVED">RESOLVE & OPEN VOTING</option>
-                <option value="CLOSED">CLOSED</option>
+                <option value="RESOLVED">MARK AS RESOLVED</option>
+                {user?.role !== 'SENIOR' && <option value="CLOSED">CLOSED</option>}
                 <option value="REOPENED">REOPENED</option>
                 <option value="ESCALATED">ESCALATED TO DIRECTOR</option>
               </select>
@@ -347,7 +199,7 @@ export const IssueDetailPage: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+              className="px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
             >
               Update Issue Status
             </button>
