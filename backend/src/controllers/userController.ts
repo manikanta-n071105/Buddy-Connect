@@ -1132,7 +1132,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
     }
 
     const uRes = await query(
-      `SELECT u.id, u.name, u.email, u.username, u.phone, u.role, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
+      `SELECT u.id, u.name, u.email, u.username, u.phone, u.role, u.blood_group, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
               COALESCE(d.department, f.department, s.department, j.department) as department,
               COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
               dcm.designation as committee_designation,
@@ -1216,7 +1216,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
 // Update User Profile
 export const updateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   const { userId } = req.params;
-  const { name, email, phone, department, batch, year, residenceStatus, gender, isCr, isCounselor, isDisciplinaryCommittee, committeeDesignation, superAdminPassword } = req.body;
+  const { name, email, phone, department, batch, year, residenceStatus, gender, blood_group, bloodGroup, isCr, isCounselor, isDisciplinaryCommittee, committeeDesignation, superAdminPassword } = req.body;
 
   try {
     await ensureUserColumns();
@@ -1240,6 +1240,11 @@ export const updateUserProfile = async (req: AuthenticatedRequest, res: Response
       if (email) { uUpdates.push(`email = $${uParams.length + 1}`); uParams.push(email.trim()); }
       if (phone !== undefined) { uUpdates.push(`phone = $${uParams.length + 1}`); uParams.push(phone ? phone.trim() : null); }
       if (gender && ['MALE', 'FEMALE'].includes(gender)) { uUpdates.push(`gender = $${uParams.length + 1}`); uParams.push(gender); }
+      const bgVal = blood_group || bloodGroup;
+      if (bgVal !== undefined) {
+        uUpdates.push(`blood_group = $${uParams.length + 1}`);
+        uParams.push(bgVal ? bgVal.trim().toUpperCase() : null);
+      }
       if (isCr !== undefined) { uUpdates.push(`is_cr = $${uParams.length + 1}`); uParams.push(Boolean(isCr)); }
       if (isCounselor !== undefined) { uUpdates.push(`is_counselor = $${uParams.length + 1}`); uParams.push(Boolean(isCounselor)); }
       if (isDisciplinaryCommittee !== undefined) {

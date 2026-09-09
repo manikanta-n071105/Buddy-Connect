@@ -32,6 +32,7 @@ import {
   UtensilsCrossed,
   Star,
   Heart,
+  HeartHandshake,
   Gavel,
   QrCode,
   Smartphone
@@ -275,6 +276,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
   // Appointed Disciplinary Committee Members (Faculty, Director, etc.) Hub & Infractions Log
   if (Boolean(user.is_disciplinary_committee) && !navItems.some((i) => i.path === '/admin/disciplinary-hub')) {
     navItems.splice(2, 0, { label: 'Disciplinary & Infractions Hub', path: '/admin/disciplinary-hub', icon: Gavel });
+  }
+
+  // Blood Bank & Donors for ALL roles
+  if (!navItems.some((i) => i.path === '/blood-bank')) {
+    navItems.push({ label: 'Blood Bank & Donors', path: '/blood-bank', icon: HeartHandshake });
   }
 
   return (

@@ -60,21 +60,12 @@ export const initDatabasePerformance = async () => {
       CREATE INDEX IF NOT EXISTS idx_faculty_user_id ON faculty(user_id);
       CREATE INDEX IF NOT EXISTS idx_directors_user_id ON directors(user_id);
 
-      CREATE INDEX IF NOT EXISTS idx_issues_created_by ON issues(created_by);
-      CREATE INDEX IF NOT EXISTS idx_issues_assigned_to ON issues(assigned_to);
+      CREATE INDEX IF NOT EXISTS idx_issues_reported_by ON issues(reported_by_id);
+      CREATE INDEX IF NOT EXISTS idx_issues_assigned_to ON issues(assigned_to_id);
       CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
 
-      CREATE INDEX IF NOT EXISTS idx_quiz_submissions_quiz_student ON quiz_submissions(quiz_id, student_user_id);
-      CREATE INDEX IF NOT EXISTS idx_quiz_submissions_quiz_score ON quiz_submissions(quiz_id, score);
-      CREATE INDEX IF NOT EXISTS idx_proctoring_violations_sub_id ON proctoring_violations(submission_id);
-      CREATE INDEX IF NOT EXISTS idx_proctoring_violations_quiz_student ON proctoring_violations(quiz_id, student_user_id);
-      CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz_id ON quiz_questions(quiz_id);
-      CREATE INDEX IF NOT EXISTS idx_quizzes_faculty_id ON quizzes(faculty_id);
-      CREATE INDEX IF NOT EXISTS idx_quizzes_active ON quizzes(is_active);
-
-      CREATE INDEX IF NOT EXISTS idx_audit_logs_user_date ON audit_logs(user_id, created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
-      CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(sender_id, receiver_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_date ON audit_logs(actor_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_notifications_recipient_unread ON notifications(recipient_id, is_read);
       CREATE INDEX IF NOT EXISTS idx_announcements_created ON announcements(created_at DESC);
     `);
   } catch (err: any) {
@@ -268,6 +259,47 @@ export const initDisciplinaryCommitteeTables = async () => {
     `);
   } catch (err: any) {
     console.warn('Disciplinary Committee table initialization notice:', err.message);
+  }
+};
+
+export const initBloodDonationTables = async () => {
+  try {
+    await query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS blood_group VARCHAR(5);
+
+      CREATE TABLE IF NOT EXISTS blood_requests (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        requester_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        patient_name VARCHAR(150) NOT NULL,
+        contact_number VARCHAR(30) NOT NULL,
+        blood_group VARCHAR(5) NOT NULL,
+        units_needed INT NOT NULL DEFAULT 1,
+        urgency VARCHAR(20) NOT NULL DEFAULT 'NORMAL' CHECK (urgency IN ('NORMAL', 'URGENT', 'CRITICAL')),
+        hospital_name VARCHAR(200),
+        additional_notes TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'FULFILLED', 'CANCELLED', 'EXPIRED')),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_blood_requests_bg ON blood_requests(blood_group);
+      CREATE INDEX IF NOT EXISTS idx_blood_requests_status ON blood_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_blood_requests_requester ON blood_requests(requester_id);
+
+      CREATE TABLE IF NOT EXISTS blood_donors (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        request_id VARCHAR(36) NOT NULL REFERENCES blood_requests(id) ON DELETE CASCADE,
+        donor_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) NOT NULL DEFAULT 'PLEDGED' CHECK (status IN ('PLEDGED', 'CONFIRMED', 'CANCELLED')),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(request_id, donor_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_blood_donors_req ON blood_donors(request_id);
+      CREATE INDEX IF NOT EXISTS idx_blood_donors_donor ON blood_donors(donor_id);
+    `);
+  } catch (err: any) {
+    console.warn('Blood donation table initialization notice:', err.message);
   }
 };
 

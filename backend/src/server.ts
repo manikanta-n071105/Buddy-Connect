@@ -15,7 +15,8 @@ import {
   initCounselingTables,
   initQuizTables,
   initSystemSettingsTables,
-  initDisciplinaryCommitteeTables
+  initDisciplinaryCommitteeTables,
+  initBloodDonationTables
 } from './config/db';
 import { initRedis } from './config/redis';
 
@@ -40,6 +41,7 @@ import messRoutes from './routes/messRoutes';
 import crFeedbackRoutes from './routes/crFeedbackRoutes';
 import counselingRoutes from './routes/counselingRoutes';
 import quizRoutes from './routes/quizRoutes';
+import bloodRoutes from './routes/bloodRoutes';
 
 import compression from 'compression';
 
@@ -109,6 +111,7 @@ app.use('/api/mess', messRoutes);
 app.use('/api/cr-feedback', crFeedbackRoutes);
 app.use('/api/counseling', counselingRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/blood', bloodRoutes);
 
 // Serve Frontend Static Build in Production if present
 const frontendDist = path.join(__dirname, '../../frontend/dist');
@@ -132,8 +135,9 @@ initCrFeedbackTables();
 initQuizTables();
 initSystemSettingsTables();
 initDisciplinaryCommitteeTables();
+initBloodDonationTables();
 initCounselingTables().then(() => {
-  logger.info('Database performance, Quiz, CR Feedback & Counseling tables initialized.');
+  logger.info('Database performance, Quiz, CR Feedback, Blood Donation & Counseling tables initialized.');
 }).catch(err => {
   logger.warn('Database initialization warning:', err.message);
 });

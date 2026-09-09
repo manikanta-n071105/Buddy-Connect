@@ -5,7 +5,7 @@ import { GoogleAuthenticatorModal } from '../common/GoogleAuthenticatorModal';
 import { Bell, Search, Activity, User as UserIcon, CheckCheck, Menu, Smartphone } from 'lucide-react';
 import { Notification } from '../../types';
 import api from '../../services/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface TopbarProps {
   onToggleMobileMenu?: () => void;
@@ -13,6 +13,7 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({ onToggleMobileMenu }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -160,30 +161,42 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleMobileMenu }) => {
                     </button>
                   </div>
                 ) : (
-                  notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`p-3 text-xs transition-colors ${n.is_read ? 'bg-white' : 'bg-orange-50/40 font-medium'}`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-extrabold text-slate-900 leading-tight">{n.title}</span>
-                        {n.type && (
-                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shrink-0 ${
-                            n.type === 'EVENT' ? 'bg-purple-100 text-purple-700' :
-                            n.type === 'POLL' ? 'bg-blue-100 text-blue-700' :
-                            n.type === 'VOTING' ? 'bg-emerald-100 text-emerald-700' :
-                            'bg-slate-100 text-slate-700'
-                          }`}>
-                            {n.type}
-                          </span>
-                        )}
+                  notifications.map((n) => {
+                    const isBloodNotif = n.type?.startsWith('BLOOD_');
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => {
+                          setShowNotifications(false);
+                          if (isBloodNotif) {
+                            navigate('/blood-bank');
+                          }
+                        }}
+                        className={`p-3 text-xs transition-colors cursor-pointer hover:bg-slate-50 ${
+                          n.is_read ? 'bg-white' : isBloodNotif ? 'bg-rose-50/50 font-medium' : 'bg-orange-50/40 font-medium'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-extrabold text-slate-900 leading-tight">{n.title}</span>
+                          {n.type && (
+                            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shrink-0 ${
+                              isBloodNotif ? 'bg-rose-100 text-rose-700' :
+                              n.type === 'EVENT' ? 'bg-purple-100 text-purple-700' :
+                              n.type === 'POLL' ? 'bg-blue-100 text-blue-700' :
+                              n.type === 'VOTING' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-slate-100 text-slate-700'
+                            }`}>
+                              {isBloodNotif ? 'BLOOD BANK' : n.type}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-slate-600 leading-relaxed mb-1">{n.message}</p>
+                        <span className="text-[10px] font-semibold text-slate-400">
+                          {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
-                      <p className="text-slate-600 leading-relaxed mb-1">{n.message}</p>
-                      <span className="text-[10px] font-semibold text-slate-400">
-                        {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

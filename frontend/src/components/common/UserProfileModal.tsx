@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { LoadingState } from './LoadingState';
 import { GoogleAuthenticatorModal } from './GoogleAuthenticatorModal';
 import { QRCodeCanvas } from 'qrcode.react';
-import { User, ShieldCheck, Mail, Phone, Calendar, Clock, KeyRound, Building2, BookOpen, UserCheck, GraduationCap, X, Edit3, Trash2, AlertTriangle, ShieldAlert, Check, Lock, Bus, Home, Star, Heart, Smartphone, Gavel, QrCode, Scissors, CreditCard, UserX, FileWarning } from 'lucide-react';
+import { User, ShieldCheck, Mail, Phone, Calendar, Clock, KeyRound, Building2, BookOpen, UserCheck, GraduationCap, X, Edit3, Trash2, AlertTriangle, ShieldAlert, Check, Lock, Bus, Home, Star, Heart, Smartphone, Gavel, QrCode, Scissors, CreditCard, UserX, FileWarning, Droplet } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,7 +20,7 @@ interface UserProfileModalProps {
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onClose, onProfileDeleted, onProfileUpdated }) => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showResetForm, setShowResetForm] = useState(false);
@@ -41,6 +41,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [totpCodeVal, setTotpCodeVal] = useState('');
   const [show2FAModal, setShow2FAModal] = useState(false);
 
+  // Quick blood group inline edit
+  const [isQuickEditingBloodGroup, setIsQuickEditingBloodGroup] = useState(false);
+  const [quickBloodGroup, setQuickBloodGroup] = useState('');
+  const [isSavingQuickBloodGroup, setIsSavingQuickBloodGroup] = useState(false);
+
   // Edit form state
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -52,6 +57,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [editYear, setEditYear] = useState('');
   const [editResidenceStatus, setEditResidenceStatus] = useState<'DAY_SCHOLAR' | 'HOSTELLER'>('DAY_SCHOLAR');
   const [editGender, setEditGender] = useState<'MALE' | 'FEMALE'>('MALE');
+  const [editBloodGroup, setEditBloodGroup] = useState('');
   const [editIsCr, setEditIsCr] = useState(false);
   const [editIsCounselor, setEditIsCounselor] = useState(false);
   const [editIsDisciplinaryCommittee, setEditIsDisciplinaryCommittee] = useState(false);
@@ -134,6 +140,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setEditYear(p.year || '');
       setEditResidenceStatus(p.residence_status || 'DAY_SCHOLAR');
       setEditGender(p.gender || 'MALE');
+      setEditBloodGroup(p.blood_group || '');
       setEditIsCr(p.is_cr || false);
       setEditIsCounselor(p.is_counselor || false);
       setEditIsDisciplinaryCommittee(p.is_disciplinary_committee || false);
@@ -257,6 +264,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
         year: editYear,
         residenceStatus: editResidenceStatus,
         gender: editGender,
+        blood_group: editBloodGroup,
         isCr: editIsCr,
         isCounselor: editIsCounselor,
         isDisciplinaryCommittee: editIsDisciplinaryCommittee,
@@ -288,6 +296,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       toast.error(err.response?.data?.message || 'Failed to delete user profile');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleQuickSaveBloodGroup = async (bg: string) => {
+    if (!bg) {
+      toast.error('Please select a blood group');
+      return;
+    }
+    setIsSavingQuickBloodGroup(true);
+    try {
+      if (isSelf) {
+        await api.put('/blood/user/blood-group', { blood_group: bg });
+      } else {
+        await api.put(`/users/${userId}`, { blood_group: bg });
+      }
+      setProfile((prev: any) => ({ ...prev, blood_group: bg }));
+      setEditBloodGroup(bg);
+      setIsQuickEditingBloodGroup(false);
+      toast.success(`Blood group updated to ${bg} successfully!`);
+      if (isSelf && refreshUser) await refreshUser();
+      onProfileUpdated?.();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update blood group');
+    } finally {
+      setIsSavingQuickBloodGroup(false);
     }
   };
 
@@ -344,6 +377,59 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                   }`}>
                     {profile.role.replace('_', ' ')}
                   </span>
+                </div>
+
+                {/* Blood Group Badge with Quick Edit Option below role text */}
+                <div className="pt-0.5 flex flex-wrap items-center gap-2">
+                  {isQuickEditingBloodGroup ? (
+                    <div className="flex items-center gap-1.5 bg-slate-900 p-1.5 rounded-xl border border-rose-500/60 shadow-lg animate-in fade-in">
+                      <select
+                        value={quickBloodGroup}
+                        onChange={(e) => setQuickBloodGroup(e.target.value)}
+                        className="p-1 bg-slate-950 text-white border border-rose-400/40 rounded-lg text-xs font-black outline-hidden"
+                      >
+                        <option value="">Select Group</option>
+                        {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map((bg) => (
+                          <option key={bg} value={bg}>{bg}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickSaveBloodGroup(quickBloodGroup)}
+                        disabled={isSavingQuickBloodGroup || !quickBloodGroup}
+                        className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-black text-[10px] rounded-lg transition-all cursor-pointer shadow-xs"
+                      >
+                        {isSavingQuickBloodGroup ? 'Saving...' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsQuickEditingBloodGroup(false)}
+                        className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white text-[10px] rounded-lg font-bold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-950/90 text-rose-300 border border-rose-700/60 font-black text-[10px] tracking-wider uppercase shadow-xs">
+                        <Droplet className="w-3.5 h-3.5 fill-rose-400 text-rose-400 shrink-0" />
+                        Blood Group: <span className="text-white font-extrabold">{profile.blood_group || 'Not Set'}</span>
+                      </span>
+                      {(isSelf || isSuperAdminOrAdmin) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickBloodGroup(profile.blood_group || 'O+');
+                            setIsQuickEditingBloodGroup(true);
+                          }}
+                          className="px-2 py-0.5 bg-white/15 hover:bg-white/25 text-white text-[10px] font-bold rounded-md transition-all cursor-pointer flex items-center gap-1 border border-white/10"
+                          title="Change Blood Group"
+                        >
+                          <Edit3 className="w-2.5 h-2.5" /> Edit
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -451,6 +537,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                       <option value="FEMALE">Female</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Blood Group</label>
+                    <select value={editBloodGroup} onChange={(e) => setEditBloodGroup(e.target.value)} className="w-full p-2 bg-white border border-slate-200 rounded-xl font-bold outline-hidden text-xs text-slate-800">
+                      <option value="">Not Set / Select Blood Group...</option>
+                      {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map((bg) => (
+                        <option key={bg} value={bg}>{bg} Blood Group</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 {['SENIOR', 'JUNIOR'].includes(profile.role) && (
                   <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200 space-y-2">
@@ -536,6 +631,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     }`}>
                       <User className="w-3.5 h-3.5 shrink-0" />
                       {profile.gender === 'FEMALE' ? 'FEMALE' : 'MALE'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
+                        <Droplet className="w-3 h-3 text-rose-600 fill-rose-600/30" /> Blood Group
+                      </span>
+                      {(isSelf || isSuperAdminOrAdmin) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuickBloodGroup(profile.blood_group || 'O+');
+                            setIsQuickEditingBloodGroup(true);
+                          }}
+                          className="text-[10px] text-rose-600 hover:text-rose-700 font-bold underline cursor-pointer"
+                        >
+                          Change
+                        </button>
+                      )}
+                    </div>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 mt-1 text-[11px] font-black rounded-lg border ${
+                      profile.blood_group ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                    }`}>
+                      <Droplet className="w-3.5 h-3.5 text-rose-600 fill-rose-600/40 shrink-0" />
+                      {profile.blood_group || 'Not Set'}
                     </span>
                   </div>
                   {['SENIOR', 'JUNIOR'].includes(profile.role) && (

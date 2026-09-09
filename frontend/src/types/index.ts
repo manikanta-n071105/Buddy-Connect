@@ -26,6 +26,7 @@ export interface User {
   name: string;
   email: string;
   username: string;
+  
   role: UserRole;
   permissions?: string[];
   directorId?: string;
@@ -45,6 +46,7 @@ export interface User {
   is_counselor?: boolean;
   is_faculty?: boolean;
   is_disciplinary_committee?: boolean;
+  blood_group?: string;
   mustChangePassword?: boolean;
 }
 
@@ -177,3 +179,40 @@ export interface Notification {
   metadata?: any;
   created_at: string;
 }
+
+export interface BloodDonor {
+  id: string;
+  request_id: string;
+  donor_id: string;
+  donor_name?: string;
+  donor_email?: string;
+  donor_phone?: string;
+  donor_blood_group?: string;
+  donor_role?: string;
+  status: 'PLEDGED' | 'CONFIRMED' | 'CANCELLED';
+  created_at: string;
+}
+
+export interface BloodRequest {
+  id: string;
+  requester_id: string;
+  requester_name: string;
+  requester_email: string;
+  requester_role?: string;
+  patient_name: string;
+  contact_number: string;
+  blood_group: string;
+  units_needed: number;
+  urgency: 'NORMAL' | 'URGENT' | 'CRITICAL';
+  hospital_name?: string;
+  additional_notes?: string;
+  status: 'OPEN' | 'FULFILLED' | 'CANCELLED' | 'EXPIRED';
+  volunteer_count: number;
+  has_pledged?: boolean;
+  can_view_contact?: boolean;
+  is_owner?: boolean;
+  donors?: BloodDonor[];
+  created_at: string;
+  updated_at: string;
+}
+

@@ -115,7 +115,8 @@ export const login = async (req: Request, res: Response) => {
       year: studentYear,
       is_faculty: Boolean(user.is_faculty || facultyId),
       is_cr: user.is_cr || false,
-      is_counselor: user.is_counselor || false
+      is_counselor: user.is_counselor || false,
+      blood_group: user.blood_group
     };
 
     const tokens = generateTokens(payload);
@@ -143,11 +144,12 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
   }
 
   try {
-    const uRes = await query(`SELECT gender, must_change_password, COALESCE(is_cr, false) as is_cr, COALESCE(is_counselor, false) as is_counselor FROM users WHERE id = $1`, [req.user.id]);
+    const uRes = await query(`SELECT gender, must_change_password, blood_group, COALESCE(is_cr, false) as is_cr, COALESCE(is_counselor, false) as is_counselor FROM users WHERE id = $1`, [req.user.id]);
     const mustChangePassword = uRes.rows[0]?.must_change_password || false;
     const gender = uRes.rows[0]?.gender || req.user.gender;
     const isCr = uRes.rows[0]?.is_cr || false;
     const isCounselor = uRes.rows[0]?.is_counselor || false;
+    const bloodGroup = uRes.rows[0]?.blood_group || req.user.blood_group;
 
     // Load fresh permissions for the user
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [req.user.id]);
@@ -180,6 +182,7 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
           residence_status: residenceStatus,
           year: studentYear,
           gender,
+          blood_group: bloodGroup,
           is_faculty: Boolean(uRes.rows[0]?.is_faculty || req.user.facultyId),
           is_cr: isCr,
           is_counselor: isCounselor,
@@ -193,7 +196,7 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 export const changePassword = async (req: AuthenticatedRequest, res: Response) => {
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword, blood_group } = req.body;
   if (!newPassword) {
     return res.status(400).json({ success: false, message: 'New password is required', code: 'INVALID_INPUT' });
   }
@@ -212,9 +215,13 @@ export const changePassword = async (req: AuthenticatedRequest, res: Response) =
     }
 
     const hashed = await bcrypt.hash(newPassword.trim(), 10);
-    await query(`UPDATE users SET password_hash = $1, must_change_password = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [hashed, req.user!.id]);
+    if (blood_group && typeof blood_group === 'string') {
+      await query(`UPDATE users SET password_hash = $1, blood_group = $2, must_change_password = false, updated_at = CURRENT_TIMESTAMP WHERE id = $3`, [hashed, blood_group.trim().toUpperCase(), req.user!.id]);
+    } else {
+      await query(`UPDATE users SET password_hash = $1, must_change_password = false, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [hashed, req.user!.id]);
+    }
 
-    await logAudit(req.user!.id, 'CHANGE_PASSWORD', 'USER', req.user!.id, { firstTimeSetup: user.must_change_password }, req.ip);
+    await logAudit(req.user!.id, 'CHANGE_PASSWORD', 'USER', req.user!.id, { firstTimeSetup: user.must_change_password, blood_group: blood_group || null }, req.ip);
 
     res.json({ success: true, message: 'Personal password saved successfully! You can now use this password every time you log in.' });
   } catch (err: any) {

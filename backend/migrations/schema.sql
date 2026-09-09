@@ -400,3 +400,39 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+
+-- 32. USER BLOOD GROUP
+ALTER TABLE users ADD COLUMN IF NOT EXISTS blood_group VARCHAR(5);
+
+-- 33. BLOOD DONATION REQUESTS
+CREATE TABLE IF NOT EXISTS blood_requests (
+    id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    requester_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    patient_name VARCHAR(150) NOT NULL,
+    contact_number VARCHAR(30) NOT NULL,
+    blood_group VARCHAR(5) NOT NULL,
+    units_needed INT NOT NULL DEFAULT 1,
+    urgency VARCHAR(20) NOT NULL DEFAULT 'NORMAL' CHECK (urgency IN ('NORMAL', 'URGENT', 'CRITICAL')),
+    hospital_name VARCHAR(200),
+    additional_notes TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'FULFILLED', 'CANCELLED', 'EXPIRED')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_blood_requests_bg ON blood_requests(blood_group);
+CREATE INDEX IF NOT EXISTS idx_blood_requests_status ON blood_requests(status);
+CREATE INDEX IF NOT EXISTS idx_blood_requests_requester ON blood_requests(requester_id);
+
+-- 34. BLOOD DONATION VOLUNTEERS
+CREATE TABLE IF NOT EXISTS blood_donors (
+    id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    request_id VARCHAR(36) NOT NULL REFERENCES blood_requests(id) ON DELETE CASCADE,
+    donor_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'PLEDGED' CHECK (status IN ('PLEDGED', 'CONFIRMED', 'CANCELLED')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(request_id, donor_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_blood_donors_req ON blood_donors(request_id);
+CREATE INDEX IF NOT EXISTS idx_blood_donors_donor ON blood_donors(donor_id);
