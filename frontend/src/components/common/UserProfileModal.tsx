@@ -88,7 +88,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const isSuperAdminOrAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role || '');
-  const isDirector = currentUser?.role === 'DIRECTOR';
+  const isMentor = currentUser?.role === 'MENTOR';
   const isSelf = currentUser?.id === userId;
 
   // Faculty Assignment state for Junior
@@ -135,7 +135,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setEditUsername(p.username || '');
       setEditPhone(p.phone === 'Hidden for privacy' ? '' : p.phone || '');
       setEditDepartment(p.department || '');
-      setEditCodeOrReg(p.director_code || p.senior_code || p.register_number || '');
+      setEditCodeOrReg(p.mentor_code || p.senior_code || p.register_number || '');
       setEditBatch(p.batch || '');
       setEditYear(p.year || '');
       setEditResidenceStatus(p.residence_status || 'DAY_SCHOLAR');
@@ -174,7 +174,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
   if (!userId) return null;
 
-  const canEditOrDelete = isSuperAdminOrAdmin || isSelf || (isDirector && profile && ['SENIOR', 'JUNIOR', 'DIRECTOR'].includes(profile.role));
+  const canEditOrDelete = isSuperAdminOrAdmin || isSelf || (isMentor && profile && ['SENIOR', 'JUNIOR', 'MENTOR'].includes(profile.role));
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,7 +257,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
         username: editUsername,
         phone: editPhone,
         department: editDepartment,
-        directorCode: profile.role === 'DIRECTOR' ? editCodeOrReg : undefined,
+        mentorCode: profile.role === 'MENTOR' ? editCodeOrReg : undefined,
         seniorCode: profile.role === 'SENIOR' ? editCodeOrReg : undefined,
         registerNumber: profile.role === 'JUNIOR' ? editCodeOrReg : undefined,
         batch: editBatch,
@@ -371,7 +371,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                   )}
                   <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border tracking-wider uppercase shadow-2xs ${
                     profile.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
-                    profile.role === 'DIRECTOR' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
+                    profile.role === 'MENTOR' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
                     profile.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
                     'bg-emerald-950 text-emerald-300 border-emerald-700'
                   }`}>
@@ -681,13 +681,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                 </div>
 
                 {/* Role Specific Entity Details */}
-                {profile.role === 'DIRECTOR' && (
+                {profile.role === 'MENTOR' && (
                   <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-200/80 space-y-2">
                     <h5 className="font-extrabold text-indigo-900 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
-                      <Building2 className="w-4 h-4 text-indigo-600" /> Director Department Overview
+                      <Building2 className="w-4 h-4 text-indigo-600" /> Mentor Department Overview
                     </h5>
                     <div className="grid grid-cols-2 gap-2 text-slate-700 font-semibold">
-                      <p>Director Code: <strong className="text-slate-900">{profile.director_code}</strong></p>
+                      <p>Mentor Code: <strong className="text-slate-900">{profile.mentor_code}</strong></p>
                       <p>Department: <strong className="text-slate-900">{getBranchShortCode(profile.department)}</strong></p>
                     </div>
                   </div>
@@ -701,7 +701,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     <div className="grid grid-cols-2 gap-2 text-slate-700 font-semibold">
                       <p>Senior Code: <strong className="text-slate-900">{profile.senior_code}</strong></p>
                       <p>Department: <strong className="text-slate-900">{getBranchShortCode(profile.department)}</strong></p>
-                      <p>Assigned Director: <strong className="text-slate-900">{profile.director_name || 'N/A'}</strong></p>
+                      <p>Assigned Director: <strong className="text-slate-900">{profile.mentor_name || 'N/A'}</strong></p>
                     </div>
                   </div>
                 )}

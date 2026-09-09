@@ -40,7 +40,7 @@ export const getAnnouncements = async (req: AuthenticatedRequest, res: Response)
     const params: any[] = [];
 
     // Filter target audience for non-Super Admin users
-    if (['SENIOR', 'JUNIOR', 'DIRECTOR'].includes(userRole)) {
+    if (['SENIOR', 'JUNIOR', 'MENTOR'].includes(userRole)) {
       sql += ` AND (a.target_audience = 'ALL' OR a.target_audience ILIKE $${params.length + 1})`;
       params.push(`%${userRole}%`);
     }

@@ -24,7 +24,7 @@ export const EventsPage: React.FC = () => {
   const [posterUrl, setPosterUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canManageEvents = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_EVENTS') ?? false);
+  const canManageEvents = ['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_EVENTS') ?? false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);

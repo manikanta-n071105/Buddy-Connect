@@ -59,11 +59,11 @@ export const getPolls = async (req: AuthenticatedRequest, res: Response) => {
       sql += ` AND p.is_active = true AND p.expires_at > CURRENT_TIMESTAMP`;
     }
 
-    // Filter department scoping for Directors / Juniors if applicable
-    if (req.user!.role === 'DIRECTOR' && req.user!.directorId) {
-      const dRes = await query(`SELECT department FROM directors WHERE id = $1`, [req.user!.directorId]);
-      if (dRes.rowCount! > 0) {
-        const dept = dRes.rows[0].department;
+    // Filter department scoping for mentors / Juniors if applicable
+    if (req.user!.role === 'MENTOR' && req.user!.mentorId) {
+      const mRes = await query(`SELECT department FROM mentors WHERE id = $1`, [req.user!.mentorId]);
+      if (mRes.rowCount! > 0) {
+        const dept = mRes.rows[0].department;
         sql += ` AND (p.department IS NULL OR p.department = 'ALL' OR p.department = $${params.length + 1})`;
         params.push(dept);
       }

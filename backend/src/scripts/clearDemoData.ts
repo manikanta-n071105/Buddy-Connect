@@ -50,8 +50,8 @@ async function clearDemoData() {
     // 1. Delete Messages & Conversations
     await safeDelete('mentor_messages');
     await safeDelete('mentor_conversations');
-    await safeDelete('director_messages');
-    await safeDelete('director_conversations');
+    await safeDelete('mentor_messages');
+    await safeDelete('mentor_conversations');
     await safeDelete('faculty_messages');
     await safeDelete('faculty_conversations');
 
@@ -84,7 +84,7 @@ async function clearDemoData() {
     await safeDelete('juniors');
     await safeDelete('seniors');
     await safeDelete('faculty');
-    await safeDelete('directors');
+    await safeDelete('mentors');
 
     // 6. Delete Admin Permissions for non-superadmins
     await client.query(`
@@ -94,7 +94,7 @@ async function clearDemoData() {
 
     // 7. Delete All Users except Super Admin
     const delUsersRes = await client.query("DELETE FROM users WHERE role != 'SUPER_ADMIN'");
-    console.log(`Deleted ${delUsersRes.rowCount} demo user accounts (Admins, Directors, Seniors, Juniors, Faculty).`);
+    console.log(`Deleted ${delUsersRes.rowCount} demo user accounts (Admins, mentors, Seniors, Juniors, Faculty).`);
 
     // 8. Ensure mani07 SuperAdmin Account
     const maniPasswordHash = await bcrypt.hash('Manikanta@340', 10);

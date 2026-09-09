@@ -86,7 +86,7 @@ export const IssuesListPage: React.FC = () => {
   }, [statusFilter, priorityFilter, categoryFilter, search]);
 
   const escalatedIssues = issues.filter(i => i.status === 'ESCALATED');
-  const isDirectorOrAdmin = ['DIRECTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
+  const isMentorOrAdmin = ['MENTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
 
   const totalPages = Math.ceil(issues.length / pageSize) || 1;
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -113,14 +113,14 @@ export const IssuesListPage: React.FC = () => {
         )}
       </div>
 
-      {/* Director & Super Admin High Priority Escalation Banner */}
-      {isDirectorOrAdmin && escalatedIssues.length > 0 && (
+      {/* Mentor & Super Admin High Priority Escalation Banner */}
+      {isMentorOrAdmin && escalatedIssues.length > 0 && (
         <div className="bg-gradient-to-r from-rose-950 via-slate-950 to-rose-950 border-2 border-rose-600/80 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3 text-slate-100 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-xs font-black uppercase tracking-wider text-rose-400 flex items-center gap-2">
               <AlertOctagon className="w-4 h-4 text-rose-500 animate-pulse shrink-0" /> High Priority Escalated Issues ({escalatedIssues.length})
             </h3>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-600 text-white uppercase tracking-wider self-start sm:self-auto">Urgent Director Action Required</span>
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-600 text-white uppercase tracking-wider self-start sm:self-auto">Urgent Mentor Action Required</span>
           </div>
 
           <p className="text-xs text-slate-300 font-medium">
@@ -269,7 +269,7 @@ export const IssuesListPage: React.FC = () => {
                     }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>{isEscalated ? 'Resolve Director Escalation' : 'View Issue Ticket'}</span>
+                    <span>{isEscalated ? 'Resolve Mentor Escalation' : 'View Issue Ticket'}</span>
                   </Link>
                 </div>
               );
@@ -317,7 +317,7 @@ export const IssuesListPage: React.FC = () => {
                         <td className="p-3.5">
                           {isEscalated ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md animate-pulse">
-                              <Flame className="w-3 h-3 text-amber-300" /> ESCALATED TO DIRECTOR
+                              <Flame className="w-3 h-3 text-amber-300" /> ESCALATED TO MENTOR
                             </span>
                           ) : (
                             <StatusBadge status={iss.status} type="issue" />

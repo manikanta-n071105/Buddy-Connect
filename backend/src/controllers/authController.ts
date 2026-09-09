@@ -41,8 +41,8 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
     }
 
-    // Fetch entity specific IDs (directorId, seniorId, juniorId, facultyId)
-    let directorId: string | undefined;
+    // Fetch entity specific IDs (mentorId, seniorId, juniorId, facultyId)
+    let mentorId: string | undefined;
     let seniorId: string | undefined;
     let juniorId: string | undefined;
     let facultyId: string | undefined;
@@ -55,28 +55,28 @@ export const login = async (req: Request, res: Response) => {
     let residenceStatus: 'DAY_SCHOLAR' | 'HOSTELLER' | undefined;
     let studentYear: string | undefined;
 
-    if (user.role === 'DIRECTOR') {
-      const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
-      if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
+    if (user.role === 'MENTOR') {
+      const mentorRes = await query(`SELECT id FROM mentors WHERE user_id = $1`, [user.id]);
+      if (mentorRes.rowCount! > 0) mentorId = mentorRes.rows[0].id;
     } else if (user.role === 'SENIOR') {
-      const senRes = await query(`SELECT id, director_id, residence_status FROM seniors WHERE user_id = $1`, [user.id]);
+      const senRes = await query(`SELECT id, mentor_id, residence_status FROM seniors WHERE user_id = $1`, [user.id]);
       if (senRes.rowCount! > 0) {
         seniorId = senRes.rows[0].id;
-        directorId = senRes.rows[0].director_id;
+        mentorId = senRes.rows[0].mentor_id;
         residenceStatus = senRes.rows[0].residence_status;
         const cntRes = await query(`SELECT COUNT(*) FROM juniors WHERE senior_id = $1`, [seniorId]);
         assignedJuniorsCount = parseInt(cntRes.rows[0].count);
       }
     } else if (user.role === 'JUNIOR') {
       const junRes = await query(
-        `SELECT j.id, j.senior_id, j.residence_status, j.year, s.director_id 
+        `SELECT j.id, j.senior_id, j.residence_status, j.year, s.mentor_id 
          FROM juniors j LEFT JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`,
         [user.id]
       );
       if (junRes.rowCount! > 0) {
         juniorId = junRes.rows[0].id;
         seniorId = junRes.rows[0].senior_id;
-        directorId = junRes.rows[0].director_id;
+        mentorId = junRes.rows[0].mentor_id;
         residenceStatus = junRes.rows[0].residence_status;
         studentYear = junRes.rows[0].year;
       }
@@ -105,7 +105,7 @@ export const login = async (req: Request, res: Response) => {
       username: user.username,
       role: user.role,
       permissions,
-      directorId,
+      mentorId,
       seniorId,
       juniorId,
       facultyId,
@@ -241,7 +241,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     const user = userRes.rows[0];
-    let directorId: string | undefined;
+    let mentorId: string | undefined;
     let seniorId: string | undefined;
     let juniorId: string | undefined;
 
@@ -249,21 +249,21 @@ export const refreshToken = async (req: Request, res: Response) => {
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
     const permissions: string[] = permRes.rows.map(r => r.permission);
 
-    if (user.role === 'DIRECTOR') {
-      const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
-      if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
+    if (user.role === 'MENTOR') {
+      const mentorRes = await query(`SELECT id FROM mentors WHERE user_id = $1`, [user.id]);
+      if (mentorRes.rowCount! > 0) mentorId = mentorRes.rows[0].id;
     } else if (user.role === 'SENIOR') {
-      const senRes = await query(`SELECT id, director_id FROM seniors WHERE user_id = $1`, [user.id]);
+      const senRes = await query(`SELECT id, mentor_id FROM seniors WHERE user_id = $1`, [user.id]);
       if (senRes.rowCount! > 0) {
         seniorId = senRes.rows[0].id;
-        directorId = senRes.rows[0].director_id;
+        mentorId = senRes.rows[0].mentor_id;
       }
     } else if (user.role === 'JUNIOR') {
-      const junRes = await query(`SELECT j.id, j.senior_id, s.director_id FROM juniors j JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`, [user.id]);
+      const junRes = await query(`SELECT j.id, j.senior_id, s.mentor_id FROM juniors j JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`, [user.id]);
       if (junRes.rowCount! > 0) {
         juniorId = junRes.rows[0].id;
         seniorId = junRes.rows[0].senior_id;
-        directorId = junRes.rows[0].director_id;
+        mentorId = junRes.rows[0].mentor_id;
       }
     }
 
@@ -274,7 +274,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       username: user.username,
       role: user.role,
       permissions,
-      directorId,
+      mentorId,
       seniorId,
       juniorId
     };

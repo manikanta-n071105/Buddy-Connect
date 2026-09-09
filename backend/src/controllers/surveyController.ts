@@ -69,9 +69,9 @@ export const getSupportIndicators = async (req: AuthenticatedRequest, res: Respo
     if (req.user!.role === 'SENIOR') {
       sql += ` AND j.senior_id = $1`;
       params.push(req.user!.seniorId);
-    } else if (req.user!.role === 'DIRECTOR') {
-      sql += ` AND s.director_id = $1`;
-      params.push(req.user!.directorId);
+    } else if (req.user!.role === 'MENTOR') {
+      sql += ` AND s.mentor_id = $1`;
+      params.push(req.user!.mentorId);
     }
 
     const result = await query(sql, params);

@@ -25,7 +25,7 @@ export const OnboardingPage: React.FC = () => {
   const [itemCategory, setItemCategory] = useState('ACADEMIC');
   const [isRequired, setIsRequired] = useState(true);
 
-  const canManageOnboarding = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_ONBOARDING') ?? false);
+  const canManageOnboarding = ['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_ONBOARDING') ?? false);
   const isSenior = user?.role === 'SENIOR';
 
   // Fetch Assigned Juniors for Senior Mentor
@@ -130,8 +130,8 @@ export const OnboardingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Senior / Director Mentor Aggregated Average Banner */}
-      {['SENIOR', 'DIRECTOR'].includes(user?.role || '') && data && (
+      {/* Senior / Mentor Aggregated Average Banner */}
+      {['SENIOR', 'MENTOR'].includes(user?.role || '') && data && (
         <div className="bg-gradient-to-r from-indigo-950 to-slate-900 text-white p-6 rounded-2xl shadow-xl flex items-center justify-between gap-4 border border-indigo-800/80">
           <div className="space-y-1">
             <h3 className="text-sm font-black tracking-tight flex items-center gap-2">

@@ -8,11 +8,11 @@ async function seed() {
   try {
     // 1. System Settings
     const settings = [
-      { key: 'MAX_SENIORS_PER_DIRECTOR', value: '8', description: 'Maximum Seniors manageable per Director' },
+      { key: 'MAX_SENIORS_PER_MENTOR', value: '8', description: 'Maximum Seniors manageable per Director' },
       { key: 'MAX_JUNIORS_PER_SENIOR', value: '8', description: 'Maximum Juniors assigned per Senior mentor' },
       { key: 'MAX_JUNIORS_PER_FACULTY', value: '5', description: 'Maximum Juniors assigned per Faculty mentor' },
-      { key: 'ISSUE_ESCALATION_HOURS', value: '24', description: 'Hours before unhandled issue escalates to Director' },
-      { key: 'CRITICAL_ISSUE_ESCALATION_HOURS', value: '6', description: 'Hours before critical issue escalates to Director/SuperAdmin' },
+      { key: 'ISSUE_ESCALATION_HOURS', value: '24', description: 'Hours before unhandled issue escalates to Mentor' },
+      { key: 'CRITICAL_ISSUE_ESCALATION_HOURS', value: '6', description: 'Hours before critical issue escalates to Mentor/SuperAdmin' },
       { key: 'VOTING_DURATION_HOURS', value: '48', description: 'Hours resolution voting remains open' },
       { key: 'MINIMUM_VOTES', value: '1', description: 'Minimum votes required to determine auto close' },
       { key: 'SATISFACTION_THRESHOLD', value: '60', description: 'Percentage of Satisfied votes needed to auto close issue' },
@@ -50,7 +50,7 @@ async function seed() {
     const onboardingItems = [
       { title: 'College ID received', category: 'General', seq: 1 },
       { title: 'Senior introduction completed', category: 'Mentorship', seq: 2 },
-      { title: 'Director introduction completed', category: 'Mentorship', seq: 3 },
+      { title: 'Mentor introduction completed', category: 'Mentorship', seq: 3 },
       { title: 'Campus & Facilities tour', category: 'Orientation', seq: 4 },
       { title: 'Library portal & physical orientation', category: 'Academic', seq: 5 },
       { title: 'Hostel rules & warden orientation', category: 'Residence', seq: 6 },
@@ -130,41 +130,41 @@ async function seed() {
         await client.query(`INSERT INTO admin_permissions (user_id, permission) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [admin1Id, p]);
       }
 
-      // Directors
+      // mentors
       const dir1User = await client.query(
         `INSERT INTO users (name, email, username, password_hash, phone, role)
-         VALUES ('Dr. Robert Vance', 'director.cs@juniorconnect.edu', 'director1', $1, '9876543210', 'DIRECTOR')
+         VALUES ('Dr. Robert Vance', 'mentor.cs@juniorconnect.edu', 'mentor1', $1, '9876543210', 'MENTOR')
          ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash RETURNING id`,
         [defaultPasswordHash]
       );
       const dir1Res = await client.query(
-        `INSERT INTO directors (user_id, director_code, department)
-         VALUES ($1, 'DIR-CSE-01', 'Computer Science & Engineering')
-         ON CONFLICT (director_code) DO UPDATE SET department = EXCLUDED.department RETURNING id`,
+        `INSERT INTO mentors (user_id, mentor_code, department)
+         VALUES ($1, 'MNT-CSE-01', 'Computer Science & Engineering')
+         ON CONFLICT (mentor_code) DO UPDATE SET department = EXCLUDED.department RETURNING id`,
         [dir1User.rows[0].id]
       );
-      const dir1Id = dir1Res.rows[0].id;
+      const mentor1Id = dir1Res.rows[0].id;
 
       const dir2User = await client.query(
         `INSERT INTO users (name, email, username, password_hash, phone, role)
-         VALUES ('Dr. Sarah Jenkins', 'director.ece@juniorconnect.edu', 'director2', $1, '9876543211', 'DIRECTOR')
+         VALUES ('Dr. Sarah Jenkins', 'mentor.ece@juniorconnect.edu', 'mentor2', $1, '9876543211', 'MENTOR')
          ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash RETURNING id`,
         [defaultPasswordHash]
       );
       const dir2Res = await client.query(
-        `INSERT INTO directors (user_id, director_code, department)
-         VALUES ($1, 'DIR-ECE-02', 'Electronics & Communication')
-         ON CONFLICT (director_code) DO UPDATE SET department = EXCLUDED.department RETURNING id`,
+        `INSERT INTO mentors (user_id, mentor_code, department)
+         VALUES ($1, 'MNT-ECE-02', 'Electronics & Communication')
+         ON CONFLICT (mentor_code) DO UPDATE SET department = EXCLUDED.department RETURNING id`,
         [dir2User.rows[0].id]
       );
-      const dir2Id = dir2Res.rows[0].id;
+      const mentor2Id = dir2Res.rows[0].id;
 
       // Seniors
       const seniorsData = [
-        { name: 'Alex Harrison', email: 'alex.sen@juniorconnect.edu', username: 'senior1', code: 'SEN-CSE-01', dirId: dir1Id, dept: 'Computer Science & Engineering' },
-        { name: 'Elena Rostova', email: 'elena.sen@juniorconnect.edu', username: 'senior2', code: 'SEN-CSE-02', dirId: dir1Id, dept: 'Computer Science & Engineering' },
-        { name: 'Michael Chang', email: 'michael.sen@juniorconnect.edu', username: 'senior3', code: 'SEN-ECE-01', dirId: dir2Id, dept: 'Electronics & Communication' },
-        { name: 'Sophia Martinez', email: 'sophia.sen@juniorconnect.edu', username: 'senior4', code: 'SEN-ECE-02', dirId: dir2Id, dept: 'Electronics & Communication' }
+        { name: 'Alex Harrison', email: 'alex.sen@juniorconnect.edu', username: 'senior1', code: 'SEN-CSE-01', mentorRefId: mentor1Id, dept: 'Computer Science & Engineering' },
+        { name: 'Elena Rostova', email: 'elena.sen@juniorconnect.edu', username: 'senior2', code: 'SEN-CSE-02', mentorRefId: mentor1Id, dept: 'Computer Science & Engineering' },
+        { name: 'Michael Chang', email: 'michael.sen@juniorconnect.edu', username: 'senior3', code: 'SEN-ECE-01', mentorRefId: mentor2Id, dept: 'Electronics & Communication' },
+        { name: 'Sophia Martinez', email: 'sophia.sen@juniorconnect.edu', username: 'senior4', code: 'SEN-ECE-02', mentorRefId: mentor2Id, dept: 'Electronics & Communication' }
       ];
 
       const seniorIds: string[] = [];
@@ -177,10 +177,10 @@ async function seed() {
           [sen.name, sen.email, sen.username, defaultPasswordHash]
         );
         const s = await client.query(
-          `INSERT INTO seniors (user_id, senior_code, director_id, department)
+          `INSERT INTO seniors (user_id, senior_code, mentor_id, department)
            VALUES ($1, $2, $3, $4)
-           ON CONFLICT (senior_code) DO UPDATE SET director_id = EXCLUDED.director_id RETURNING id`,
-          [u.rows[0].id, sen.code, sen.dirId, sen.dept]
+           ON CONFLICT (senior_code) DO UPDATE SET mentor_id = EXCLUDED.mentor_id RETURNING id`,
+          [u.rows[0].id, sen.code, sen.mentorRefId, sen.dept]
         );
         seniorIds.push(s.rows[0].id);
       }
@@ -220,11 +220,11 @@ async function seed() {
       }
     });
 
-    logger.info('Default hierarchy (SuperAdmin, Admins, Directors, Seniors, Juniors) seeded.');
+    logger.info('Default hierarchy (SuperAdmin, Admins, mentors, Seniors, Juniors) seeded.');
 
     // 7. Seed Sample Issue & 3-Color Votes
     const catRes = await query(`SELECT id FROM issue_categories WHERE name = 'Hostel' LIMIT 1`);
-    const junRes = await query(`SELECT j.id as junior_id, j.user_id as junior_user_id, j.senior_id, s.director_id, s.user_id as senior_user_id FROM juniors j JOIN seniors s ON j.senior_id = s.id LIMIT 1`);
+    const junRes = await query(`SELECT j.id as junior_id, j.user_id as junior_user_id, j.senior_id, s.mentor_id, s.user_id as senior_user_id FROM juniors j JOIN seniors s ON j.senior_id = s.id LIMIT 1`);
 
     if (catRes.rowCount! > 0 && junRes.rowCount! > 0) {
       const jun = junRes.rows[0];
@@ -232,14 +232,14 @@ async function seed() {
 
       const issueRes = await query(
         `INSERT INTO issues (
-          issue_number, reported_by_id, junior_id, senior_id, director_id,
+          issue_number, reported_by_id, junior_id, senior_id, mentor_id,
           category_id, title, description, priority, status, assigned_to_id, resolution
         ) VALUES (
           'JC-1001', $1, $2, $3, $4,
           $5, 'Hostel Room Water Supply Pressure Issue', 'Water pressure in Block C room 304 is low during morning hours.',
           'HIGH', 'VOTING', $6, 'Plumbing maintenance team inspected and replaced main valve on Block C line.'
         ) ON CONFLICT (issue_number) DO UPDATE SET status = EXCLUDED.status RETURNING id`,
-        [jun.junior_user_id, jun.junior_id, jun.senior_id, jun.director_id, categoryId, jun.senior_user_id]
+        [jun.junior_user_id, jun.junior_id, jun.senior_id, jun.mentor_id, categoryId, jun.senior_user_id]
       );
 
       const issueId = issueRes.rows[0].id;

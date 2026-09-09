@@ -40,13 +40,13 @@ export const getMeetings = async (req: AuthenticatedRequest, res: Response) => {
       const sId = jRes.rows[0].senior_id;
       const fId = jRes.rows[0].faculty_id;
 
-      // Find user IDs for Senior, Faculty, and Directors
+      // Find user IDs for Senior, Faculty, and mentors
       const mentorUserIdsRes = await query(
         `SELECT user_id FROM seniors WHERE id = $1
          UNION
          SELECT user_id FROM faculty WHERE id = $2
          UNION
-         SELECT user_id FROM directors`,
+         SELECT user_id FROM mentors`,
         [sId || '', fId || '']
       );
       const mentorUserIds = mentorUserIdsRes.rows.map(r => r.user_id);
@@ -88,10 +88,10 @@ export const createMeeting = async (req: AuthenticatedRequest, res: Response) =>
   const { title, agenda, meetingDate, location, meetingLink, targetJuniorId } = req.body;
   const user = req.user!;
 
-  if (!['SENIOR', 'FACULTY', 'DIRECTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
+  if (!['SENIOR', 'FACULTY', 'MENTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
     return res.status(403).json({
       success: false,
-      message: 'Access denied: Only Mentors and Directors can schedule meetings',
+      message: 'Access denied: Only Mentors and mentors can schedule meetings',
       code: 'FORBIDDEN'
     });
   }
@@ -237,7 +237,7 @@ export const summarizeMeetingHearing = async (req: AuthenticatedRequest, res: Re
 
   try {
     const rawNotes = String(hearingNotes).trim();
-    const attendeesStr = Array.isArray(attendees) ? attendees.join(', ') : (attendees || 'Super Admin, Directors, Mentors');
+    const attendeesStr = Array.isArray(attendees) ? attendees.join(', ') : (attendees || 'Super Admin, mentors, Mentors');
 
     let executiveSummary = '';
     let keyHighlights = '';

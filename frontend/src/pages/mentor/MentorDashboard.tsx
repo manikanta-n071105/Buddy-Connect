@@ -8,7 +8,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pi
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
-export const DirectorDashboard: React.FC = () => {
+export const MentorDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSeniorModal, setShowSeniorModal] = useState(false);
@@ -80,7 +80,7 @@ export const DirectorDashboard: React.FC = () => {
     }
   };
 
-  if (isLoading || !stats) return <LoadingState message="Loading Director Workspace..." />;
+  if (isLoading || !stats) return <LoadingState message="Loading Mentor Workspace..." />;
 
   const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
   const rawPieData = [
@@ -100,7 +100,7 @@ export const DirectorDashboard: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-[10px] font-extrabold uppercase tracking-widest">
             <Building2 className="w-3 h-3" /> Department Leadership
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">Director Management Dashboard</h1>
+          <h1 className="text-2xl font-black tracking-tight text-white">Mentor Management Dashboard</h1>
           <p className="text-xs text-slate-300">Oversee Senior Mentors, department metrics, and resolution scorecards</p>
         </div>
         <button
@@ -111,7 +111,7 @@ export const DirectorDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Aggregated Summary Cards for Director */}
+      {/* Aggregated Summary Cards for Mentor */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <SpotlightCard spotlightColor="rgba(100, 116, 139, 0.15)" className="p-5">
           <div className="flex items-center justify-between">

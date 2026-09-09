@@ -24,10 +24,10 @@ interface SeniorNode {
 }
 
 interface DirectorNode {
-  director_id: string;
+  mentor_id: string;
   user_id?: string;
-  director_code: string;
-  director_name: string;
+  mentor_code: string;
+  mentor_name: string;
   director_email: string;
   department: string;
   seniors: SeniorNode[];
@@ -48,7 +48,7 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
   onTransferJunior
 }) => {
   const [expandedDirectors, setExpandedDirectors] = useState<Record<string, boolean>>({
-    [data[0]?.director_id || '']: true
+    [data[0]?.mentor_id || '']: true
   });
 
   const [expandedSeniors, setExpandedSeniors] = useState<Record<string, boolean>>({});
@@ -65,13 +65,13 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
   return (
     <div className="space-y-4">
       {data.map(dir => {
-        const isDirExpanded = !!expandedDirectors[dir.director_id];
+        const isDirExpanded = !!expandedDirectors[dir.mentor_id];
         return (
-          <div key={dir.director_id} className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
+          <div key={dir.mentor_id} className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
             {/* Director Node Header */}
             <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <button onClick={() => toggleDirector(dir.director_id)} className="p-1 hover:bg-slate-800 rounded">
+                <button onClick={() => toggleDirector(dir.mentor_id)} className="p-1 hover:bg-slate-800 rounded">
                   {isDirExpanded ? (
                     <ChevronDown className="w-5 h-5 text-indigo-400" />
                   ) : (
@@ -86,10 +86,10 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
                     onClick={() => dir.user_id && setSelectedProfileId(dir.user_id)}
                     className="font-bold text-sm tracking-wide hover:underline cursor-pointer flex items-center gap-1.5"
                   >
-                    {dir.director_name}
+                    {dir.mentor_name}
                     <Eye className="w-3.5 h-3.5 text-indigo-400 opacity-80" />
                   </h3>
-                  <p className="text-xs text-slate-300 font-medium">Director • {dir.department} ({dir.director_code})</p>
+                  <p className="text-xs text-slate-300 font-medium">Mentor • {dir.department} ({dir.mentor_code})</p>
                 </div>
               </div>
 

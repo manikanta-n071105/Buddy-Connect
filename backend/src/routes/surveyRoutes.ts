@@ -7,7 +7,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', getSurveys);
-router.get('/support-indicators', authorizeRole('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR'), getSupportIndicators);
+router.get('/support-indicators', authorizeRole('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR'), getSupportIndicators);
 router.get('/:id', getSurveyDetails);
 router.post('/:id/submit', submitSurvey);
 

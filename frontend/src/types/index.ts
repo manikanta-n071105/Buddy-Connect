@@ -19,7 +19,7 @@ export const getBranchShortCode = (dept?: string) => {
   return dept;
 };
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'DIRECTOR' | 'SENIOR' | 'JUNIOR' | 'FACULTY' | 'WARDEN';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MENTOR' | 'SENIOR' | 'JUNIOR' | 'FACULTY' | 'WARDEN';
 
 export interface User {
   id: string;
@@ -29,7 +29,7 @@ export interface User {
   
   role: UserRole;
   permissions?: string[];
-  directorId?: string;
+  mentorId?: string;
   seniorId?: string;
   juniorId?: string;
   facultyId?: string;
@@ -94,7 +94,7 @@ export interface Issue {
   reported_by_id: string;
   junior_id: string;
   senior_id: string;
-  director_id: string;
+  mentor_id: string;
   category_id: string;
   category_name?: string;
   title: string;
@@ -106,7 +106,7 @@ export interface Issue {
   junior_name?: string;
   junior_email?: string;
   senior_name?: string;
-  director_name?: string;
+  mentor_name?: string;
   resolution?: string;
   resolution_notes?: string;
   resolved_at?: string;

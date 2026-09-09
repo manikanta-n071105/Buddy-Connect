@@ -67,8 +67,8 @@ async function seedJntuaLoadData() {
 
     await safeDelete('mentor_messages');
     await safeDelete('mentor_conversations');
-    await safeDelete('director_messages');
-    await safeDelete('director_conversations');
+    await safeDelete('mentor_messages');
+    await safeDelete('mentor_conversations');
     await safeDelete('faculty_messages');
     await safeDelete('faculty_conversations');
     await safeDelete('mentorship_meetings');
@@ -88,36 +88,36 @@ async function seedJntuaLoadData() {
     await safeDelete('juniors');
     await safeDelete('seniors');
     await safeDelete('faculty');
-    await safeDelete('directors');
+    await safeDelete('mentors');
     await client.query("DELETE FROM users WHERE role != 'SUPER_ADMIN'");
 
     console.log('Generating JNTUA Load Testing Data (01 to D2)...');
 
     const defaultPassHash = await bcrypt.hash('Password123!', 5);
 
-    // 1. Departments & Directors
+    // 1. Departments & mentors
     const departments = [
-      { name: 'Computer Science & Engineering', code: 'CSE', dirName: 'Dr. R. V. Sharma', dirEmail: 'director.cse@sseptp.org', dirCode: 'DIR-CSE-01' },
-      { name: 'Electronics & Communication', code: 'ECE', dirName: 'Dr. K. S. Rao', dirEmail: 'director.ece@sseptp.org', dirCode: 'DIR-ECE-02' },
-      { name: 'Electrical & Electronics', code: 'EEE', dirName: 'Dr. M. V. Reddy', dirEmail: 'director.eee@sseptp.org', dirCode: 'DIR-EEE-03' }
+      { name: 'Computer Science & Engineering', code: 'CSE', mentorName: 'Dr. R. V. Sharma', mentorEmail: 'mentor.cse@sseptp.org', mentorCode: 'MNT-CSE-01' },
+      { name: 'Electronics & Communication', code: 'ECE', mentorName: 'Dr. K. S. Rao', mentorEmail: 'mentor.ece@sseptp.org', mentorCode: 'MNT-ECE-02' },
+      { name: 'Electrical & Electronics', code: 'EEE', mentorName: 'Dr. M. V. Reddy', mentorEmail: 'mentor.eee@sseptp.org', mentorCode: 'MNT-EEE-03' }
     ];
 
-    const directorMap: { [code: string]: string } = {};
+    const mentorMap: { [code: string]: string } = {};
 
     for (const dept of departments) {
       const uRes = await client.query(
         `INSERT INTO users (name, email, username, password_hash, phone, role)
-         VALUES ($1, $2, $3, $4, '9876500000', 'DIRECTOR')
+         VALUES ($1, $2, $3, $4, '9876500000', 'MENTOR')
          ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name RETURNING id`,
-        [dept.dirName, dept.dirEmail, dept.dirEmail.split('@')[0], defaultPassHash]
+        [dept.mentorName, dept.mentorEmail, dept.mentorEmail.split('@')[0], defaultPassHash]
       );
-      const dRes = await client.query(
-        `INSERT INTO directors (user_id, director_code, department)
+      const mRes = await client.query(
+        `INSERT INTO mentors (user_id, mentor_code, department)
          VALUES ($1, $2, $3)
-         ON CONFLICT (director_code) DO UPDATE SET department = EXCLUDED.department RETURNING id`,
-        [uRes.rows[0].id, dept.dirCode, dept.name]
+         ON CONFLICT (mentor_code) DO UPDATE SET department = EXCLUDED.department RETURNING id`,
+        [uRes.rows[0].id, dept.mentorCode, dept.name]
       );
-      directorMap[dept.code] = dRes.rows[0].id;
+      mentorMap[dept.code] = mRes.rows[0].id;
     }
 
     // 2. Faculty Mentors (2 per department)
@@ -174,7 +174,7 @@ async function seedJntuaLoadData() {
       uRes.rows.forEach(r => { userMap[r.email] = r.id; });
 
       const senValues: string[] = [];
-      const senParams: any[] = [directorMap[dept.code], dept.name];
+      const senParams: any[] = [mentorMap[dept.code], dept.name];
       let sIdx = 3;
 
       for (let i = 0; i < seniorRolls.length; i++) {
@@ -187,9 +187,9 @@ async function seedJntuaLoadData() {
       }
 
       const sRes = await client.query(
-        `INSERT INTO seniors (user_id, senior_code, director_id, department)
+        `INSERT INTO seniors (user_id, senior_code, mentor_id, department)
          VALUES ${senValues.join(', ')}
-         ON CONFLICT (user_id) DO UPDATE SET director_id = EXCLUDED.director_id RETURNING id`,
+         ON CONFLICT (user_id) DO UPDATE SET mentor_id = EXCLUDED.mentor_id RETURNING id`,
         senParams
       );
 
@@ -255,7 +255,7 @@ async function seedJntuaLoadData() {
     }
 
     console.log(`✅ JNTUA Load Test Data Populated Successfully!`);
-    console.log(`- Directors: ${departments.length}`);
+    console.log(`- mentors: ${departments.length}`);
     console.log(`- Faculty Mentors: 6`);
     console.log(`- Senior Mentors: 396`);
     console.log(`- Junior Students: ${totalJuniors} (01 to D2 series)`);

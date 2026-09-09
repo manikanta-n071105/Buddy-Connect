@@ -46,7 +46,7 @@ export const SuperAdminDashboard: React.FC = () => {
     meetingType: 'HEARING',
     location: 'Super Admin Boardroom',
     chairpersonName: user?.name || 'Super Administrator',
-    attendees: 'Super Admin, Department Directors, Mentors',
+    attendees: 'Super Admin, Department mentors, Mentors',
     hearingNotes: '',
     customDecisions: ''
   });
@@ -110,7 +110,7 @@ export const SuperAdminDashboard: React.FC = () => {
       'Reporter (Junior)',
       'Department',
       'Assigned Senior',
-      'Director',
+      'MENTOR',
       'Resolution Notes',
       'Date Reported',
       'Last Updated'
@@ -126,7 +126,7 @@ export const SuperAdminDashboard: React.FC = () => {
       `"${i.junior_name || ''} (@${i.junior_username || ''})"`,
       `"${i.junior_department || ''}"`,
       `"${i.senior_name || ''}"`,
-      `"${i.director_name || ''}"`,
+      `"${i.mentor_name || ''}"`,
       `"${(i.resolution || '').replace(/"/g, '""')}"`,
       `"${i.created_at ? new Date(i.created_at).toLocaleDateString() : ''}"`,
       `"${i.updated_at ? new Date(i.updated_at).toLocaleDateString() : ''}"`
@@ -266,7 +266,7 @@ export const SuperAdminDashboard: React.FC = () => {
         meetingType: 'HEARING',
         location: 'Super Admin Boardroom',
         chairpersonName: user?.name || 'Super Administrator',
-        attendees: 'Super Admin, Department Directors, Mentors',
+        attendees: 'Super Admin, Department mentors, Mentors',
         hearingNotes: '',
         customDecisions: ''
       });
@@ -678,13 +678,13 @@ ${mom.decisions_reached || mom.decisionsReached}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <SpotlightCard spotlightColor="rgba(79, 70, 229, 0.15)" className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total Directors</span>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total mentors</span>
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center transition-transform hover:scale-110">
                   <Building2 className="w-5 h-5" />
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight">
-                <AnimatedCounter value={stats.totalDirectors} />
+                <AnimatedCounter value={stats.totalMentors} />
               </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Department Heads</div>
             </SpotlightCard>
@@ -934,7 +934,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                       type="text"
                       value={momForm.attendees}
                       onChange={(e) => setMomForm({ ...momForm, attendees: e.target.value })}
-                      placeholder="Super Admin, CSE Director, Faculty Advisor, Junior Student"
+                      placeholder="Super Admin, CSE Mentor, Faculty Advisor, Junior Student"
                       className="w-full p-2.5 bg-slate-950 text-white border border-slate-800 rounded-xl text-xs font-semibold outline-hidden focus:border-indigo-500"
                     />
                   </div>
@@ -972,10 +972,10 @@ ${mom.decisions_reached || mom.decisionsReached}
 
                       <button
                         type="button"
-                        onClick={() => insertNotePreset('Director Input')}
+                        onClick={() => insertNotePreset('Mentor Input')}
                         className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] font-bold"
                       >
-                        + Director
+                        + Mentor
                       </button>
                     </div>
                   </div>
@@ -1304,7 +1304,7 @@ ${mom.decisions_reached || mom.decisionsReached}
 
                   <div className="bg-rose-50 p-3.5 rounded-2xl border border-rose-200">
                     <span className="text-[10px] font-black uppercase text-rose-900 tracking-wider flex items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> Escalated to Director
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> ESCALATED TO MENTOR
                     </span>
                     <p className="text-2xl font-black text-rose-700 mt-1">
                       {reportData.unsolvedIssues.filter((i: any) => i.status === 'ESCALATED').length}
@@ -1436,7 +1436,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                                   <div className="bg-amber-100/60 p-2 rounded-xl border border-amber-200 text-amber-950 text-[11px]">
                                     <strong className="font-extrabold text-amber-900 block uppercase text-[9px] tracking-wider">Pending Action:</strong>
                                     {issue.status === 'ESCALATED' ? (
-                                      <span className="text-rose-700 font-bold">Escalated to Department Director (Level {issue.escalation_level || 1})</span>
+                                      <span className="text-rose-700 font-bold">Escalated to Department Mentor (Level {issue.escalation_level || 1})</span>
                                     ) : (
                                       <span>Pending mentor review & solution</span>
                                     )}

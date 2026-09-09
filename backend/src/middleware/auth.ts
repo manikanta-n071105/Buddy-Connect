@@ -37,7 +37,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
     }
 
     const user = userRes.rows[0];
-    let directorId = payload.directorId;
+    let mentorId = payload.mentorId;
     let seniorId = payload.seniorId;
     let juniorId = payload.juniorId;
     let facultyId = payload.facultyId;
@@ -46,22 +46,22 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
     const permissions: string[] = permRes.rows.map(r => r.permission);
 
-    if (!directorId && !seniorId && !juniorId && !facultyId) {
-      if (user.role === 'DIRECTOR') {
-        const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
-        if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
+    if (!mentorId && !seniorId && !juniorId && !facultyId) {
+      if (user.role === 'MENTOR') {
+        const mentorRes = await query(`SELECT id FROM mentors WHERE user_id = $1`, [user.id]);
+        if (mentorRes.rowCount! > 0) mentorId = mentorRes.rows[0].id;
       } else if (user.role === 'FACULTY') {
         const facRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
         if (facRes.rowCount! > 0) facultyId = facRes.rows[0].id;
       } else if (user.role === 'SENIOR') {
-        const senRes = await query(`SELECT id, director_id FROM seniors WHERE user_id = $1`, [user.id]);
+        const senRes = await query(`SELECT id, mentor_id FROM seniors WHERE user_id = $1`, [user.id]);
         if (senRes.rowCount! > 0) {
           seniorId = senRes.rows[0].id;
-          directorId = senRes.rows[0].director_id;
+          mentorId = senRes.rows[0].mentor_id;
         }
       } else if (user.role === 'JUNIOR') {
         const junRes = await query(
-          `SELECT j.id, j.senior_id, j.faculty_id, s.director_id
+          `SELECT j.id, j.senior_id, j.faculty_id, s.mentor_id
            FROM juniors j
            LEFT JOIN seniors s ON j.senior_id = s.id
            WHERE j.user_id = $1`,
@@ -70,7 +70,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
         if (junRes.rowCount! > 0) {
           juniorId = junRes.rows[0].id;
           seniorId = junRes.rows[0].senior_id;
-          directorId = junRes.rows[0].director_id;
+          mentorId = junRes.rows[0].mentor_id;
           facultyId = junRes.rows[0].faculty_id;
         }
       }
@@ -86,7 +86,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
       is_counselor: Boolean(user.is_counselor),
       is_disciplinary_committee: Boolean(user.is_disciplinary_committee),
       permissions,
-      directorId,
+      mentorId,
       seniorId,
       juniorId,
       facultyId

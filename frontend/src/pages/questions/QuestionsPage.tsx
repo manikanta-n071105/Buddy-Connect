@@ -28,7 +28,7 @@ export const QuestionsPage: React.FC = () => {
   const [qCategory, setQCategory] = useState('GENERAL');
   const [qAnswerGuide, setQAnswerGuide] = useState('');
 
-  const canManageQuestions = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_QUESTIONS') ?? false);
+  const canManageQuestions = ['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_QUESTIONS') ?? false);
   const isSenior = user?.role === 'SENIOR';
 
   // Fetch Assigned Juniors for Senior Mentor
@@ -148,8 +148,8 @@ export const QuestionsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Senior / Director Mentor Aggregated Questions Average Banner */}
-      {['SENIOR', 'DIRECTOR'].includes(user?.role || '') && (
+      {/* Senior / Mentor Aggregated Questions Average Banner */}
+      {['SENIOR', 'MENTOR'].includes(user?.role || '') && (
         <div className="bg-gradient-to-r from-emerald-950 to-slate-900 text-white p-6 rounded-2xl shadow-xl flex items-center justify-between gap-4 border border-emerald-800/80">
           <div className="space-y-1">
             <h3 className="text-sm font-black tracking-tight flex items-center gap-2">

@@ -179,7 +179,7 @@ const generateFrontTexture = (user: User | null) => {
   const roleColor =
     user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN'
       ? '#dc2626'
-      : user?.role === 'DIRECTOR'
+      : user?.role === 'MENTOR'
       ? '#d97706'
       : user?.role === 'FACULTY' || user?.role === 'WARDEN'
       ? '#059669'

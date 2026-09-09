@@ -147,7 +147,7 @@ export const getQuizzes = async (req: AuthenticatedRequest, res: Response) => {
   try {
     await ensureQuizTables();
 
-    if (req.user!.role === 'FACULTY' || req.user!.role === 'SUPER_ADMIN' || req.user!.role === 'ADMIN' || req.user!.role === 'DIRECTOR') {
+    if (req.user!.role === 'FACULTY' || req.user!.role === 'SUPER_ADMIN' || req.user!.role === 'ADMIN' || req.user!.role === 'MENTOR') {
       let facultyId = req.user!.facultyId;
       if (!facultyId && req.user!.role === 'FACULTY') {
         const fRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [req.user!.id]);

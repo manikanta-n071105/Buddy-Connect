@@ -411,7 +411,7 @@ export const MentalHealthPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: COUNSELOR REQUESTS HUB (COUNSELOR DIRECTORS ONLY) */}
+      {/* TAB 3: COUNSELOR REQUESTS HUB (COUNSELOR mentors ONLY) */}
       {activeTab === 'COUNSELOR_DASHBOARD' && (
         <div className="space-y-4">
           <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -645,7 +645,7 @@ export const MentalHealthPage: React.FC = () => {
         </div>
       )}
 
-      {/* MANAGE STATUS MODAL FOR COUNSELOR DIRECTORS */}
+      {/* MANAGE STATUS MODAL FOR COUNSELOR mentors */}
       {selectedApptForUpdate && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">

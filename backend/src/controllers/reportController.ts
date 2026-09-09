@@ -17,9 +17,9 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     let issueScopeSql = `WHERE 1=1`;
     const params: any[] = [];
 
-    if (userRole === 'DIRECTOR') {
-      issueScopeSql += ` AND i.director_id = $1`;
-      params.push(req.user!.directorId);
+    if (userRole === 'MENTOR') {
+      issueScopeSql += ` AND i.mentor_id = $1`;
+      params.push(req.user!.mentorId);
     } else if (userRole === 'SENIOR') {
       issueScopeSql += ` AND i.senior_id = $1`;
       params.push(req.user!.seniorId);
@@ -42,7 +42,7 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
       categoryChartRes,
       votesRes
     ] = await Promise.all([
-      query(`SELECT COUNT(*) FROM directors`),
+      query(`SELECT COUNT(*) FROM mentors`),
       query(`SELECT COUNT(*) FROM seniors`),
       query(`SELECT COUNT(*) FROM juniors`),
       query(`SELECT COUNT(*) FROM issues i ${issueScopeSql}`, params),
@@ -97,12 +97,12 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     let overallOnboardingRate = 0;
     let overallQuestionsRate = 0;
 
-    if (['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR'].includes(req.user!.role)) {
+    if (['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR'].includes(req.user!.role)) {
       let deptScopeSql = ``;
       const deptParams: any[] = [];
-      if (req.user!.role === 'DIRECTOR') {
-        deptScopeSql = ` WHERE s.director_id = $1`;
-        deptParams.push(req.user!.directorId);
+      if (req.user!.role === 'MENTOR') {
+        deptScopeSql = ` WHERE s.mentor_id = $1`;
+        deptParams.push(req.user!.mentorId);
       } else if (req.user!.role === 'SENIOR') {
         deptScopeSql = ` WHERE j.senior_id = $1`;
         deptParams.push(req.user!.seniorId);
@@ -149,7 +149,7 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
 
     // Senior Scorecards (Aggregated Average Scores per Senior)
     let seniorPerformance: any[] = [];
-    if (['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(req.user!.role)) {
+    if (['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(req.user!.role)) {
       let senPerfSql = `
         SELECT s.id as senior_id, s.senior_code, u.name as senior_name,
                (SELECT COUNT(*) FROM juniors WHERE senior_id = s.id) as junior_count,
@@ -188,9 +188,9 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         JOIN users u ON s.user_id = u.id
       `;
       const senParams: any[] = [];
-      if (req.user!.role === 'DIRECTOR') {
-        senPerfSql += ` WHERE s.director_id = $1`;
-        senParams.push(req.user!.directorId);
+      if (req.user!.role === 'MENTOR') {
+        senPerfSql += ` WHERE s.mentor_id = $1`;
+        senParams.push(req.user!.mentorId);
       }
       senPerfSql += ` ORDER BY total_issues DESC`;
       const perfRes = await query(senPerfSql, senParams);
@@ -198,7 +198,7 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     }
 
     const responseData = {
-      totalDirectors: parseInt(directorsCountRes.rows[0].count),
+      totalMentors: parseInt(directorsCountRes.rows[0].count),
       totalSeniors: parseInt(seniorsCountRes.rows[0].count),
       totalJuniors: parseInt(juniorsCountRes.rows[0].count),
       totalIssues: parseInt(issuesTotalRes.rows[0].count),
@@ -239,9 +239,9 @@ export const getDetailedIssuesReport = async (req: AuthenticatedRequest, res: Re
     let scopeSql = `WHERE 1=1`;
     const params: any[] = [];
 
-    if (req.user!.role === 'DIRECTOR') {
-      scopeSql += ` AND i.director_id = $1`;
-      params.push(req.user!.directorId);
+    if (req.user!.role === 'MENTOR') {
+      scopeSql += ` AND i.mentor_id = $1`;
+      params.push(req.user!.mentorId);
     } else if (req.user!.role === 'SENIOR') {
       scopeSql += ` AND i.senior_id = $1`;
       params.push(req.user!.seniorId);
@@ -260,15 +260,15 @@ export const getDetailedIssuesReport = async (req: AuthenticatedRequest, res: Re
               uj.email as junior_email,
               COALESCE(j.department, 'Campus') as junior_department,
               us.name as senior_name, s.senior_code,
-              ud.name as director_name, d.department as director_department
+              ud.name as mentor_name, d.department as director_department
        FROM issues i
        LEFT JOIN issue_categories c ON i.category_id = c.id
        LEFT JOIN juniors j ON (i.junior_id = j.id OR i.junior_id = j.user_id)
        LEFT JOIN users uj ON (j.user_id = uj.id OR i.junior_id = uj.id)
        LEFT JOIN seniors s ON (i.senior_id = s.id OR i.senior_id = s.user_id)
        LEFT JOIN users us ON (s.user_id = us.id OR i.senior_id = us.id)
-       LEFT JOIN directors d ON (i.director_id = d.id OR i.director_id = d.user_id)
-       LEFT JOIN users ud ON (d.user_id = ud.id OR i.director_id = ud.id)
+       LEFT JOIN mentors d ON (i.mentor_id = d.id OR i.mentor_id = d.user_id)
+       LEFT JOIN users ud ON (d.user_id = ud.id OR i.mentor_id = ud.id)
        ${scopeSql}
        ORDER BY i.created_at DESC`,
       params

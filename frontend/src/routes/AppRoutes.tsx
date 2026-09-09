@@ -6,7 +6,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
 
 import { SuperAdminDashboard } from '../pages/super-admin/SuperAdminDashboard';
-import { DirectorDashboard } from '../pages/director/DirectorDashboard';
+import { MentorDashboard } from '../pages/mentor/MentorDashboard';
 import { SeniorDashboard } from '../pages/senior/SeniorDashboard';
 import { JuniorDashboard } from '../pages/junior/JuniorDashboard';
 import { StudentDashboard } from '../pages/junior/StudentDashboard';
@@ -47,8 +47,8 @@ const DashboardDispatcher: React.FC = () => {
     case 'SUPER_ADMIN':
     case 'ADMIN':
       return <SuperAdminDashboard />;
-    case 'DIRECTOR':
-      return <DirectorDashboard />;
+    case 'MENTOR':
+      return <MentorDashboard />;
     case 'FACULTY':
       return <FacultyDashboard />;
     case 'SENIOR':

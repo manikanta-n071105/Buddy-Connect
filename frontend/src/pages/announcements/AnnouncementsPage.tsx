@@ -24,7 +24,7 @@ export const AnnouncementsPage: React.FC = () => {
   const [targetAudience, setTargetAudience] = useState('ALL');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canManageAnnouncements = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_ANNOUNCEMENTS') ?? false);
+  const canManageAnnouncements = ['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_ANNOUNCEMENTS') ?? false);
 
   const fetchAnnouncements = async (forceRefresh = false) => {
     await fetchWithCache<any[]>(
@@ -308,7 +308,7 @@ export const AnnouncementsPage: React.FC = () => {
                     <option value="ALL">All Students & Mentors</option>
                     <option value="JUNIOR">Juniors Only</option>
                     <option value="SENIOR">Senior Mentors Only</option>
-                    <option value="DIRECTOR">Directors Only</option>
+                    <option value="MENTOR">mentors Only</option>
                   </select>
                 </div>
               </div>

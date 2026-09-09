@@ -68,7 +68,7 @@ export const DisciplinaryAppointingPage: React.FC = () => {
       'swr_faculty_candidates',
       '/users',
       (data) => {
-        const candidates = (data || []).filter((u: any) => ['FACULTY', 'DIRECTOR'].includes(u.role));
+        const candidates = (data || []).filter((u: any) => ['FACULTY', 'MENTOR'].includes(u.role));
         setFacultyOptions(candidates);
         if (candidates.length > 0 && !selectedUserId) {
           setSelectedUserId(candidates[0].id);
@@ -101,7 +101,7 @@ export const DisciplinaryAppointingPage: React.FC = () => {
   const handleAppointCommittee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) {
-      toast.error('Please select a Faculty member or Director');
+      toast.error('Please select a Faculty member or Mentor');
       return;
     }
 
@@ -250,7 +250,7 @@ export const DisciplinaryAppointingPage: React.FC = () => {
                   if (availableNonCounselorCandidates.length > 0) {
                     handleOpenCounselorModal(availableNonCounselorCandidates[0], 'APPOINT');
                   } else {
-                    toast.info('All Faculty and Directors are already appointed as Counseling Teachers.');
+                    toast.info('All Faculty and mentors are already appointed as Counseling Teachers.');
                   }
                 }}
                 className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
@@ -318,7 +318,7 @@ export const DisciplinaryAppointingPage: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
               <Gavel className="w-10 h-10 text-purple-500 mx-auto" />
               <h3 className="text-sm font-black text-slate-900 uppercase">No Disciplinary Committee Members Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">Click "Appoint Committee Member" to select Faculty members or Directors and assign custom committee roles.</p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">Click "Appoint Committee Member" to select Faculty members or mentors and assign custom committee roles.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -391,7 +391,7 @@ export const DisciplinaryAppointingPage: React.FC = () => {
             <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
               <Heart className="w-10 h-10 text-rose-500 mx-auto" />
               <h3 className="text-sm font-black text-slate-900 uppercase">No Counseling Teachers Appointed</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">Appoint Faculty members or Directors as Counseling Teachers to provide mental health guidance to students.</p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">Appoint Faculty members or mentors as Counseling Teachers to provide mental health guidance to students.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -566,10 +566,10 @@ export const DisciplinaryAppointingPage: React.FC = () => {
 
             <form onSubmit={handleAppointCommittee} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Select Faculty Member / Director *</label>
+                <label className="block font-bold text-slate-700 mb-1">Select Faculty Member / Mentor *</label>
                 {availableNonCommitteeCandidates.length === 0 ? (
                   <p className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl font-bold">
-                    ⚠️ All available Faculty members and Directors are already appointed to the committee.
+                    ⚠️ All available Faculty members and mentors are already appointed to the committee.
                   </p>
                 ) : (
                   <select

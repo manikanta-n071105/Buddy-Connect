@@ -55,10 +55,10 @@ export const initDatabasePerformance = async () => {
       CREATE INDEX IF NOT EXISTS idx_juniors_faculty_id ON juniors(faculty_id);
 
       CREATE INDEX IF NOT EXISTS idx_seniors_user_id ON seniors(user_id);
-      CREATE INDEX IF NOT EXISTS idx_seniors_director_id ON seniors(director_id);
+      CREATE INDEX IF NOT EXISTS idx_seniors_mentor_id ON seniors(mentor_id);
 
       CREATE INDEX IF NOT EXISTS idx_faculty_user_id ON faculty(user_id);
-      CREATE INDEX IF NOT EXISTS idx_directors_user_id ON directors(user_id);
+      CREATE INDEX IF NOT EXISTS idx_directors_user_id ON mentors(user_id);
 
       CREATE INDEX IF NOT EXISTS idx_issues_reported_by ON issues(reported_by_id);
       CREATE INDEX IF NOT EXISTS idx_issues_assigned_to ON issues(assigned_to_id);

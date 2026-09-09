@@ -229,7 +229,7 @@ export const runIntegrityCheck = async (req: Request, res: Response) => {
 
     try {
       const unassignedRes = await query(`
-        SELECT COUNT(*) FROM seniors WHERE director_id IS NULL
+        SELECT COUNT(*) FROM seniors WHERE mentor_id IS NULL
       `);
       unassignedSeniors = parseInt(unassignedRes.rows[0].count);
     } catch {}

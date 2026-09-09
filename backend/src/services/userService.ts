@@ -37,7 +37,7 @@ export class UserService {
     }
 
     const user = userRes.rows[0];
-    let directorId: string | undefined;
+    let mentorId: string | undefined;
     let seniorId: string | undefined;
     let juniorId: string | undefined;
     let facultyId: string | undefined;
@@ -45,28 +45,28 @@ export class UserService {
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
     const permissions: string[] = permRes.rows.map(r => r.permission);
 
-    if (user.role === 'DIRECTOR') {
-      const dirRes = await query(`SELECT id FROM directors WHERE user_id = $1`, [user.id]);
-      if (dirRes.rowCount! > 0) directorId = dirRes.rows[0].id;
+    if (user.role === 'MENTOR') {
+      const mentorRes = await query(`SELECT id FROM mentors WHERE user_id = $1`, [user.id]);
+      if (mentorRes.rowCount! > 0) mentorId = mentorRes.rows[0].id;
     } else if (user.role === 'FACULTY') {
       const facRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
       if (facRes.rowCount! > 0) facultyId = facRes.rows[0].id;
     } else if (user.role === 'SENIOR') {
-      const senRes = await query(`SELECT id, director_id FROM seniors WHERE user_id = $1`, [user.id]);
+      const senRes = await query(`SELECT id, mentor_id FROM seniors WHERE user_id = $1`, [user.id]);
       if (senRes.rowCount! > 0) {
         seniorId = senRes.rows[0].id;
-        directorId = senRes.rows[0].director_id;
+        mentorId = senRes.rows[0].mentor_id;
       }
     } else if (user.role === 'JUNIOR') {
       const junRes = await query(
-        `SELECT j.id, j.senior_id, j.faculty_id, s.director_id
+        `SELECT j.id, j.senior_id, j.faculty_id, s.mentor_id
          FROM juniors j LEFT JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`,
         [user.id]
       );
       if (junRes.rowCount! > 0) {
         juniorId = junRes.rows[0].id;
         seniorId = junRes.rows[0].senior_id;
-        directorId = junRes.rows[0].director_id;
+        mentorId = junRes.rows[0].mentor_id;
         facultyId = junRes.rows[0].faculty_id;
       }
     }
@@ -80,7 +80,7 @@ export class UserService {
       is_cr: Boolean(user.is_cr),
       is_counselor: Boolean(user.is_counselor),
       permissions,
-      directorId,
+      mentorId,
       seniorId,
       juniorId,
       facultyId

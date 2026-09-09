@@ -13,11 +13,11 @@ const router = Router();
 
 router.use(authenticate);
 
-router.post('/', authorizeRole('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'FACULTY'), createQuiz);
+router.post('/', authorizeRole('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'), createQuiz);
 router.get('/', getQuizzes);
 router.get('/:id', getQuizById);
 router.post('/:id/submit', authorizeRole('JUNIOR', 'SENIOR'), submitQuiz);
-router.get('/:id/results', authorizeRole('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'FACULTY'), getQuizResults);
-router.post('/:id/reconduct', authorizeRole('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'FACULTY'), reconductQuiz);
+router.get('/:id/results', authorizeRole('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'), getQuizResults);
+router.post('/:id/reconduct', authorizeRole('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'), reconductQuiz);
 
 export default router;

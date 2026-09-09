@@ -138,7 +138,7 @@ export const SettingsPage: React.FC = () => {
 
   const getSettingIcon = (key: string) => {
     if (key.includes('FACULTY')) return <BookOpen className="w-4 h-4 text-teal-600 shrink-0" />;
-    if (key.includes('SENIOR') || key.includes('JUNIOR') || key.includes('DIRECTOR')) return <Users className="w-4 h-4 text-indigo-600 shrink-0" />;
+    if (key.includes('SENIOR') || key.includes('JUNIOR') || key.includes('MENTOR')) return <Users className="w-4 h-4 text-indigo-600 shrink-0" />;
     return <Clock className="w-4 h-4 text-amber-600 shrink-0" />;
   };
 
@@ -148,8 +148,8 @@ export const SettingsPage: React.FC = () => {
         return 'Max Juniors Assigned per Faculty Member';
       case 'MAX_JUNIORS_PER_SENIOR':
         return 'Max Juniors Assigned per Senior Mentor';
-      case 'MAX_SENIORS_PER_DIRECTOR':
-        return 'Max Seniors Managed per Department Director';
+      case 'MAX_SENIORS_PER_MENTOR':
+        return 'Max Seniors Managed per Department Mentor';
       default:
         return key.replace(/_/g, ' ');
     }

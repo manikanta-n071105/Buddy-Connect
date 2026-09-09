@@ -74,7 +74,7 @@ export const updateSuggestionStatus = async (req: AuthenticatedRequest, res: Res
   const { id } = req.params;
   const { status, responseNote } = req.body;
 
-  if (!['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR'].includes(req.user!.role)) {
+  if (!['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR'].includes(req.user!.role)) {
     return res.status(403).json({ success: false, message: 'Only mentors and management can update suggestion status', code: 'FORBIDDEN' });
   }
 

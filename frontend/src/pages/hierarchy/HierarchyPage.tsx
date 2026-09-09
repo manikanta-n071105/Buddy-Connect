@@ -45,7 +45,7 @@ export const HierarchyPage: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 font-medium">
-              Sanskrithi School of Engineering • Interactive Expandable View of Directors, Seniors, Assigned Juniors & Capacity Limits
+              Sanskrithi School of Engineering • Interactive Expandable View of mentors, Seniors, Assigned Juniors & Capacity Limits
             </p>
           </div>
         </div>

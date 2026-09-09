@@ -55,7 +55,7 @@ export const PollsPage: React.FC = () => {
   const [options, setOptions] = useState<string[]>(['', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canCreatePoll = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_POLLS') ?? false);
+  const canCreatePoll = ['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') || (user?.permissions?.includes('MANAGE_POLLS') ?? false);
   const isJunior = user?.role === 'JUNIOR';
 
   const fetchPolls = async () => {

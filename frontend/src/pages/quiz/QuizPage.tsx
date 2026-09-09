@@ -31,7 +31,7 @@ import { toast } from 'sonner';
 
 export const QuizPage: React.FC = () => {
   const { user } = useAuth();
-  const isFacultyOrAdmin = ['FACULTY', 'SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '');
+  const isFacultyOrAdmin = ['FACULTY', 'SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '');
 
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

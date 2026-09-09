@@ -17,9 +17,9 @@ export const startSlaCronJob = () => {
 
       // Find standard issues pending longer than standardHours
       const stdEscalationRes = await query(
-        `SELECT i.id, i.issue_number, i.title, i.priority, i.director_id, d.user_id as director_user_id
+        `SELECT i.id, i.issue_number, i.title, i.priority, i.mentor_id, d.user_id as mentor_user_id
          FROM issues i
-         JOIN directors d ON i.director_id = d.id
+         JOIN mentors d ON i.mentor_id = d.id
          WHERE i.status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS')
            AND i.priority != 'CRITICAL'
            AND i.created_at < NOW() - INTERVAL '1 hour' * $1`,
@@ -28,9 +28,9 @@ export const startSlaCronJob = () => {
 
       // Find critical issues pending longer than criticalHours
       const critEscalationRes = await query(
-        `SELECT i.id, i.issue_number, i.title, i.priority, i.director_id, d.user_id as director_user_id
+        `SELECT i.id, i.issue_number, i.title, i.priority, i.mentor_id, d.user_id as mentor_user_id
          FROM issues i
-         JOIN directors d ON i.director_id = d.id
+         JOIN mentors d ON i.mentor_id = d.id
          WHERE i.status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS')
            AND i.priority = 'CRITICAL'
            AND i.created_at < NOW() - INTERVAL '1 hour' * $1`,
@@ -46,12 +46,12 @@ export const startSlaCronJob = () => {
           [issue.id]
         );
 
-        // Notify Director
+        // Notify Mentor
         await query(
           `INSERT INTO notifications (recipient_id, title, message, type, metadata)
            VALUES ($1, $2, $3, 'ISSUE_ESCALATED', $4)`,
           [
-            issue.director_user_id,
+            issue.mentor_user_id,
             `ESCALATION ALERT: Issue #${issue.issue_number}`,
             `Issue "${issue.title}" (${issue.priority} Priority) has breached SLA time limit and has been escalated to you.`,
             JSON.stringify({ issueId: issue.id, issueNumber: issue.issue_number })

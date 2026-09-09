@@ -7,10 +7,10 @@ export const getOnboardingProgress = async (req: AuthenticatedRequest, res: Resp
   const targetJuniorId = req.user!.role === 'JUNIOR' ? req.user!.juniorId : (req.query.juniorId as string);
 
   // Director / Non-Senior scope check for individual student answers
-  if (req.user!.role === 'DIRECTOR' && targetJuniorId) {
+  if (req.user!.role === 'MENTOR' && targetJuniorId) {
     return res.status(403).json({
       success: false,
-      message: 'Directors can only view overall department percentages and senior averages, not individual student answers',
+      message: 'mentors can only view overall department percentages and senior averages, not individual student answers',
       code: 'FORBIDDEN'
     });
   }
@@ -52,15 +52,15 @@ export const getOnboardingProgress = async (req: AuthenticatedRequest, res: Resp
     const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
     let overallAveragePercent = 0;
-    if (['SENIOR', 'DIRECTOR', 'SUPER_ADMIN', 'ADMIN'].includes(req.user!.role)) {
+    if (['SENIOR', 'MENTOR', 'SUPER_ADMIN', 'ADMIN'].includes(req.user!.role)) {
       let scopeSql = ``;
       const scopeParams: any[] = [];
       if (req.user!.role === 'SENIOR') {
         scopeSql = ` WHERE j.senior_id = $1`;
         scopeParams.push(req.user!.seniorId);
-      } else if (req.user!.role === 'DIRECTOR') {
-        scopeSql = ` WHERE s.director_id = $1`;
-        scopeParams.push(req.user!.directorId);
+      } else if (req.user!.role === 'MENTOR') {
+        scopeSql = ` WHERE s.mentor_id = $1`;
+        scopeParams.push(req.user!.mentorId);
       }
 
       const avgRes = await query(
@@ -104,7 +104,7 @@ export const createOnboardingItem = async (req: AuthenticatedRequest, res: Respo
     return res.status(400).json({ success: false, message: 'Title and category required', code: 'INVALID_INPUT' });
   }
 
-  if (!['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(req.user!.role) && !req.user!.permissions?.includes('MANAGE_ONBOARDING')) {
+  if (!['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(req.user!.role) && !req.user!.permissions?.includes('MANAGE_ONBOARDING')) {
     return res.status(403).json({ success: false, message: 'Permission MANAGE_ONBOARDING required to create onboarding checklist items', code: 'FORBIDDEN' });
   }
 
@@ -163,11 +163,11 @@ export const toggleOnboardingItem = async (req: AuthenticatedRequest, res: Respo
 export const getQuestions = async (req: AuthenticatedRequest, res: Response) => {
   const targetJuniorId = req.user!.role === 'JUNIOR' ? req.user!.juniorId : (req.query.juniorId as string);
 
-  // Director Privacy Protection: Directors cannot inspect individual student answers
-  if (req.user!.role === 'DIRECTOR' && targetJuniorId) {
+  // Director Privacy Protection: mentors cannot inspect individual student answers
+  if (req.user!.role === 'MENTOR' && targetJuniorId) {
     return res.status(403).json({
       success: false,
-      message: 'Directors can only view overall department percentages and senior averages, not individual student answers',
+      message: 'mentors can only view overall department percentages and senior averages, not individual student answers',
       code: 'FORBIDDEN'
     });
   }
@@ -199,15 +199,15 @@ export const getQuestions = async (req: AuthenticatedRequest, res: Response) => 
     }
 
     let overallQuestionsPercent = 0;
-    if (['SENIOR', 'DIRECTOR', 'SUPER_ADMIN', 'ADMIN'].includes(req.user!.role)) {
+    if (['SENIOR', 'MENTOR', 'SUPER_ADMIN', 'ADMIN'].includes(req.user!.role)) {
       let scopeSql = ``;
       const scopeParams: any[] = [];
       if (req.user!.role === 'SENIOR') {
         scopeSql = ` WHERE j.senior_id = $1`;
         scopeParams.push(req.user!.seniorId);
-      } else if (req.user!.role === 'DIRECTOR') {
-        scopeSql = ` WHERE s.director_id = $1`;
-        scopeParams.push(req.user!.directorId);
+      } else if (req.user!.role === 'MENTOR') {
+        scopeSql = ` WHERE s.mentor_id = $1`;
+        scopeParams.push(req.user!.mentorId);
       }
 
       const qAvgRes = await query(
@@ -249,7 +249,7 @@ export const createCommonQuestion = async (req: AuthenticatedRequest, res: Respo
     return res.status(400).json({ success: false, message: 'Question text required', code: 'INVALID_INPUT' });
   }
 
-  if (!['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(req.user!.role) && !req.user!.permissions?.includes('MANAGE_QUESTIONS')) {
+  if (!['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(req.user!.role) && !req.user!.permissions?.includes('MANAGE_QUESTIONS')) {
     return res.status(403).json({ success: false, message: 'Permission MANAGE_QUESTIONS required to create common questions', code: 'FORBIDDEN' });
   }
 

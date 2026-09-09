@@ -23,7 +23,7 @@ export const SuggestionsPage: React.FC = () => {
   const [statusVal, setStatusVal] = useState('UNDER_REVIEW');
   const [responseNoteVal, setResponseNoteVal] = useState('');
 
-  const isMentorOrManagement = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR'].includes(user?.role || '');
+  const isMentorOrManagement = ['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR'].includes(user?.role || '');
 
   const fetchSuggestions = async () => {
     try {

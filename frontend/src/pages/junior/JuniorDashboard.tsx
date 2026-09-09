@@ -140,7 +140,7 @@ export const JuniorDashboard: React.FC = () => {
             <Calendar className="w-5 h-5 text-orange-600" />
             <div>
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Scheduled Mentorship Meetings ({meetings.length})</h3>
-              <p className="text-[11px] text-slate-500 font-medium">Meetings assigned to you by your Senior Mentor, Faculty Mentor, or Director</p>
+              <p className="text-[11px] text-slate-500 font-medium">Meetings assigned to you by your Senior Mentor, Faculty Mentor, or Mentor</p>
             </div>
           </div>
           <span className="px-3 py-1 bg-orange-50 text-orange-700 text-xs font-black rounded-full border border-orange-200">
@@ -152,7 +152,7 @@ export const JuniorDashboard: React.FC = () => {
           <div className="p-8 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200 space-y-2">
             <Clock className="w-8 h-8 text-slate-300 mx-auto" />
             <p className="text-xs font-bold text-slate-700">No Mentorship Meetings Scheduled</p>
-            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">When your Senior Mentor, Faculty Mentor, or Director schedules a meeting, the time and location will appear here.</p>
+            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">When your Senior Mentor, Faculty Mentor, or Mentor schedules a meeting, the time and location will appear here.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -174,7 +174,7 @@ export const JuniorDashboard: React.FC = () => {
                     <div>
                       <span className={`inline-block px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider mb-1 ${
                         m.mentor_role === 'FACULTY' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
-                        m.mentor_role === 'DIRECTOR' ? 'bg-slate-900 text-white' :
+                        m.mentor_role === 'MENTOR' ? 'bg-slate-900 text-white' :
                         'bg-blue-100 text-blue-800 border border-blue-200'
                       }`}>
                         {m.mentor_role} MEETING • {m.mentor_name}

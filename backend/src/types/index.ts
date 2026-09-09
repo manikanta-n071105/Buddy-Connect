@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'DIRECTOR' | 'SENIOR' | 'JUNIOR' | 'FACULTY' | 'WARDEN';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MENTOR' | 'SENIOR' | 'JUNIOR' | 'FACULTY' | 'WARDEN';
 
 export interface UserPayload {
   id: string;
@@ -9,7 +9,7 @@ export interface UserPayload {
   name: string;
   role: UserRole;
   permissions?: string[];
-  directorId?: string;
+  mentorId?: string;
   seniorId?: string;
   juniorId?: string;
   facultyId?: string;

@@ -11,8 +11,8 @@ export const MentorChatPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const juniorIdParam = searchParams.get('juniorId');
 
-  const [chatChannel, setChatChannel] = useState<'SENIOR' | 'DIRECTOR' | 'FACULTY'>(
-    user?.role === 'DIRECTOR' ? 'DIRECTOR' : user?.role === 'FACULTY' ? 'FACULTY' : 'SENIOR'
+  const [chatChannel, setChatChannel] = useState<'SENIOR' | 'MENTOR' | 'FACULTY'>(
+    user?.role === 'MENTOR' ? 'MENTOR' : user?.role === 'FACULTY' ? 'FACULTY' : 'SENIOR'
   );
   const [contacts, setContacts] = useState<any[]>([]);
   const [activeJuniorId, setActiveJuniorId] = useState<string | null>(juniorIdParam);
@@ -23,16 +23,16 @@ export const MentorChatPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
-  // Mobile Contacts Drawer State for Senior/Director/Faculty
+  // Mobile Contacts Drawer State for Senior/Mentor/Faculty
   const [isMobileContactsOpen, setIsMobileContactsOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isSenior = user?.role === 'SENIOR';
   const isJunior = user?.role === 'JUNIOR';
-  const isDirector = user?.role === 'DIRECTOR';
+  const isMentor = user?.role === 'MENTOR';
   const isFaculty = user?.role === 'FACULTY';
-  const isStaff = isSenior || isDirector || isFaculty;
+  const isStaff = isSenior || isMentor || isFaculty;
 
   // Auto-scroll to bottom of chat window
   const scrollToBottom = () => {
@@ -142,7 +142,7 @@ export const MentorChatPage: React.FC = () => {
             <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 shrink-0" /> Live Chat Center
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 hidden sm:block">
-            {isJunior ? 'Communicate directly with your Senior Mentor, Faculty Mentor, or Department Director' : 'Real-time mentorship & student query messages'}
+            {isJunior ? 'Communicate directly with your Senior Mentor, Faculty Mentor, or Department Mentor' : 'Real-time mentorship & student query messages'}
           </p>
         </div>
 
@@ -166,12 +166,12 @@ export const MentorChatPage: React.FC = () => {
               Faculty Mentor Chat 🎓
             </button>
             <button
-              onClick={() => setChatChannel('DIRECTOR')}
+              onClick={() => setChatChannel('MENTOR')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                chatChannel === 'DIRECTOR' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                chatChannel === 'MENTOR' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Director Chat 👑
+              Mentor Chat 👑
             </button>
           </div>
         )}
@@ -274,13 +274,13 @@ export const MentorChatPage: React.FC = () => {
                 <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 leading-tight truncate">
                   {partnerInfo?.name || (
                     isJunior
-                      ? (chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'DIRECTOR' ? 'Department Director' : 'Senior Mentor')
+                      ? (chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'MENTOR' ? 'Department Mentor' : 'Senior Mentor')
                       : 'Select Junior Student'
                   )}
                 </h3>
                 <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
                   {isJunior
-                    ? `${chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'DIRECTOR' ? 'Department Director' : 'Senior Mentor'} • ${partnerInfo?.faculty_code || partnerInfo?.director_code || partnerInfo?.senior_code || ''}`
+                    ? `${chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'MENTOR' ? 'Department Mentor' : 'Senior Mentor'} • ${partnerInfo?.faculty_code || partnerInfo?.mentor_code || partnerInfo?.senior_code || ''}`
                     : `Junior Student • ${partnerInfo?.register_number || ''}`}
                 </p>
               </div>
@@ -301,7 +301,7 @@ export const MentorChatPage: React.FC = () => {
               <MessageCircle className="w-10 h-10 text-slate-300" />
               <p className="text-xs font-extrabold text-slate-800">
                 {isJunior
-                  ? `No ${chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'DIRECTOR' ? 'Department Director' : 'Senior Mentor'} assigned yet.`
+                  ? `No ${chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'MENTOR' ? 'Department Mentor' : 'Senior Mentor'} assigned yet.`
                   : 'No conversation partner selected.'}
               </p>
               <p className="text-[11px] text-slate-500 max-w-xs">
@@ -361,7 +361,7 @@ export const MentorChatPage: React.FC = () => {
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder={
                   isJunior
-                    ? `Type a message to your ${chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'DIRECTOR' ? 'Director' : 'Senior Mentor'}...`
+                    ? `Type a message to your ${chatChannel === 'FACULTY' ? 'Faculty Mentor' : chatChannel === 'MENTOR' ? 'MENTOR' : 'Senior Mentor'}...`
                     : "Type a message to student..."
                 }
                 className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-semibold outline-hidden"

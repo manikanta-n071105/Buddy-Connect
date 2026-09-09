@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(30),
-    role VARCHAR(30) NOT NULL CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR', 'JUNIOR', 'FACULTY')),
+    role VARCHAR(30) NOT NULL CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR', 'JUNIOR', 'FACULTY')),
     is_active BOOLEAN NOT NULL DEFAULT true,
     must_change_password BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS admin_permissions (
     UNIQUE(user_id, permission)
 );
 
--- 3. DIRECTORS
-CREATE TABLE IF NOT EXISTS directors (
+-- 3. mentors
+CREATE TABLE IF NOT EXISTS mentors (
     id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     user_id VARCHAR(36) UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    director_code VARCHAR(50) UNIQUE NOT NULL,
+    mentor_code VARCHAR(50) UNIQUE NOT NULL,
     department VARCHAR(100) NOT NULL,
     status VARCHAR(30) DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -61,14 +61,14 @@ CREATE TABLE IF NOT EXISTS seniors (
     id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     user_id VARCHAR(36) UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     senior_code VARCHAR(50) UNIQUE NOT NULL,
-    director_id VARCHAR(36) NOT NULL REFERENCES directors(id) ON DELETE RESTRICT,
+    mentor_id VARCHAR(36) NOT NULL REFERENCES mentors(id) ON DELETE RESTRICT,
     department VARCHAR(100) NOT NULL,
     status VARCHAR(30) DEFAULT 'ACTIVE',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_seniors_director_id ON seniors(director_id);
+CREATE INDEX IF NOT EXISTS idx_seniors_mentor_id ON seniors(mentor_id);
 
 -- 6. JUNIORS
 CREATE TABLE IF NOT EXISTS juniors (
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS issues (
     reported_by_id VARCHAR(36) NOT NULL REFERENCES users(id),
     junior_id VARCHAR(36) NOT NULL REFERENCES juniors(id),
     senior_id VARCHAR(36) NOT NULL REFERENCES seniors(id),
-    director_id VARCHAR(36) NOT NULL REFERENCES directors(id),
+    mentor_id VARCHAR(36) NOT NULL REFERENCES mentors(id),
     category_id VARCHAR(36) NOT NULL REFERENCES issue_categories(id),
     title VARCHAR(200) NOT NULL,
     description TEXT NOT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS issues (
 
 CREATE INDEX IF NOT EXISTS idx_issues_junior ON issues(junior_id);
 CREATE INDEX IF NOT EXISTS idx_issues_senior ON issues(senior_id);
-CREATE INDEX IF NOT EXISTS idx_issues_director ON issues(director_id);
+CREATE INDEX IF NOT EXISTS idx_issues_director ON issues(mentor_id);
 CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
 CREATE INDEX IF NOT EXISTS idx_issues_created_at ON issues(created_at);
 
@@ -366,20 +366,20 @@ CREATE TABLE IF NOT EXISTS mentor_messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 29. DIRECTOR CONVERSATIONS
-CREATE TABLE IF NOT EXISTS director_conversations (
+-- 29. MENTOR CONVERSATIONS
+CREATE TABLE IF NOT EXISTS mentor_conversations (
     id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     junior_id VARCHAR(36) NOT NULL REFERENCES juniors(id) ON DELETE CASCADE,
-    director_id VARCHAR(36) NOT NULL REFERENCES directors(id) ON DELETE CASCADE,
+    mentor_id VARCHAR(36) NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(junior_id, director_id)
+    UNIQUE(junior_id, mentor_id)
 );
 
--- 30. DIRECTOR MESSAGES
-CREATE TABLE IF NOT EXISTS director_messages (
+-- 30. MENTOR MESSAGES
+CREATE TABLE IF NOT EXISTS mentor_messages (
     id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    conversation_id VARCHAR(36) NOT NULL REFERENCES director_conversations(id) ON DELETE CASCADE,
+    conversation_id VARCHAR(36) NOT NULL REFERENCES mentor_conversations(id) ON DELETE CASCADE,
     sender_id VARCHAR(36) NOT NULL REFERENCES users(id),
     content TEXT NOT NULL,
     is_read BOOLEAN DEFAULT false,

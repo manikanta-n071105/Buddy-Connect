@@ -77,7 +77,7 @@ if (require.main === module) {
     path.join('C:', 'Users', 'nmani', '.gemini', 'antigravity-ide', 'brain', '070fef1c-3b7d-489a-8faa-24d9bfa977a2', 'Sanskrithi_Buddy_Developer_Experience_Letter.pdf')
   ].filter(p => {
     try {
-      const dir = path.dirname(p);
+      const dir = path.mentorName(p);
       return fs.existsSync(dir);
     } catch (e) {
       return false;

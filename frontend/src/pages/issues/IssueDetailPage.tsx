@@ -69,12 +69,12 @@ export const IssueDetailPage: React.FC = () => {
 
   const { issue, comments, isReporter } = data;
 
-  const canManageStatus = ['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR', 'FACULTY'].includes(user?.role || '');
+  const canManageStatus = ['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR', 'FACULTY'].includes(user?.role || '');
   const isSeniorMentor = user?.role === 'SENIOR';
-  const isEscalatedToDirector = issue.status === 'ESCALATED';
+  const isEscalatedToMentor = issue.status === 'ESCALATED';
 
-  // Senior Mentor CANNOT change status if issue is escalated to Director
-  const canUpdateStatus = canManageStatus && !(isSeniorMentor && isEscalatedToDirector);
+  // Senior Mentor CANNOT change status if issue is ESCALATED TO MENTOR
+  const canUpdateStatus = canManageStatus && !(isSeniorMentor && isEscalatedToMentor);
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto pb-8">
@@ -107,9 +107,9 @@ export const IssueDetailPage: React.FC = () => {
 
           <div className="flex items-center gap-2 shrink-0">
             <StatusBadge status={issue.priority} type="priority" />
-            {isEscalatedToDirector ? (
+            {isEscalatedToMentor ? (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-md animate-pulse">
-                <Flame className="w-3.5 h-3.5 text-amber-300" /> ESCALATED TO DIRECTOR
+                <Flame className="w-3.5 h-3.5 text-amber-300" /> ESCALATED TO MENTOR
               </span>
             ) : (
               <StatusBadge status={issue.status} type="issue" />
@@ -138,8 +138,8 @@ export const IssueDetailPage: React.FC = () => {
             <p className="text-slate-900 font-extrabold mt-0.5">{issue.senior_name}</p>
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">Department Director</span>
-            <p className="text-slate-900 font-extrabold mt-0.5">{issue.director_name}</p>
+            <span className="text-[10px] text-slate-400 font-bold uppercase block">Department Mentor</span>
+            <p className="text-slate-900 font-extrabold mt-0.5">{issue.mentor_name}</p>
           </div>
           <div>
             <span className="text-[10px] text-slate-400 font-bold uppercase block">Date Logged</span>
@@ -184,7 +184,7 @@ export const IssueDetailPage: React.FC = () => {
                 <option value="RESOLVED">MARK AS RESOLVED</option>
                 {user?.role !== 'SENIOR' && <option value="CLOSED">CLOSED</option>}
                 <option value="REOPENED">REOPENED</option>
-                <option value="ESCALATED">ESCALATED TO DIRECTOR</option>
+                <option value="ESCALATED">ESCALATED TO Mentor</option>
               </select>
             </div>
 

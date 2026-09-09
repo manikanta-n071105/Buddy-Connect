@@ -12,45 +12,45 @@ export const getHierarchyTree = async (req: AuthenticatedRequest, res: Response)
     }
     const userRole = req.user.role;
     const userId = req.user.id;
-    const directorId = req.user!.directorId;
+    const mentorId = req.user!.mentorId;
     const seniorId = req.user!.seniorId;
 
-    const cacheKey = `hierarchy_tree:${userRole}:${userId}:${directorId || ''}:${seniorId || ''}`;
+    const cacheKey = `hierarchy_tree:${userRole}:${userId}:${mentorId || ''}:${seniorId || ''}`;
     const cachedTree = await cache.get<any[]>(cacheKey);
     if (cachedTree) {
       return res.json({ success: true, data: cachedTree });
     }
 
     let directorsSql = `
-      SELECT d.id as director_id, d.director_code, d.department, u.id as user_id, u.name as director_name, u.email as director_email
-      FROM directors d
+      SELECT d.id as mentor_id, d.mentor_code, d.department, u.id as user_id, u.name as mentor_name, u.email as director_email
+      FROM mentors d
       JOIN users u ON d.user_id = u.id
     `;
     const directorsParams: any[] = [];
 
-    if (userRole === 'DIRECTOR' || userRole === 'SENIOR') {
+    if (userRole === 'MENTOR' || userRole === 'SENIOR') {
       directorsSql += ` WHERE d.id = $1`;
-      directorsParams.push(directorId);
+      directorsParams.push(mentorId);
     }
 
     const directorsRes = await query(directorsSql, directorsParams);
-    const directors = directorsRes.rows;
+    const mentors = directorsRes.rows;
 
-    if (directors.length === 0) {
+    if (mentors.length === 0) {
       await cache.set(cacheKey, [], 15000);
       return res.json({ success: true, data: [] });
     }
 
-    const directorIds = directors.map(d => d.director_id);
+    const mentorIds = mentors.map(d => d.mentor_id);
 
-    // Fetch all seniors for all matched directors in a single batch query
+    // Fetch all seniors for all matched mentors in a single batch query
     let seniorsSql = `
-      SELECT s.id as senior_id, s.senior_code, s.department, s.director_id, u.id as user_id, u.name as senior_name, u.email as senior_email
+      SELECT s.id as senior_id, s.senior_code, s.department, s.mentor_id, u.id as user_id, u.name as senior_name, u.email as senior_email
       FROM seniors s
       JOIN users u ON s.user_id = u.id
-      WHERE s.director_id = ANY($1::text[])
+      WHERE s.mentor_id = ANY($1::text[])
     `;
-    const seniorsParams: any[] = [directorIds];
+    const seniorsParams: any[] = [mentorIds];
 
     if (userRole === 'SENIOR') {
       seniorsSql += ` AND s.id = $2`;
@@ -83,8 +83,8 @@ export const getHierarchyTree = async (req: AuthenticatedRequest, res: Response)
       juniorsBySeniorId[jun.senior_id].push(jun);
     }
 
-    // Group seniors by director_id
-    const seniorsByDirectorId: Record<string, any[]> = {};
+    // Group seniors by mentor_id
+    const seniorsBymentorId: Record<string, any[]> = {};
     for (const sen of allSeniors) {
       const juniors = juniorsBySeniorId[sen.senior_id] || [];
       const senWithJun = {
@@ -93,15 +93,15 @@ export const getHierarchyTree = async (req: AuthenticatedRequest, res: Response)
         juniorCount: juniors.length
       };
 
-      if (!seniorsByDirectorId[sen.director_id]) {
-        seniorsByDirectorId[sen.director_id] = [];
+      if (!seniorsBymentorId[sen.mentor_id]) {
+        seniorsBymentorId[sen.mentor_id] = [];
       }
-      seniorsByDirectorId[sen.director_id].push(senWithJun);
+      seniorsBymentorId[sen.mentor_id].push(senWithJun);
     }
 
     // Assemble final tree
-    const tree = directors.map(dir => {
-      const seniors = seniorsByDirectorId[dir.director_id] || [];
+    const tree = mentors.map(dir => {
+      const seniors = seniorsBymentorId[dir.mentor_id] || [];
       return {
         ...dir,
         seniors,

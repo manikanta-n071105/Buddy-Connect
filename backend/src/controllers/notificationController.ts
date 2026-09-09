@@ -78,7 +78,7 @@ export const sendSampleNotifications = async (req: AuthenticatedRequest, res: Re
       },
       {
         title: '📢 Official Circular: Semester Lab & Mentorship Guidelines',
-        message: 'All Directors, Senior Mentors, and Junior Students are requested to review the updated mentorship circular published on the portal.',
+        message: 'All mentors, Senior Mentors, and Junior Students are requested to review the updated mentorship circular published on the portal.',
         type: 'ANNOUNCEMENT',
         metadata: JSON.stringify({ announcementId: 305 })
       }

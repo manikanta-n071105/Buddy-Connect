@@ -14,7 +14,7 @@ interface StudentQrCodeModalProps {
     rollNo?: string;
     register_number?: string;
     senior_code?: string;
-    director_code?: string;
+    mentor_code?: string;
     username?: string;
     department?: string;
     year?: string;
@@ -33,7 +33,7 @@ export const StudentQrCodeModal: React.FC<StudentQrCodeModalProps> = ({ isOpen, 
     student.rollNo ||
     student.register_number ||
     student.senior_code ||
-    student.director_code ||
+    student.mentor_code ||
     student.username ||
     'N/A';
 

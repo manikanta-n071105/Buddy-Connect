@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
           { label: 'Analytics', path: '/reports', icon: BarChart3 }
         ];
 
-      case 'DIRECTOR': {
+      case 'MENTOR': {
         const isFacultyDirector = Boolean(user.facultyId || user.is_faculty);
         const isCounselor = Boolean(user.is_counselor);
         return [
@@ -263,8 +263,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
     navItems.push({ label: 'CR Feedbacks Audit', path: '/admin/cr-feedbacks', icon: ShieldCheck });
   }
 
-  // Mental Health Counseling link for Juniors, Seniors, and Directors
-  if (['JUNIOR', 'SENIOR', 'DIRECTOR'].includes(user.role) && !navItems.some((i) => i.path === '/counseling')) {
+  // Mental Health Counseling link for Juniors, Seniors, and mentors
+  if (['JUNIOR', 'SENIOR', 'MENTOR'].includes(user.role) && !navItems.some((i) => i.path === '/counseling')) {
     navItems.push({ label: 'Mental Health Counseling', path: '/counseling', icon: Heart });
   }
 
@@ -339,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
             <div className="w-9.5 h-9.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 p-2 group-hover:bg-orange-500/20 transition-colors">
               {user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' ? (
                 <Crown className="w-4 h-4 text-orange-400" />
-              ) : user.role === 'DIRECTOR' ? (
+              ) : user.role === 'MENTOR' ? (
                 <Building2 className="w-4 h-4 text-orange-400" />
               ) : user.role === 'FACULTY' ? (
                 <BookOpen className="w-4 h-4 text-orange-400" />
@@ -360,8 +360,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
 
         </div>
 
-        {/* Scan Student QR Code Button for Admins, Directors & Faculty */}
-        {['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'FACULTY'].includes(user.role) && (
+        {/* Scan Student QR Code Button for Admins, mentors & Faculty */}
+        {['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'].includes(user.role) && (
           <div className="px-3.5 pt-2 pb-1">
             <button
               onClick={() => {

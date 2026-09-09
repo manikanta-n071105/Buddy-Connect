@@ -32,11 +32,11 @@ export const clearUsersDirectoryCache = async () => {
 // Migrate all existing user codes to DIR-??, SRS-??, and JRS-?? sequence format
 const migrateExistingUserCodes = async () => {
   try {
-    // 1. Update existing Directors
-    const dirs = await query(`SELECT id FROM directors ORDER BY id ASC`);
+    // 1. Update existing mentors
+    const dirs = await query(`SELECT id FROM mentors ORDER BY id ASC`);
     for (let i = 0; i < dirs.rows.length; i++) {
       const code = `DIR-${(i + 1).toString().padStart(2, '0')}`;
-      await query(`UPDATE directors SET director_code = $1 WHERE id = $2`, [code, dirs.rows[i].id]);
+      await query(`UPDATE mentors SET mentor_code = $1 WHERE id = $2`, [code, dirs.rows[i].id]);
     }
 
     // 2. Update existing Seniors
@@ -104,7 +104,7 @@ const ensureUserColumns = async () => {
         ) THEN
           ALTER TABLE users DROP CONSTRAINT users_role_check;
         END IF;
-        ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR', 'JUNIOR', 'FACULTY', 'WARDEN'));
+        ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR', 'JUNIOR', 'FACULTY', 'WARDEN'));
       EXCEPTION WHEN OTHERS THEN
         NULL;
       END $$;
@@ -210,7 +210,7 @@ const ensureFacultyTables = async () => {
         ) THEN
           ALTER TABLE users DROP CONSTRAINT users_role_check;
         END IF;
-        ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR', 'JUNIOR', 'FACULTY', 'WARDEN'));
+        ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR', 'JUNIOR', 'FACULTY', 'WARDEN'));
       EXCEPTION WHEN OTHERS THEN
         NULL;
       END $$;
@@ -242,9 +242,9 @@ const ensureFacultyTables = async () => {
   }
 };
 
-// Create Director (Super Admin can assign permissions with password verification)
-export const createDirector = async (req: AuthenticatedRequest, res: Response) => {
-  const { name, email, username, password, phone, directorCode, department, permissions, superAdminPassword, gender, isFaculty, facultyDepartment, facultyYear } = req.body;
+// Create Mentor (Super Admin can assign permissions with password verification)
+export const createMentor = async (req: AuthenticatedRequest, res: Response) => {
+  const { name, email, username, password, phone, mentorCode, department, permissions, superAdminPassword, gender, isFaculty, facultyDepartment, facultyYear } = req.body;
   if (!name || !email || !username || !password || !department || !gender || !['MALE', 'FEMALE'].includes(gender)) {
     return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Gender)', code: 'INVALID_INPUT' });
   }
@@ -266,22 +266,22 @@ export const createDirector = async (req: AuthenticatedRequest, res: Response) =
     const cleanPassword = password.trim();
     const passwordHash = await bcrypt.hash(cleanPassword, 10);
 
-    const countRes = await query(`SELECT COUNT(*) FROM directors`);
+    const countRes = await query(`SELECT COUNT(*) FROM mentors`);
     const nextSeq = (parseInt(countRes.rows[0].count) + 1).toString().padStart(2, '0');
-    const finalDirectorCode = directorCode ? directorCode.trim() : `DIR-${nextSeq}`;
+    const finalMentorCode = mentorCode ? mentorCode.trim() : `MNT-${nextSeq}`;
 
     const result = await executeTransaction(async (client) => {
       const uRes = await client.query(
         `INSERT INTO users (name, email, username, password_hash, phone, role, gender, must_change_password, is_faculty)
-         VALUES ($1, $2, $3, $4, $5, 'DIRECTOR', $6, true, $7) RETURNING id, name, email, username, role, gender, is_faculty`,
+         VALUES ($1, $2, $3, $4, $5, 'MENTOR', $6, true, $7) RETURNING id, name, email, username, role, gender, is_faculty`,
         [name.trim(), cleanEmail, cleanUsername, passwordHash, phone ? phone.trim() : null, targetGender, Boolean(isFaculty)]
       );
       const user = uRes.rows[0];
 
-      const dRes = await client.query(
-        `INSERT INTO directors (user_id, director_code, department)
-         VALUES ($1, $2, $3) RETURNING id, director_code, department, status`,
-        [user.id, finalDirectorCode, department.trim()]
+      const mRes = await client.query(
+        `INSERT INTO mentors (user_id, mentor_code, department)
+         VALUES ($1, $2, $3) RETURNING id, mentor_code, department, status`,
+        [user.id, finalMentorCode, department.trim()]
       );
 
       // Dual Role: Also create Faculty record if Director is also appointed as Faculty Member
@@ -319,10 +319,10 @@ export const createDirector = async (req: AuthenticatedRequest, res: Response) =
         }
       }
 
-      return { user, director: dRes.rows[0], faculty: facultyRecord };
+      return { user, mentor: mRes.rows[0], faculty: facultyRecord };
     });
 
-    await logAudit(req.user!.id, 'CREATE_DIRECTOR', 'DIRECTOR', result.director.id, { name: name.trim(), department: department.trim(), directorCode: finalDirectorCode, isFaculty: Boolean(isFaculty) }, req.ip);
+    await logAudit(req.user!.id, 'CREATE_MENTOR', 'MENTOR', result.mentor.id, { name: name.trim(), department: department.trim(), mentorCode: finalMentorCode, isFaculty: Boolean(isFaculty) }, req.ip);
 
     await clearUsersDirectoryCache();
 
@@ -609,11 +609,11 @@ const ensureResidenceStatusColumn = async () => {
 
 // Create Senior (Super Admin can assign permissions with password verification)
 export const createSenior = async (req: AuthenticatedRequest, res: Response) => {
-  const { name, email, username, password, phone, department, directorId: reqDirectorId, permissions, superAdminPassword, residenceStatus, gender, isCr } = req.body;
+  const { name, email, username, password, phone, department, mentorId: reqmentorId, permissions, superAdminPassword, residenceStatus, gender, isCr } = req.body;
 
-  const targetDirectorId = req.user!.role === 'DIRECTOR' ? req.user!.directorId : reqDirectorId;
+  const targetmentorId = req.user!.role === 'MENTOR' ? req.user!.mentorId : reqmentorId;
 
-  if (!name || !email || !username || !password || !department || !targetDirectorId || !gender || !['MALE', 'FEMALE'].includes(gender)) {
+  if (!name || !email || !username || !password || !department || !targetmentorId || !gender || !['MALE', 'FEMALE'].includes(gender)) {
     return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Director, Gender)', code: 'INVALID_INPUT' });
   }
 
@@ -636,8 +636,8 @@ export const createSenior = async (req: AuthenticatedRequest, res: Response) => 
     }
 
     // Check Director Senior Capacity
-    const maxSeniors = await getSettingValue('MAX_SENIORS_PER_DIRECTOR', 8);
-    const countRes = await query(`SELECT COUNT(*) FROM seniors WHERE director_id = $1`, [targetDirectorId]);
+    const maxSeniors = await getSettingValue('MAX_SENIORS_PER_MENTOR', 8);
+    const countRes = await query(`SELECT COUNT(*) FROM seniors WHERE mentor_id = $1`, [targetmentorId]);
     const currentCount = parseInt(countRes.rows[0].count);
 
     if (currentCount >= maxSeniors) {
@@ -666,9 +666,9 @@ export const createSenior = async (req: AuthenticatedRequest, res: Response) => 
       const user = uRes.rows[0];
 
       const sRes = await client.query(
-        `INSERT INTO seniors (user_id, senior_code, director_id, department, residence_status)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id, senior_code, director_id, department, residence_status`,
-        [user.id, finalSeniorCode, targetDirectorId, department.trim(), targetResidenceStatus]
+        `INSERT INTO seniors (user_id, senior_code, mentor_id, department, residence_status)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, senior_code, mentor_id, department, residence_status`,
+        [user.id, finalSeniorCode, targetmentorId, department.trim(), targetResidenceStatus]
       );
 
       if (hasPermissionsToAssign && Array.isArray(permissions)) {
@@ -680,7 +680,7 @@ export const createSenior = async (req: AuthenticatedRequest, res: Response) => 
       return { user, senior: sRes.rows[0] };
     });
 
-    await logAudit(req.user!.id, 'CREATE_SENIOR', 'SENIOR', result.senior.id, { name: name.trim(), targetDirectorId, seniorCode: finalSeniorCode, permissions: hasPermissionsToAssign ? permissions : [] }, req.ip);
+    await logAudit(req.user!.id, 'CREATE_SENIOR', 'SENIOR', result.senior.id, { name: name.trim(), targetmentorId, seniorCode: finalSeniorCode, permissions: hasPermissionsToAssign ? permissions : [] }, req.ip);
 
     await clearUsersDirectoryCache();
 
@@ -822,31 +822,31 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
   const is4thYear = String(year).trim().toLowerCase().includes('4th');
 
   if (is4thYear) {
-    let targetDirectorId = req.user!.role === 'DIRECTOR' ? req.user!.directorId : req.body.directorId;
-    if (!targetDirectorId) {
-      const dRes = await query(
-        `SELECT id FROM directors WHERE department = $1 OR department ILIKE $2 ORDER BY created_at ASC LIMIT 1`,
+    let targetmentorId = req.user!.role === 'MENTOR' ? req.user!.mentorId : req.body.mentorId;
+    if (!targetmentorId) {
+      const mRes = await query(
+        `SELECT id FROM mentors WHERE department = $1 OR department ILIKE $2 ORDER BY created_at ASC LIMIT 1`,
         [department.trim(), `%${department.trim()}%`]
       );
-      if (dRes.rowCount! > 0) {
-        targetDirectorId = dRes.rows[0].id;
+      if (mRes.rowCount! > 0) {
+        targetmentorId = mRes.rows[0].id;
       } else {
-        const anyDir = await query(`SELECT id FROM directors ORDER BY created_at ASC LIMIT 1`);
+        const anyDir = await query(`SELECT id FROM mentors ORDER BY created_at ASC LIMIT 1`);
         if (anyDir.rowCount! > 0) {
-          targetDirectorId = anyDir.rows[0].id;
+          targetmentorId = anyDir.rows[0].id;
         }
       }
     }
 
-    if (!targetDirectorId) {
+    if (!targetmentorId) {
       return res.status(400).json({
         success: false,
-        message: 'No Director found in the system to assign 4th Year Senior Mentor. Please select or create a Director account first.',
-        code: 'NO_DIRECTOR'
+        message: 'No Director found in the system to assign 4th Year Senior Mentor. Please select or create a Mentor Account first.',
+        code: 'NO_MENTOR'
       });
     }
 
-    req.body.directorId = targetDirectorId;
+    req.body.mentorId = targetmentorId;
     return createSenior(req, res);
   } else {
     const is1stYear = String(year).trim().toLowerCase().includes('1st');
@@ -1062,14 +1062,14 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
       SELECT u.id, u.name, u.email, u.username, u.phone, u.role, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
              COALESCE(d.department, f.department, s.department, j.department) as department,
              COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
-             d.id as director_id, d.director_code,
+             d.id as mentor_id, d.mentor_code,
              f.id as faculty_id, f.faculty_code, f.max_juniors,
              (SELECT COUNT(*) FROM juniors fj WHERE fj.faculty_id = f.id) as assigned_juniors_count,
-             s.id as senior_id, s.senior_code, s.director_id as senior_director_id, s.residence_status as senior_residence_status,
+             s.id as senior_id, s.senior_code, s.mentor_id as senior_mentor_id, s.residence_status as senior_residence_status,
              j.id as junior_id, j.register_number, j.senior_id as junior_senior_id, j.faculty_id as junior_faculty_id, j.batch, j.year, j.residence_status as junior_residence_status,
              uf.name as faculty_name
       FROM users u
-      LEFT JOIN directors d ON u.id = d.user_id
+      LEFT JOIN mentors d ON u.id = d.user_id
       LEFT JOIN faculty f ON u.id = f.user_id
       LEFT JOIN seniors s ON u.id = s.user_id
       LEFT JOIN juniors j ON u.id = j.user_id
@@ -1080,9 +1080,9 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     const params: any[] = [];
 
     // Hierarchy & Role Scoping
-    if (req.user!.role === 'DIRECTOR') {
-      sql += ` AND (u.id = $${params.length + 1} OR s.director_id = $${params.length + 2} OR j.senior_id IN (SELECT id FROM seniors WHERE director_id = $${params.length + 2}))`;
-      params.push(req.user!.id, req.user!.directorId);
+    if (req.user!.role === 'MENTOR') {
+      sql += ` AND (u.id = $${params.length + 1} OR s.mentor_id = $${params.length + 2} OR j.senior_id IN (SELECT id FROM seniors WHERE mentor_id = $${params.length + 2}))`;
+      params.push(req.user!.id, req.user!.mentorId);
     } else if (req.user!.role === 'FACULTY') {
       sql += ` AND (u.id = $${params.length + 1} OR j.faculty_id = $${params.length + 2} OR (f.id = $${params.length + 2} AND j.department = f.department AND (f.year IS NULL OR f.year = '' OR f.year = 'All Years' OR j.year = f.year OR j.year ILIKE '%' || f.year || '%')))`;
       params.push(req.user!.id, req.user!.facultyId);
@@ -1136,12 +1136,12 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
               COALESCE(d.department, f.department, s.department, j.department) as department,
               COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
               dcm.designation as committee_designation,
-              d.id as director_id, d.director_code,
+              d.id as mentor_id, d.mentor_code,
               f.id as faculty_id, f.faculty_code,
-              s.id as senior_id, s.senior_code, s.director_id as senior_director_id, s.residence_status as senior_residence_status,
+              s.id as senior_id, s.senior_code, s.mentor_id as senior_mentor_id, s.residence_status as senior_residence_status,
               j.id as junior_id, j.register_number, j.senior_id as junior_senior_id, j.faculty_id as junior_faculty_id, j.batch, j.year, j.joining_date, j.residence_status as junior_residence_status
        FROM users u
-       LEFT JOIN directors d ON u.id = d.user_id
+       LEFT JOIN mentors d ON u.id = d.user_id
        LEFT JOIN faculty f ON u.id = f.user_id
        LEFT JOIN seniors s ON u.id = s.user_id
        LEFT JOIN juniors j ON u.id = j.user_id
@@ -1163,21 +1163,21 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
     const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [userId]);
     userProfile.permissions = permRes.rows.map(r => r.permission);
 
-    // Fetch related Senior, Director & Faculty names for Juniors
+    // Fetch related Senior, MENTOR & FACULTY names for Juniors
     if (userProfile.role === 'JUNIOR') {
       if (userProfile.junior_senior_id) {
         const sInfo = await query(
-          `SELECT s.id as senior_id, us.name as senior_name, d.id as director_id, ud.name as director_name
+          `SELECT s.id as senior_id, us.name as senior_name, d.id as mentor_id, ud.name as mentor_name
            FROM seniors s
            JOIN users us ON s.user_id = us.id
-           JOIN directors d ON s.director_id = d.id
+           JOIN mentors d ON s.mentor_id = d.id
            JOIN users ud ON d.user_id = ud.id
            WHERE s.id = $1`,
           [userProfile.junior_senior_id]
         );
         if (sInfo.rowCount! > 0) {
           userProfile.senior_name = sInfo.rows[0].senior_name;
-          userProfile.director_name = sInfo.rows[0].director_name;
+          userProfile.mentor_name = sInfo.rows[0].mentor_name;
         }
       }
       if (userProfile.junior_faculty_id) {
@@ -1193,16 +1193,16 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
           userProfile.faculty_code = fInfo.rows[0].faculty_code;
         }
       }
-    } else if (userProfile.role === 'SENIOR' && userProfile.senior_director_id) {
+    } else if (userProfile.role === 'SENIOR' && userProfile.senior_mentor_id) {
       const dInfo = await query(
-        `SELECT d.id as director_id, ud.name as director_name
-         FROM directors d
+        `SELECT d.id as mentor_id, ud.name as mentor_name
+         FROM mentors d
          JOIN users ud ON d.user_id = ud.id
          WHERE d.id = $1`,
-        [userProfile.senior_director_id]
+        [userProfile.senior_mentor_id]
       );
       if (dInfo.rowCount! > 0) {
-        userProfile.director_name = dInfo.rows[0].director_name;
+        userProfile.mentor_name = dInfo.rows[0].mentor_name;
       }
     }
 
@@ -1280,8 +1280,8 @@ export const updateUserProfile = async (req: AuthenticatedRequest, res: Response
 
       const validRes = residenceStatus && ['DAY_SCHOLAR', 'HOSTELLER'].includes(residenceStatus) ? residenceStatus : null;
 
-      if (targetUser.role === 'DIRECTOR' && department) {
-        await client.query(`UPDATE directors SET department = $1 WHERE user_id = $2`, [department.trim(), userId]);
+      if (targetUser.role === 'MENTOR' && department) {
+        await client.query(`UPDATE mentors SET department = $1 WHERE user_id = $2`, [department.trim(), userId]);
       } else if (targetUser.role === 'SENIOR') {
         let sUpdates: string[] = [];
         let sParams: any[] = [];
@@ -1427,7 +1427,7 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
       // Messaging & Activity
       await safeQuery(`DELETE FROM hostel_meal_rsvps WHERE user_id = $1`, [userId]);
       await safeQuery(`DELETE FROM mentor_messages WHERE sender_id = $1`, [userId]);
-      await safeQuery(`DELETE FROM director_messages WHERE sender_id = $1`, [userId]);
+      await safeQuery(`DELETE FROM mentor_messages WHERE sender_id = $1`, [userId]);
       await safeQuery(`DELETE FROM faculty_messages WHERE sender_id = $1`, [userId]);
       await safeQuery(`DELETE FROM poll_votes WHERE voter_id = $1`, [userId]);
       await safeQuery(`DELETE FROM suggestion_votes WHERE user_id = $1`, [userId]);
@@ -1459,12 +1459,12 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
           await safeQuery(`UPDATE juniors SET senior_id = NULL WHERE senior_id = $1`, [sId]);
           await safeQuery(`DELETE FROM seniors WHERE id = $1`, [sId]);
         }
-      } else if (targetUser.role === 'DIRECTOR') {
-        const dRes = await client.query(`SELECT id FROM directors WHERE user_id = $1`, [userId]);
-        if (dRes.rowCount! > 0) {
-          const dId = dRes.rows[0].id;
-          await safeQuery(`UPDATE seniors SET director_id = NULL WHERE director_id = $1`, [dId]);
-          await safeQuery(`DELETE FROM directors WHERE id = $1`, [dId]);
+      } else if (targetUser.role === 'MENTOR') {
+        const mRes = await client.query(`SELECT id FROM mentors WHERE user_id = $1`, [userId]);
+        if (mRes.rowCount! > 0) {
+          const dId = mRes.rows[0].id;
+          await safeQuery(`UPDATE seniors SET mentor_id = NULL WHERE mentor_id = $1`, [dId]);
+          await safeQuery(`DELETE FROM mentors WHERE id = $1`, [dId]);
         }
       } else if (targetUser.role === 'FACULTY') {
         const fRes = await client.query(`SELECT id FROM faculty WHERE user_id = $1`, [userId]);
@@ -1479,7 +1479,7 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
       await safeQuery(`DELETE FROM juniors WHERE user_id = $1`, [userId]);
       await safeQuery(`DELETE FROM seniors WHERE user_id = $1`, [userId]);
       await safeQuery(`DELETE FROM faculty WHERE user_id = $1`, [userId]);
-      await safeQuery(`DELETE FROM directors WHERE user_id = $1`, [userId]);
+      await safeQuery(`DELETE FROM mentors WHERE user_id = $1`, [userId]);
 
       await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
     });
@@ -1544,15 +1544,15 @@ export const resetUserPassword = async (req: AuthenticatedRequest, res: Response
   }
 };
 
-// Get Directors List for dropdowns
-export const getDirectorsList = async (req: AuthenticatedRequest, res: Response) => {
+// Get mentors List for dropdowns
+export const getMentorsList = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const cached = await cache.get<any[]>('directors_list');
     if (cached) return res.json({ success: true, data: cached });
 
     const result = await query(`
-      SELECT d.id as director_id, d.director_code, d.department, u.name as director_name, u.email, u.id as user_id
-      FROM directors d
+      SELECT d.id as mentor_id, d.mentor_code, d.department, u.name as mentor_name, u.email, u.id as user_id
+      FROM mentors d
       JOIN users u ON d.user_id = u.id
       ORDER BY u.name ASC
     `);
@@ -1571,10 +1571,10 @@ export const getSeniorsList = async (req: AuthenticatedRequest, res: Response) =
 
     const result = await query(`
       SELECT s.id as senior_id, s.senior_code, s.department, u.name as senior_name, u.email, u.id as user_id,
-             d.id as director_id, ud.name as director_name
+             d.id as mentor_id, ud.name as mentor_name
       FROM seniors s
       JOIN users u ON s.user_id = u.id
-      LEFT JOIN directors d ON s.director_id = d.id
+      LEFT JOIN mentors d ON s.mentor_id = d.id
       LEFT JOIN users ud ON d.user_id = ud.id
       ORDER BY u.name ASC
     `);
@@ -1599,7 +1599,7 @@ export const getDisciplinaryCommitteeMembers = async (req: AuthenticatedRequest,
       FROM disciplinary_committee_members dcm
       JOIN users u ON dcm.user_id = u.id
       LEFT JOIN faculty f ON u.id = f.user_id
-      LEFT JOIN directors d ON u.id = d.user_id
+      LEFT JOIN mentors d ON u.id = d.user_id
       LEFT JOIN users ua ON dcm.appointed_by = ua.id
       ORDER BY dcm.created_at DESC
     `);
@@ -1738,9 +1738,9 @@ export const lookupUserByQr = async (req: AuthenticatedRequest, res: Response) =
               COALESCE(d.department, f.department, s.department, j.department) as department,
               COALESCE(j.year, f.year, '') as year,
               COALESCE(j.batch, '') as batch,
-              COALESCE(j.register_number, s.senior_code, f.faculty_code, d.director_code) as code
+              COALESCE(j.register_number, s.senior_code, f.faculty_code, d.mentor_code) as code
        FROM users u
-       LEFT JOIN directors d ON u.id = d.user_id
+       LEFT JOIN mentors d ON u.id = d.user_id
        LEFT JOIN faculty f ON u.id = f.user_id
        LEFT JOIN seniors s ON u.id = s.user_id
        LEFT JOIN juniors j ON u.id = j.user_id
@@ -1749,7 +1749,7 @@ export const lookupUserByQr = async (req: AuthenticatedRequest, res: Response) =
           OR LOWER(j.register_number) = LOWER($1) 
           OR LOWER(s.senior_code) = LOWER($1) 
           OR LOWER(f.faculty_code) = LOWER($1) 
-          OR LOWER(d.director_code) = LOWER($1)
+          OR LOWER(d.mentor_code) = LOWER($1)
           OR u.email ILIKE '%' || $1 || '%'
           OR u.username ILIKE '%' || $1 || '%'
           OR u.name ILIKE '%' || $1 || '%'
@@ -1899,11 +1899,11 @@ export const createDisciplinaryComplaint = async (req: AuthenticatedRequest, res
       ]
     );
 
-    // If repeat offender (offense >= 3), send urgent escalation alert to Committee Members, Admins, & Directors
+    // If repeat offender (offense >= 3), send urgent escalation alert to Committee Members, Admins, & mentors
     if (offenseNumber >= 3) {
       try {
         const committeeAndAdmins = await query(
-          `SELECT id FROM users WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'DIRECTOR') OR is_disciplinary_committee = true`
+          `SELECT id FROM users WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR') OR is_disciplinary_committee = true`
         );
         for (const recipient of committeeAndAdmins.rows) {
           if (recipient.id !== complainantId) {

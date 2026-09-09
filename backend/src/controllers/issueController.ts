@@ -38,26 +38,26 @@ export const createIssue = async (req: AuthenticatedRequest, res: Response) => {
   try {
     let juniorId: string;
     let seniorId: string;
-    let directorId: string;
+    let mentorId: string;
     let seniorUserId: string;
 
     if (req.user!.role === 'JUNIOR') {
       juniorId = req.user!.juniorId!;
       seniorId = req.user!.seniorId!;
-      directorId = req.user!.directorId!;
+      mentorId = req.user!.mentorId!;
     } else {
       if (!req.body.juniorId) {
         return res.status(400).json({ success: false, message: 'Junior ID required when creating issue on behalf of student', code: 'INVALID_INPUT' });
       }
       juniorId = req.body.juniorId;
       const jRes = await query(
-        `SELECT j.senior_id, s.director_id, s.user_id as senior_user_id
+        `SELECT j.senior_id, s.mentor_id, s.user_id as senior_user_id
          FROM juniors j JOIN seniors s ON j.senior_id = s.id WHERE j.id = $1`,
         [juniorId]
       );
       if (jRes.rowCount === 0) return res.status(404).json({ success: false, message: 'Junior not found', code: 'NOT_FOUND' });
       seniorId = jRes.rows[0].senior_id;
-      directorId = jRes.rows[0].director_id;
+      mentorId = jRes.rows[0].mentor_id;
     }
 
     const senUserRes = await query(`SELECT user_id FROM seniors WHERE id = $1`, [seniorId]);
@@ -71,11 +71,11 @@ export const createIssue = async (req: AuthenticatedRequest, res: Response) => {
     const newIssue = await executeTransaction(async (client) => {
       const iRes = await client.query(
         `INSERT INTO issues (
-          issue_number, reported_by_id, junior_id, senior_id, director_id,
+          issue_number, reported_by_id, junior_id, senior_id, mentor_id,
           category_id, title, description, priority, status, assigned_to_id
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'OPEN', $10)
         RETURNING *`,
-        [issueNumber, req.user!.id, juniorId, seniorId, directorId, categoryId, title, description, priority, seniorUserId]
+        [issueNumber, req.user!.id, juniorId, seniorId, mentorId, categoryId, title, description, priority, seniorUserId]
       );
 
       await client.query(
@@ -110,7 +110,7 @@ export const getIssues = async (req: AuthenticatedRequest, res: Response) => {
              ic.name as category_name,
              uj.name as junior_name, uj.email as junior_email,
              us.name as senior_name,
-             ud.name as director_name,
+             ud.name as mentor_name,
              ua.name as assigned_to_name
       FROM issues i
       JOIN issue_categories ic ON i.category_id = ic.id
@@ -118,7 +118,7 @@ export const getIssues = async (req: AuthenticatedRequest, res: Response) => {
       JOIN users uj ON j.user_id = uj.id
       JOIN seniors s ON i.senior_id = s.id
       JOIN users us ON s.user_id = us.id
-      JOIN directors d ON i.director_id = d.id
+      JOIN mentors d ON i.mentor_id = d.id
       JOIN users ud ON d.user_id = ud.id
       LEFT JOIN users ua ON i.assigned_to_id = ua.id
       WHERE 1=1
@@ -132,9 +132,9 @@ export const getIssues = async (req: AuthenticatedRequest, res: Response) => {
     } else if (req.user!.role === 'SENIOR') {
       sql += ` AND i.senior_id = $${params.length + 1}`;
       params.push(req.user!.seniorId);
-    } else if (req.user!.role === 'DIRECTOR') {
-      sql += ` AND i.director_id = $${params.length + 1}`;
-      params.push(req.user!.directorId);
+    } else if (req.user!.role === 'MENTOR') {
+      sql += ` AND i.mentor_id = $${params.length + 1}`;
+      params.push(req.user!.mentorId);
     }
 
     if (status) {
@@ -192,7 +192,7 @@ export const getIssueById = async (req: AuthenticatedRequest, res: Response) => 
               ic.name as category_name,
               uj.name as junior_name, uj.email as junior_email,
               us.name as senior_name,
-              ud.name as director_name,
+              ud.name as mentor_name,
               ua.name as assigned_to_name
        FROM issues i
        JOIN issue_categories ic ON i.category_id = ic.id
@@ -200,7 +200,7 @@ export const getIssueById = async (req: AuthenticatedRequest, res: Response) => 
        JOIN users uj ON j.user_id = uj.id
        JOIN seniors s ON i.senior_id = s.id
        JOIN users us ON s.user_id = us.id
-       JOIN directors d ON i.director_id = d.id
+       JOIN mentors d ON i.mentor_id = d.id
        JOIN users ud ON d.user_id = ud.id
        LEFT JOIN users ua ON i.assigned_to_id = ua.id
        WHERE i.id = $1`,
@@ -250,7 +250,7 @@ export const updateIssueStatus = async (req: AuthenticatedRequest, res: Response
     if (issue.status === 'ESCALATED' && req.user!.role === 'SENIOR') {
       return res.status(403).json({
         success: false,
-        message: 'This issue has been escalated to the Department Director. Senior Mentors cannot change the status of escalated issues.',
+        message: 'This issue has been escalated to the Department Mentor. Senior Mentors cannot change the status of escalated issues.',
         code: 'FORBIDDEN'
       });
     }
@@ -258,7 +258,7 @@ export const updateIssueStatus = async (req: AuthenticatedRequest, res: Response
     if (status === 'CLOSED' && req.user!.role === 'SENIOR') {
       return res.status(403).json({
         success: false,
-        message: 'Senior Mentors cannot close issue tickets. Issues can only be closed by the student who reported it, Department Director, or Administrator.',
+        message: 'Senior Mentors cannot close issue tickets. Issues can only be closed by the student who reported it, Department Mentor, or Administrator.',
         code: 'FORBIDDEN'
       });
     }

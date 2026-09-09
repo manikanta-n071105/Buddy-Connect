@@ -26,20 +26,20 @@ const ensureChatTables = async () => {
   `);
 
   await query(`
-    CREATE TABLE IF NOT EXISTS director_conversations (
+    CREATE TABLE IF NOT EXISTS mentor_conversations (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
         junior_id VARCHAR(36) NOT NULL REFERENCES juniors(id) ON DELETE CASCADE,
-        director_id VARCHAR(36) NOT NULL REFERENCES directors(id) ON DELETE CASCADE,
+        mentor_id VARCHAR(36) NOT NULL REFERENCES mentors(id) ON DELETE CASCADE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(junior_id, director_id)
+        UNIQUE(junior_id, mentor_id)
     );
   `);
 
   await query(`
-    CREATE TABLE IF NOT EXISTS director_messages (
+    CREATE TABLE IF NOT EXISTS mentor_messages (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-        conversation_id VARCHAR(36) NOT NULL REFERENCES director_conversations(id) ON DELETE CASCADE,
+        conversation_id VARCHAR(36) NOT NULL REFERENCES mentor_conversations(id) ON DELETE CASCADE,
         sender_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
         is_read BOOLEAN DEFAULT false,
@@ -75,20 +75,20 @@ export const getConversationsList = async (req: AuthenticatedRequest, res: Respo
   try {
     await ensureChatTables();
     const userRole = req.user!.role;
-    const chatType = (req.query.chatType as string) || (userRole === 'FACULTY' ? 'FACULTY' : userRole === 'DIRECTOR' ? 'DIRECTOR' : 'SENIOR');
+    const chatType = (req.query.chatType as string) || (userRole === 'FACULTY' ? 'FACULTY' : userRole === 'MENTOR' ? 'MENTOR' : 'SENIOR');
 
-    if (userRole === 'DIRECTOR' || chatType === 'DIRECTOR') {
+    if (userRole === 'MENTOR' || chatType === 'MENTOR') {
       if (userRole === 'JUNIOR') {
-        // Fetch Department Director(s) for this Junior
-        const dirRes = await query(
-          `SELECT d.id as director_id, u.id as user_id, u.name, u.email, d.director_code, d.department
-           FROM directors d
+        // Fetch Department Mentor(s) for this Junior
+        const mentorRes = await query(
+          `SELECT d.id as mentor_id, u.id as user_id, u.name, u.email, d.mentor_code, d.department
+           FROM mentors d
            JOIN users u ON d.user_id = u.id
            ORDER BY u.name ASC`
         );
-        return res.json({ success: true, data: dirRes.rows });
-      } else if (userRole === 'DIRECTOR') {
-        if (!req.user!.directorId) {
+        return res.json({ success: true, data: mentorRes.rows });
+      } else if (userRole === 'MENTOR') {
+        if (!req.user!.mentorId) {
           return res.status(400).json({ success: false, message: 'Director record not found', code: 'NOT_FOUND' });
         }
 
@@ -98,9 +98,9 @@ export const getConversationsList = async (req: AuthenticatedRequest, res: Respo
            FROM juniors j
            JOIN users u ON j.user_id = u.id
            JOIN seniors s ON j.senior_id = s.id
-           WHERE s.director_id = $1
+           WHERE s.mentor_id = $1
            ORDER BY u.name ASC`,
-          [req.user!.directorId]
+          [req.user!.mentorId]
         );
         return res.json({ success: true, data: junRes.rows });
       }
@@ -183,52 +183,52 @@ export const getConversationsList = async (req: AuthenticatedRequest, res: Respo
   }
 };
 
-// Get Conversation & Messages (Supports Senior, Director & Faculty Chat)
+// Get Conversation & Messages (Supports Senior, MENTOR & FACULTY Chat)
 export const getConversation = async (req: AuthenticatedRequest, res: Response) => {
   try {
     await ensureChatTables();
 
-    const chatType = (req.query.chatType as string) || (req.user!.role === 'FACULTY' ? 'FACULTY' : req.user!.role === 'DIRECTOR' ? 'DIRECTOR' : 'SENIOR');
-    const isDirectorChat = chatType === 'DIRECTOR' || req.query.directorId !== undefined || req.user!.role === 'DIRECTOR';
+    const chatType = (req.query.chatType as string) || (req.user!.role === 'FACULTY' ? 'FACULTY' : req.user!.role === 'MENTOR' ? 'MENTOR' : 'SENIOR');
+    const isDirectorChat = chatType === 'MENTOR' || req.query.mentorId !== undefined || req.user!.role === 'MENTOR';
     const isFacultyChat = chatType === 'FACULTY' || req.query.facultyId !== undefined || req.user!.role === 'FACULTY';
 
-    // 1. DIRECTOR CHAT
+    // 1. Mentor Chat
     if (isDirectorChat) {
       let juniorId: string | undefined;
-      let directorId: string | undefined;
+      let mentorId: string | undefined;
 
       if (req.user!.role === 'JUNIOR') {
         juniorId = req.user!.juniorId;
-        directorId = req.query.directorId as string || req.user!.directorId;
-        if (!directorId) {
-          const firstDir = await query(`SELECT id FROM directors LIMIT 1`);
-          if (firstDir.rowCount! > 0) directorId = firstDir.rows[0].id;
+        mentorId = req.query.mentorId as string || req.user!.mentorId;
+        if (!mentorId) {
+          const firstDir = await query(`SELECT id FROM mentors LIMIT 1`);
+          if (firstDir.rowCount! > 0) mentorId = firstDir.rows[0].id;
         }
-      } else if (req.user!.role === 'DIRECTOR') {
-        directorId = req.user!.directorId;
+      } else if (req.user!.role === 'MENTOR') {
+        mentorId = req.user!.mentorId;
         juniorId = req.query.juniorId as string;
-        if (!juniorId && directorId) {
+        if (!juniorId && mentorId) {
           const firstJun = await query(
-            `SELECT j.id FROM juniors j JOIN seniors s ON j.senior_id = s.id WHERE s.director_id = $1 LIMIT 1`,
-            [directorId]
+            `SELECT j.id FROM juniors j JOIN seniors s ON j.senior_id = s.id WHERE s.mentor_id = $1 LIMIT 1`,
+            [mentorId]
           );
           if (firstJun.rowCount! > 0) juniorId = firstJun.rows[0].id;
         }
       } else {
         juniorId = req.query.juniorId as string;
-        directorId = req.query.directorId as string;
+        mentorId = req.query.mentorId as string;
       }
 
       if (juniorId) {
         const checkJ = await query(`SELECT id FROM juniors WHERE id = $1 OR user_id = $1`, [juniorId]);
         if (checkJ.rowCount! > 0) juniorId = checkJ.rows[0].id;
       }
-      if (directorId) {
-        const checkD = await query(`SELECT id FROM directors WHERE id = $1 OR user_id = $1`, [directorId]);
-        if (checkD.rowCount! > 0) directorId = checkD.rows[0].id;
+      if (mentorId) {
+        const checkD = await query(`SELECT id FROM mentors WHERE id = $1 OR user_id = $1`, [mentorId]);
+        if (checkD.rowCount! > 0) mentorId = checkD.rows[0].id;
       }
 
-      if (!juniorId || !directorId) {
+      if (!juniorId || !mentorId) {
         return res.status(400).json({
           success: false,
           message: 'No active Junior or Director conversation partner found.',
@@ -236,16 +236,16 @@ export const getConversation = async (req: AuthenticatedRequest, res: Response) 
         });
       }
 
-      // Get or Create director conversation
+      // Get or Create mentor conversation
       let convRes = await query(
-        `SELECT * FROM director_conversations WHERE junior_id = $1 AND director_id = $2`,
-        [juniorId, directorId]
+        `SELECT * FROM mentor_conversations WHERE junior_id = $1 AND mentor_id = $2`,
+        [juniorId, mentorId]
       );
 
       if (convRes.rowCount === 0) {
         convRes = await query(
-          `INSERT INTO director_conversations (junior_id, director_id) VALUES ($1, $2) RETURNING *`,
-          [juniorId, directorId]
+          `INSERT INTO mentor_conversations (junior_id, mentor_id) VALUES ($1, $2) RETURNING *`,
+          [juniorId, mentorId]
         );
       }
 
@@ -254,9 +254,9 @@ export const getConversation = async (req: AuthenticatedRequest, res: Response) 
       let partnerInfo: any = {};
       if (req.user!.role === 'JUNIOR') {
         const pRes = await query(
-          `SELECT u.name, u.email, d.director_code, d.department
-           FROM directors d JOIN users u ON d.user_id = u.id WHERE d.id = $1`,
-          [directorId]
+          `SELECT u.name, u.email, d.mentor_code, d.department
+           FROM mentors d JOIN users u ON d.user_id = u.id WHERE d.id = $1`,
+          [mentorId]
         );
         partnerInfo = pRes.rows[0] || {};
       } else {
@@ -270,13 +270,13 @@ export const getConversation = async (req: AuthenticatedRequest, res: Response) 
 
       const messagesRes = await query(
         `SELECT m.*, u.name as sender_name, u.role as sender_role
-         FROM director_messages m JOIN users u ON m.sender_id = u.id
+         FROM mentor_messages m JOIN users u ON m.sender_id = u.id
          WHERE m.conversation_id = $1 ORDER BY m.created_at ASC`,
         [conversation.id]
       );
 
       await query(
-        `UPDATE director_messages SET is_read = true WHERE conversation_id = $1 AND sender_id != $2`,
+        `UPDATE mentor_messages SET is_read = true WHERE conversation_id = $1 AND sender_id != $2`,
         [conversation.id, req.user!.id]
       );
 
@@ -286,8 +286,8 @@ export const getConversation = async (req: AuthenticatedRequest, res: Response) 
           conversation,
           partnerInfo,
           activeJuniorId: juniorId,
-          activeDirectorId: directorId,
-          chatType: 'DIRECTOR',
+          activementorId: mentorId,
+          chatType: 'MENTOR',
           messages: messagesRes.rows
         }
       });
@@ -505,16 +505,16 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
   try {
     await ensureChatTables();
 
-    // Check if conversationId belongs to director_conversations
-    const dirConvCheck = await query(`SELECT id FROM director_conversations WHERE id = $1`, [conversationId]);
-    if (dirConvCheck.rowCount! > 0 || chatType === 'DIRECTOR') {
+    // Check if conversationId belongs to mentor_conversations
+    const mentorConvCheck = await query(`SELECT id FROM mentor_conversations WHERE id = $1`, [conversationId]);
+    if (mentorConvCheck.rowCount! > 0 || chatType === 'MENTOR') {
       const msgRes = await query(
-        `INSERT INTO director_messages (conversation_id, sender_id, content)
+        `INSERT INTO mentor_messages (conversation_id, sender_id, content)
          VALUES ($1, $2, $3) RETURNING *`,
         [conversationId, req.user!.id, content.trim()]
       );
 
-      await query(`UPDATE director_conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [conversationId]);
+      await query(`UPDATE mentor_conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [conversationId]);
 
       return res.status(201).json({ success: true, data: msgRes.rows[0] });
     }

@@ -52,8 +52,8 @@ export const toggleCounselorStatus = async (req: AuthenticatedRequest, res: Resp
       return res.status(404).json({ success: false, message: 'User not found', code: 'NOT_FOUND' });
     }
 
-    if (!['DIRECTOR', 'FACULTY', 'SUPER_ADMIN', 'ADMIN'].includes(uRes.rows[0].role)) {
-      return res.status(400).json({ success: false, message: 'Only Faculty members and Directors can be appointed as Mental Health Counseling Teachers.', code: 'INVALID_ROLE' });
+    if (!['MENTOR', 'FACULTY', 'SUPER_ADMIN', 'ADMIN'].includes(uRes.rows[0].role)) {
+      return res.status(400).json({ success: false, message: 'Only Faculty members and mentors can be appointed as Mental Health Counseling Teachers.', code: 'INVALID_ROLE' });
     }
 
     await query(`UPDATE users SET is_counselor = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [Boolean(isCounselor), userId]);
@@ -79,9 +79,9 @@ export const getCounselorsList = async (req: AuthenticatedRequest, res: Response
     const cRes = await query(
       `SELECT u.id as user_id, u.name, u.email, u.phone, u.gender, u.role, COALESCE(u.is_counselor, false) as is_counselor,
               COALESCE(d.department, f.department) as department,
-              COALESCE(d.director_code, f.faculty_code) as code
+              COALESCE(d.mentor_code, f.faculty_code) as code
        FROM users u
-       LEFT JOIN directors d ON u.id = d.user_id
+       LEFT JOIN mentors d ON u.id = d.user_id
        LEFT JOIN faculty f ON u.id = f.user_id
        WHERE u.is_counselor = true AND u.is_active = true
        ORDER BY u.name ASC`
@@ -108,7 +108,7 @@ export const bookAppointment = async (req: AuthenticatedRequest, res: Response) 
 
   try {
     // Verify Counselor is an active appointed counselor Director
-    const cCheck = await query(`SELECT id, name FROM users WHERE id = $1 AND role = 'DIRECTOR' AND is_counselor = true AND is_active = true`, [counselorUserId]);
+    const cCheck = await query(`SELECT id, name FROM users WHERE id = $1 AND role = 'MENTOR' AND is_counselor = true AND is_active = true`, [counselorUserId]);
     if (cCheck.rowCount === 0) {
       return res.status(400).json({
         success: false,
@@ -150,7 +150,7 @@ export const getMyAppointments = async (req: AuthenticatedRequest, res: Response
               d.department as counselor_department
        FROM counseling_appointments ca
        JOIN users uc ON ca.counselor_user_id = uc.id
-       LEFT JOIN directors d ON uc.id = d.user_id
+       LEFT JOIN mentors d ON uc.id = d.user_id
        WHERE ca.student_user_id = $1
        ORDER BY ca.appointment_date DESC, ca.created_at DESC`,
       [studentUserId]
@@ -175,7 +175,7 @@ export const getCounselorAppointments = async (req: AuthenticatedRequest, res: R
        JOIN users us ON ca.student_user_id = us.id
        LEFT JOIN seniors s ON us.id = s.user_id
        LEFT JOIN juniors j ON us.id = j.user_id
-       WHERE ca.counselor_user_id = $1 OR ca.counselor_user_id IN (SELECT id FROM directors WHERE user_id = $1)
+       WHERE ca.counselor_user_id = $1 OR ca.counselor_user_id IN (SELECT id FROM mentors WHERE user_id = $1)
        ORDER BY ca.appointment_date DESC, ca.created_at DESC`,
       [counselorUserId]
     );
@@ -233,7 +233,7 @@ export const getAllAppointmentsAdmin = async (req: AuthenticatedRequest, res: Re
        FROM counseling_appointments ca
        JOIN users us ON ca.student_user_id = us.id
        JOIN users uc ON ca.counselor_user_id = uc.id
-       LEFT JOIN directors d ON uc.id = d.user_id
+       LEFT JOIN mentors d ON uc.id = d.user_id
        ORDER BY ca.created_at DESC`
     );
 

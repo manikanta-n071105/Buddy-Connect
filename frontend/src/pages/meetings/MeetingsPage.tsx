@@ -25,7 +25,7 @@ export const MeetingsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
 
-  const isMentor = ['SENIOR', 'FACULTY', 'DIRECTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
+  const isMentor = ['SENIOR', 'FACULTY', 'MENTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
 
   const fetchMeetings = async () => {
     try {
@@ -150,7 +150,7 @@ export const MeetingsPage: React.FC = () => {
                       <div>
                         <span className={`inline-block px-2 py-0.5 text-[9px] font-black rounded-md uppercase tracking-wider mb-1 ${
                           m.mentor_role === 'FACULTY' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
-                          m.mentor_role === 'DIRECTOR' ? 'bg-slate-900 text-white' :
+                          m.mentor_role === 'MENTOR' ? 'bg-slate-900 text-white' :
                           'bg-blue-100 text-blue-800 border border-blue-200'
                         }`}>
                           {m.mentor_role} MEETING • {m.mentor_name}

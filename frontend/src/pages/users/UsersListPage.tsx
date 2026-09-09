@@ -16,7 +16,7 @@ import { getBranchShortCode, DEPARTMENT_OPTIONS } from '../../types';
 export const UsersListPage: React.FC = () => {
   const { user } = useAuth();
   const [usersList, setUsersList] = useState<any[]>([]);
-  const [directorsList, setDirectorsList] = useState<any[]>([]);
+  const [MentorsList, setMentorsList] = useState<any[]>([]);
   const [seniorsList, setSeniorsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,7 +38,7 @@ export const UsersListPage: React.FC = () => {
   // Modals state
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [showDirectorModal, setShowDirectorModal] = useState(false);
+  const [showMentorModal, setshowMentorModal] = useState(false);
   const [showFacultyModal, setShowFacultyModal] = useState(false);
   const [showWardenModal, setShowWardenModal] = useState(false);
   const [showSeniorModal, setShowSeniorModal] = useState(false);
@@ -98,20 +98,20 @@ export const UsersListPage: React.FC = () => {
     'VIEW_ANALYTICS'
   ]);
 
-  // 2. Director Form state
-  const [dirName, setDirName] = useState('');
-  const [dirEmail, setDirEmail] = useState('');
-  const [dirUsername, setDirUsername] = useState('');
-  const [dirPassword, setDirPassword] = useState('Password123!');
-  const [dirPhone, setDirPhone] = useState('');
-  const [dirGender, setDirGender] = useState<'MALE' | 'FEMALE'>('MALE');
-  const [dirCode, setDirCode] = useState('');
-  const [dirDepartment, setDirDepartment] = useState('CSE');
-  const [dirPermissions, setDirPermissions] = useState<string[]>([]);
-  const [dirSuperAdminPassword, setDirSuperAdminPassword] = useState('');
-  const [dirIsFaculty, setDirIsFaculty] = useState(false);
-  const [dirFacultyDept, setDirFacultyDept] = useState('CSE-A');
-  const [dirFacultyYear, setDirFacultyYear] = useState('3rd Year');
+  // 2. Mentor Form state
+  const [mntName, setMntName] = useState('');
+  const [mntEmail, setMntEmail] = useState('');
+  const [mntUsername, setMntUsername] = useState('');
+  const [mntPassword, setMntPassword] = useState('Password123!');
+  const [mntPhone, setMntPhone] = useState('');
+  const [mntGender, setMntGender] = useState<'MALE' | 'FEMALE'>('MALE');
+  const [mntCode, setMntCode] = useState('');
+  const [mntDepartment, setMntDepartment] = useState('CSE');
+  const [mntPermissions, setMntPermissions] = useState<string[]>([]);
+  const [mntSuperAdminPassword, setMntSuperAdminPassword] = useState('');
+  const [mntIsFaculty, setMntIsFaculty] = useState(false);
+  const [mntFacultyDept, setMntFacultyDept] = useState('CSE-A');
+  const [mntFacultyYear, setMntFacultyYear] = useState('3rd Year');
 
   // 2.5 Faculty Form state
   const [facName, setFacName] = useState('');
@@ -135,7 +135,7 @@ export const UsersListPage: React.FC = () => {
   const [senPermissions, setSenPermissions] = useState<string[]>([]);
   const [senSuperAdminPassword, setSenSuperAdminPassword] = useState('');
   const [senIsCr, setSenIsCr] = useState(false);
-  const [selectedDirectorId, setSelectedDirectorId] = useState('');
+  const [selectedmentorId, setSelectedmentorId] = useState('');
 
   const [senResidenceStatus, setSenResidenceStatus] = useState<'DAY_SCHOLAR' | 'HOSTELLER'>('DAY_SCHOLAR');
 
@@ -205,12 +205,12 @@ export const UsersListPage: React.FC = () => {
     }
   };
 
-  const fetchDirectorsAndSeniors = async () => {
+  const fetchMentorsAndSeniors = async () => {
     try {
-      const dirRes = await api.get('/users/directors');
-      setDirectorsList(dirRes.data.data);
-      if (dirRes.data.data.length > 0) {
-        setSelectedDirectorId(dirRes.data.data[0].director_id);
+      const mentorRes = await api.get('/users/mentors');
+      setMentorsList(mentorRes.data.data);
+      if (mentorRes.data.data.length > 0) {
+        setSelectedmentorId(mentorRes.data.data[0].mentor_id);
       }
 
       const senRes = await api.get('/users/seniors');
@@ -225,7 +225,7 @@ export const UsersListPage: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-    fetchDirectorsAndSeniors();
+    fetchMentorsAndSeniors();
   }, []);
 
   const togglePermission = (key: string) => {
@@ -267,46 +267,46 @@ export const UsersListPage: React.FC = () => {
     }
   };
 
-  // 2. Create Director Submit
-  const handleCreateDirector = async (e: React.FormEvent) => {
+  // 2. Create Mentor Submit
+  const handleCreateMentor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!dirName || !dirEmail || !dirUsername || !dirPassword || !dirDepartment || !dirGender) {
-      toast.error('Please fill in all required director fields including Gender');
+    if (!mntName || !mntEmail || !mntUsername || !mntPassword || !mntDepartment || !mntGender) {
+      toast.error('Please fill in all required mentor fields including Gender');
       return;
     }
-    if (user?.role === 'SUPER_ADMIN' && dirPermissions.length > 0 && !dirSuperAdminPassword) {
-      toast.error('Please enter your Super Admin password to grant Director permissions');
+    if (user?.role === 'SUPER_ADMIN' && mntPermissions.length > 0 && !mntSuperAdminPassword) {
+      toast.error('Please enter your Super Admin password to Grant Mentor Permissions');
       return;
     }
 
     try {
-      await api.post('/users/director', {
-        name: dirName.trim(),
-        email: dirEmail.trim(),
-        username: dirUsername.trim(),
-        password: dirPassword.trim(),
-        phone: dirPhone.trim(),
-        gender: dirGender,
-        directorCode: 'AUTO',
-        department: dirDepartment.trim(),
-        permissions: dirPermissions,
-        superAdminPassword: dirSuperAdminPassword.trim(),
-        isFaculty: dirIsFaculty,
-        facultyDepartment: dirFacultyDept.trim(),
-        facultyYear: dirFacultyYear
+      await api.post('/users/mentor', {
+        name: mntName.trim(),
+        email: mntEmail.trim(),
+        username: mntUsername.trim(),
+        password: mntPassword.trim(),
+        phone: mntPhone.trim(),
+        gender: mntGender,
+        mentorCode: 'AUTO',
+        department: mntDepartment.trim(),
+        permissions: mntPermissions,
+        superAdminPassword: mntSuperAdminPassword.trim(),
+        isFaculty: mntIsFaculty,
+        facultyDepartment: mntFacultyDept.trim(),
+        facultyYear: mntFacultyYear
       });
       setCreatedCredential({
-        role: dirIsFaculty ? 'DIRECTOR & FACULTY (Dual Role)' : 'DIRECTOR',
-        name: dirName.trim(),
-        username: dirUsername.trim(),
-        pass: dirPassword.trim()
+        role: mntIsFaculty ? 'MENTOR & FACULTY (Dual Role)' : 'MENTOR',
+        name: mntName.trim(),
+        username: mntUsername.trim(),
+        pass: mntPassword.trim()
       });
-      setShowDirectorModal(false);
-      setDirName(''); setDirEmail(''); setDirUsername(''); setDirPhone(''); setDirDepartment('CSE'); setDirPermissions([]); setDirSuperAdminPassword(''); setDirIsFaculty(false);
+      setshowMentorModal(false);
+      setMntName(''); setMntEmail(''); setMntUsername(''); setMntPhone(''); setMntDepartment('CSE'); setMntPermissions([]); setMntSuperAdminPassword(''); setMntIsFaculty(false);
       fetchUsers(true);
-      fetchDirectorsAndSeniors();
+      fetchMentorsAndSeniors();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create director');
+      toast.error(err.response?.data?.message || 'Failed to create mentor');
     }
   };
 
@@ -415,7 +415,7 @@ export const UsersListPage: React.FC = () => {
         gender: senGender,
         seniorCode: 'AUTO',
         department: senDepartment.trim(),
-        directorId: selectedDirectorId,
+        mentorId: selectedmentorId,
         residenceStatus: senResidenceStatus,
         isCr: senIsCr,
         permissions: senPermissions,
@@ -430,7 +430,7 @@ export const UsersListPage: React.FC = () => {
       setShowSeniorModal(false);
       setSenName(''); setSenEmail(''); setSenUsername(''); setSenPhone(''); setSenDepartment('CSE'); setSenResidenceStatus('DAY_SCHOLAR'); setSenIsCr(false); setSenPermissions([]); setSenSuperAdminPassword('');
       fetchUsers(true);
-      fetchDirectorsAndSeniors();
+      fetchMentorsAndSeniors();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to create senior mentor');
     }
@@ -507,7 +507,7 @@ export const UsersListPage: React.FC = () => {
         isCr: junIsCr,
         superAdminPassword: junSuperAdminPassword.trim(),
         seniorId: junYear.includes('1st') ? selectedSeniorId : undefined,
-        directorId: junYear.includes('4th') ? selectedDirectorId : undefined
+        mentorId: junYear.includes('4th') ? selectedmentorId : undefined
       });
 
       setCreatedCredential({
@@ -617,7 +617,7 @@ export const UsersListPage: React.FC = () => {
           {/* Action Buttons Toolbar - Neatly Grouped */}
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 shrink-0">
             {/* Quick Tools Group */}
-            {['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'FACULTY'].includes(user?.role || '') && (
+            {['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'].includes(user?.role || '') && (
               <button
                 onClick={() => setShowScannerModal(true)}
                 className="px-3.5 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-98"
@@ -631,9 +631,9 @@ export const UsersListPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/70 p-1.5 rounded-xl border border-slate-800/90 shadow-2xs">
               <span className="px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider hidden lg:inline">Create Accounts:</span>
 
-              {['SUPER_ADMIN', 'ADMIN', 'DIRECTOR', 'SENIOR', 'FACULTY'].includes(user?.role || '') && (
+              {['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR', 'FACULTY'].includes(user?.role || '') && (
                 <button
-                  onClick={() => { fetchDirectorsAndSeniors(); setShowStudentModal(true); }}
+                  onClick={() => { fetchMentorsAndSeniors(); setShowStudentModal(true); }}
                   className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-lg shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
                 >
                   <GraduationCap className="w-3.5 h-3.5" /> Student
@@ -660,11 +660,10 @@ export const UsersListPage: React.FC = () => {
 
               {user?.role === 'SUPER_ADMIN' && (
                 <button
-                  onClick={() => setShowDirectorModal(true)}
+                  onClick={() => setshowMentorModal(true)}
                   className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-lg border border-slate-700 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
                 >
-                  <Building2 className="w-3.5 h-3.5" /> Director
-                </button>
+                  <Building2 className="w-3.5 h-3.5" />Mentor</button>
               )}
 
               {(user?.role === 'SUPER_ADMIN' || (user?.role === 'ADMIN' && user?.permissions?.includes('CREATE_ADMIN'))) && (
@@ -700,7 +699,7 @@ export const UsersListPage: React.FC = () => {
 
         {/* Role Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
-          {['ALL', 'SUPER_ADMIN', 'DIRECTOR', 'WARDEN', 'FACULTY', 'DISCIPLINARY_COMMITTEE', 'SENIOR', 'JUNIOR', 'ADMIN'].map((r) => (
+          {['ALL', 'SUPER_ADMIN', 'MENTOR', 'WARDEN', 'FACULTY', 'DISCIPLINARY_COMMITTEE', 'SENIOR', 'JUNIOR', 'ADMIN'].map((r) => (
             <button
               key={r}
               onClick={() => setActiveRoleFilter(r)}
@@ -734,7 +733,7 @@ export const UsersListPage: React.FC = () => {
                 {/* Accent indicator line */}
                 <div className={`absolute top-0 left-0 bottom-0 w-1 ${
                   u.role === 'SUPER_ADMIN' ? 'bg-purple-600' :
-                  u.role === 'DIRECTOR' ? 'bg-slate-900' :
+                  u.role === 'MENTOR' ? 'bg-slate-900' :
                   u.role === 'WARDEN' ? 'bg-indigo-600' :
                   u.role === 'FACULTY' ? 'bg-teal-600' :
                   u.role === 'SENIOR' ? 'bg-blue-600' :
@@ -745,7 +744,7 @@ export const UsersListPage: React.FC = () => {
                   <div className="flex items-center gap-2.5 font-black text-slate-900 cursor-pointer" onClick={() => setSelectedProfileId(u.id)}>
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shadow-xs shrink-0 ${
                       u.role === 'SUPER_ADMIN' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                      u.role === 'DIRECTOR' ? 'bg-slate-100 text-slate-900 border border-slate-200' :
+                      u.role === 'MENTOR' ? 'bg-slate-100 text-slate-900 border border-slate-200' :
                       u.role === 'WARDEN' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
                       u.role === 'FACULTY' ? 'bg-teal-100 text-teal-800 border border-teal-200' :
                       u.role === 'SENIOR' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
@@ -761,7 +760,7 @@ export const UsersListPage: React.FC = () => {
 
                   <span className={`px-2.5 py-0.5 text-[9px] font-black rounded-full border uppercase tracking-wider shrink-0 ${
                     u.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
-                    u.role === 'DIRECTOR' ? 'bg-slate-900 text-white border-slate-800' :
+                    u.role === 'MENTOR' ? 'bg-slate-900 text-white border-slate-800' :
                     u.role === 'WARDEN' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
                     u.role === 'FACULTY' ? 'bg-teal-950 text-teal-300 border-teal-700' :
                     u.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
@@ -862,7 +861,7 @@ export const UsersListPage: React.FC = () => {
                         >
                           <Gavel className="w-3 h-3 text-rose-600" /> Remove Committee
                         </button>
-                      ) : (u.role === 'FACULTY' || (u.role === 'DIRECTOR' && u.is_faculty)) ? (
+                      ) : (u.role === 'FACULTY' || (u.role === 'MENTOR' && u.is_faculty)) ? (
                         <button
                           onClick={() => {
                             setCommitteeTargetUser(u);
@@ -952,7 +951,7 @@ export const UsersListPage: React.FC = () => {
                     <td className="p-4">
                       <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border uppercase tracking-wider shadow-2xs whitespace-nowrap ${
                         u.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
-                        u.role === 'DIRECTOR' ? 'bg-slate-900 text-white border-slate-800' :
+                        u.role === 'MENTOR' ? 'bg-slate-900 text-white border-slate-800' :
                         u.role === 'WARDEN' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
                         u.role === 'FACULTY' ? 'bg-teal-950 text-teal-300 border-teal-700' :
                         u.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
@@ -1003,7 +1002,7 @@ export const UsersListPage: React.FC = () => {
                           <KeyRound className="w-3.5 h-3.5 text-amber-600" /> Reset Password
                         </button>
                       )}
-                      {['SUPER_ADMIN', 'ADMIN', 'DIRECTOR'].includes(user?.role || '') && (
+                      {['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') && (
                         u.is_disciplinary_committee ? (
                           <button
                             onClick={() => handleRemoveCommittee(u)}
@@ -1012,7 +1011,7 @@ export const UsersListPage: React.FC = () => {
                           >
                             <Gavel className="w-3.5 h-3.5 text-rose-600" /> Remove Committee
                           </button>
-                        ) : (u.role === 'FACULTY' || (u.role === 'DIRECTOR' && u.is_faculty)) ? (
+                        ) : (u.role === 'FACULTY' || (u.role === 'MENTOR' && u.is_faculty)) ? (
                           <button
                             onClick={() => {
                               setCommitteeTargetUser(u);
@@ -1255,8 +1254,8 @@ export const UsersListPage: React.FC = () => {
         document.body
       )}
 
-      {/* 2. CREATE DIRECTOR MODAL */}
-      {showDirectorModal && createPortal(
+      {/* 2. CREATE MENTOR MODAL */}
+      {showMentorModal && createPortal(
         <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-4 sm:p-5 space-y-4 max-h-[92vh] overflow-y-auto">
             <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-1 sm:hidden shrink-0" />
@@ -1268,47 +1267,47 @@ export const UsersListPage: React.FC = () => {
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase tracking-wider border border-indigo-500/30">
                     <Building2 className="w-3 h-3" /> Department Leadership
                   </div>
-                  <h3 className="text-base sm:text-lg font-black text-white tracking-tight">Create Director Account</h3>
+                  <h3 className="text-base sm:text-lg font-black text-white tracking-tight">Create Mentor Account</h3>
                   <p className="text-[11px] text-slate-300 font-medium">Assign department head credentials and supervision scope.</p>
                 </div>
-                <button onClick={() => setShowDirectorModal(false)} className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer shrink-0">
+                <button onClick={() => setshowMentorModal(false)} className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer shrink-0">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <form onSubmit={handleCreateDirector} className="space-y-4 text-xs" autoComplete="off">
+            <form onSubmit={handleCreateMentor} className="space-y-4 text-xs" autoComplete="off">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Director Full Name *</label>
-                <input type="text" required value={dirName} onChange={(e) => setDirName(e.target.value)} placeholder="Dr. Robert Vance" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden" />
+                <label className="block font-bold text-slate-700 mb-1">Mentor Full Name *</label>
+                <input type="text" required value={mntName} onChange={(e) => setMntName(e.target.value)} placeholder="Dr. Robert Vance" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Official Email *</label>
-                  <input type="email" required value={dirEmail} onChange={(e) => setDirEmail(e.target.value)} placeholder="director.cs@juniorconnect.edu" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden" />
+                  <input type="email" required value={mntEmail} onChange={(e) => setMntEmail(e.target.value)} placeholder="mentor.cs@juniorconnect.edu" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Login Username *</label>
-                  <input type="text" required value={dirUsername} onChange={(e) => setDirUsername(e.target.value)} placeholder="director_cs" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden" />
+                  <input type="text" required value={mntUsername} onChange={(e) => setMntUsername(e.target.value)} placeholder="director_cs" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Initial Password *</label>
-                  <input type="password" autoComplete="new-password" required value={dirPassword} onChange={(e) => setDirPassword(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-hidden" />
+                  <input type="password" autoComplete="new-password" required value={mntPassword} onChange={(e) => setMntPassword(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-hidden" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Mobile / Phone Number *</label>
-                  <input type="text" required value={dirPhone} onChange={(e) => setDirPhone(e.target.value)} placeholder="e.g. +91 9876543210" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold outline-hidden" />
+                  <input type="text" required value={mntPhone} onChange={(e) => setMntPhone(e.target.value)} placeholder="e.g. +91 9876543210" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold outline-hidden" />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Director Code (Read-Only)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Mentor Code (Read-Only)</label>
                   <input type="text" readOnly disabled value="DIR-?? (Auto-assigned)" className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-500 cursor-not-allowed outline-hidden" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Department *</label>
-                  <select required value={dirDepartment} onChange={(e) => setDirDepartment(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden">
+                  <select required value={mntDepartment} onChange={(e) => setMntDepartment(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden">
                     <option value="">Select Department Branch...</option>
                     {DEPARTMENT_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -1318,7 +1317,7 @@ export const UsersListPage: React.FC = () => {
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Gender Classification *</label>
-                <select required value={dirGender} onChange={(e) => setDirGender(e.target.value as any)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden cursor-pointer">
+                <select required value={mntGender} onChange={(e) => setMntGender(e.target.value as any)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden cursor-pointer">
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
                 </select>
@@ -1329,8 +1328,8 @@ export const UsersListPage: React.FC = () => {
                 <label className="flex items-center gap-2 font-black text-purple-950 text-xs cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    checked={dirIsFaculty}
-                    onChange={(e) => setDirIsFaculty(e.target.checked)}
+                    checked={mntIsFaculty}
+                    onChange={(e) => setMntIsFaculty(e.target.checked)}
                     className="w-4 h-4 text-purple-600 rounded-md focus:ring-purple-500 accent-purple-600 cursor-pointer"
                   />
                   <span className="flex items-center gap-1.5">
@@ -1338,14 +1337,14 @@ export const UsersListPage: React.FC = () => {
                   </span>
                 </label>
 
-                {dirIsFaculty && (
+                {mntIsFaculty && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div>
                       <label className="block font-bold text-purple-950 text-[11px] mb-1">Faculty Branch / Section *</label>
                       <select
                         required
-                        value={dirFacultyDept}
-                        onChange={(e) => setDirFacultyDept(e.target.value)}
+                        value={mntFacultyDept}
+                        onChange={(e) => setMntFacultyDept(e.target.value)}
                         className="w-full p-2 bg-white border border-purple-300 rounded-xl font-extrabold text-slate-900 text-xs outline-hidden focus:ring-2 focus:ring-purple-500 cursor-pointer"
                       >
                         <option value="">Select Branch...</option>
@@ -1358,8 +1357,8 @@ export const UsersListPage: React.FC = () => {
                       <label className="block font-bold text-purple-950 text-[11px] mb-1">Faculty Academic Year *</label>
                       <select
                         required
-                        value={dirFacultyYear}
-                        onChange={(e) => setDirFacultyYear(e.target.value)}
+                        value={mntFacultyYear}
+                        onChange={(e) => setMntFacultyYear(e.target.value)}
                         className="w-full p-2 bg-white border border-purple-300 rounded-xl font-extrabold text-slate-900 text-xs outline-hidden focus:ring-2 focus:ring-purple-500 cursor-pointer"
                       >
                         <option value="">Select Year...</option>
@@ -1376,19 +1375,19 @@ export const UsersListPage: React.FC = () => {
               {user?.role === 'SUPER_ADMIN' && (
                 <div className="space-y-2 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
                   <div className="flex items-center justify-between">
-                    <label className="block font-bold text-slate-800 uppercase tracking-wider text-[11px]">Super Admin: Grant Director Permissions (Optional)</label>
+                    <label className="block font-bold text-slate-800 uppercase tracking-wider text-[11px]">Super Admin: Grant Mentor Permissions (Optional)</label>
                     <div className="flex gap-2 text-[10px]">
-                      <button type="button" onClick={() => setDirPermissions(availablePermissions.map(p => p.key))} className="text-orange-600 font-bold hover:underline cursor-pointer">Select All</button>
-                      <button type="button" onClick={() => setDirPermissions([])} className="text-slate-500 font-bold hover:underline cursor-pointer">Deselect All</button>
+                      <button type="button" onClick={() => setMntPermissions(availablePermissions.map(p => p.key))} className="text-orange-600 font-bold hover:underline cursor-pointer">Select All</button>
+                      <button type="button" onClick={() => setMntPermissions([])} className="text-slate-500 font-bold hover:underline cursor-pointer">Deselect All</button>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 max-h-48 overflow-y-auto">
                     {availablePermissions.map((p) => {
-                      const isChecked = dirPermissions.includes(p.key);
+                      const isChecked = mntPermissions.includes(p.key);
                       return (
                         <label
                           key={p.key}
-                          onClick={() => setDirPermissions(isChecked ? dirPermissions.filter(k => k !== p.key) : [...dirPermissions, p.key])}
+                          onClick={() => setMntPermissions(isChecked ? mntPermissions.filter(k => k !== p.key) : [...mntPermissions, p.key])}
                           className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition-all ${
                             isChecked ? 'bg-orange-50 text-orange-950 border-orange-300 font-extrabold shadow-2xs' : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50 font-medium'
                           }`}
@@ -1399,22 +1398,22 @@ export const UsersListPage: React.FC = () => {
                       );
                     })}
                   </div>
-                  {dirPermissions.length > 0 && (
+                  {mntPermissions.length > 0 && (
                     <div className="pt-2">
                       <label className="block font-bold text-orange-950 mb-1">Verify Super Admin Password *</label>
                       <input
                         type="password"
                         required
                         placeholder="Enter Super Admin Password"
-                        value={dirSuperAdminPassword}
-                        onChange={(e) => setDirSuperAdminPassword(e.target.value)}
+                        value={mntSuperAdminPassword}
+                        onChange={(e) => setMntSuperAdminPassword(e.target.value)}
                         className="w-full p-2 bg-white border border-orange-300 rounded-xl font-mono outline-hidden"
                       />
                     </div>
                   )}
                 </div>
               )}
-              <button type="submit" className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl shadow-lg transition-all cursor-pointer">Create Director Account & Credentials</button>
+              <button type="submit" className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl shadow-lg transition-all cursor-pointer">Create Mentor Account & Credentials</button>
             </form>
           </div>
         </div>,
@@ -1661,26 +1660,26 @@ export const UsersListPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              {user?.role !== 'DIRECTOR' && (
+              {user?.role !== 'MENTOR' && (
                 <div className="space-y-1.5 p-3.5 bg-blue-50/90 border-2 border-blue-200 rounded-2xl shadow-2xs">
                   <label className="block font-black text-blue-950 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-blue-600" /> Assign Director Mentor *
+                    <Building2 className="w-4 h-4 text-blue-600" /> Assign Mentor *
                   </label>
-                  {directorsList.length === 0 ? (
+                  {MentorsList.length === 0 ? (
                     <p className="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-                      ⚠️ No Directors found. Please create a Director account first.
+                      ⚠️ No mentors found. Please create a Mentor Account first.
                     </p>
                   ) : (
                     <select
                       required
-                      value={selectedDirectorId}
-                      onChange={(e) => setSelectedDirectorId(e.target.value)}
+                      value={selectedmentorId}
+                      onChange={(e) => setSelectedmentorId(e.target.value)}
                       className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-extrabold text-slate-900 text-xs outline-hidden shadow-xs focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     >
-                      <option value="" className="text-slate-500 font-bold">-- Select Director Mentor --</option>
-                      {directorsList.map((d) => (
-                        <option key={d.director_id} value={d.director_id} className="font-extrabold text-slate-900 bg-white">
-                          {d.director_name} ({d.department})
+                      <option value="" className="text-slate-500 font-bold">-- Select Mentor --</option>
+                      {MentorsList.map((d) => (
+                        <option key={d.mentor_id} value={d.mentor_id} className="font-extrabold text-slate-900 bg-white">
+                          {d.mentor_name} ({d.department})
                         </option>
                       ))}
                     </select>
@@ -1889,7 +1888,7 @@ export const UsersListPage: React.FC = () => {
                       <option value="" className="text-slate-500 font-bold">-- Select Senior Mentor --</option>
                       {seniorsList.map((s) => (
                         <option key={s.senior_id} value={s.senior_id} className="font-extrabold text-slate-900 bg-white">
-                          {s.senior_name} (Director: {s.director_name})
+                          {s.senior_name} (Mentor: {s.mentor_name})
                         </option>
                       ))}
                     </select>
@@ -1897,27 +1896,27 @@ export const UsersListPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 4th Year: Required Director Selection */}
-              {junYear.includes('4th') && user?.role !== 'DIRECTOR' && (
+              {/* 4th Year: Required Mentor Selection */}
+              {junYear.includes('4th') && user?.role !== 'MENTOR' && (
                 <div className="space-y-1.5 p-3.5 bg-blue-50/90 border-2 border-blue-200 rounded-2xl shadow-2xs">
                   <label className="block font-black text-blue-950 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-blue-600" /> Assign Director / Department Head *
+                    <Building2 className="w-4 h-4 text-blue-600" /> Assign Mentor / Department Head *
                   </label>
-                  {directorsList.length === 0 ? (
+                  {MentorsList.length === 0 ? (
                     <p className="text-xs font-bold text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-                      ⚠️ No Directors found. Please create a Director account first.
+                      ⚠️ No mentors found. Please create a Mentor Account first.
                     </p>
                   ) : (
                     <select
                       required
-                      value={selectedDirectorId}
-                      onChange={(e) => setSelectedDirectorId(e.target.value)}
+                      value={selectedmentorId}
+                      onChange={(e) => setSelectedmentorId(e.target.value)}
                       className="w-full p-2.5 bg-white border border-blue-300 rounded-xl font-extrabold text-slate-900 text-xs outline-hidden shadow-xs focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     >
-                      <option value="" className="text-slate-500 font-bold">-- Select Department Director --</option>
-                      {directorsList.map((d) => (
-                        <option key={d.director_id} value={d.director_id} className="font-extrabold text-slate-900 bg-white">
-                          {d.director_name} ({d.department})
+                      <option value="" className="text-slate-500 font-bold">-- Select Department Mentor --</option>
+                      {MentorsList.map((d) => (
+                        <option key={d.mentor_id} value={d.mentor_id} className="font-extrabold text-slate-900 bg-white">
+                          {d.mentor_name} ({d.department})
                         </option>
                       ))}
                     </select>
