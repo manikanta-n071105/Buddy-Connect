@@ -40,9 +40,10 @@ import {
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  onReplay3DIntro?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DIntro }) => {
   const { user, logout } = useAuth();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [showScannerModal, setShowScannerModal] = useState(false);
@@ -295,11 +296,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Brand Header */}
         <div className="relative h-16 px-4 flex items-center justify-between border-b border-slate-800/90 bg-slate-950 overflow-hidden">
           <AcademicGridPattern className="text-orange-500/15" />
-          <div className="relative z-10 flex items-center gap-2 overflow-hidden">
+          <div
+            onClick={onReplay3DIntro}
+            className="relative z-10 flex items-center gap-2 overflow-hidden cursor-pointer group"
+            title="Click to replay 3D College Logo Intro Animation"
+          >
             <img
               src="/assets/sse-reveal.png"
               alt="Sanskrithi School of Engineering"
-              className="h-7 w-auto object-contain max-w-[155px] drop-shadow-md"
+              className="h-7 w-auto object-contain max-w-[155px] drop-shadow-md group-hover:scale-105 transition-transform"
             />
           </div>
 
@@ -345,6 +350,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </p>
             </div>
           </div>
+
+
         </div>
 
         {/* Scan Student QR Code Button for Admins, Directors & Faculty */}

@@ -6,18 +6,13 @@ import { toast } from 'sonner';
 import { SanskrithiIntro } from '../../components/common/SanskrithiIntro';
 
 export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
-
-  const handleIntroComplete = () => {
-    setShowIntro(false);
-    navigate('/dashboard');
-  };
+  const [showPreLoginIntro, setShowPreLoginIntro] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +25,7 @@ export const LoginPage: React.FC = () => {
     try {
       await login({ usernameOrEmail: usernameOrEmail.trim(), password: password.trim() });
       toast.success('Signed in successfully! Welcome to JuniorConnect.');
-      setShowIntro(true);
+      navigate('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Login failed. Invalid username or password.');
       setIsLoading(false);
@@ -51,10 +46,11 @@ export const LoginPage: React.FC = () => {
       <div className="absolute bottom-5 left-5 w-[250px] sm:w-[500px] h-[200px] sm:h-[300px] bg-indigo-600/15 blur-[100px] sm:blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute top-5 right-5 w-[200px] sm:w-[400px] h-[150px] sm:h-[250px] bg-purple-600/10 blur-[90px] sm:blur-[130px] rounded-full pointer-events-none" />
 
-      {/* 3D SSE Intro Animation on Login Success */}
-      {showIntro && (
-        <SanskrithiIntro onComplete={handleIntroComplete} />
+      {/* 3D SSE S-Logo Spin Intro BEFORE Login Page */}
+      {showPreLoginIntro && (
+        <SanskrithiIntro spinOnly={true} onComplete={() => setShowPreLoginIntro(false)} />
       )}
+
 
       {/* Main Container */}
       <div className="w-full max-w-sm sm:max-w-md mx-auto relative z-10 space-y-4 sm:space-y-6">
