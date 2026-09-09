@@ -80,6 +80,66 @@ button, input, select, textarea {
   font-family: 'Inter', sans-serif;
 }
 
+/* Glassmorphism & Modern UI Enhancements */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-card-dark {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(30, 41, 59, 0.8);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glow-orange {
+  box-shadow: 0 0 25px -5px rgba(234, 88, 12, 0.25);
+}
+
+.glow-indigo {
+  box-shadow: 0 0 25px -5px rgba(79, 70, 229, 0.25);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+}
+
+.gradient-text-orange {
+  background: linear-gradient(135deg, #ea580c 0%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-indigo {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-blue {
+  background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.88; transform: scale(1.015); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+}
+
 /* Custom Scrollbar for sleek UI */
 ::-webkit-scrollbar {
   width: 6px;
@@ -99,7 +159,7 @@ button, input, select, textarea {
   background: #94a3b8;
 }
 
-/* Anti-Screenshot Print Utility Styles: Ensures content is hidden on screen print */
+/* Anti-Screenshot Print Utility Styles */
 @media print {
   body {
     display: none !important;

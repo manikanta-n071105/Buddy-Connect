@@ -369,15 +369,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 to={item.path}
                 onClick={() => onClose && onClose()}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
+                  `group relative flex items-center gap-3 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-600/30 scale-[1.01]'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80 hover:translate-x-0.5'
+                      ? 'bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 text-white shadow-lg shadow-orange-600/30 scale-[1.01] border border-orange-400/30'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/90 hover:translate-x-1 border border-transparent'
                   }`
                 }
               >
-                <Icon className="w-4 h-4 shrink-0 opacity-90" />
-                <span className="tracking-wide">{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-amber-400'}`} />
+                    <span className="tracking-wide">{item.label}</span>
+                    {isActive && (
+                      <span className="absolute right-2.5 w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                    )}
+                  </>
+                )}
               </NavLink>
             );
           })}
