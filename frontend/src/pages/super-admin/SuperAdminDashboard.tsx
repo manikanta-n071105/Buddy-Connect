@@ -3,6 +3,7 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
+import { SpotlightCard, AnimatedCounter, AcademicGridPattern, ShinyText, GradientBorder } from '../../components/bits';
 import {
   Building2, Users, CircleAlert, CheckCircle2, Flame, BarChart3, ShieldCheck, Activity,
   FileSpreadsheet, Download, Printer, X, Search, Filter, Clock, Sparkles, AlertTriangle,
@@ -673,51 +674,59 @@ ${mom.decisions_reached || mom.decisionsReached}
       {/* ========================================================================= */}
       {activeTab === 'OVERVIEW' && (
         <div className="space-y-6 animate-in fade-in">
-          {/* Summary Cards */}
+          {/* Summary Cards with React Bits Spotlight & Animated Counters */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-lg transition-all group">
+            <SpotlightCard spotlightColor="rgba(79, 70, 229, 0.15)" className="p-5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total Directors</span>
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center transition-transform hover:scale-110">
                   <Building2 className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight">{stats.totalDirectors}</p>
+              <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight">
+                <AnimatedCounter value={stats.totalDirectors} />
+              </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Department Heads</div>
-            </div>
+            </SpotlightCard>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-lg transition-all group">
+            <SpotlightCard spotlightColor="rgba(37, 99, 235, 0.15)" className="p-5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Seniors & Juniors</span>
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center transition-transform hover:scale-110">
                   <Users className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight">{stats.totalSeniors} <span className="text-xs font-bold text-slate-400">S</span> / {stats.totalJuniors} <span className="text-xs font-bold text-slate-400">J</span></p>
+              <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight flex items-baseline gap-1">
+                <AnimatedCounter value={stats.totalSeniors} /> <span className="text-xs font-bold text-slate-400">S</span> / <AnimatedCounter value={stats.totalJuniors} /> <span className="text-xs font-bold text-slate-400">J</span>
+              </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Active Student Hierarchy</div>
-            </div>
+            </SpotlightCard>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-lg transition-all group">
+            <SpotlightCard spotlightColor="rgba(245, 158, 11, 0.15)" className="p-5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Active Open Issues</span>
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center transition-transform hover:scale-110">
                   <CircleAlert className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-amber-600 mt-3 tracking-tight">{stats.openIssues}</p>
+              <p className="text-3xl font-black text-amber-600 mt-3 tracking-tight">
+                <AnimatedCounter value={stats.openIssues} />
+              </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Pending Resolution</div>
-            </div>
+            </SpotlightCard>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs hover:shadow-lg transition-all group">
+            <SpotlightCard spotlightColor="rgba(16, 185, 129, 0.15)" className="p-5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Satisfaction Rate</span>
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center transition-transform hover:scale-110">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
               </div>
-              <p className="text-3xl font-black text-emerald-600 mt-3 tracking-tight">{stats.satisfactionRate}%</p>
+              <p className="text-3xl font-black text-emerald-600 mt-3 tracking-tight">
+                <AnimatedCounter value={stats.satisfactionRate} suffix="%" />
+              </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Feedback Score</div>
-            </div>
+            </SpotlightCard>
           </div>
 
           {/* Quick Action Hubs */}

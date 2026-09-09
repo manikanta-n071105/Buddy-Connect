@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserProfileModal } from '../common/UserProfileModal';
 import { QrScannerModal } from '../common/QrScannerModal';
+import { AcademicGridPattern, ShinyText } from '../bits';
 import {
   LayoutDashboard,
   Users,
@@ -292,8 +293,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         }`}
       >
         {/* Brand Header */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-800/90 bg-slate-950">
-          <div className="flex items-center gap-2 overflow-hidden">
+        <div className="relative h-16 px-4 flex items-center justify-between border-b border-slate-800/90 bg-slate-950 overflow-hidden">
+          <AcademicGridPattern className="text-orange-500/15" />
+          <div className="relative z-10 flex items-center gap-2 overflow-hidden">
             <img
               src="/assets/sse-reveal.png"
               alt="Sanskrithi School of Engineering"
@@ -305,7 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-900 md:hidden rounded-lg cursor-pointer transition-colors"
+              className="relative z-10 p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-900 md:hidden rounded-lg cursor-pointer transition-colors"
               aria-label="Close Menu"
             >
               <X className="w-5 h-5" />
@@ -320,7 +322,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               if (onClose) onClose();
               setSelectedProfileId(user.id);
             }}
-            className="flex items-center gap-3 p-2.5 bg-slate-900/80 hover:bg-slate-900 rounded-xl border border-slate-800/90 hover:border-slate-700 cursor-pointer transition-all group"
+            className="relative overflow-hidden flex items-center gap-3 p-2.5 bg-slate-900/80 hover:bg-slate-900 rounded-xl border border-slate-800/90 hover:border-slate-700 cursor-pointer transition-all group"
             title="Click to view your profile"
           >
             <div className="w-9.5 h-9.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 p-2 group-hover:bg-orange-500/20 transition-colors">
@@ -338,7 +340,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </div>
             <div className="overflow-hidden flex-1">
               <p className="text-xs font-extrabold text-slate-100 truncate group-hover:text-orange-400 transition-colors">{user.name}</p>
-              <p className="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">{user.role.replace('_', ' ')}</p>
+              <p className="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">
+                <ShinyText text={user.role.replace('_', ' ')} />
+              </p>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { CredentialSuccessModal } from '../../components/common/CredentialSucces
 import { UserProfileModal } from '../../components/common/UserProfileModal';
 import { GoogleAuthenticatorModal } from '../../components/common/GoogleAuthenticatorModal';
 import { QrScannerModal } from '../../components/common/QrScannerModal';
+import { SpotlightCard, AnimatedCounter, AcademicGridPattern, ShinyText } from '../../components/bits';
 import { Users, UserPlus, Shield, Building2, BookOpen, UserCheck, GraduationCap, X, KeyRound, User as UserIcon, Search, Phone, Mail, Filter, Sparkles, ChevronRight, Layers, Lock, Bus, Home, Star, Smartphone, Gavel, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -601,6 +602,7 @@ export const UsersListPage: React.FC = () => {
     <div className="space-y-4 pb-8">
       {/* Sleek Banner Header - Matching Cohesive Design System */}
       <div className="relative overflow-hidden bg-slate-900 p-4 sm:p-5 rounded-2xl text-white shadow-md border border-slate-800">
+        <AcademicGridPattern className="text-orange-500/15" />
         <div className="absolute -right-12 -top-12 w-64 h-64 bg-orange-500/10 blur-3xl pointer-events-none rounded-full" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
