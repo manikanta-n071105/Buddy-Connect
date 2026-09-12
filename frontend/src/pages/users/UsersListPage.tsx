@@ -1534,6 +1534,10 @@ export const UsersListPage: React.FC = () => {
                 >
                   <option value="">None (Standard Faculty Member)</option>
                   <option value="DIRECTOR">Director</option>
+                  <option value="VICE PRINCIPAL">Vice Principal</option>
+                  <option value="CONTROLLER OF EXAMINATIONS">Controller of Examinations</option>
+                  <option value="MENTAL HEALTH COUNSELOR">Mental Health Counselor</option>
+                  <option value="DISCIPLINARY COMMITTEE">Disciplinary Committee Member</option>
                   <option value="HR">HR (Human Resources)</option>
                   <option value="ACCOUNTS DEPT">Accounts Department</option>
                   <option value="HOD">HOD (Head of Department)</option>
