@@ -8,7 +8,7 @@ import { UserProfileModal } from '../../components/common/UserProfileModal';
 import { GoogleAuthenticatorModal } from '../../components/common/GoogleAuthenticatorModal';
 import { QrScannerModal } from '../../components/common/QrScannerModal';
 import { SpotlightCard, AnimatedCounter, AcademicGridPattern, ShinyText } from '../../components/bits';
-import { Users, UserPlus, Shield, Building2, BookOpen, UserCheck, GraduationCap, X, KeyRound, User as UserIcon, Search, Phone, Mail, Filter, Sparkles, ChevronRight, Layers, Lock, Bus, Home, Star, Smartphone, Gavel, QrCode } from 'lucide-react';
+import { Users, UserPlus, Shield, Building2, BookOpen, UserCheck, GraduationCap, X, KeyRound, User as UserIcon, Search, Phone, Mail, Filter, Sparkles, ChevronRight, Layers, Lock, Bus, Home, Star, Smartphone, Gavel, QrCode, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { getBranchShortCode, DEPARTMENT_OPTIONS } from '../../types';
@@ -758,7 +758,6 @@ export const UsersListPage: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-xs font-black text-slate-900 hover:text-orange-600 hover:underline truncate">{u.name}</h4>
-                      <p className="text-[10px] text-orange-600 font-extrabold truncate">@{u.username}</p>
                     </div>
                   </div>
 
@@ -827,16 +826,19 @@ export const UsersListPage: React.FC = () => {
                         <Star className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" /> CR
                       </span>
                     )}
-                    {u.is_disciplinary_committee && (!u.special_role || !u.special_role.toUpperCase().includes('DISCIPLINARY')) && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
-                        <Gavel className="w-3 h-3 text-purple-700 shrink-0" /> Disciplinary Committee
-                      </span>
-                    )}
-                    {u.special_role && (
+                    {u.special_role ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black rounded-md bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs uppercase tracking-wider">
                         <Sparkles className="w-3 h-3 text-amber-300 shrink-0 fill-amber-300" /> {u.special_role}
                       </span>
-                    )}
+                    ) : u.is_disciplinary_committee ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs uppercase tracking-wider">
+                        <Gavel className="w-3 h-3 text-purple-700 shrink-0" /> Disciplinary Committee
+                      </span>
+                    ) : u.is_counselor ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black rounded-md bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs uppercase tracking-wider">
+                        <Heart className="w-3 h-3 text-rose-700 shrink-0" /> Mental Health Counselor
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
@@ -872,7 +874,7 @@ export const UsersListPage: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-500 font-extrabold uppercase tracking-wider">
                 <tr>
-                  <th className="p-4 min-w-[200px]">Full Name & Username</th>
+                  <th className="p-4 min-w-[200px]">Full Name</th>
                   <th className="p-4 min-w-[260px]">Email & Details</th>
                   <th className="p-4 min-w-[130px]">Assigned Role</th>
                   <th className="p-4 min-w-[150px]">Phone Number</th>
@@ -886,10 +888,7 @@ export const UsersListPage: React.FC = () => {
                     <td className="p-4 font-black text-orange-600 hover:text-orange-700 hover:underline cursor-pointer" onClick={() => setSelectedProfileId(u.id)}>
                       <span className="flex items-center gap-2">
                         <UserIcon className="w-4 h-4 text-orange-500 shrink-0" />
-                        <div>
-                          <span>{u.name}</span>
-                          <span className="block text-[10px] text-orange-600 font-extrabold">@{u.username}</span>
-                        </div>
+                        <span>{u.name}</span>
                       </span>
                     </td>
                     <td className="p-4">
@@ -927,11 +926,6 @@ export const UsersListPage: React.FC = () => {
                             <Star className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" /> CR
                           </span>
                         )}
-                        {u.is_disciplinary_committee && (!u.special_role || !u.special_role.toUpperCase().includes('DISCIPLINARY')) && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
-                            <Gavel className="w-3 h-3 text-purple-700 shrink-0" /> Disciplinary Committee
-                          </span>
-                        )}
                       </div>
                     </td>
                     <td className="p-4">
@@ -946,11 +940,19 @@ export const UsersListPage: React.FC = () => {
                         }`}>
                           {u.role.replace('_', ' ')}
                         </span>
-                        {u.special_role && (
+                        {u.special_role ? (
                           <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
                             <Sparkles className="w-2.5 h-2.5 text-purple-700" /> {u.special_role}
                           </span>
-                        )}
+                        ) : u.is_disciplinary_committee ? (
+                          <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+                            <Gavel className="w-2.5 h-2.5 text-purple-700" /> Disciplinary Committee
+                          </span>
+                        ) : u.is_counselor ? (
+                          <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+                            <Heart className="w-2.5 h-2.5 text-rose-700" /> Mental Health Counselor
+                          </span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="p-4 text-slate-500 font-bold">
