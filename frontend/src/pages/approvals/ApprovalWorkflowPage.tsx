@@ -119,7 +119,14 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+    if (isSuperAdmin) {
+      setActiveTab('principal');
+    } else if (isHR || isDirector || isAccounts) {
+      setActiveTab('department');
+    } else {
+      setActiveTab('my');
+    }
+  }, [user]);
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();

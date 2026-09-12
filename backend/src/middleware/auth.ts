@@ -28,7 +28,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
 
     // 2. If not cached, fetch fresh user details in single query & populate entity IDs
     const userRes = await query(
-      `SELECT id, name, email, username, role, is_active, COALESCE(is_cr, false) as is_cr, COALESCE(is_counselor, false) as is_counselor, COALESCE(is_disciplinary_committee, false) as is_disciplinary_committee FROM users WHERE id = $1`,
+      `SELECT id, name, email, username, role, special_role, is_active, COALESCE(is_cr, false) as is_cr, COALESCE(is_counselor, false) as is_counselor, COALESCE(is_disciplinary_committee, false) as is_disciplinary_committee FROM users WHERE id = $1`,
       [payload.id]
     );
 
@@ -82,6 +82,8 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
       email: user.email,
       username: user.username,
       role: user.role,
+      special_role: user.special_role || '',
+      specialRole: user.special_role || '',
       is_cr: Boolean(user.is_cr),
       is_counselor: Boolean(user.is_counselor),
       is_disciplinary_committee: Boolean(user.is_disciplinary_committee),
