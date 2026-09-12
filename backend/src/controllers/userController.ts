@@ -112,8 +112,11 @@ const ensureUserColumns = async () => {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20) DEFAULT 'MALE'`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_cr BOOLEAN DEFAULT false`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_faculty BOOLEAN DEFAULT false`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS special_role VARCHAR(100)`);
+    await query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false`);
+    await query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false`);
     await query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS special_role VARCHAR(100)`);
     await query(`ALTER TABLE seniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
     await query(`ALTER TABLE juniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);

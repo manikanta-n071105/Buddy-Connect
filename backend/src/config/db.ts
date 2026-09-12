@@ -132,6 +132,9 @@ export const initCrFeedbackTables = async () => {
 export const initCounselingTables = async () => {
   try {
     await query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;
+      ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;
+
       CREATE TABLE IF NOT EXISTS counseling_appointments (
         id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
         student_user_id VARCHAR(36) REFERENCES users(id) ON DELETE CASCADE,
@@ -225,7 +228,11 @@ export const initDisciplinaryCommitteeTables = async () => {
   try {
     await query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS special_role VARCHAR(100);
       ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false;
+      ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;
+      ALTER TABLE faculty ADD COLUMN IF NOT EXISTS special_role VARCHAR(100);
 
       CREATE TABLE IF NOT EXISTS disciplinary_committee_members (
         id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,

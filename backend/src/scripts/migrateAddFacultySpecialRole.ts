@@ -32,13 +32,18 @@ async function migrateAddFacultySpecialRole() {
 
     await client.query('BEGIN;');
 
-    console.log('Adding special_role column to users and faculty tables...');
+    console.log('Adding special_role, is_counselor, and is_disciplinary_committee columns to users and faculty tables...');
 
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false;`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS special_role VARCHAR(100);`);
+
+    await client.query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;`);
+    await client.query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false;`);
     await client.query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS special_role VARCHAR(100);`);
 
     await client.query('COMMIT;');
-    console.log('special_role column added successfully!');
+    console.log('Faculty and users columns added successfully!');
 
   } catch (err: any) {
     await client.query('ROLLBACK;');
