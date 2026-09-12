@@ -348,6 +348,12 @@ export const createFaculty = async (req: AuthenticatedRequest, res: Response) =>
 
     const targetGender = gender;
     const finalSpecialRole = (specialRole || special_role || '').trim() || null;
+    const isSpecCommittee = Boolean(finalSpecialRole && finalSpecialRole.toUpperCase().includes('DISCIPLINARY'));
+    const isSpecCounselor = Boolean(finalSpecialRole && (finalSpecialRole.toUpperCase().includes('COUNSELOR') || finalSpecialRole.toUpperCase().includes('COUNSELLOR')));
+
+    const finalIsCounselor = Boolean(isCounselor) || isSpecCounselor;
+    const finalIsCommittee = Boolean(isDisciplinaryCommittee) || isSpecCommittee;
+
     let hasPermissionsToAssign = false;
     if (req.user!.role === 'SUPER_ADMIN' && Array.isArray(permissions) && permissions.length > 0) {
       await verifySuperAdminAuth(req.user!.id, superAdminPassword);
@@ -375,20 +381,22 @@ export const createFaculty = async (req: AuthenticatedRequest, res: Response) =>
       const uRes = await client.query(
         `INSERT INTO users (name, email, username, password_hash, phone, role, gender, must_change_password, is_counselor, is_disciplinary_committee, special_role)
          VALUES ($1, $2, $3, $4, $5, 'FACULTY', $6, true, $7, $8, $9) RETURNING id, name, email, username, role, gender, is_counselor, is_disciplinary_committee, special_role`,
-        [name.trim(), cleanEmail, cleanUsername, passwordHash, phone ? phone.trim() : null, targetGender, Boolean(isCounselor), Boolean(isDisciplinaryCommittee), finalSpecialRole]
+        [name.trim(), cleanEmail, cleanUsername, passwordHash, phone ? phone.trim() : null, targetGender, finalIsCounselor, finalIsCommittee, finalSpecialRole]
       );
       const user = uRes.rows[0];
 
       const fRes = await client.query(
         `INSERT INTO faculty (user_id, faculty_code, department, year, max_juniors, is_counselor, is_disciplinary_committee, special_role)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, faculty_code, department, year, max_juniors, status, special_role`,
-        [user.id, finalFacultyCode, department.trim(), year ? year.trim() : null, capacityLimit, Boolean(isCounselor), Boolean(isDisciplinaryCommittee), finalSpecialRole]
+        [user.id, finalFacultyCode, department.trim(), year ? year.trim() : null, capacityLimit, finalIsCounselor, finalIsCommittee, finalSpecialRole]
       );
 
-      if (Boolean(isDisciplinaryCommittee)) {
+      if (finalIsCommittee) {
         const desig = committeeDesignation ? committeeDesignation.trim() : 'Committee Member';
         await client.query(
-          `INSERT INTO disciplinary_committee_members (user_id, faculty_id, designation, appointed_by) VALUES ($1, $2, $3, $4)`,
+          `INSERT INTO disciplinary_committee_members (user_id, faculty_id, designation, appointed_by)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (user_id) DO UPDATE SET designation = EXCLUDED.designation`,
           [user.id, fRes.rows[0].id, desig, req.user!.id]
         );
       }
@@ -1254,6 +1262,17 @@ export const updateUserProfile = async (req: AuthenticatedRequest, res: Response
       if (specVal !== undefined) {
         uUpdates.push(`special_role = $${uParams.length + 1}`);
         uParams.push(specVal ? specVal.trim() : null);
+
+        const specValUpper = (specVal || '').trim().toUpperCase();
+        if (specValUpper.includes('DISCIPLINARY')) {
+          uUpdates.push(`is_disciplinary_committee = true`);
+        } else if (isDisciplinaryCommittee === undefined && targetUser.role === 'FACULTY' && specVal !== '') {
+          // preserve
+        }
+
+        if (specValUpper.includes('COUNSELOR') || specValUpper.includes('COUNSELLOR')) {
+          uUpdates.push(`is_counselor = true`);
+        }
       }
       if (isCr !== undefined) { uUpdates.push(`is_cr = $${uParams.length + 1}`); uParams.push(Boolean(isCr)); }
       if (isCounselor !== undefined) { uUpdates.push(`is_counselor = $${uParams.length + 1}`); uParams.push(Boolean(isCounselor)); }
@@ -1272,25 +1291,34 @@ export const updateUserProfile = async (req: AuthenticatedRequest, res: Response
         await client.query(`UPDATE faculty SET special_role = $1 WHERE user_id = $2`, [specVal ? specVal.trim() : null, userId]);
       }
 
-      // Update faculty table if faculty row exists
-      if (isDisciplinaryCommittee !== undefined) {
-        await client.query(`UPDATE faculty SET is_disciplinary_committee = $1 WHERE user_id = $2`, [Boolean(isDisciplinaryCommittee), userId]);
-        if (Boolean(isDisciplinaryCommittee)) {
-          const dcmCheck = await client.query(`SELECT id FROM disciplinary_committee_members WHERE user_id = $1`, [userId]);
-          const desig = committeeDesignation ? committeeDesignation.trim() : 'Committee Member';
-          if (dcmCheck.rowCount! > 0) {
-            await client.query(`UPDATE disciplinary_committee_members SET designation = $1 WHERE user_id = $2`, [desig, userId]);
-          } else {
-            const fRes = await client.query(`SELECT id FROM faculty WHERE user_id = $1`, [userId]);
-            const fId = fRes.rowCount! > 0 ? fRes.rows[0].id : null;
-            await client.query(
-              `INSERT INTO disciplinary_committee_members (user_id, faculty_id, designation, appointed_by) VALUES ($1, $2, $3, $4)`,
-              [userId, fId, desig, req.user!.id]
-            );
-          }
+      // Auto-sync disciplinary_committee_members and flags
+      const updatedUserRes = await client.query(`SELECT is_disciplinary_committee, is_counselor, special_role FROM users WHERE id = $1`, [userId]);
+      const updatedUser = updatedUserRes.rows[0];
+
+      const specUpper = (updatedUser?.special_role || '').trim().toUpperCase();
+      const shouldBeCommittee = Boolean(updatedUser?.is_disciplinary_committee || specUpper.includes('DISCIPLINARY'));
+      const shouldBeCounselor = Boolean(updatedUser?.is_counselor || specUpper.includes('COUNSELOR') || specUpper.includes('COUNSELLOR'));
+
+      if (shouldBeCommittee) {
+        await client.query(`UPDATE users SET is_disciplinary_committee = true WHERE id = $1`, [userId]);
+        await client.query(`UPDATE faculty SET is_disciplinary_committee = true WHERE user_id = $1`, [userId]);
+        const dcmCheck = await client.query(`SELECT id FROM disciplinary_committee_members WHERE user_id = $1`, [userId]);
+        const desig = committeeDesignation ? committeeDesignation.trim() : 'Committee Member';
+        if (dcmCheck.rowCount! > 0) {
+          await client.query(`UPDATE disciplinary_committee_members SET designation = $1 WHERE user_id = $2`, [desig, userId]);
         } else {
-          await client.query(`DELETE FROM disciplinary_committee_members WHERE user_id = $1`, [userId]);
+          const fRes = await client.query(`SELECT id FROM faculty WHERE user_id = $1`, [userId]);
+          const fId = fRes.rowCount! > 0 ? fRes.rows[0].id : null;
+          await client.query(
+            `INSERT INTO disciplinary_committee_members (user_id, faculty_id, designation, appointed_by) VALUES ($1, $2, $3, $4)`,
+            [userId, fId, desig, req.user!.id]
+          );
         }
+      }
+
+      if (shouldBeCounselor) {
+        await client.query(`UPDATE users SET is_counselor = true WHERE id = $1`, [userId]);
+        await client.query(`UPDATE faculty SET is_counselor = true WHERE user_id = $1`, [userId]);
       }
 
       const validRes = residenceStatus && ['DAY_SCHOLAR', 'HOSTELLER'].includes(residenceStatus) ? residenceStatus : null;
