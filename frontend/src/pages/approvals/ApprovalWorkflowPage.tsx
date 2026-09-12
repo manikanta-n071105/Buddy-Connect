@@ -41,35 +41,35 @@ export const ApprovalWorkflowPage: React.FC = () => {
   const [showResubmitModal, setShowResubmitModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Form States for 14-Point SSE Financial Assistance Application
-  const [newTitle, setNewTitle] = useState('APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024');
+  // Form States for 14-Point SSE Financial Assistance Application (Blank initial state, sample data shown in placeholders)
+  const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('Guest Program / Lecture');
-  const [newDept, setNewDept] = useState(user?.department || 'HAS');
+  const [newDept, setNewDept] = useState(user?.department || '');
   const [newDesc, setNewDesc] = useState('');
-  const [newAmount, setNewAmount] = useState('6000');
+  const [newAmount, setNewAmount] = useState('');
 
   // 14 Individual Points State
-  const [f1OrgSecretary, setF1OrgSecretary] = useState('Dr. R. Nithya, Associate Professor');
-  const [f2Dept, setF2Dept] = useState('HAS');
-  const [f3Theme, setF3Theme] = useState('Guest Lecture');
-  const [f4TargetGroup, setF4TargetGroup] = useState('HAS Faculties, all First Year Students');
-  const [f5ResourcePerson, setF5ResourcePerson] = useState('Dr. Padmasuvarna');
-  const [f6Affiliation, setF6Affiliation] = useState('Professor, Department of Physics, Jawaharlal Nehru Technological University Anantapur, Andhra Pradesh');
+  const [f1OrgSecretary, setF1OrgSecretary] = useState('');
+  const [f2Dept, setF2Dept] = useState(user?.department || '');
+  const [f3Theme, setF3Theme] = useState('');
+  const [f4TargetGroup, setF4TargetGroup] = useState('');
+  const [f5ResourcePerson, setF5ResourcePerson] = useState('');
+  const [f6Affiliation, setF6Affiliation] = useState('');
   const [f7Level, setF7Level] = useState('State Level');
   const [f8Duration, setF8Duration] = useState('Half Day');
-  const [f9PastPrograms, setF9PastPrograms] = useState('Organized 2 FDPs and 1 National Seminar in the last academic year');
-  const [f10LocalPart, setF10LocalPart] = useState('First Year Students & HAS Faculty');
-  const [f10OutstationPart, setF10OutstationPart] = useState('NIL');
+  const [f9PastPrograms, setF9PastPrograms] = useState('');
+  const [f10LocalPart, setF10LocalPart] = useState('');
+  const [f10OutstationPart, setF10OutstationPart] = useState('');
   
   // Expenditure
-  const [f11TaDa, setF11TaDa] = useState('NIL');
-  const [f11Honorarium, setF11Honorarium] = useState('5000');
-  const [f11Misc, setF11Misc] = useState('1000');
-  const [f11Total, setF11Total] = useState('6000');
+  const [f11TaDa, setF11TaDa] = useState('');
+  const [f11Honorarium, setF11Honorarium] = useState('');
+  const [f11Misc, setF11Misc] = useState('');
+  const [f11Total, setF11Total] = useState('');
   
-  const [f12AssistanceSought, setF12AssistanceSought] = useState('6000');
-  const [f13OtherSources, setF13OtherSources] = useState('NIL (External Sponsors: NIL, Registration Fees: NIL)');
-  const [f14ImportanceNote, setF14ImportanceNote] = useState('Guest Lecture on Physics & Engineering applications essential for first-year students foundational growth.');
+  const [f12AssistanceSought, setF12AssistanceSought] = useState('');
+  const [f13OtherSources, setF13OtherSources] = useState('');
+  const [f14ImportanceNote, setF14ImportanceNote] = useState('');
 
   // Auto-calculate Total Expenditure
   const calculateTotalExp = (hon: string, misc: string) => {
@@ -740,6 +740,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024"
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
