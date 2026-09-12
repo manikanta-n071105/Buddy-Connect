@@ -7,8 +7,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
-        poppins: ['Poppins', 'sans-serif'],
+        sans: ['"GT America"', 'Plus Jakarta Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        gtamerica: ['"GT America"', 'sans-serif'],
+        poppins: ['"GT America"', 'Poppins', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
