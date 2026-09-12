@@ -861,29 +861,6 @@ export const UsersListPage: React.FC = () => {
                         <KeyRound className="w-3 h-3 text-amber-600" /> Reset
                       </button>
                     )}
-                    {['SUPER_ADMIN', 'ADMIN'].includes(user?.role || '') && (
-                      u.is_disciplinary_committee ? (
-                        <button
-                          onClick={() => handleRemoveCommittee(u)}
-                          className="px-3 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-xl transition-colors inline-flex items-center gap-1 cursor-pointer"
-                          title="Remove from Disciplinary Committee"
-                        >
-                          <Gavel className="w-3 h-3 text-rose-600" /> Remove Committee
-                        </button>
-                      ) : (u.role === 'FACULTY' || (u.role === 'MENTOR' && u.is_faculty)) ? (
-                        <button
-                          onClick={() => {
-                            setCommitteeTargetUser(u);
-                            setCommitteeDesignation('Committee Member');
-                            setShowCommitteeModal(true);
-                          }}
-                          className="px-3 py-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-xl transition-colors inline-flex items-center gap-1 cursor-pointer"
-                          title="Appoint to Disciplinary Committee"
-                        >
-                          <Gavel className="w-3 h-3 text-purple-600" /> Appoint Committee
-                        </button>
-                      ) : null
-                    )}
                   </div>
                 </div>
               </div>
@@ -1017,29 +994,6 @@ export const UsersListPage: React.FC = () => {
                         >
                           <KeyRound className="w-3.5 h-3.5 text-amber-600" /> Reset Password
                         </button>
-                      )}
-                      {['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(user?.role || '') && (
-                        u.is_disciplinary_committee ? (
-                          <button
-                            onClick={() => handleRemoveCommittee(u)}
-                            className="px-3 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                            title="Remove from Disciplinary Committee"
-                          >
-                            <Gavel className="w-3.5 h-3.5 text-rose-600" /> Remove Committee
-                          </button>
-                        ) : (u.role === 'FACULTY' || (u.role === 'MENTOR' && u.is_faculty)) ? (
-                          <button
-                            onClick={() => {
-                              setCommitteeTargetUser(u);
-                              setCommitteeDesignation('Committee Member');
-                              setShowCommitteeModal(true);
-                            }}
-                            className="px-3 py-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200/80 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                            title="Appoint to Disciplinary Committee"
-                          >
-                            <Gavel className="w-3.5 h-3.5 text-purple-600" /> Appoint Committee
-                          </button>
-                        ) : null
                       )}
                     </td>
                   </tr>
