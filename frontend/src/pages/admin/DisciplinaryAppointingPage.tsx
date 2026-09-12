@@ -2,17 +2,24 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { LoadingState } from '../../components/common/LoadingState';
-import { User, getBranchShortCode } from '../../types';
-import { Gavel, Heart, ShieldCheck, ShieldAlert, Search, Plus, Trash2, X, KeyRound, Building2, UserCheck, BookOpen, Layers, CheckCircle2, AlertTriangle, Clock, Smartphone, Scissors, CreditCard, UserX, FileWarning } from 'lucide-react';
+import { getBranchShortCode } from '../../types';
+import { Gavel, Heart, ShieldCheck, ShieldAlert, Search, Plus, Trash2, X, KeyRound, User as UserIcon, Sparkles, Edit3, CheckCircle2, AlertTriangle, Clock, Smartphone, Scissors, CreditCard, UserX, FileWarning } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileDisciplinaryComplaintModal } from '../../components/common/FileDisciplinaryComplaintModal';
-
 import { fetchWithCache } from '../../utils/swr';
 
 export const DisciplinaryAppointingPage: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'DISCIPLINARY' | 'COUNSELOR' | 'COMPLAINTS'>('DISCIPLINARY');
+  const [activeTab, setActiveTab] = useState<'SPECIAL_ROLES' | 'DISCIPLINARY' | 'COUNSELOR' | 'COMPLAINTS'>('SPECIAL_ROLES');
+  const [roleFilter, setRoleFilter] = useState('ALL');
   const [showFileInfractionModal, setShowFileInfractionModal] = useState(false);
+
+  // Special Roles State
+  const [showSpecialRoleModal, setShowSpecialRoleModal] = useState(false);
+  const [targetFacultyForSpecialRole, setTargetFacultyForSpecialRole] = useState<any>(null);
+  const [selectedSpecialRoleVal, setSelectedSpecialRoleVal] = useState('DIRECTOR');
+  const [customSpecialRoleVal, setCustomSpecialRoleVal] = useState('');
+  const [isSubmittingSpecialRole, setIsSubmittingSpecialRole] = useState(false);
 
   // Disciplinary Committee State
   const [committeeMembers, setCommitteeMembers] = useState<any[]>([]);
@@ -97,11 +104,58 @@ export const DisciplinaryAppointingPage: React.FC = () => {
     fetchAllComplaints();
   }, []);
 
+  // Handlers for Special Roles Appointing
+  const handleAssignSpecialRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetFacultyForSpecialRole) {
+      toast.error('Please select a faculty member');
+      return;
+    }
+    const finalRole = selectedSpecialRoleVal === 'CUSTOM' ? customSpecialRoleVal.trim() : selectedSpecialRoleVal;
+
+    setIsSubmittingSpecialRole(true);
+    try {
+      await api.put(`/users/${targetFacultyForSpecialRole.id}`, {
+        specialRole: finalRole || '',
+        special_role: finalRole || ''
+      });
+      toast.success(`Special Role "${finalRole || 'None'}" updated for ${targetFacultyForSpecialRole.name}!`);
+      setShowSpecialRoleModal(false);
+      setTargetFacultyForSpecialRole(null);
+      setCustomSpecialRoleVal('');
+      fetchFacultyCandidates(true);
+      fetchCommitteeMembers(true);
+      fetchCounselors(true);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update special role');
+    } finally {
+      setIsSubmittingSpecialRole(false);
+    }
+  };
+
+  const handleClearSpecialRole = async (u: any) => {
+    if (!window.confirm(`Are you sure you want to remove the special role for ${u.name}?`)) return;
+    try {
+      await api.put(`/users/${u.id}`, {
+        specialRole: '',
+        special_role: '',
+        isDisciplinaryCommittee: false,
+        isCounselor: false
+      });
+      toast.success(`Special role removed for ${u.name}`);
+      fetchFacultyCandidates(true);
+      fetchCommitteeMembers(true);
+      fetchCounselors(true);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to remove special role');
+    }
+  };
+
   // Handlers for Disciplinary Committee
   const handleAppointCommittee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) {
-      toast.error('Please select a Faculty member or Mentor');
+      toast.error('Please select a faculty member');
       return;
     }
 
@@ -112,30 +166,28 @@ export const DisciplinaryAppointingPage: React.FC = () => {
         designation: committeeDesignation.trim() || 'Committee Member'
       });
 
-      toast.success('Appointed member to Disciplinary Committee successfully!');
+      const appointedUser = facultyOptions.find((f) => f.id === selectedUserId);
+      toast.success(`Appointed ${appointedUser?.name || 'Faculty'} to Disciplinary Committee!`);
       setShowAppointCommitteeModal(false);
       setCommitteeDesignation('Committee Member');
       fetchCommitteeMembers(true);
       fetchFacultyCandidates(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to appoint committee member');
+      toast.error(err.response?.data?.message || 'Failed to appoint to Disciplinary Committee');
     } finally {
       setIsSubmittingCommittee(false);
     }
   };
 
-  const handleRemoveCommittee = async (memberId: string, memberName: string) => {
-    if (!window.confirm(`Are you sure you want to remove ${memberName} from the Disciplinary Committee?`)) {
-      return;
-    }
-
+  const handleRemoveCommitteeMember = async (userId: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove ${name} from the Disciplinary Committee?`)) return;
     try {
-      await api.delete(`/users/disciplinary-committee/${memberId}`);
-      toast.success(`Removed ${memberName} from Disciplinary Committee`);
+      await api.post('/users/disciplinary-committee/remove', { userId });
+      toast.success(`Removed ${name} from Disciplinary Committee`);
       fetchCommitteeMembers(true);
       fetchFacultyCandidates(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to remove committee member');
+      toast.error(err.response?.data?.message || 'Failed to remove member');
     }
   };
 
@@ -178,6 +230,30 @@ export const DisciplinaryAppointingPage: React.FC = () => {
     }
   };
 
+  // Filtering Logic
+  const specialRoleFaculty = facultyOptions.filter((u) => {
+    if (!searchTerm.trim() && roleFilter === 'ALL') return true;
+    const t = searchTerm.toLowerCase();
+    const name = (u.name || '').toLowerCase();
+    const dept = (u.department || '').toLowerCase();
+    const roleStr = (u.special_role || '').toLowerCase();
+    const matchesSearch = name.includes(t) || dept.includes(t) || roleStr.includes(t);
+    
+    if (roleFilter === 'ALL') return matchesSearch;
+    const uRole = (u.special_role || '').toUpperCase();
+    if (roleFilter === 'DIRECTOR') return matchesSearch && uRole.includes('DIRECTOR');
+    if (roleFilter === 'VICE_PRINCIPAL') return matchesSearch && uRole.includes('VICE');
+    if (roleFilter === 'PRINCIPAL') return matchesSearch && (uRole.includes('PRINCIPAL') && !uRole.includes('VICE'));
+    if (roleFilter === 'DEAN') return matchesSearch && uRole.includes('DEAN');
+    if (roleFilter === 'HOD') return matchesSearch && uRole.includes('HOD');
+    if (roleFilter === 'CONTROLLER') return matchesSearch && uRole.includes('CONTROLLER');
+    if (roleFilter === 'COUNSELOR') return matchesSearch && (uRole.includes('COUNSELOR') || u.is_counselor);
+    if (roleFilter === 'DISCIPLINARY') return matchesSearch && (uRole.includes('DISCIPLINARY') || u.is_disciplinary_committee);
+    if (roleFilter === 'HR') return matchesSearch && uRole.includes('HR');
+    if (roleFilter === 'ACCOUNTS') return matchesSearch && uRole.includes('ACCOUNT');
+    return matchesSearch;
+  });
+
   const filteredCommittee = committeeMembers.filter((m) => {
     if (!searchTerm.trim()) return true;
     const t = searchTerm.toLowerCase();
@@ -207,6 +283,10 @@ export const DisciplinaryAppointingPage: React.FC = () => {
 
   const canAppoint = ['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role || '');
 
+  const totalSpecialRoleHolders = facultyOptions.filter(
+    (f) => f.special_role || f.is_disciplinary_committee || f.is_counselor
+  ).length;
+
   return (
     <div className="space-y-6 pb-12">
       {/* Page Header Banner */}
@@ -215,13 +295,13 @@ export const DisciplinaryAppointingPage: React.FC = () => {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-[10px] font-black uppercase tracking-wider">
-              <ShieldCheck className="w-3 h-3 text-purple-400" /> Appointing Management Hub
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-400" /> Administrative Leadership Hub
             </div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
               Special Roles & Committee Appointing Hub
             </h1>
             <p className="text-xs text-slate-300 font-medium max-w-2xl">
-              Dedicated administrative hub for appointing <strong className="text-purple-300">Disciplinary Committee Members</strong> and <strong className="text-rose-300">Mental Health Counseling Teachers</strong>.
+              Centralized administrative hub to appoint, manage, and assign all <strong className="text-amber-300">Special Roles & Designations</strong> (Director, Vice Principal, Dean, HOD, Counselor, Disciplinary Committee, HR, Accounts).
             </p>
           </div>
 
@@ -232,6 +312,20 @@ export const DisciplinaryAppointingPage: React.FC = () => {
                 className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-98"
               >
                 <ShieldAlert className="w-4 h-4" /> Report Student Infraction
+              </button>
+            )}
+
+            {canAppoint && activeTab === 'SPECIAL_ROLES' && (
+              <button
+                onClick={() => {
+                  setTargetFacultyForSpecialRole(facultyOptions[0] || null);
+                  setSelectedSpecialRoleVal('DIRECTOR');
+                  setCustomSpecialRoleVal('');
+                  setShowSpecialRoleModal(true);
+                }}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-950" /> Appoint Special Role
               </button>
             )}
 
@@ -265,6 +359,16 @@ export const DisciplinaryAppointingPage: React.FC = () => {
       {/* Navigation Tabs & Search Toolbar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('SPECIAL_ROLES')}
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeTab === 'SPECIAL_ROLES'
+                ? 'bg-slate-900 text-amber-300 shadow-sm border border-slate-700'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400/20" /> All Special Roles ({totalSpecialRoleHolders})
+          </button>
           <button
             onClick={() => setActiveTab('DISCIPLINARY')}
             className={`px-4 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
@@ -309,69 +413,103 @@ export const DisciplinaryAppointingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* TAB 1: DISCIPLINARY COMMITTEE MEMBERS */}
-      {activeTab === 'DISCIPLINARY' && (
+      {/* TAB 0: ALL SPECIAL ROLES & DESIGNATIONS */}
+      {activeTab === 'SPECIAL_ROLES' && (
         <div className="space-y-4">
-          {isLoadingCommittee ? (
-            <LoadingState message="Fetching Disciplinary Committee members..." />
-          ) : filteredCommittee.length === 0 ? (
+          {/* Sub-filter chips */}
+          <div className="flex items-center gap-1.5 flex-wrap bg-slate-100/70 p-2 rounded-2xl border border-slate-200/80">
+            {[
+              { key: 'ALL', label: 'All Faculty & Mentors' },
+              { key: 'DIRECTOR', label: 'Directors' },
+              { key: 'VICE_PRINCIPAL', label: 'Vice Principals' },
+              { key: 'PRINCIPAL', label: 'Principals' },
+              { key: 'DEAN', label: 'Deans' },
+              { key: 'HOD', label: 'HODs' },
+              { key: 'CONTROLLER', label: 'Controllers' },
+              { key: 'COUNSELOR', label: 'Counselors' },
+              { key: 'DISCIPLINARY', label: 'Disciplinary Committee' },
+              { key: 'HR', label: 'HR' },
+              { key: 'ACCOUNTS', label: 'Accounts' }
+            ].map((chip) => (
+              <button
+                key={chip.key}
+                onClick={() => setRoleFilter(chip.key)}
+                className={`px-3 py-1.5 text-[10px] font-black rounded-xl transition-all cursor-pointer ${
+                  roleFilter === chip.key
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Special Roles Faculty Cards Grid */}
+          {specialRoleFaculty.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
-              <Gavel className="w-10 h-10 text-purple-500 mx-auto" />
-              <h3 className="text-sm font-black text-slate-900 uppercase">No Disciplinary Committee Members Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">Click "Appoint Committee Member" to select Faculty members or mentors and assign custom committee roles.</p>
+              <Sparkles className="w-10 h-10 text-amber-500 mx-auto" />
+              <h3 className="text-sm font-black text-slate-900 uppercase">No Faculty Members Found for Selected Designation</h3>
+              <p className="text-xs text-slate-500">Click "Appoint Special Role" above to assign leadership titles to faculty members.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCommittee.map((m) => {
-                const displayName = m.name || m.faculty_name || 'Committee Member';
+              {specialRoleFaculty.map((f) => {
+                const displaySpecialRole = f.special_role || (f.is_disciplinary_committee ? 'DISCIPLINARY COMMITTEE' : f.is_counselor ? 'MENTAL HEALTH COUNSELOR' : null);
+
                 return (
-                  <div key={m.id || m.user_id} className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4 flex flex-col justify-between relative overflow-hidden">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-800 border border-purple-200 flex items-center justify-center font-black text-sm shadow-xs">
-                            {displayName.charAt(0).toUpperCase()}
+                  <div key={f.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:shadow-md transition-all space-y-3 relative overflow-hidden flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shrink-0">
+                            {f.name.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <h4 className="font-extrabold text-xs text-slate-900">{displayName}</h4>
-                            <p className="text-[11px] text-purple-600 font-extrabold">@{m.username || 'user'}</p>
+                          <div className="min-w-0">
+                            <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm truncate">{f.name}</h4>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{f.department || 'General Faculty'}</p>
                           </div>
                         </div>
 
-                        <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-purple-950 text-purple-200 border border-purple-800 tracking-wider uppercase flex items-center gap-1 shrink-0">
-                          <Gavel className="w-3 h-3 text-purple-400" /> Member
-                        </span>
+                        {displaySpecialRole ? (
+                          <span className="px-2.5 py-1 text-[9px] font-black rounded-xl bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs uppercase tracking-wider whitespace-nowrap flex items-center gap-1 shrink-0">
+                            <Sparkles className="w-3 h-3 text-purple-700 shrink-0" /> {displaySpecialRole}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 text-[9px] font-bold rounded-xl bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider shrink-0">
+                            Standard Staff
+                          </span>
+                        )}
                       </div>
 
-                      <div className="space-y-2 text-xs">
-                        <div className="p-2.5 bg-purple-50/70 border border-purple-200/80 rounded-xl">
-                          <span className="text-[10px] text-purple-700 font-extrabold uppercase tracking-wider block">Committee Designation</span>
-                          <span className="font-black text-purple-950 text-xs">{m.designation || 'Committee Member'}</span>
-                        </div>
-
-                        {m.department && (
-                          <div className="flex items-center justify-between text-slate-600 text-xs pt-1">
-                            <span className="font-semibold text-slate-400">Department:</span>
-                            <span className="font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                              {getBranchShortCode(m.department)}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between text-slate-600 text-xs">
-                          <span className="font-semibold text-slate-400">Appointed Date:</span>
-                          <span className="font-bold text-slate-700">{m.created_at ? new Date(m.created_at).toLocaleDateString() : 'Active'}</span>
-                        </div>
+                      <div className="text-xs text-slate-600 space-y-1">
+                        <p className="font-medium truncate"><strong className="text-slate-800">Email:</strong> {f.email}</p>
+                        {f.phone && <p className="font-medium"><strong className="text-slate-800">Phone:</strong> {f.phone}</p>}
                       </div>
                     </div>
 
                     {canAppoint && (
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+                      <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100">
                         <button
-                          onClick={() => handleRemoveCommittee(m.user_id || m.id, displayName)}
-                          className="px-3.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                          onClick={() => {
+                            setTargetFacultyForSpecialRole(f);
+                            setSelectedSpecialRoleVal(f.special_role || 'DIRECTOR');
+                            setCustomSpecialRoleVal('');
+                            setShowSpecialRoleModal(true);
+                          }}
+                          className="flex-1 py-1.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl border border-amber-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Remove Member
+                          <Edit3 className="w-3.5 h-3.5 text-amber-600" /> Edit Role
                         </button>
+                        {displaySpecialRole && (
+                          <button
+                            onClick={() => handleClearSpecialRole(f)}
+                            className="py-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors cursor-pointer"
+                            title="Remove Special Role"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -382,149 +520,165 @@ export const DisciplinaryAppointingPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: MENTAL HEALTH COUNSELING TEACHERS */}
-      {activeTab === 'COUNSELOR' && (
+      {/* TAB 1: DISCIPLINARY COMMITTEE MEMBERS */}
+      {activeTab === 'DISCIPLINARY' && (
         <div className="space-y-4">
-          {isLoadingCounselors ? (
-            <LoadingState message="Fetching Mental Health Counseling Teachers..." />
-          ) : filteredCounselors.length === 0 ? (
+          {isLoadingCommittee ? (
+            <LoadingState message="Fetching Disciplinary Committee members..." />
+          ) : filteredCommittee.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
-              <Heart className="w-10 h-10 text-rose-500 mx-auto" />
-              <h3 className="text-sm font-black text-slate-900 uppercase">No Counseling Teachers Appointed</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">Appoint Faculty members or mentors as Counseling Teachers to provide mental health guidance to students.</p>
+              <Gavel className="w-10 h-10 text-purple-500 mx-auto" />
+              <h3 className="text-sm font-black text-slate-900 uppercase">No Disciplinary Committee Members Found</h3>
+              <p className="text-xs text-slate-500">Click "Appoint Committee Member" above to appoint faculty to the Disciplinary Committee.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCounselors.map((c) => {
-                const displayName = c.name || 'Counseling Teacher';
-                return (
-                  <div key={c.user_id || c.id} className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4 flex flex-col justify-between relative overflow-hidden">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-800 border border-rose-200 flex items-center justify-center font-black text-sm shadow-xs">
-                            {displayName.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <h4 className="font-extrabold text-xs text-slate-900">{displayName}</h4>
-                            <p className="text-[11px] text-rose-600 font-extrabold">{c.code || c.role || 'Teacher'}</p>
-                          </div>
+              {filteredCommittee.map((m) => (
+                <div key={m.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:shadow-md transition-all space-y-3 relative overflow-hidden flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-purple-950 text-purple-200 flex items-center justify-center font-black text-sm shrink-0">
+                          <Gavel className="w-4.5 h-4.5 text-purple-400" />
                         </div>
-
-                        <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-rose-950 text-rose-200 border border-rose-800 tracking-wider uppercase flex items-center gap-1 shrink-0">
-                          <Heart className="w-3 h-3 text-rose-400 fill-rose-400" /> Counselor
-                        </span>
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm truncate">{m.name || m.faculty_name}</h4>
+                          <p className="text-[10px] text-purple-700 font-extrabold uppercase tracking-wider">{m.designation || 'Committee Member'}</p>
+                        </div>
                       </div>
+                      <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-purple-100 text-purple-900 border border-purple-200 uppercase tracking-wider shrink-0">
+                        Active
+                      </span>
+                    </div>
 
-                    <div className="space-y-2 text-xs">
-                      {c.department && (
-                        <div className="flex items-center justify-between text-slate-600 text-xs">
-                          <span className="font-semibold text-slate-400">Department:</span>
-                          <span className="font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                            {getBranchShortCode(c.department)}
-                          </span>
-                        </div>
-                      )}
-                      {c.email && (
-                        <div className="flex items-center justify-between text-slate-600 text-xs">
-                          <span className="font-semibold text-slate-400">Email:</span>
-                          <span className="font-bold text-slate-800 truncate max-w-[170px]">{c.email}</span>
-                        </div>
-                      )}
+                    <div className="text-xs text-slate-600 space-y-1">
+                      <p className="font-medium truncate"><strong className="text-slate-800">Email:</strong> {m.email}</p>
+                      {m.department && <p className="font-medium"><strong className="text-slate-800">Branch:</strong> {getBranchShortCode(m.department)}</p>}
                     </div>
                   </div>
 
                   {canAppoint && (
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
+                    <div className="pt-2 border-t border-slate-100 flex justify-end">
                       <button
-                        onClick={() => handleOpenCounselorModal(c, 'REMOVE')}
-                        className="px-3.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                        onClick={() => handleRemoveCommitteeMember(m.user_id || m.id, m.name || m.faculty_name)}
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Remove Counselor Status
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Remove Member
                       </button>
                     </div>
                   )}
                 </div>
-              );
-            })}
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* TAB 3: STUDENT DISCIPLINARY INFRACTIONS LOG */}
+      {/* TAB 2: MENTAL HEALTH COUNSELING TEACHERS */}
+      {activeTab === 'COUNSELOR' && (
+        <div className="space-y-4">
+          {isLoadingCounselors ? (
+            <LoadingState message="Fetching Counseling Teachers..." />
+          ) : filteredCounselors.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
+              <Heart className="w-10 h-10 text-rose-500 mx-auto" />
+              <h3 className="text-sm font-black text-slate-900 uppercase">No Counseling Teachers Appointed Yet</h3>
+              <p className="text-xs text-slate-500">Click "Appoint Counseling Teacher" above to designate faculty for confidential student counseling.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCounselors.map((c) => (
+                <div key={c.id || c.mentor_id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:shadow-md transition-all space-y-3 relative overflow-hidden flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-rose-950 text-rose-200 flex items-center justify-center font-black text-sm shrink-0">
+                          <Heart className="w-4.5 h-4.5 text-rose-400 fill-rose-400/40" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm truncate">{c.name || c.mentor_name}</h4>
+                          <p className="text-[10px] text-rose-700 font-extrabold uppercase tracking-wider">Mental Health Counselor</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-rose-100 text-rose-900 border border-rose-200 uppercase tracking-wider shrink-0">
+                        Confidential
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-600 space-y-1">
+                      <p className="font-medium truncate"><strong className="text-slate-800">Email:</strong> {c.email}</p>
+                      {c.department && <p className="font-medium"><strong className="text-slate-800">Branch:</strong> {getBranchShortCode(c.department)}</p>}
+                    </div>
+                  </div>
+
+                  {canAppoint && (
+                    <div className="pt-2 border-t border-slate-100 flex justify-end">
+                      <button
+                        onClick={() => handleOpenCounselorModal(c, 'REMOVE')}
+                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Revoke Status
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: STUDENT INFRACTIONS LOG */}
       {activeTab === 'COMPLAINTS' && (
         <div className="space-y-4">
           {isLoadingComplaints ? (
-            <LoadingState message="Fetching student disciplinary infractions log..." />
-          ) : complaintsList.filter((c) => {
-              const q = searchTerm.toLowerCase();
-              return (
-                c.student_name?.toLowerCase().includes(q) ||
-                c.student_email?.toLowerCase().includes(q) ||
-                c.complainant_name?.toLowerCase().includes(q) ||
-                c.complaint_type?.toLowerCase().includes(q) ||
-                c.description?.toLowerCase().includes(q)
-              );
-            }).length === 0 ? (
+            <LoadingState message="Fetching Disciplinary Infractions Log..." />
+          ) : complaintsList.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
-              <ShieldAlert className="w-10 h-10 text-amber-500 mx-auto" />
-              <h3 className="text-sm font-black text-slate-900 uppercase">No Student Infractions Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No disciplinary complaints matching your search query. Infractions logged against students (late comer, no uniform, improper haircut/beard) will appear here.
-              </p>
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+              <h3 className="text-sm font-black text-slate-900 uppercase">Clean Record: No Infractions Logged</h3>
+              <p className="text-xs text-slate-500">No disciplinary complaints or infractions have been filed against students.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {complaintsList
-                .filter((c) => {
-                  const q = searchTerm.toLowerCase();
-                  return (
-                    c.student_name?.toLowerCase().includes(q) ||
-                    c.student_email?.toLowerCase().includes(q) ||
-                    c.complainant_name?.toLowerCase().includes(q) ||
-                    c.complaint_type?.toLowerCase().includes(q) ||
-                    c.description?.toLowerCase().includes(q)
-                  );
-                })
-                .map((c) => {
-                  const IconComp =
-                    c.complaint_type === 'LATE_COMER' ? Clock :
-                    c.complaint_type === 'UNIFORM_VIOLATION' ? UserX :
-                    c.complaint_type === 'IMPROPER_BEARD_HAIRCUT' ? Scissors :
-                    c.complaint_type === 'ID_CARD_MISSING' ? CreditCard :
-                    c.complaint_type === 'MOBILE_USAGE' ? Smartphone :
-                    c.complaint_type === 'MISBEHAVIOR' ? AlertTriangle : FileWarning;
+              {complaintsList.map((c) => {
+                const IconComp =
+                  c.complaint_type === 'LATE_COMER' ? Clock :
+                  c.complaint_type === 'UNIFORM_VIOLATION' ? UserX :
+                  c.complaint_type === 'IMPROPER_BEARD_HAIRCUT' ? Scissors :
+                  c.complaint_type === 'ID_CARD_MISSING' ? CreditCard :
+                  c.complaint_type === 'MOBILE_USAGE' ? Smartphone :
+                  c.complaint_type === 'MISBEHAVIOR' ? AlertTriangle : FileWarning;
 
-                  return (
-                    <div key={c.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3 relative overflow-hidden">
-                      <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="px-2.5 py-1 text-[10px] font-black rounded-xl bg-rose-100 text-rose-900 border border-rose-300 uppercase tracking-wider inline-flex items-center gap-1.5">
-                              <IconComp className="w-3.5 h-3.5 text-rose-700" />
-                              {c.complaint_type.replace(/_/g, ' ')}
+                return (
+                  <div key={c.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3 relative overflow-hidden">
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-1 text-[10px] font-black rounded-xl bg-rose-100 text-rose-900 border border-rose-300 uppercase tracking-wider inline-flex items-center gap-1.5">
+                            <IconComp className="w-3.5 h-3.5 text-rose-700" />
+                            {c.complaint_type.replace(/_/g, ' ')}
+                          </span>
+                          {c.offense_number && (
+                            <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
+                              {c.offense_number === 1 ? '1st Offense' : c.offense_number === 2 ? '2nd Repeat' : c.offense_number === 3 ? '3rd Repeat' : `${c.offense_number}th Offense`}
                             </span>
-                            {c.offense_number && (
-                              <span className="px-2 py-0.5 text-[9px] font-black rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
-                                {c.offense_number === 1 ? '1st Offense' : c.offense_number === 2 ? '2nd Repeat' : c.offense_number === 3 ? '3rd Repeat' : `${c.offense_number}th Offense`}
-                              </span>
-                            )}
-                          </div>
-                          <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 pt-0.5">
-                            Student: <span className="text-orange-600 underline">{c.student_name}</span> (@{c.student_username})
-                          </h4>
-                          <p className="text-[10px] text-slate-500 font-semibold">{c.student_email}</p>
+                          )}
                         </div>
-                        <span className={`px-2.5 py-1 text-[10px] font-black rounded-xl uppercase tracking-wider shrink-0 shadow-2xs ${
-                          c.severity === 'CRITICAL' ? 'bg-rose-600 text-white' :
-                          c.severity === 'HIGH' ? 'bg-orange-500 text-white' :
-                          c.severity === 'MEDIUM' ? 'bg-amber-500 text-white' :
-                          'bg-slate-700 text-white'
-                        }`}>
-                          {c.severity}
-                        </span>
+                        <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 pt-0.5">
+                          Student: <span className="text-orange-600 underline">{c.student_name}</span> (@{c.student_username})
+                        </h4>
+                        <p className="text-[10px] text-slate-500 font-semibold">{c.student_email}</p>
                       </div>
+                      <span className={`px-2.5 py-1 text-[10px] font-black rounded-xl uppercase tracking-wider shrink-0 shadow-2xs ${
+                        c.severity === 'CRITICAL' ? 'bg-rose-600 text-white' :
+                        c.severity === 'HIGH' ? 'bg-orange-500 text-white' :
+                        c.severity === 'MEDIUM' ? 'bg-amber-500 text-white' :
+                        'bg-slate-700 text-white'
+                      }`}>
+                        {c.severity}
+                      </span>
+                    </div>
 
                     {c.description && (
                       <p className="text-xs text-slate-700 font-medium bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
@@ -548,6 +702,97 @@ export const DisciplinaryAppointingPage: React.FC = () => {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL: APPOINT / EDIT SPECIAL ROLE */}
+      {showSpecialRoleModal && (
+        <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="w-4.5 h-4.5 text-amber-500 fill-amber-400" /> Appoint Special Role / Designation
+              </h3>
+              <button onClick={() => setShowSpecialRoleModal(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignSpecialRole} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Select Faculty / Staff Member *</label>
+                <select
+                  required
+                  value={targetFacultyForSpecialRole?.id || ''}
+                  onChange={(e) => {
+                    const found = facultyOptions.find((f) => f.id === e.target.value);
+                    setTargetFacultyForSpecialRole(found);
+                    if (found) setSelectedSpecialRoleVal(found.special_role || 'DIRECTOR');
+                  }}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden focus:border-amber-500 cursor-pointer"
+                >
+                  {facultyOptions.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.department || 'Faculty'}) - Current Role: {f.special_role || 'Standard Staff'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Assign Special Role / Designation *</label>
+                <select
+                  value={selectedSpecialRoleVal}
+                  onChange={(e) => setSelectedSpecialRoleVal(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-amber-300 rounded-xl font-extrabold text-slate-900 outline-hidden focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                >
+                  <option value="">None (Remove Special Role)</option>
+                  <option value="DIRECTOR">Director</option>
+                  <option value="VICE PRINCIPAL">Vice Principal</option>
+                  <option value="PRINCIPAL">Principal</option>
+                  <option value="DEAN">Dean</option>
+                  <option value="HOD">HOD (Head of Department)</option>
+                  <option value="CONTROLLER OF EXAMINATIONS">Controller of Examinations</option>
+                  <option value="MENTAL HEALTH COUNSELOR">Mental Health Counselor</option>
+                  <option value="DISCIPLINARY COMMITTEE">Disciplinary Committee Member</option>
+                  <option value="HR">HR (Human Resources)</option>
+                  <option value="ACCOUNTS DEPT">Accounts Department</option>
+                  <option value="CUSTOM">Other / Custom Designation...</option>
+                </select>
+              </div>
+
+              {selectedSpecialRoleVal === 'CUSTOM' && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Custom Designation Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={customSpecialRoleVal}
+                    onChange={(e) => setCustomSpecialRoleVal(e.target.value)}
+                    placeholder="e.g. Vice Principal, Exam Controller"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden focus:border-amber-500"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSpecialRoleModal(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingSpecialRole || !targetFacultyForSpecialRole}
+                  className="px-4 py-2 text-xs font-extrabold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Sparkles className="w-3.5 h-3.5 fill-slate-950" /> Confirm Designation
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
