@@ -15,26 +15,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 243.4 75.4% 58.6%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 224 64% 33%; /* #1E3A8A Navy Blue */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 25 95% 53%; /* #F97316 Orange */
+    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 25 95% 53%; /* #F97316 Orange Accent */
+    --accent-foreground: 0 0% 100%; /* #FFFFFF */
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 243.4 75.4% 58.6%;
+    --ring: 25 95% 53%;
 
     --radius: 0.75rem;
+
+    --brand-navy: #1E3A8A;
+    --brand-orange: #F97316;
+    --brand-white: #FFFFFF;
   }
 
   * {
@@ -102,31 +106,31 @@ button, input, select, textarea {
 }
 
 .glow-orange {
-  box-shadow: 0 0 25px -5px rgba(234, 88, 12, 0.25);
+  box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.35);
+}
+
+.glow-navy {
+  box-shadow: 0 0 25px -5px rgba(30, 58, 138, 0.35);
 }
 
 .glow-indigo {
-  box-shadow: 0 0 25px -5px rgba(79, 70, 229, 0.25);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 25px -5px rgba(30, 58, 138, 0.25);
 }
 
 .gradient-text-orange {
-  background: linear-gradient(135deg, #ea580c 0%, #d97706 100%);
+  background: linear-gradient(135deg, #F97316 0%, #ea580c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.gradient-text-indigo {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+.gradient-text-navy {
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.gradient-text-blue {
-  background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+.gradient-text-brand {
+  background: linear-gradient(135deg, #1E3A8A 0%, #F97316 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
