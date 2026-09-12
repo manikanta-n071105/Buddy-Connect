@@ -145,7 +145,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setEditBloodGroup(p.blood_group || '');
       setEditSpecialRole(p.special_role || '');
       setEditCustomSpecialRole(
-        p.special_role && !['DIRECTOR', 'VICE PRINCIPAL', 'CONTROLLER OF EXAMINATIONS', 'MENTAL HEALTH COUNSELOR', 'DISCIPLINARY COMMITTEE', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(p.special_role)
+        p.special_role && !['DIRECTOR', 'VICE PRINCIPAL', 'CONTROLLER OF EXAMINATIONS', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(p.special_role)
           ? p.special_role
           : ''
       );
@@ -567,27 +567,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                 {(profile.role === 'FACULTY' || isSuperAdminOrAdmin) && (
                   <div className="space-y-2 pt-1 border-t border-slate-200/60">
                     <div>
-                      <label className="block font-bold text-slate-800 mb-1 text-xs">Special Role / Designation (e.g. Director, Counselor, HR)</label>
+                      <label className="block font-bold text-slate-800 mb-1 text-xs">Special Role / Designation (e.g. Director, Principal, HOD)</label>
                       <select
-                        value={['', 'DIRECTOR', 'VICE PRINCIPAL', 'CONTROLLER OF EXAMINATIONS', 'MENTAL HEALTH COUNSELOR', 'DISCIPLINARY COMMITTEE', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(editSpecialRole) ? editSpecialRole : 'CUSTOM'}
+                        value={['', 'DIRECTOR', 'VICE PRINCIPAL', 'CONTROLLER OF EXAMINATIONS', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(editSpecialRole) ? editSpecialRole : 'CUSTOM'}
                         onChange={(e) => setEditSpecialRole(e.target.value)}
                         className="w-full p-2 bg-white border border-purple-300 rounded-xl font-extrabold text-slate-900 outline-hidden focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
                       >
                         <option value="">None (Standard Staff / Faculty)</option>
                         <option value="DIRECTOR">Director</option>
                         <option value="VICE PRINCIPAL">Vice Principal</option>
+                        <option value="PRINCIPAL">Principal</option>
+                        <option value="DEAN">Dean</option>
+                        <option value="HOD">HOD (Head of Department)</option>
                         <option value="CONTROLLER OF EXAMINATIONS">Controller of Examinations</option>
-                        <option value="MENTAL HEALTH COUNSELOR">Mental Health Counselor</option>
-                        <option value="DISCIPLINARY COMMITTEE">Disciplinary Committee Member</option>
                         <option value="HR">HR (Human Resources)</option>
                         <option value="ACCOUNTS DEPT">Accounts Department</option>
-                        <option value="HOD">HOD (Head of Department)</option>
-                        <option value="DEAN">Dean</option>
-                        <option value="PRINCIPAL">Principal</option>
                         <option value="CUSTOM">Other / Custom Designation...</option>
                       </select>
                     </div>
-                    {(['CUSTOM'].includes(editSpecialRole) || (editSpecialRole && !['', 'DIRECTOR', 'VICE PRINCIPAL', 'CONTROLLER OF EXAMINATIONS', 'MENTAL HEALTH COUNSELOR', 'DISCIPLINARY COMMITTEE', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(editSpecialRole))) && (
+                    {(['CUSTOM'].includes(editSpecialRole) || (editSpecialRole && !['', 'DIRECTOR', 'VICE PRINCIPAL', 'CONTROLLER OF EXAMINATIONS', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(editSpecialRole))) && (
                       <div>
                         <label className="block font-bold text-slate-800 mb-1 text-xs">Custom Designation Title *</label>
                         <input
