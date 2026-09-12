@@ -41,12 +41,42 @@ export const ApprovalWorkflowPage: React.FC = () => {
   const [showResubmitModal, setShowResubmitModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Form States
-  const [newTitle, setNewTitle] = useState('');
-  const [newCategory, setNewCategory] = useState('Guest Lecture / Event');
-  const [newDesc, setNewDesc] = useState('');
-  const [newAmount, setNewAmount] = useState('');
+  // Form States for 14-Point SSE Financial Assistance Application
+  const [newTitle, setNewTitle] = useState('APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024');
+  const [newCategory, setNewCategory] = useState('Guest Program / Lecture');
   const [newDept, setNewDept] = useState(user?.department || 'HAS');
+
+  // 14 Individual Points State
+  const [f1OrgSecretary, setF1OrgSecretary] = useState('Dr. R. Nithya, Associate Professor');
+  const [f2Dept, setF2Dept] = useState('HAS');
+  const [f3Theme, setF3Theme] = useState('Guest Lecture');
+  const [f4TargetGroup, setF4TargetGroup] = useState('HAS Faculties, all First Year Students');
+  const [f5ResourcePerson, setF5ResourcePerson] = useState('Dr. Padmasuvarna');
+  const [f6Affiliation, setF6Affiliation] = useState('Professor, Department of Physics, Jawaharlal Nehru Technological University Anantapur, Andhra Pradesh');
+  const [f7Level, setF7Level] = useState('State Level');
+  const [f8Duration, setF8Duration] = useState('Half Day');
+  const [f9PastPrograms, setF9PastPrograms] = useState('Organized 2 FDPs and 1 National Seminar in the last academic year');
+  const [f10LocalPart, setF10LocalPart] = useState('First Year Students & HAS Faculty');
+  const [f10OutstationPart, setF10OutstationPart] = useState('NIL');
+  
+  // Expenditure
+  const [f11TaDa, setF11TaDa] = useState('NIL');
+  const [f11Honorarium, setF11Honorarium] = useState('5000');
+  const [f11Misc, setF11Misc] = useState('1000');
+  const [f11Total, setF11Total] = useState('6000');
+  
+  const [f12AssistanceSought, setF12AssistanceSought] = useState('6000');
+  const [f13OtherSources, setF13OtherSources] = useState('NIL (External Sponsors: NIL, Registration Fees: NIL)');
+  const [f14ImportanceNote, setF14ImportanceNote] = useState('Guest Lecture on Physics & Engineering applications essential for first-year students foundational growth.');
+
+  // Auto-calculate Total Expenditure
+  const calculateTotalExp = (hon: string, misc: string) => {
+    const h = parseFloat(hon) || 0;
+    const m = parseFloat(misc) || 0;
+    const tot = h + m;
+    setF11Total(tot > 0 ? tot.toString() : '6000');
+    setF12AssistanceSought(tot > 0 ? tot.toString() : '6000');
+  };
 
   // Principal Action State
   const [principalActionType, setPrincipalActionType] = useState<'APPROVE' | 'REQUEST_CHANGES' | 'REJECT'>('APPROVE');
@@ -89,26 +119,46 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newDesc.trim()) {
-      toast.error('Please enter requisition title and details');
+    if (!newTitle.trim()) {
+      toast.error('Please enter application title');
       return;
     }
+    
+    // Construct formatted 14-point description
+    const formatted14Points = `
+1. Organizing Secretary: ${f1OrgSecretary}
+2. Department: ${f2Dept}
+3. Theme: ${f3Theme}
+4. Target Group: ${f4TargetGroup}
+5. Resource Person: ${f5ResourcePerson}
+6. Affiliation: ${f6Affiliation}
+7. Level: ${f7Level}
+8. Duration: ${f8Duration}
+9. Past Programmes Organized: ${f9PastPrograms}
+10. Expected Participants: Local (${f10LocalPart}), Outstation (${f10OutstationPart})
+11. Estimated Expenditure:
+    - TA & DA: ${f11TaDa}
+    - Honorarium: Rs. ${f11Honorarium}
+    - Miscellaneous: Rs. ${f11Misc}
+    - Total Expenditure: Rs. ${f11Total}
+12. Financial Assistance Sought: Rs. ${f12AssistanceSought}
+13. Expected Other Sources: ${f13OtherSources}
+14. Note on Importance: ${f14ImportanceNote}
+`.trim();
+
     try {
       await api.post('/approvals', {
         title: newTitle,
         category: newCategory,
-        description: newDesc,
-        amount: parseFloat(newAmount) || 0,
-        department: newDept
+        description: formatted14Points,
+        amount: parseFloat(f11Total) || 6000,
+        department: f2Dept || newDept
       });
-      toast.success('Requisition submitted to Principal for approval!');
+      toast.success('Application submitted to Principal for approval!');
       setShowCreateModal(false);
-      setNewTitle('');
-      setNewDesc('');
-      setNewAmount('');
       fetchRequests();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit requisition');
+      toast.error(err.response?.data?.message || 'Failed to submit application');
     }
   };
 
@@ -642,86 +692,288 @@ export const ApprovalWorkflowPage: React.FC = () => {
             </div>
 
             {/* Quick Fill Sample Button */}
-            <div className="p-3 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-between gap-3 text-xs">
-              <span className="text-orange-900 font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-orange-500" /> Test with 22 March 2024 SSE Guest Lecture Data?
-              </span>
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 flex items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5">
+                <span className="text-orange-950 font-bold flex items-center gap-1.5 text-xs">
+                  <Sparkles className="w-4 h-4 text-orange-500" /> Pre-fill 22 March 2024 SSE Guest Lecture Data
+                </span>
+                <p className="text-[11px] text-slate-600">Populates Dr. R. Nithya, Dr. Padmasuvarna, JNTU Anantapur, HAS Dept, Rs. 6000</p>
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   setNewTitle('APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024');
                   setNewCategory('Guest Program / Lecture');
                   setNewDept('HAS');
-                  setNewAmount('6000');
-                  setNewDesc(`1. Organizing Secretary: Dr. R. Nithya, Associate Professor\n2. Department: HAS\n3. Theme: Guest Lecture\n4. Target Group: HAS Faculties, all First Year Students\n5. Resource Person: Dr. Padmasuvarna, Professor, Dept of Physics, JNTU Anantapur\n6. Level: State Level\n7. Duration: Half Day\n8. Expected Participants: First Year Students (Local: 120, Outstation: 0)\n9. Estimated Expenditure:\n   - TA & DA: NIL\n   - Honorarium to Resource Person: Rs. 5000\n   - Miscellaneous: Rs. 1000\n   - Total Expenditure: Rs. 6000\n10. Importance Note: Financial assistance for guest lecture on physics & engineering applications for first year students.`);
+                  setF1OrgSecretary('Dr. R. Nithya, Associate Professor');
+                  setF2Dept('HAS');
+                  setF3Theme('Guest Lecture');
+                  setF4TargetGroup('HAS Faculties, all First Year Students');
+                  setF5ResourcePerson('Dr. Padmasuvarna');
+                  setF6Affiliation('Professor, Department of Physics, Jawaharlal Nehru Technological University Anantapur, Andhra Pradesh');
+                  setF7Level('State Level');
+                  setF8Duration('Half Day');
+                  setF9PastPrograms('Organized 2 FDPs and 1 National Seminar in the last academic year');
+                  setF10LocalPart('First Year Students & HAS Faculty');
+                  setF10OutstationPart('NIL');
+                  setF11TaDa('NIL');
+                  setF11Honorarium('5000');
+                  setF11Misc('1000');
+                  setF11Total('6000');
+                  setF12AssistanceSought('6000');
+                  setF13OtherSources('NIL (External Sponsors: NIL, Registration Fees: NIL)');
+                  setF14ImportanceNote('Guest Lecture on Physics & Engineering applications essential for first-year students foundational growth.');
                 }}
-                className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-all"
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold transition-all shadow-sm"
               >
-                Auto-Fill Sample Data
+                Auto-Fill Sample Form
               </button>
             </div>
 
-            <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateRequest} className="space-y-4 text-xs max-h-[70vh] overflow-y-auto pr-2">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Application Title / Event Name</label>
+                <label className="block font-bold text-slate-800 mb-1">Application Title / Heading</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-semibold"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-slate-900 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Requisition Category</label>
-                  <select
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-medium"
-                  >
-                    <option value="Guest Program / Lecture">Guest Program / Lecture</option>
-                    <option value="Financial Assistance for Guest Program">Financial Assistance for Guest Program</option>
-                  </select>
-                </div>
+              {/* 1. Organizing Secretary */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">1. Name & Address of Organizing Secretary of FDP/Program</label>
+                <input
+                  type="text"
+                  required
+                  value={f1OrgSecretary}
+                  onChange={(e) => setF1OrgSecretary(e.target.value)}
+                  placeholder="e.g. Dr. R. Nithya, Associate Professor"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                />
+              </div>
 
+              {/* 2 & 3. Department & Theme */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Total Expenditure (₹)</label>
+                  <label className="block font-bold text-slate-800 mb-1">2. Department</label>
                   <input
-                    type="number"
-                    value={newAmount}
-                    onChange={(e) => setNewAmount(e.target.value)}
-                    placeholder="e.g. 6000"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-emerald-700"
+                    type="text"
+                    required
+                    value={f2Dept}
+                    onChange={(e) => {
+                      setF2Dept(e.target.value);
+                      setNewDept(e.target.value);
+                    }}
+                    placeholder="e.g. HAS (Humanities & Sciences)"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">3. Theme(s) of the FDP / Program</label>
+                  <input
+                    type="text"
+                    required
+                    value={f3Theme}
+                    onChange={(e) => setF3Theme(e.target.value)}
+                    placeholder="e.g. Guest Lecture"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
                   />
                 </div>
               </div>
 
+              {/* 4. Target Group */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Department</label>
+                <label className="block font-bold text-slate-800 mb-1">4. Target Group</label>
                 <input
                   type="text"
                   required
-                  value={newDept}
-                  onChange={(e) => setNewDept(e.target.value)}
-                  placeholder="e.g. HAS (Humanities & Sciences)"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200"
+                  value={f4TargetGroup}
+                  onChange={(e) => setF4TargetGroup(e.target.value)}
+                  placeholder="e.g. HAS Faculties, all First Year Students"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
                 />
               </div>
 
+              {/* 5 & 6. Resource Person & Affiliation */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">5. Name(s) of Resource Person(s)</label>
+                  <input
+                    type="text"
+                    required
+                    value={f5ResourcePerson}
+                    onChange={(e) => setF5ResourcePerson(e.target.value)}
+                    placeholder="e.g. Dr. Padmasuvarna"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">6. Affiliation of Resource Person</label>
+                  <input
+                    type="text"
+                    required
+                    value={f6Affiliation}
+                    onChange={(e) => setF6Affiliation(e.target.value)}
+                    placeholder="e.g. Professor, Dept of Physics, JNTU Anantapur"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+              </div>
+
+              {/* 7 & 8. Level & Duration */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">7. Level of Expert Lecture</label>
+                  <select
+                    value={f7Level}
+                    onChange={(e) => setF7Level(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  >
+                    <option value="State Level">State Level</option>
+                    <option value="Regional Level">Regional Level</option>
+                    <option value="National Level">National Level</option>
+                    <option value="International Level">International Level</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">8. Duration of Programme</label>
+                  <select
+                    value={f8Duration}
+                    onChange={(e) => setF8Duration(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  >
+                    <option value="Half Day">Half Day</option>
+                    <option value="1 Day">1 Day</option>
+                    <option value="2 Days">2 Days</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 9. Past Programmes */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  14-Point Application Details (Organizing Secretary, Resource Person, Target Group, Expenditure Breakup & Importance Note)
-                </label>
+                <label className="block font-bold text-slate-800 mb-1">9. Details of Programmes Organized During Last 1 Year</label>
+                <input
+                  type="text"
+                  value={f9PastPrograms}
+                  onChange={(e) => setF9PastPrograms(e.target.value)}
+                  placeholder="e.g. Organized 2 FDPs under Department auspices"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                />
+              </div>
+
+              {/* 10. Participants Breakdown */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">10a. Local Participants Expected</label>
+                  <input
+                    type="text"
+                    value={f10LocalPart}
+                    onChange={(e) => setF10LocalPart(e.target.value)}
+                    placeholder="e.g. All First Year Students"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">10b. Outstation Participants Expected</label>
+                  <input
+                    type="text"
+                    value={f10OutstationPart}
+                    onChange={(e) => setF10OutstationPart(e.target.value)}
+                    placeholder="e.g. NIL"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+              </div>
+
+              {/* 11. Estimated Expenditure */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <h4 className="font-extrabold text-slate-900 text-xs">11. Estimated Expenditure Breakdown</h4>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">TA & DA</label>
+                    <input
+                      type="text"
+                      value={f11TaDa}
+                      onChange={(e) => setF11TaDa(e.target.value)}
+                      placeholder="NIL"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Honorarium to Resource Persons (₹)</label>
+                    <input
+                      type="number"
+                      value={f11Honorarium}
+                      onChange={(e) => {
+                        setF11Honorarium(e.target.value);
+                        calculateTotalExp(e.target.value, f11Misc);
+                      }}
+                      placeholder="5000"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Miscellaneous (₹)</label>
+                    <input
+                      type="number"
+                      value={f11Misc}
+                      onChange={(e) => {
+                        setF11Misc(e.target.value);
+                        calculateTotalExp(f11Honorarium, e.target.value);
+                      }}
+                      placeholder="1000"
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-200 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 font-bold">
+                  <span className="text-slate-800">Total Estimated Expenditure:</span>
+                  <span className="text-sm font-extrabold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-lg">
+                    ₹{f11Total}
+                  </span>
+                </div>
+              </div>
+
+              {/* 12 & 13. Financial Assistance & Other Sources */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">12. Financial Assistance Sought (₹)</label>
+                  <input
+                    type="number"
+                    value={f12AssistanceSought}
+                    onChange={(e) => setF12AssistanceSought(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-emerald-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">13. Expected from Other Sources</label>
+                  <input
+                    type="text"
+                    value={f13OtherSources}
+                    onChange={(e) => setF13OtherSources(e.target.value)}
+                    placeholder="e.g. NIL / Sponsors"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+              </div>
+
+              {/* 14. Importance Note */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">14. Enclose a Brief Note About Importance of Program</label>
                 <textarea
-                  rows={8}
+                  rows={3}
                   required
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder={`1. Name & Address of Organizing Secretary: Dr. R. Nithya, Associate Professor\n2. Department: HAS\n3. Theme: Guest Lecture\n4. Target Group: HAS Faculties, all First Year Students\n5. Resource Person: Dr. Padmasuvarna, Professor, Dept of Physics, JNTUA Anantapur\n6. Duration: Half Day\n7. Expenditure: Honorarium Rs. 5000, Misc Rs. 1000, Total Rs. 6000\n8. Brief Note about Importance...`}
-                  className="w-full px-4 py-2.5 font-mono text-xs rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  value={f14ImportanceNote}
+                  onChange={(e) => setF14ImportanceNote(e.target.value)}
+                  placeholder="Explain why this guest program is essential..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
                 />
               </div>
 
