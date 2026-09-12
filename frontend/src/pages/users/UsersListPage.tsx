@@ -827,7 +827,7 @@ export const UsersListPage: React.FC = () => {
                         <Star className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" /> CR
                       </span>
                     )}
-                    {u.is_disciplinary_committee && (
+                    {u.is_disciplinary_committee && (!u.special_role || !u.special_role.toUpperCase().includes('DISCIPLINARY')) && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
                         <Gavel className="w-3 h-3 text-purple-700 shrink-0" /> Disciplinary Committee
                       </span>
@@ -927,7 +927,7 @@ export const UsersListPage: React.FC = () => {
                             <Star className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" /> CR
                           </span>
                         )}
-                        {u.is_disciplinary_committee && (
+                        {u.is_disciplinary_committee && (!u.special_role || !u.special_role.toUpperCase().includes('DISCIPLINARY')) && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
                             <Gavel className="w-3 h-3 text-purple-700 shrink-0" /> Disciplinary Committee
                           </span>

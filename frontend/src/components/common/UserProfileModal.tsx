@@ -370,12 +370,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                       <Star className="w-3.5 h-3.5 fill-amber-950 text-amber-950" /> CR
                     </span>
                   )}
-                  {profile.is_counselor && (
+                  {profile.is_counselor && (!profile.special_role || !profile.special_role.toUpperCase().includes('COUNSELOR')) && (
                     <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-rose-500 text-white border border-rose-400 tracking-wider uppercase shadow-xs flex items-center gap-1">
                       <Heart className="w-3.5 h-3.5 fill-white text-white" /> Counselor
                     </span>
                   )}
-                  {profile.is_disciplinary_committee && (
+                  {profile.is_disciplinary_committee && (!profile.special_role || !profile.special_role.toUpperCase().includes('DISCIPLINARY')) && (
                     <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-purple-600 text-white border border-purple-400 tracking-wider uppercase shadow-xs flex items-center gap-1">
                       <Gavel className="w-3.5 h-3.5 fill-white text-white" /> Committee Member
                     </span>
