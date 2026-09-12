@@ -289,7 +289,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
 
   // Exam Seating Management System for ALL roles (Controlled by Controller of Examinations & Super Admin)
   if (!navItems.some((i) => i.path === '/exam-seating')) {
-    navItems.splice(2, 0, { label: 'Exam Seating Management', path: '/exam-seating', icon: GraduationCap });
+    const specialRole = (user.special_role || user.specialRole || '').toUpperCase();
+    const isController = ['SUPER_ADMIN', 'ADMIN'].includes(user.role) || specialRole.includes('CONTROLLER') || specialRole.includes('EXAM');
+    const isFaculty = ['FACULTY', 'MENTOR'].includes(user.role) && !isController;
+    const label = isController ? 'Exam Seating Management' : isFaculty ? 'Invigilation & Seating' : 'Find My Exam Seat';
+    navItems.splice(2, 0, { label, path: '/exam-seating', icon: GraduationCap });
   }
 
   return (

@@ -28,7 +28,8 @@ import {
   UserX,
   FileWarning,
   Sliders,
-  Grid
+  Grid,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -76,6 +77,97 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
   return list;
 }
 
+// ============================================================================
+// SEATING GRID MATRIX COMPONENT (MATCHING EXACT USER SCREENSHOT)
+// ============================================================================
+const SeatingGridMatrix: React.FC<{ hall: any; seatings: any[] }> = ({ hall, seatings }) => {
+  const rows = hall.rows_count || hall.rows || 6;
+  const cols = hall.cols_count || hall.cols || 4;
+  const disabledSet = new Set<string>(hall.disabled_seats_json || []);
+
+  // Columns from cols down to 1 (e.g. 4, 3, 2, 1 matching Image 2)
+  const colIndices = Array.from({ length: cols }, (_, i) => cols - i);
+  // Rows from rows down to 1 mapped to letters F, E, D, C, B, A
+  const rowIndices = Array.from({ length: rows }, (_, i) => rows - i);
+
+  const getRowLetter = (r: number) => String.fromCharCode(64 + r);
+
+  return (
+    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-3xl border border-slate-200 shadow-inner overflow-x-auto min-w-[360px]">
+      {/* Top Column Number Headers (4, 3, 2, 1) */}
+      <div className="flex items-center gap-4 mb-3">
+        {colIndices.map((c) => (
+          <div key={c} className="w-16 text-center text-xs font-bold text-slate-400">
+            {c}
+          </div>
+        ))}
+        <div className="w-6" />
+      </div>
+
+      {/* Grid Rows */}
+      <div className="space-y-3">
+        {rowIndices.map((r) => {
+          return (
+            <div key={r} className="flex items-center gap-4">
+              {colIndices.map((c) => {
+                const seatKey = `${r}-${c}`;
+                const isBroken = disabledSet.has(seatKey);
+                const matchedSeat = seatings.find((s: any) => s.grid_row === r && s.grid_col === c);
+
+                if (isBroken) {
+                  return (
+                    <div
+                      key={c}
+                      className="w-16 h-12 rounded-2xl border-2 border-dashed border-rose-300 bg-rose-50 flex items-center justify-center text-[10px] text-rose-400 font-bold"
+                    >
+                      Disabled
+                    </div>
+                  );
+                }
+
+                if (!matchedSeat) {
+                  return (
+                    <div
+                      key={c}
+                      className="w-16 h-12 rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] text-slate-300 font-semibold"
+                    >
+                      -
+                    </div>
+                  );
+                }
+
+                // Alternating branch borders (Blue vs Emerald matching Image 2)
+                const branchUpper = (matchedSeat.branch || '').toUpperCase();
+                const isBlueBranch = branchUpper.includes('ECE') || branchUpper.includes('EEE') || (c % 2 === 0);
+                const borderClass = isBlueBranch
+                  ? 'border-2 border-blue-500 text-blue-900 bg-white shadow-2xs hover:scale-105'
+                  : 'border-2 border-emerald-500 text-emerald-900 bg-white shadow-2xs hover:scale-105';
+
+                const shortRoll = matchedSeat.roll_number.length > 3 ? matchedSeat.roll_number.slice(-3) : matchedSeat.roll_number;
+
+                return (
+                  <div
+                    key={c}
+                    className={`w-16 h-12 rounded-2xl ${borderClass} flex flex-col items-center justify-center font-extrabold font-mono text-xs transition-all cursor-default`}
+                    title={`${matchedSeat.roll_number} - ${matchedSeat.student_name || matchedSeat.branch}`}
+                  >
+                    <span>{shortRoll}</span>
+                  </div>
+                );
+              })}
+
+              {/* Row Letter Label on Right (A, B, C, D, E, F...) */}
+              <div className="w-6 text-left text-xs font-bold text-slate-400">
+                {getRowLetter(r)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const ExamSeatingPage: React.FC = () => {
   const { user } = useAuth();
   const specialRole = (user?.special_role || user?.specialRole || '').toUpperCase();
@@ -87,9 +179,13 @@ export const ExamSeatingPage: React.FC = () => {
     specialRole.includes('CONTROLLER') ||
     specialRole.includes('EXAM');
 
-  const isFaculty = userRole === 'FACULTY' || userRole === 'MENTOR' || isController;
+  const isFaculty = (userRole === 'FACULTY' || userRole === 'MENTOR') && !isController;
+  const isStudent = userRole === 'JUNIOR' || userRole === 'SENIOR';
 
-  const [activeTab, setActiveTab] = useState<'EXAMS_LIST' | 'STUDENT_LOOKUP' | 'INVIGILATION_DUTIES' | 'MALPRACTICE_LOGS'>('EXAMS_LIST');
+  const [activeTab, setActiveTab] = useState<'EXAMS_LIST' | 'STUDENT_LOOKUP' | 'INVIGILATION_DUTIES'>(
+    isController ? 'EXAMS_LIST' : isFaculty ? 'INVIGILATION_DUTIES' : 'STUDENT_LOOKUP'
+  );
+
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedExamDetails, setSelectedExamDetails] = useState<any | null>(null);
@@ -97,7 +193,6 @@ export const ExamSeatingPage: React.FC = () => {
   // Modals
   const [showCreateExamModal, setShowCreateExamModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
-  const [showMalpracticeModal, setShowMalpracticeModal] = useState(false);
 
   // Student Lookup Search
   const [lookupRollNumber, setLookupRollNumber] = useState('');
@@ -106,18 +201,13 @@ export const ExamSeatingPage: React.FC = () => {
 
   // Invigilation Duty State
   const [invigilationDuties, setInvigilationDuties] = useState<any[]>([]);
-  const [activeHallAttendance, setActiveHallAttendance] = useState<{ [seatingId: string]: string }>({});
-
-  // Malpractice Modal Form State
-  const [targetSeatingForMalpractice, setTargetSeatingForMalpractice] = useState<any | null>(null);
-  const [malpracticeOffense, setMalpracticeOffense] = useState('');
-  const [malpracticeEvidence, setMalpracticeEvidence] = useState('');
 
   // --------------------------------------------------------------------------
   // CREATE EXAM FORM STATE
   // --------------------------------------------------------------------------
   const [examForm, setExamForm] = useState({
     name: 'JNTUA B.Tech III-I Regular Examinations 2026',
+    subject: '',
     exam_code: `EXAM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     date: new Date().toISOString().split('T')[0],
     time: '10:00 AM - 01:00 PM',
@@ -127,13 +217,13 @@ export const ExamSeatingPage: React.FC = () => {
   });
 
   const [batchesList, setBatchesList] = useState<any[]>([
-    { branch: 'CSE', year_batch: 'III Year', start_reg: '21121A0501', end_reg: '21121A0560', excluded_ids: '' },
+    { branch: 'CSE', year_batch: 'III Year', start_reg: '21121A0501', end_reg: '21121A0560', excluded_ids: '21121A0502, 21121A0504' },
     { branch: 'ECE', year_batch: 'III Year', start_reg: '21121A0401', end_reg: '21121A0460', excluded_ids: '' }
   ]);
 
   const [roomsList, setRoomsList] = useState<any[]>([
-    { hall_name: 'Hall A (Knowledge Park)', rows: 8, cols: 6, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '1-2, 4-5' },
-    { hall_name: 'Hall B (Main Block)', rows: 6, cols: 8, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }
+    { hall_name: 'Hall A (Knowledge Park)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' },
+    { hall_name: 'Hall B (Main Block)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }
   ]);
 
   const [isSubmittingExam, setIsSubmittingExam] = useState(false);
@@ -175,11 +265,8 @@ export const ExamSeatingPage: React.FC = () => {
   useEffect(() => {
     fetchExams();
     fetchMySeatLookup();
-    if (isFaculty) {
+    if (isFaculty || isController) {
       fetchInvigilationDuties();
-    }
-    if (!isController && !isFaculty) {
-      setActiveTab('STUDENT_LOOKUP');
     }
   }, []);
 
@@ -219,6 +306,27 @@ export const ExamSeatingPage: React.FC = () => {
     }
   };
 
+  // Toggle Excluded Roll Number Chip
+  const toggleRollExclusion = (batchIdx: number, rollToToggle: string) => {
+    const updated = [...batchesList];
+    const currentExclStr = updated[batchIdx].excluded_ids || '';
+    let currentExclArr = currentExclStr
+      .split(',')
+      .map((s: string) => s.trim().toUpperCase())
+      .filter(Boolean);
+
+    const target = rollToToggle.trim().toUpperCase();
+
+    if (currentExclArr.includes(target)) {
+      currentExclArr = currentExclArr.filter((r: string) => r !== target);
+    } else {
+      currentExclArr.push(target);
+    }
+
+    updated[batchIdx].excluded_ids = currentExclArr.join(', ');
+    setBatchesList(updated);
+  };
+
   // Run Automatic Seating Allocation Engine
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,8 +347,8 @@ export const ExamSeatingPage: React.FC = () => {
 
       const parsedRooms = roomsList.map(r => ({
         hall_name: r.hall_name,
-        rows: parseInt(r.rows) || 8,
-        cols: parseInt(r.cols) || 6,
+        rows: parseInt(r.rows) || 6,
+        cols: parseInt(r.cols) || 4,
         fill_strategy: r.fill_strategy,
         prevent_adjacency: r.prevent_adjacency,
         aisle_interval: parseInt(r.aisle_interval) || 2,
@@ -249,6 +357,7 @@ export const ExamSeatingPage: React.FC = () => {
 
       const res = await api.post('/exam-seating/exams', {
         ...examForm,
+        name: examForm.subject ? `${examForm.name} - ${examForm.subject}` : examForm.name,
         batches: parsedBatches,
         rooms: parsedRooms
       });
@@ -266,80 +375,18 @@ export const ExamSeatingPage: React.FC = () => {
     }
   };
 
-  // Submit Hall Attendance
-  const handleSaveAttendance = async (examId: string, hallId: string) => {
-    const attendancePayload = Object.keys(activeHallAttendance).map(seatingId => ({
-      seatingId,
-      attendance_status: activeHallAttendance[seatingId]
-    }));
-
-    if (attendancePayload.length === 0) {
-      toast.error('No changes to save.');
-      return;
-    }
-
-    try {
-      await api.post('/exam-seating/invigilation/attendance', {
-        examId,
-        hallId,
-        attendanceData: attendancePayload
-      });
-      toast.success('Attendance updated successfully for hall!');
-      fetchExamDetails(examId);
-    } catch (err: any) {
-      toast.error('Failed to update attendance');
-    }
-  };
-
-  // Submit Malpractice Log
-  const handleLogMalpractice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!targetSeatingForMalpractice || !malpracticeOffense.trim()) return;
-
-    try {
-      await api.post('/exam-seating/malpractice', {
-        examId: targetSeatingForMalpractice.exam_id,
-        seatingId: targetSeatingForMalpractice.id,
-        rollNumber: targetSeatingForMalpractice.roll_number,
-        studentName: targetSeatingForMalpractice.student_name,
-        hallName: targetSeatingForMalpractice.hall_name,
-        offenseDetails: malpracticeOffense,
-        evidenceNotes: malpracticeEvidence,
-        actionTaken: 'BOOKED_UNDER_MALPRACTICE'
-      });
-
-      toast.success(`Malpractice case booked for student ${targetSeatingForMalpractice.roll_number}`);
-      setShowMalpracticeModal(false);
-      setMalpracticeOffense('');
-      setMalpracticeEvidence('');
-      if (selectedExamDetails) {
-        fetchExamDetails(selectedExamDetails.id);
-      }
-    } catch (err: any) {
-      toast.error('Failed to log malpractice incident');
-    }
-  };
-
-  // Calculate live preview count for batch builder
-  const getBatchCount = (startReg: string, endReg: string, excludedStr: string) => {
-    const list = generateStudentRange(startReg, endReg);
-    const excl = new Set((excludedStr || '').split(',').map(x => x.trim().toUpperCase()));
-    return list.filter(x => !excl.has(x)).length;
-  };
-
-  // Color helper for branches
-  const getBranchBadgeStyle = (branch: string) => {
-    switch ((branch || '').toUpperCase()) {
-      case 'CSE': return 'bg-indigo-500 text-white border-indigo-600';
-      case 'ECE': return 'bg-blue-600 text-white border-blue-700';
-      case 'EEE': return 'bg-amber-600 text-white border-amber-700';
-      case 'MECH': return 'bg-rose-600 text-white border-rose-700';
-      case 'CIVIL': return 'bg-emerald-600 text-white border-emerald-700';
-      default: return 'bg-purple-600 text-white border-purple-700';
-    }
-  };
-
   if (isLoading) return <LoadingState message="Loading Exam Seating Engine & Portal..." />;
+
+  // Calculate global summary counts across batches for the Exclude Header
+  let totalGeneratedCount = 0;
+  let totalExcludedCount = 0;
+  batchesList.forEach(batch => {
+    const rolls = generateStudentRange(batch.start_reg, batch.end_reg);
+    const excl = new Set((batch.excluded_ids || '').split(',').map((x: string) => x.trim().toUpperCase()).filter(Boolean));
+    totalGeneratedCount += rolls.length;
+    totalExcludedCount += excl.size;
+  });
+  const totalReadyStudents = totalGeneratedCount - totalExcludedCount;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -349,13 +396,18 @@ export const ExamSeatingPage: React.FC = () => {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 backdrop-blur-md text-xs font-semibold border border-indigo-500/30">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" /> Controller of Examinations Portal
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
+              {isController ? 'Controller of Examinations Command Center' : isFaculty ? 'Faculty Invigilation Portal' : 'Student Exam Seat Finder'}
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
               Exam Seating Management System
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-              Automatic JNTUA Roll Number Range Generator, Anti-Cheating Seat Allocation Engine, Live Invigilation Grid, and Door Charts.
+              {isController
+                ? 'Automatic JNTUA Roll Number Range Generator, Anti-Cheating Seat Allocation Engine, Live Invigilation Grid, and Door Charts.'
+                : isFaculty
+                ? 'View assigned invigilation duties, mark attendance, and report malpractice cases.'
+                : 'Search your allocated exam hall, row, column, and seat number for upcoming examinations.'}
             </p>
           </div>
 
@@ -372,7 +424,7 @@ export const ExamSeatingPage: React.FC = () => {
             <button
               onClick={fetchExams}
               className="p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer"
-              title="Refresh"
+              title="Refresh Data"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -382,7 +434,7 @@ export const ExamSeatingPage: React.FC = () => {
 
       {/* Tabs Bar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
-        {(isController || isFaculty) && (
+        {isController && (
           <button
             onClick={() => setActiveTab('EXAMS_LIST')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
@@ -403,10 +455,10 @@ export const ExamSeatingPage: React.FC = () => {
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
-          <Search className="w-4 h-4" /> Student Seat Lookup
+          <Search className="w-4 h-4" /> Find My Seat / Roll No Lookup
         </button>
 
-        {isFaculty && (
+        {(isFaculty || isController) && (
           <button
             onClick={() => setActiveTab('INVIGILATION_DUTIES')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
@@ -421,9 +473,9 @@ export const ExamSeatingPage: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: EXAMS LIST & SEATING MATRIX */}
+      {/* TAB 1: EXAMS LIST & SEATING MATRIX (CONTROLLER & SUPER ADMIN ONLY) */}
       {/* ========================================================================= */}
-      {activeTab === 'EXAMS_LIST' && (
+      {activeTab === 'EXAMS_LIST' && isController && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left List of Exams */}
           <div className={`space-y-4 ${selectedExamDetails ? 'lg:col-span-4' : 'lg:col-span-12'}`}>
@@ -452,7 +504,7 @@ export const ExamSeatingPage: React.FC = () => {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
                           isSelected ? 'bg-indigo-500/30 text-indigo-300' : 'bg-indigo-50 text-indigo-600'
                         }`}>
                           {ex.exam_code || 'EXAM'}
@@ -501,18 +553,16 @@ export const ExamSeatingPage: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {isController && (
-                      <button
-                        onClick={() => handleTogglePublish(selectedExamDetails.id, selectedExamDetails.published)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                          selectedExamDetails.published
-                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                            : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
-                        }`}
-                      >
-                        {selectedExamDetails.published ? 'Unpublish Plan' : 'Publish Plan to Portal'}
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleTogglePublish(selectedExamDetails.id, selectedExamDetails.published)}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        selectedExamDetails.published
+                          ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                          : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md'
+                      }`}
+                    >
+                      {selectedExamDetails.published ? 'Unpublish Plan' : 'Publish Plan to Portal'}
+                    </button>
 
                     <button
                       onClick={() => setShowPrintModal(true)}
@@ -521,15 +571,13 @@ export const ExamSeatingPage: React.FC = () => {
                       <Printer className="w-4 h-4" /> Print Door Charts
                     </button>
 
-                    {isController && (
-                      <button
-                        onClick={() => handleDeleteExam(selectedExamDetails.id)}
-                        className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                        title="Delete Exam Plan"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDeleteExam(selectedExamDetails.id)}
+                      className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                      title="Delete Exam Plan"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
@@ -537,7 +585,6 @@ export const ExamSeatingPage: React.FC = () => {
                 <div className="space-y-6">
                   {selectedExamDetails.halls.map((hall: any) => {
                     const hallSeats = selectedExamDetails.seatings.filter((s: any) => s.hall_name === hall.hall_name);
-                    const disabledSet = new Set<string>(hall.disabled_seats_json || []);
 
                     return (
                       <div key={hall.id} className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-slate-50/50">
@@ -551,68 +598,13 @@ export const ExamSeatingPage: React.FC = () => {
                           </div>
 
                           <div className="flex items-center gap-2 text-[10px] font-bold">
-                            <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">Column Fill Strategy</span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Anti-Cheating Enabled</span>
+                            <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">Column-Major Strategy</span>
+                            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Anti-Cheating Active</span>
                           </div>
                         </div>
 
-                        {/* Interactive Seating Grid Visualization */}
-                        <div className="overflow-x-auto p-4 bg-white rounded-xl border border-slate-200 shadow-inner">
-                          <div
-                            className="grid gap-2 min-w-[500px]"
-                            style={{
-                              gridTemplateColumns: `repeat(${hall.cols_count}, minmax(0, 1fr))`
-                            }}
-                          >
-                            {Array.from({ length: hall.rows_count * hall.cols_count }).map((_, idx) => {
-                              const r = Math.floor(idx / hall.cols_count) + 1;
-                              const c = (idx % hall.cols_count) + 1;
-                              const seatKey = `${r}-${c}`;
-                              const isBroken = disabledSet.has(seatKey);
-                              const matchedSeat = hallSeats.find((s: any) => s.grid_row === r && s.grid_col === c);
-
-                              if (isBroken) {
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="h-16 rounded-xl border border-dashed border-rose-300 bg-rose-50/50 flex flex-col items-center justify-center text-[10px] text-rose-400 font-bold"
-                                  >
-                                    <span>Disabled</span>
-                                    <span>Seat</span>
-                                  </div>
-                                );
-                              }
-
-                              if (!matchedSeat) {
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="h-16 rounded-xl border border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-[10px] text-slate-400 font-semibold"
-                                  >
-                                    <span>R{r}-C{c}</span>
-                                    <span>Empty</span>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`h-16 p-1.5 rounded-xl border flex flex-col justify-between text-left transition-all ${getBranchBadgeStyle(matchedSeat.branch)}`}
-                                >
-                                  <div className="flex items-center justify-between text-[9px] font-bold opacity-90">
-                                    <span>R{r}-C{c}</span>
-                                    <span>{matchedSeat.branch}</span>
-                                  </div>
-                                  <div>
-                                    <p className="font-extrabold text-[11px] font-mono leading-tight truncate">{matchedSeat.roll_number}</p>
-                                    <p className="text-[9px] opacity-80 truncate">{matchedSeat.student_name}</p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        {/* Rendering Matrix matching Image 2 */}
+                        <SeatingGridMatrix hall={hall} seatings={hallSeats} />
                       </div>
                     );
                   })}
@@ -624,7 +616,7 @@ export const ExamSeatingPage: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: STUDENT SEAT LOOKUP */}
+      {/* TAB 2: STUDENT SEAT LOOKUP (FOR STUDENTS & ALL ROLES) */}
       {/* ========================================================================= */}
       {activeTab === 'STUDENT_LOOKUP' && (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -693,9 +685,9 @@ export const ExamSeatingPage: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: INVIGILATION DUTIES & ATTENDANCE */}
+      {/* TAB 3: INVIGILATION DUTIES */}
       {/* ========================================================================= */}
-      {activeTab === 'INVIGILATION_DUTIES' && (
+      {activeTab === 'INVIGILATION_DUTIES' && (isFaculty || isController) && (
         <div className="space-y-6">
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <h3 className="text-lg font-black text-slate-900">Faculty Invigilation Assignments</h3>
@@ -742,23 +734,40 @@ export const ExamSeatingPage: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: RUN AUTOMATIC SEATING ALLOCATION ENGINE */}
+      {/* MODAL: RUN AUTOMATIC SEATING ALLOCATION ENGINE (MATCHES EXPLICIT SCREENSHOTS) */}
       {/* ========================================================================= */}
-      {showCreateExamModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-8">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      {showCreateExamModal && isController && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 flex items-start sm:items-center justify-center">
+          <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-auto max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 sticky top-0 bg-white z-20">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">
                   Automatic Engine
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 mt-1">Configure Exam & Seating Engine</h3>
+                <h3 className="text-xl font-extrabold text-slate-900 mt-1">Configure Exam & Seating Allocator</h3>
               </div>
-              <button onClick={() => setShowCreateExamModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button
+                onClick={() => setShowCreateExamModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             <form onSubmit={handleCreateExam} className="space-y-6 text-xs font-medium">
-              {/* Exam Info */}
+              {/* SUBJECT (OPTIONAL) FIELD - MATCHING SCREENSHOT 1 */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="SUBJECT (OPTIONAL)"
+                  value={examForm.subject}
+                  onChange={(e) => setExamForm({ ...examForm, subject: e.target.value })}
+                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-white font-bold text-xs uppercase tracking-wider text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 shadow-2xs"
+                />
+              </div>
+
+              {/* Exam Metadata */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                 <div className="sm:col-span-2">
                   <label className="block font-bold text-slate-700 mb-1">Examination Title *</label>
@@ -767,7 +776,7 @@ export const ExamSeatingPage: React.FC = () => {
                     required
                     value={examForm.name}
                     onChange={(e) => setExamForm({ ...examForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500/20"
                   />
                 </div>
 
@@ -777,7 +786,7 @@ export const ExamSeatingPage: React.FC = () => {
                     type="text"
                     value={examForm.exam_code}
                     onChange={(e) => setExamForm({ ...examForm, exam_code: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white font-mono"
                   />
                 </div>
 
@@ -788,7 +797,7 @@ export const ExamSeatingPage: React.FC = () => {
                     required
                     value={examForm.date}
                     onChange={(e) => setExamForm({ ...examForm, date: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white"
                   />
                 </div>
 
@@ -799,7 +808,7 @@ export const ExamSeatingPage: React.FC = () => {
                     required
                     value={examForm.time}
                     onChange={(e) => setExamForm({ ...examForm, time: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white"
                   />
                 </div>
 
@@ -808,7 +817,7 @@ export const ExamSeatingPage: React.FC = () => {
                   <select
                     value={examForm.session}
                     onChange={(e) => setExamForm({ ...examForm, session: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white"
                   >
                     <option value="FN">Forenoon (FN)</option>
                     <option value="AN">Afternoon (AN)</option>
@@ -816,94 +825,140 @@ export const ExamSeatingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Student Batches Builder */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-slate-900 text-sm">1. Student Batches (JNTUA Roll Number Ranges)</h4>
+              {/* STUDENT ROLL NUMBER EXCLUSION SECTION - MATCHING EXACT SCREENSHOT 1 */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm font-extrabold">
+                    <span className="flex items-center gap-1.5 text-emerald-600">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      {totalReadyStudents} Students ready
+                    </span>
+                    {totalExcludedCount > 0 && (
+                      <span className="text-red-600 font-extrabold">
+                        ({totalExcludedCount} Excluded)
+                      </span>
+                    )}
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => setBatchesList([...batchesList, { branch: 'EEE', year_batch: 'III Year', start_reg: '', end_reg: '', excluded_ids: '' }])}
-                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer"
+                    className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Branch Batch
                   </button>
                 </div>
 
                 {batchesList.map((batch, idx) => {
-                  const studentCount = getBatchCount(batch.start_reg, batch.end_reg, batch.excluded_ids);
+                  const generatedRolls = generateStudentRange(batch.start_reg, batch.end_reg);
+                  const exclSet = new Set((batch.excluded_ids || '').split(',').map((x: string) => x.trim().toUpperCase()).filter(Boolean));
+
                   return (
-                    <div key={idx} className="p-4 bg-white border border-slate-200 rounded-2xl grid grid-cols-1 sm:grid-cols-6 gap-3 items-center">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Branch</label>
-                        <input
-                          type="text"
-                          value={batch.branch}
-                          onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].branch = e.target.value;
-                            setBatchesList(updated);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold"
-                        />
+                    <div key={idx} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 items-center">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Branch</label>
+                          <input
+                            type="text"
+                            value={batch.branch}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].branch = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold bg-slate-50"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Start Roll No</label>
+                          <input
+                            type="text"
+                            placeholder="21121A0501"
+                            value={batch.start_reg}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].start_reg = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">End Roll No</label>
+                          <input
+                            type="text"
+                            placeholder="21121A0560"
+                            value={batch.end_reg}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].end_reg = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Excluded Roll Numbers</label>
+                          <input
+                            type="text"
+                            placeholder="Click chips below to exclude"
+                            value={batch.excluded_ids}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].excluded_ids = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end">
+                          {batchesList.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setBatchesList(batchesList.filter((_, i) => i !== idx))}
+                              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Start Roll No</label>
-                        <input
-                          type="text"
-                          placeholder="21121A0501"
-                          value={batch.start_reg}
-                          onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].start_reg = e.target.value;
-                            setBatchesList(updated);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
-                        />
-                      </div>
+                      {/* SELECT TO EXCLUDE (RED = EXCLUDED) CHIP CONTAINER - MATCHES SCREENSHOT 1 */}
+                      {generatedRolls.length > 0 && (
+                        <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-2">
+                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                            SELECT TO EXCLUDE (RED = EXCLUDED)
+                          </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">End Roll No</label>
-                        <input
-                          type="text"
-                          placeholder="21121A0560"
-                          value={batch.end_reg}
-                          onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].end_reg = e.target.value;
-                            setBatchesList(updated);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Excluded Roll Numbers</label>
-                        <input
-                          type="text"
-                          placeholder="21121A0512, 21121A0545"
-                          value={batch.excluded_ids}
-                          onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].excluded_ids = e.target.value;
-                            setBatchesList(updated);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-indigo-600 text-xs">{studentCount} Students</span>
-                        {batchesList.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => setBatchesList(batchesList.filter((_, i) => i !== idx))}
-                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
+                          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-white rounded-xl border border-slate-200">
+                            {generatedRolls.map((roll) => {
+                              const isExcluded = exclSet.has(roll);
+                              // Display short suffix (e.g. 501, 502, 5A2) matching Screenshot 1
+                              const shortRoll = roll.length > 3 ? roll.slice(-3) : roll;
+                              return (
+                                <button
+                                  type="button"
+                                  key={roll}
+                                  onClick={() => toggleRollExclusion(idx, roll)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer shadow-2xs ${
+                                    isExcluded
+                                      ? 'bg-red-500 text-white border border-red-600 font-extrabold shadow-sm scale-105'
+                                      : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
+                                  }`}
+                                  title={isExcluded ? `Excluded: ${roll} (Click to Include)` : `Included: ${roll} (Click to Exclude)`}
+                                >
+                                  {shortRoll}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -915,7 +970,7 @@ export const ExamSeatingPage: React.FC = () => {
                   <h4 className="font-extrabold text-slate-900 text-sm">2. Exam Halls & Grid Strategy</h4>
                   <button
                     type="button"
-                    onClick={() => setRoomsList([...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 8, cols: 6, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }])}
+                    onClick={() => setRoomsList([...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }])}
                     className="px-3 py-1.5 bg-indigo-50 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Exam Hall
@@ -985,7 +1040,7 @@ export const ExamSeatingPage: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Broken / Disabled Seats</label>
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Disabled Seats</label>
                         <input
                           type="text"
                           placeholder="1-2, 4-5"
@@ -1034,7 +1089,7 @@ export const ExamSeatingPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateExamModal(false)}
-                  className="px-4 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100"
+                  className="px-4 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
                 >
                   Cancel
                 </button>
