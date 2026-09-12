@@ -162,6 +162,12 @@ export const FacultyDashboard: React.FC = () => {
 
             <div className="pt-1 flex flex-wrap gap-2">
               <button
+                onClick={() => navigate('/approvals')}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-lg shadow-orange-500/25 transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+              >
+                <FileText className="w-4 h-4" /> Approvals & Requisitions
+              </button>
+              <button
                 onClick={() => navigate('/quizzes')}
                 className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2 cursor-pointer active:scale-98"
               >

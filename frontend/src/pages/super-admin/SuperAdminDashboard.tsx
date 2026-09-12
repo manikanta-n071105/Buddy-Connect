@@ -674,6 +674,28 @@ ${mom.decisions_reached || mom.decisionsReached}
       {/* ========================================================================= */}
       {activeTab === 'OVERVIEW' && (
         <div className="space-y-6 animate-in fade-in">
+          {/* PRINCIPAL APPROVALS QUICK BANNER */}
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 border border-orange-500/30 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-500/30 text-orange-400 flex items-center justify-center font-bold">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-white">Principal Approvals & Requisitions Hub</h3>
+                <p className="text-xs text-slate-300">
+                  Review HOD financial assistance applications, guest lecture proposals, request changes, or approve for HR, Director & Accounts review.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/approvals')}
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-lg shadow-orange-500/25 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer hover:scale-102 active:scale-98"
+            >
+              Open Approvals Hub <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Summary Cards with React Bits Spotlight & Animated Counters */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <SpotlightCard spotlightColor="rgba(79, 70, 229, 0.15)" className="p-5">
