@@ -82,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
       case 'SUPER_ADMIN':
         return [
           { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Approvals & Requisitions', path: '/approvals', icon: FileSpreadsheet },
           { label: 'Hierarchy Tree', path: '/hierarchy', icon: Network },
           { label: 'User Directory', path: '/users', icon: Users },
           { label: 'Special Roles Appointing Hub', path: '/admin/disciplinary-hub', icon: Gavel },
@@ -100,6 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
       case 'ADMIN':
         return [
           { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Approvals & Requisitions', path: '/approvals', icon: FileSpreadsheet },
           { label: 'Hierarchy Tree', path: '/hierarchy', icon: Network },
           { label: 'User Directory', path: '/users', icon: Users },
           { label: 'Special Roles Appointing Hub', path: '/admin/disciplinary-hub', icon: Gavel },
@@ -121,6 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
         const isCounselor = Boolean(user.is_counselor);
         return [
           { label: 'Director Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Approvals & Requisitions', path: '/approvals', icon: FileSpreadsheet },
           { label: 'Hierarchy Tree', path: '/hierarchy', icon: Network },
           { label: 'Seniors & Juniors', path: '/users', icon: Users },
           ...(isFacultyDirector ? [
@@ -180,6 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
         const isCounselor = Boolean(user.is_counselor);
         return [
           { label: 'Faculty Dashboard', path: '/dashboard', icon: LayoutDashboard },
+          { label: 'Approvals & Requisitions', path: '/approvals', icon: FileSpreadsheet },
           { label: 'My Class Students', path: '/users', icon: Users },
           { label: 'Faculty Meetings', path: '/meetings', icon: CalendarDays },
           { label: 'Class Quizzes & Analytics', path: '/quizzes', icon: FileSpreadsheet },

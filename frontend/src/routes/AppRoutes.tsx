@@ -38,6 +38,7 @@ import { AdminCounselorsPage } from '../pages/admin/AdminCounselorsPage';
 import { DisciplinaryAppointingPage } from '../pages/admin/DisciplinaryAppointingPage';
 import { QuizPage } from '../pages/quiz/QuizPage';
 import { BloodBankPage } from '../pages/blood/BloodBankPage';
+import { ApprovalWorkflowPage } from '../pages/approvals/ApprovalWorkflowPage';
 
 const DashboardDispatcher: React.FC = () => {
   const { user } = useAuth();
@@ -104,6 +105,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/admin/appointing-hub" element={<DisciplinaryAppointingPage />} />
           <Route path="/quizzes" element={<QuizPage />} />
           <Route path="/blood-bank" element={<BloodBankPage />} />
+          <Route path="/approvals" element={<ApprovalWorkflowPage />} />
         </Route>
       </Route>
 

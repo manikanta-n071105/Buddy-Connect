@@ -310,6 +310,56 @@ export const initBloodDonationTables = async () => {
   }
 };
 
+export const initApprovalTables = async () => {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS approval_requests (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        request_number VARCHAR(50) UNIQUE NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        amount NUMERIC(12, 2) DEFAULT 0,
+        department VARCHAR(100) NOT NULL,
+        submitted_by_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        submitted_by_name VARCHAR(150) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'PENDING_PRINCIPAL_APPROVAL',
+        principal_comments TEXT,
+        principal_action_at TIMESTAMP WITH TIME ZONE,
+        hr_status VARCHAR(30) DEFAULT 'PENDING',
+        hr_comments TEXT,
+        hr_action_at TIMESTAMP WITH TIME ZONE,
+        director_status VARCHAR(30) DEFAULT 'PENDING',
+        director_comments TEXT,
+        director_action_at TIMESTAMP WITH TIME ZONE,
+        accounts_status VARCHAR(30) DEFAULT 'PENDING',
+        accounts_comments TEXT,
+        accounts_action_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS approval_request_comments (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        request_id VARCHAR(36) NOT NULL REFERENCES approval_requests(id) ON DELETE CASCADE,
+        author_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        author_name VARCHAR(150) NOT NULL,
+        author_role VARCHAR(100) NOT NULL,
+        comment TEXT NOT NULL,
+        stage VARCHAR(50) DEFAULT 'GENERAL',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_approval_requests_sub ON approval_requests(submitted_by_id);
+      CREATE INDEX IF NOT EXISTS idx_approval_requests_stat ON approval_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_approval_requests_dept ON approval_requests(department);
+      CREATE INDEX IF NOT EXISTS idx_approval_comments_req ON approval_request_comments(request_id);
+    `);
+  } catch (err: any) {
+    console.warn('Approval tables initialization notice:', err.message);
+  }
+};
+
 export const getClient = (): Promise<PoolClient> => pool.connect();
 
 export const executeTransaction = async <T>(callback: (client: PoolClient) => Promise<T>): Promise<T> => {
