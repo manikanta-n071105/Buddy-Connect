@@ -17,7 +17,8 @@ import {
   initSystemSettingsTables,
   initDisciplinaryCommitteeTables,
   initBloodDonationTables,
-  initApprovalTables
+  initApprovalTables,
+  initExamSeatingTables
 } from './config/db';
 import { initRedis } from './config/redis';
 
@@ -44,6 +45,7 @@ import counselingRoutes from './routes/counselingRoutes';
 import quizRoutes from './routes/quizRoutes';
 import bloodRoutes from './routes/bloodRoutes';
 import approvalRoutes from './routes/approvalRoutes';
+import examSeatingRoutes from './routes/examSeatingRoutes';
 
 import compression from 'compression';
 
@@ -115,6 +117,7 @@ app.use('/api/counseling', counselingRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/blood', bloodRoutes);
 app.use('/api/approvals', approvalRoutes);
+app.use('/api/exam-seating', examSeatingRoutes);
 
 // Serve Frontend Static Build in Production if present
 const frontendDist = path.join(__dirname, '../../frontend/dist');
@@ -140,6 +143,7 @@ initSystemSettingsTables();
 initDisciplinaryCommitteeTables();
 initBloodDonationTables();
 initApprovalTables();
+initExamSeatingTables();
 initCounselingTables().then(() => {
   logger.info('Database performance, Quiz, CR Feedback, Blood Donation & Counseling tables initialized.');
 }).catch(err => {

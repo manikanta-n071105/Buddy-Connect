@@ -360,6 +360,100 @@ export const initApprovalTables = async () => {
   }
 };
 
+export const initExamSeatingTables = async () => {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS exams (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        name VARCHAR(255) NOT NULL,
+        exam_code VARCHAR(100),
+        date DATE NOT NULL,
+        time VARCHAR(100) NOT NULL,
+        session VARCHAR(50) DEFAULT 'FN',
+        academic_year VARCHAR(50),
+        year_semester VARCHAR(50),
+        branches JSONB DEFAULT '[]'::jsonb,
+        created_by_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+        status VARCHAR(30) DEFAULT 'SCHEDULED',
+        published BOOLEAN DEFAULT false,
+        total_students INT DEFAULT 0,
+        total_halls INT DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS exam_halls (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        exam_id VARCHAR(36) NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+        hall_name VARCHAR(100) NOT NULL,
+        capacity INT NOT NULL,
+        rows_count INT NOT NULL DEFAULT 8,
+        cols_count INT NOT NULL DEFAULT 6,
+        fill_strategy VARCHAR(20) DEFAULT 'col',
+        prevent_adjacency BOOLEAN DEFAULT true,
+        aisle_interval INT DEFAULT 2,
+        disabled_seats_json JSONB DEFAULT '[]'::jsonb,
+        zone_config_json JSONB DEFAULT '{}'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS exam_seatings (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        exam_id VARCHAR(36) NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+        hall_id VARCHAR(36) REFERENCES exam_halls(id) ON DELETE CASCADE,
+        hall_name VARCHAR(100) NOT NULL,
+        seat_number VARCHAR(50) NOT NULL,
+        grid_row INT NOT NULL,
+        grid_col INT NOT NULL,
+        student_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+        roll_number VARCHAR(50) NOT NULL,
+        student_name VARCHAR(150),
+        branch VARCHAR(50),
+        year_batch VARCHAR(50),
+        attendance_status VARCHAR(20) DEFAULT 'PENDING',
+        remarks TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS exam_invigilators (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        exam_id VARCHAR(36) NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+        hall_id VARCHAR(36) REFERENCES exam_halls(id) ON DELETE CASCADE,
+        hall_name VARCHAR(100) NOT NULL,
+        faculty_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        faculty_name VARCHAR(150) NOT NULL,
+        department VARCHAR(100),
+        assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(exam_id, hall_id, faculty_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS exam_malpractices (
+        id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        exam_id VARCHAR(36) NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+        seating_id VARCHAR(36) REFERENCES exam_seatings(id) ON DELETE SET NULL,
+        roll_number VARCHAR(50) NOT NULL,
+        student_name VARCHAR(150) NOT NULL,
+        hall_name VARCHAR(100) NOT NULL,
+        invigilator_name VARCHAR(150),
+        offense_details TEXT NOT NULL,
+        evidence_notes TEXT,
+        action_taken VARCHAR(100) DEFAULT 'BOOKED_UNDER_MALPRACTICE',
+        logged_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_exams_date ON exams(date);
+      CREATE INDEX IF NOT EXISTS idx_exams_published ON exams(published);
+      CREATE INDEX IF NOT EXISTS idx_exam_halls_exam ON exam_halls(exam_id);
+      CREATE INDEX IF NOT EXISTS idx_exam_seatings_exam ON exam_seatings(exam_id);
+      CREATE INDEX IF NOT EXISTS idx_exam_seatings_roll ON exam_seatings(LOWER(roll_number));
+      CREATE INDEX IF NOT EXISTS idx_exam_seatings_student ON exam_seatings(student_id);
+      CREATE INDEX IF NOT EXISTS idx_exam_invig_faculty ON exam_invigilators(faculty_id);
+    `);
+  } catch (err: any) {
+    console.warn('Exam Seating tables initialization notice:', err.message);
+  }
+};
+
 export const getClient = (): Promise<PoolClient> => pool.connect();
 
 export const executeTransaction = async <T>(callback: (client: PoolClient) => Promise<T>): Promise<T> => {

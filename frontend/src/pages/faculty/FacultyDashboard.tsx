@@ -286,6 +286,15 @@ export const FacultyDashboard: React.FC = () => {
             </Link>
 
             <Link
+              to="/exam-seating"
+              className="p-3 bg-indigo-50 hover:bg-indigo-100 rounded-2xl border border-indigo-200 hover:border-indigo-400 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <GraduationCap className="w-5 h-5 text-indigo-600 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">Exam Seating Hub</p>
+              <p className="text-[10px] text-indigo-700 font-extrabold">Controller & Seating</p>
+            </Link>
+
+            <Link
               to="/admin/cr-feedbacks"
               className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
             >
