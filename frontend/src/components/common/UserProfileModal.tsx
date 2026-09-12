@@ -63,6 +63,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [editIsCr, setEditIsCr] = useState(false);
   const [editIsCounselor, setEditIsCounselor] = useState(false);
   const [editIsDisciplinaryCommittee, setEditIsDisciplinaryCommittee] = useState(false);
+  const [editMaxJuniors, setEditMaxJuniors] = useState('5');
   const [editCommitteeDesignation, setEditCommitteeDesignation] = useState('Committee Member');
   const [editSuperAdminPassword, setEditSuperAdminPassword] = useState('');
 
@@ -153,6 +154,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setEditIsCounselor(p.is_counselor || false);
       setEditIsDisciplinaryCommittee(p.is_disciplinary_committee || false);
       setEditCommitteeDesignation(p.committee_designation || 'Committee Member');
+      setEditMaxJuniors((p.max_juniors || 5).toString());
     } catch (err) {
       toast.error('Failed to load user profile');
       onClose();
@@ -280,6 +282,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
         isCounselor: editIsCounselor,
         isDisciplinaryCommittee: editIsDisciplinaryCommittee,
         committeeDesignation: editCommitteeDesignation,
+        maxJuniors: ['FACULTY', 'MENTOR'].includes(profile?.role) ? parseInt(editMaxJuniors) || 5 : undefined,
+        max_juniors: ['FACULTY', 'MENTOR'].includes(profile?.role) ? parseInt(editMaxJuniors) || 5 : undefined,
         superAdminPassword: editSuperAdminPassword.trim()
       });
 
@@ -381,9 +385,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     </span>
                   )}
                   {profile.special_role && (
-                    <span className="px-3 py-1 text-[10px] font-black rounded-full bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white border border-purple-400/40 tracking-wider uppercase shadow-md flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
-                      Special Role: <span className="text-amber-200">{profile.special_role}</span>
+                    <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-purple-100 text-purple-900 border border-purple-300 tracking-wider uppercase shadow-2xs flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-700 shrink-0" /> {profile.special_role}
                     </span>
                   )}
                   <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border tracking-wider uppercase shadow-2xs ${
@@ -563,6 +566,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                       ))}
                     </select>
                   </div>
+                  {['FACULTY', 'MENTOR'].includes(profile?.role) && (
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Student Capacity Limit (Max Mentees)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={editMaxJuniors}
+                        onChange={(e) => setEditMaxJuniors(e.target.value)}
+                        className="w-full p-2 bg-white border border-teal-300 rounded-xl font-extrabold text-slate-900 outline-hidden text-xs"
+                      />
+                    </div>
+                  )}
                 </div>
                 {(profile.role === 'FACULTY' || isSuperAdminOrAdmin) && (
                   <div className="space-y-2 pt-1 border-t border-slate-200/60">

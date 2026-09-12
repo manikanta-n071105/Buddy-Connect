@@ -842,28 +842,14 @@ export const UsersListPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Actions */}
-                <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-[11px] pl-2">
+                {/* Card Status Banner */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px] pl-2 cursor-pointer" onClick={() => setSelectedProfileId(u.id)}>
                   <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-md border uppercase ${u.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                     {u.is_active ? 'ACTIVE' : 'DISABLED'}
                   </span>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setSelectedProfileId(u.id)}
-                      className="px-3 py-1.5 text-[11px] font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 rounded-xl transition-colors cursor-pointer"
-                    >
-                      Profile
-                    </button>
-                    {['SUPER_ADMIN', 'ADMIN'].includes(user?.role || '') && (
-                      <button
-                        onClick={() => { setResetTargetUser(u); setShowResetModal(true); }}
-                        className="px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl transition-colors inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <KeyRound className="w-3 h-3 text-amber-600" /> Reset
-                      </button>
-                    )}
-                  </div>
+                  <span className="text-[10px] font-bold text-orange-600 flex items-center gap-1">
+                    View Profile <ChevronRight className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
             ))}
@@ -879,12 +865,11 @@ export const UsersListPage: React.FC = () => {
                   <th className="p-4 min-w-[130px]">Assigned Role</th>
                   <th className="p-4 min-w-[150px]">Phone Number</th>
                   <th className="p-4 min-w-[120px]">Account Status</th>
-                  <th className="p-4 min-w-[140px]">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {paginatedUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={u.id} className="hover:bg-orange-50/50 transition-colors cursor-pointer" onClick={() => setSelectedProfileId(u.id)}>
                     <td className="p-4 font-black text-orange-600 hover:text-orange-700 hover:underline cursor-pointer" onClick={() => setSelectedProfileId(u.id)}>
                       <span className="flex items-center gap-2">
                         <UserIcon className="w-4 h-4 text-orange-500 shrink-0" />
@@ -968,35 +953,6 @@ export const UsersListPage: React.FC = () => {
                       <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border uppercase tracking-wider ${u.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                         {u.is_active ? 'ACTIVE' : 'DISABLED'}
                       </span>
-                    </td>
-                    <td className="p-4 flex gap-2">
-                      <button
-                        onClick={() => setSelectedProfileId(u.id)}
-                        className="px-3 py-1.5 text-[11px] font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200/80 rounded-xl transition-colors cursor-pointer"
-                      >
-                        Profile
-                      </button>
-                      {user?.role === 'SUPER_ADMIN' && u.role === 'FACULTY' && (
-                        <button
-                          onClick={() => {
-                            setCapacityTargetFaculty(u);
-                            setNewMaxJuniorsVal((u.max_juniors || 5).toString());
-                            setShowCapacityModal(true);
-                          }}
-                          className="px-3 py-1.5 text-[11px] font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200/80 rounded-xl transition-colors inline-flex items-center gap-1 cursor-pointer"
-                          title="Edit Faculty Junior Capacity Limit"
-                        >
-                          <BookOpen className="w-3.5 h-3.5 text-teal-600" /> Limit: {u.max_juniors || 5}
-                        </button>
-                      )}
-                      {['SUPER_ADMIN', 'ADMIN'].includes(user?.role || '') && (
-                        <button
-                          onClick={() => { setResetTargetUser(u); setShowResetModal(true); }}
-                          className="px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <KeyRound className="w-3.5 h-3.5 text-amber-600" /> Reset Password
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
