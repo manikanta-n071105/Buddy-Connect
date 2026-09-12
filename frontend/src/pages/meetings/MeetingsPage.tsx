@@ -24,6 +24,8 @@ export const MeetingsPage: React.FC = () => {
   const [meetings, setMeetings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
 
   const isMentor = ['SENIOR', 'FACULTY', 'MENTOR', 'SUPER_ADMIN', 'ADMIN'].includes(user?.role || '');
 
@@ -70,9 +72,6 @@ export const MeetingsPage: React.FC = () => {
   const upcomingMeetings = meetings.filter(m => m.status === 'SCHEDULED');
   const pastMeetings = meetings.filter(m => m.status !== 'SCHEDULED');
 
-  // Pagination State
-  const [upcomingPage, setUpcomingPage] = useState(1);
-  const [pastPage, setPastPage] = useState(1);
   const pageSize = 6;
 
   const upcomingTotalPages = Math.ceil(upcomingMeetings.length / pageSize) || 1;
