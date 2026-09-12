@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { LoadingState } from './LoadingState';
 import { GoogleAuthenticatorModal } from './GoogleAuthenticatorModal';
 import { QRCodeCanvas } from 'qrcode.react';
-import { User, ShieldCheck, Mail, Phone, Calendar, Clock, KeyRound, Building2, BookOpen, UserCheck, GraduationCap, X, Edit3, Trash2, AlertTriangle, ShieldAlert, Check, Lock, Bus, Home, Star, Heart, Smartphone, Gavel, QrCode, Scissors, CreditCard, UserX, FileWarning, Droplet } from 'lucide-react';
+import { User, ShieldCheck, Mail, Phone, Calendar, Clock, KeyRound, Building2, BookOpen, UserCheck, GraduationCap, X, Edit3, Trash2, AlertTriangle, ShieldAlert, Check, Lock, Bus, Home, Star, Heart, Smartphone, Gavel, QrCode, Scissors, CreditCard, UserX, FileWarning, Droplet, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
@@ -58,6 +58,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const [editResidenceStatus, setEditResidenceStatus] = useState<'DAY_SCHOLAR' | 'HOSTELLER'>('DAY_SCHOLAR');
   const [editGender, setEditGender] = useState<'MALE' | 'FEMALE'>('MALE');
   const [editBloodGroup, setEditBloodGroup] = useState('');
+  const [editSpecialRole, setEditSpecialRole] = useState('');
+  const [editCustomSpecialRole, setEditCustomSpecialRole] = useState('');
   const [editIsCr, setEditIsCr] = useState(false);
   const [editIsCounselor, setEditIsCounselor] = useState(false);
   const [editIsDisciplinaryCommittee, setEditIsDisciplinaryCommittee] = useState(false);
@@ -141,6 +143,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setEditResidenceStatus(p.residence_status || 'DAY_SCHOLAR');
       setEditGender(p.gender || 'MALE');
       setEditBloodGroup(p.blood_group || '');
+      setEditSpecialRole(p.special_role || '');
+      setEditCustomSpecialRole(
+        p.special_role && !['DIRECTOR', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(p.special_role)
+          ? p.special_role
+          : ''
+      );
       setEditIsCr(p.is_cr || false);
       setEditIsCounselor(p.is_counselor || false);
       setEditIsDisciplinaryCommittee(p.is_disciplinary_committee || false);
@@ -251,6 +259,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
     setIsSaving(true);
     try {
+      const finalSpecialRole = editSpecialRole === 'CUSTOM' ? editCustomSpecialRole.trim() : editSpecialRole;
       await api.put(`/users/${userId}`, {
         name: editName,
         email: editEmail,
@@ -265,6 +274,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
         residenceStatus: editResidenceStatus,
         gender: editGender,
         blood_group: editBloodGroup,
+        specialRole: finalSpecialRole || '',
+        special_role: finalSpecialRole || '',
         isCr: editIsCr,
         isCounselor: editIsCounselor,
         isDisciplinaryCommittee: editIsDisciplinaryCommittee,
@@ -367,6 +378,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                   {profile.is_disciplinary_committee && (
                     <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-purple-600 text-white border border-purple-400 tracking-wider uppercase shadow-xs flex items-center gap-1">
                       <Gavel className="w-3.5 h-3.5 fill-white text-white" /> Committee Member
+                    </span>
+                  )}
+                  {profile.special_role && (
+                    <span className="px-3 py-1 text-[10px] font-black rounded-full bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white border border-purple-400/40 tracking-wider uppercase shadow-md flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
+                      Special Role: <span className="text-amber-200">{profile.special_role}</span>
                     </span>
                   )}
                   <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border tracking-wider uppercase shadow-2xs ${
@@ -547,6 +564,40 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     </select>
                   </div>
                 </div>
+                {(profile.role === 'FACULTY' || isSuperAdminOrAdmin) && (
+                  <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                    <div>
+                      <label className="block font-bold text-slate-800 mb-1 text-xs">Special Role / Designation (e.g. Director, HR, Accounts)</label>
+                      <select
+                        value={['', 'DIRECTOR', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(editSpecialRole) ? editSpecialRole : 'CUSTOM'}
+                        onChange={(e) => setEditSpecialRole(e.target.value)}
+                        className="w-full p-2 bg-white border border-purple-300 rounded-xl font-extrabold text-slate-900 outline-hidden focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
+                      >
+                        <option value="">None (Standard Staff / Faculty)</option>
+                        <option value="DIRECTOR">Director</option>
+                        <option value="HR">HR (Human Resources)</option>
+                        <option value="ACCOUNTS DEPT">Accounts Department</option>
+                        <option value="HOD">HOD (Head of Department)</option>
+                        <option value="DEAN">Dean</option>
+                        <option value="PRINCIPAL">Principal</option>
+                        <option value="CUSTOM">Other / Custom Designation...</option>
+                      </select>
+                    </div>
+                    {(['CUSTOM'].includes(editSpecialRole) || (editSpecialRole && !['', 'DIRECTOR', 'HR', 'ACCOUNTS DEPT', 'HOD', 'DEAN', 'PRINCIPAL'].includes(editSpecialRole))) && (
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1 text-xs">Custom Designation Title *</label>
+                        <input
+                          type="text"
+                          required
+                          value={editCustomSpecialRole}
+                          onChange={(e) => setEditCustomSpecialRole(e.target.value)}
+                          placeholder="e.g. Vice Principal, Controller of Examinations"
+                          className="w-full p-2 bg-white border border-purple-300 rounded-xl font-bold text-slate-900 outline-hidden text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
                 {['SENIOR', 'JUNIOR'].includes(profile.role) && (
                   <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200 space-y-2">
                     <label className="flex items-center gap-2 font-extrabold text-amber-950 text-xs cursor-pointer select-none">

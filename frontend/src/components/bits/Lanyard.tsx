@@ -199,12 +199,28 @@ const generateFrontTexture = (user: User | null) => {
   ctx.textBaseline = 'middle';
   ctx.fillText(roleText, W / 2, 808);
 
+  const specialRoleText = user?.special_role || (user as any)?.specialRole;
+  if (specialRoleText) {
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#6b21a8';
+    ctx.font = '800 22px Arial, sans-serif';
+    const specPillW = Math.max(240, ctx.measureText(specialRoleText.toUpperCase()).width + 50);
+    ctx.beginPath();
+    ctx.roundRect(W / 2 - specPillW / 2, 846, specPillW, 40, 20);
+    ctx.fill();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.font = '900 20px Arial, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`⭐ ${specialRoleText.toUpperCase()}`, W / 2, 866);
+  }
+
   // ─── Department ───
   ctx.textBaseline = 'alphabetic';
   const dept = user?.department || 'Computer Science & Engineering';
   ctx.fillStyle = '#475569';
-  ctx.font = '700 30px Arial, sans-serif';
-  ctx.fillText(dept.toUpperCase(), W / 2, 900);
+  ctx.font = '700 28px Arial, sans-serif';
+  ctx.fillText(dept.toUpperCase(), W / 2, 915);
 
   // ─── Year / Batch ───
   const academicYr = user?.year || user?.batch || (user as any)?.academicYear;

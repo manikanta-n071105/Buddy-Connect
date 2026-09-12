@@ -113,6 +113,8 @@ const ensureUserColumns = async () => {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_cr BOOLEAN DEFAULT false`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_faculty BOOLEAN DEFAULT false`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS special_role VARCHAR(100)`);
+    await query(`ALTER TABLE faculty ADD COLUMN IF NOT EXISTS special_role VARCHAR(100)`);
     await query(`ALTER TABLE seniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
     await query(`ALTER TABLE juniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
     await query(`ALTER TABLE juniors ALTER COLUMN senior_id DROP NOT NULL`);
@@ -334,7 +336,7 @@ export const createMentor = async (req: AuthenticatedRequest, res: Response) => 
 
 // Create Faculty (Super Admin / Admin only, Super Admin sets faculty code and maxJuniors)
 export const createFaculty = async (req: AuthenticatedRequest, res: Response) => {
-  const { name, email, username, password, phone, department, year, facultyCode, maxJuniors, permissions, superAdminPassword, gender, isCounselor, isDisciplinaryCommittee, committeeDesignation } = req.body;
+  const { name, email, username, password, phone, department, year, facultyCode, maxJuniors, permissions, superAdminPassword, gender, isCounselor, isDisciplinaryCommittee, committeeDesignation, specialRole, special_role } = req.body;
   if (!name || !email || !username || !password || !department || !gender || !['MALE', 'FEMALE'].includes(gender)) {
     return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Gender)', code: 'INVALID_INPUT' });
   }
@@ -345,6 +347,7 @@ export const createFaculty = async (req: AuthenticatedRequest, res: Response) =>
     await migrateExistingUserCodes();
 
     const targetGender = gender;
+    const finalSpecialRole = (specialRole || special_role || '').trim() || null;
     let hasPermissionsToAssign = false;
     if (req.user!.role === 'SUPER_ADMIN' && Array.isArray(permissions) && permissions.length > 0) {
       await verifySuperAdminAuth(req.user!.id, superAdminPassword);
@@ -370,16 +373,16 @@ export const createFaculty = async (req: AuthenticatedRequest, res: Response) =>
 
     const result = await executeTransaction(async (client) => {
       const uRes = await client.query(
-        `INSERT INTO users (name, email, username, password_hash, phone, role, gender, must_change_password, is_counselor, is_disciplinary_committee)
-         VALUES ($1, $2, $3, $4, $5, 'FACULTY', $6, true, $7, $8) RETURNING id, name, email, username, role, gender, is_counselor, is_disciplinary_committee`,
-        [name.trim(), cleanEmail, cleanUsername, passwordHash, phone ? phone.trim() : null, targetGender, Boolean(isCounselor), Boolean(isDisciplinaryCommittee)]
+        `INSERT INTO users (name, email, username, password_hash, phone, role, gender, must_change_password, is_counselor, is_disciplinary_committee, special_role)
+         VALUES ($1, $2, $3, $4, $5, 'FACULTY', $6, true, $7, $8, $9) RETURNING id, name, email, username, role, gender, is_counselor, is_disciplinary_committee, special_role`,
+        [name.trim(), cleanEmail, cleanUsername, passwordHash, phone ? phone.trim() : null, targetGender, Boolean(isCounselor), Boolean(isDisciplinaryCommittee), finalSpecialRole]
       );
       const user = uRes.rows[0];
 
       const fRes = await client.query(
-        `INSERT INTO faculty (user_id, faculty_code, department, year, max_juniors, is_counselor, is_disciplinary_committee)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, faculty_code, department, year, max_juniors, status`,
-        [user.id, finalFacultyCode, department.trim(), year ? year.trim() : null, capacityLimit, Boolean(isCounselor), Boolean(isDisciplinaryCommittee)]
+        `INSERT INTO faculty (user_id, faculty_code, department, year, max_juniors, is_counselor, is_disciplinary_committee, special_role)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, faculty_code, department, year, max_juniors, status, special_role`,
+        [user.id, finalFacultyCode, department.trim(), year ? year.trim() : null, capacityLimit, Boolean(isCounselor), Boolean(isDisciplinaryCommittee), finalSpecialRole]
       );
 
       if (Boolean(isDisciplinaryCommittee)) {
@@ -453,7 +456,7 @@ export const getFacultyList = async (req: AuthenticatedRequest, res: Response) =
   try {
     await ensureFacultyTables();
     const result = await query(`
-      SELECT f.id as faculty_id, f.faculty_code, f.department, f.year, f.max_juniors, f.status,
+      SELECT f.id as faculty_id, f.faculty_code, f.department, f.year, f.max_juniors, f.status, COALESCE(f.special_role, u.special_role) as special_role,
              u.id as user_id, u.name as faculty_name, u.email, u.phone,
              (SELECT COUNT(*) FROM juniors j WHERE j.faculty_id = f.id OR (j.department = f.department AND (f.year IS NULL OR f.year = '' OR f.year = 'All Years' OR j.year = f.year OR j.year ILIKE '%' || f.year || '%'))) as assigned_juniors_count
       FROM faculty f
@@ -1060,6 +1063,7 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
 
     let sql = `
       SELECT u.id, u.name, u.email, u.username, u.phone, u.role, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
+             COALESCE(u.special_role, f.special_role) as special_role,
              COALESCE(d.department, f.department, s.department, j.department) as department,
              COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
              d.id as mentor_id, d.mentor_code,
@@ -1133,6 +1137,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
 
     const uRes = await query(
       `SELECT u.id, u.name, u.email, u.username, u.phone, u.role, u.blood_group, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
+              COALESCE(u.special_role, f.special_role) as special_role,
               COALESCE(d.department, f.department, s.department, j.department) as department,
               COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
               dcm.designation as committee_designation,
@@ -1216,7 +1221,7 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
 // Update User Profile
 export const updateUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   const { userId } = req.params;
-  const { name, email, phone, department, batch, year, residenceStatus, gender, blood_group, bloodGroup, isCr, isCounselor, isDisciplinaryCommittee, committeeDesignation, superAdminPassword } = req.body;
+  const { name, email, phone, department, batch, year, residenceStatus, gender, blood_group, bloodGroup, isCr, isCounselor, isDisciplinaryCommittee, committeeDesignation, superAdminPassword, specialRole, special_role } = req.body;
 
   try {
     await ensureUserColumns();
@@ -1245,6 +1250,11 @@ export const updateUserProfile = async (req: AuthenticatedRequest, res: Response
         uUpdates.push(`blood_group = $${uParams.length + 1}`);
         uParams.push(bgVal ? bgVal.trim().toUpperCase() : null);
       }
+      const specVal = specialRole !== undefined ? specialRole : special_role;
+      if (specVal !== undefined) {
+        uUpdates.push(`special_role = $${uParams.length + 1}`);
+        uParams.push(specVal ? specVal.trim() : null);
+      }
       if (isCr !== undefined) { uUpdates.push(`is_cr = $${uParams.length + 1}`); uParams.push(Boolean(isCr)); }
       if (isCounselor !== undefined) { uUpdates.push(`is_counselor = $${uParams.length + 1}`); uParams.push(Boolean(isCounselor)); }
       if (isDisciplinaryCommittee !== undefined) {
@@ -1255,6 +1265,11 @@ export const updateUserProfile = async (req: AuthenticatedRequest, res: Response
       if (uUpdates.length > 1) {
         uParams.push(userId);
         await client.query(`UPDATE users SET ${uUpdates.join(', ')} WHERE id = $${uParams.length}`, uParams);
+      }
+
+      // Update faculty table if special_role is passed
+      if (specVal !== undefined) {
+        await client.query(`UPDATE faculty SET special_role = $1 WHERE user_id = $2`, [specVal ? specVal.trim() : null, userId]);
       }
 
       // Update faculty table if faculty row exists

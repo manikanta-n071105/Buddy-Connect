@@ -22,6 +22,8 @@ export interface UserPayload {
   is_counselor?: boolean;
   is_disciplinary_committee?: boolean;
   blood_group?: string;
+  special_role?: string;
+  specialRole?: string;
 }
 
 export interface AuthenticatedRequest extends Request {

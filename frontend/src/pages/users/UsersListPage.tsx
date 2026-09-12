@@ -122,12 +122,14 @@ export const UsersListPage: React.FC = () => {
   const [facGender, setFacGender] = useState<'MALE' | 'FEMALE'>('MALE');
   const [facDepartment, setFacDepartment] = useState('CSE');
   const [facYear, setFacYear] = useState('');
+  const [facSpecialRole, setFacSpecialRole] = useState('');
+  const [facCustomSpecialRole, setFacCustomSpecialRole] = useState('');
 
   // 3. Senior Form state
   const [senName, setSenName] = useState('');
   const [senEmail, setSenEmail] = useState('');
   const [senUsername, setSenUsername] = useState('');
-  const [senPassword, setSenPassword] = useState('Password123!');
+  const [senPassword, setSenPassword] = useState('Password123');
   const [senPhone, setSenPhone] = useState('');
   const [senGender, setSenGender] = useState<'MALE' | 'FEMALE'>('MALE');
   const [senCode, setSenCode] = useState('');
@@ -319,6 +321,7 @@ export const UsersListPage: React.FC = () => {
     }
 
     try {
+      const finalSpecialRole = facSpecialRole === 'CUSTOM' ? facCustomSpecialRole.trim() : facSpecialRole;
       await api.post('/users/faculty', {
         name: facName.trim(),
         email: facEmail.trim(),
@@ -327,16 +330,17 @@ export const UsersListPage: React.FC = () => {
         phone: facPhone.trim(),
         gender: facGender,
         department: facDepartment.trim(),
-        year: facYear
+        year: facYear,
+        specialRole: finalSpecialRole || undefined
       });
       setCreatedCredential({
-        role: 'FACULTY MEMBER',
+        role: finalSpecialRole ? `FACULTY MEMBER (${finalSpecialRole})` : 'FACULTY MEMBER',
         name: facName.trim(),
         username: facUsername.trim(),
         pass: facPassword.trim()
       });
       setShowFacultyModal(false);
-      setFacName(''); setFacEmail(''); setFacUsername(''); setFacPhone(''); setFacDepartment('CSE'); setFacYear('');
+      setFacName(''); setFacEmail(''); setFacUsername(''); setFacPhone(''); setFacDepartment('CSE'); setFacYear(''); setFacSpecialRole(''); setFacCustomSpecialRole('');
       fetchUsers(true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to create faculty member');
@@ -828,6 +832,11 @@ export const UsersListPage: React.FC = () => {
                         <Gavel className="w-3 h-3 text-purple-700 shrink-0" /> Disciplinary Committee
                       </span>
                     )}
+                    {u.special_role && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-black rounded-md bg-gradient-to-r from-purple-700 to-indigo-700 text-white shadow-2xs uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3 text-amber-300 shrink-0 fill-amber-300" /> {u.special_role}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -949,16 +958,23 @@ export const UsersListPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border uppercase tracking-wider shadow-2xs whitespace-nowrap ${
-                        u.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
-                        u.role === 'MENTOR' ? 'bg-slate-900 text-white border-slate-800' :
-                        u.role === 'WARDEN' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
-                        u.role === 'FACULTY' ? 'bg-teal-950 text-teal-300 border-teal-700' :
-                        u.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
-                        'bg-emerald-950 text-emerald-300 border-emerald-700'
-                      }`}>
-                        {u.role.replace('_', ' ')}
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className={`px-3 py-1 text-[10px] font-extrabold rounded-full border uppercase tracking-wider shadow-2xs whitespace-nowrap ${
+                          u.role === 'SUPER_ADMIN' ? 'bg-purple-950 text-purple-300 border-purple-700' :
+                          u.role === 'MENTOR' ? 'bg-slate-900 text-white border-slate-800' :
+                          u.role === 'WARDEN' ? 'bg-indigo-950 text-indigo-300 border-indigo-700' :
+                          u.role === 'FACULTY' ? 'bg-teal-950 text-teal-300 border-teal-700' :
+                          u.role === 'SENIOR' ? 'bg-blue-950 text-blue-300 border-blue-700' :
+                          'bg-emerald-950 text-emerald-300 border-emerald-700'
+                        }`}>
+                          {u.role.replace('_', ' ')}
+                        </span>
+                        {u.special_role && (
+                          <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-purple-700" /> {u.special_role}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 text-slate-500 font-bold">
                       {u.phone === 'Hidden for privacy' ? (
@@ -1509,6 +1525,36 @@ export const UsersListPage: React.FC = () => {
                   </select>
                 </div>
               </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Special Role / Designation (Optional)</label>
+                <select
+                  value={facSpecialRole}
+                  onChange={(e) => setFacSpecialRole(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-teal-300 rounded-xl font-extrabold text-slate-900 outline-hidden focus:ring-2 focus:ring-teal-500 cursor-pointer text-xs"
+                >
+                  <option value="">None (Standard Faculty Member)</option>
+                  <option value="DIRECTOR">Director</option>
+                  <option value="HR">HR (Human Resources)</option>
+                  <option value="ACCOUNTS DEPT">Accounts Department</option>
+                  <option value="HOD">HOD (Head of Department)</option>
+                  <option value="DEAN">Dean</option>
+                  <option value="PRINCIPAL">Principal</option>
+                  <option value="CUSTOM">Other / Custom Designation...</option>
+                </select>
+              </div>
+              {facSpecialRole === 'CUSTOM' && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Custom Designation Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={facCustomSpecialRole}
+                    onChange={(e) => setFacCustomSpecialRole(e.target.value)}
+                    placeholder="e.g. Vice Principal, Controller of Examinations"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden text-xs"
+                  />
+                </div>
+              )}
               <button type="submit" className="w-full py-3 bg-teal-700 hover:bg-teal-600 text-white font-black rounded-xl shadow-lg shadow-teal-700/30 transition-all cursor-pointer">Create Faculty Account & Auto-Map Students</button>
             </form>
           </div>
