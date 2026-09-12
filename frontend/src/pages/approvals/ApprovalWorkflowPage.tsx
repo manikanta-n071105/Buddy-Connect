@@ -631,76 +631,97 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
       {/* CREATE REQUISITION MODAL */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-5 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-5 my-8 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-extrabold text-slate-900">Submit New Requisition / Proposal</h3>
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING GUEST PROGRAM</h3>
+                <p className="text-xs text-slate-500">Sanskrithi School of Engineering Official Requisition Form</p>
+              </div>
               <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
-            <form onSubmit={handleCreateRequest} className="space-y-4">
+            {/* Quick Fill Sample Button */}
+            <div className="p-3 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-between gap-3 text-xs">
+              <span className="text-orange-900 font-semibold flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-orange-500" /> Test with 22 March 2024 SSE Guest Lecture Data?
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewTitle('APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024');
+                  setNewCategory('Guest Program / Lecture');
+                  setNewDept('HAS');
+                  setNewAmount('6000');
+                  setNewDesc(`1. Organizing Secretary: Dr. R. Nithya, Associate Professor\n2. Department: HAS\n3. Theme: Guest Lecture\n4. Target Group: HAS Faculties, all First Year Students\n5. Resource Person: Dr. Padmasuvarna, Professor, Dept of Physics, JNTU Anantapur\n6. Level: State Level\n7. Duration: Half Day\n8. Expected Participants: First Year Students (Local: 120, Outstation: 0)\n9. Estimated Expenditure:\n   - TA & DA: NIL\n   - Honorarium to Resource Person: Rs. 5000\n   - Miscellaneous: Rs. 1000\n   - Total Expenditure: Rs. 6000\n10. Importance Note: Financial assistance for guest lecture on physics & engineering applications for first year students.`);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-all"
+              >
+                Auto-Fill Sample Data
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateRequest} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Requisition Title / Program Theme</label>
+                <label className="block font-bold text-slate-700 mb-1">Application Title / Event Name</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. One Day Guest Program on Physics & Engineering"
-                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  placeholder="e.g. APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-semibold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
+                  <label className="block font-bold text-slate-700 mb-1">Requisition Category</label>
                   <select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-medium"
                   >
                     <option value="Guest Program / Lecture">Guest Program / Lecture</option>
-                    <option value="Financial Assistance">Financial Assistance</option>
-                    <option value="Departmental Budget">Departmental Budget</option>
-                    <option value="Equipment & Infrastructure">Equipment & Infrastructure</option>
-                    <option value="Faculty FDP / Workshop">Faculty FDP / Workshop</option>
-                    <option value="Other Requisition">Other Requisition</option>
+                    <option value="Financial Assistance for Guest Program">Financial Assistance for Guest Program</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Estimated Budget (₹)</label>
+                  <label className="block font-bold text-slate-700 mb-1">Total Expenditure (₹)</label>
                   <input
                     type="number"
                     value={newAmount}
                     onChange={(e) => setNewAmount(e.target.value)}
                     placeholder="e.g. 6000"
-                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-emerald-700"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Department</label>
+                <label className="block font-bold text-slate-700 mb-1">Department</label>
                 <input
                   type="text"
                   required
                   value={newDept}
                   onChange={(e) => setNewDept(e.target.value)}
-                  placeholder="e.g. HAS, CSE, ECE"
-                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  placeholder="e.g. HAS (Humanities & Sciences)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Requisition Details / Resource Persons / Expenditure Breakup</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  14-Point Application Details (Organizing Secretary, Resource Person, Target Group, Expenditure Breakup & Importance Note)
+                </label>
                 <textarea
-                  rows={4}
+                  rows={8}
                   required
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Include details of resource persons, target participants, honorarium (e.g. Rs. 5000), miscellaneous (e.g. Rs. 1000), and importance..."
-                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  placeholder={`1. Name & Address of Organizing Secretary: Dr. R. Nithya, Associate Professor\n2. Department: HAS\n3. Theme: Guest Lecture\n4. Target Group: HAS Faculties, all First Year Students\n5. Resource Person: Dr. Padmasuvarna, Professor, Dept of Physics, JNTUA Anantapur\n6. Duration: Half Day\n7. Expenditure: Honorarium Rs. 5000, Misc Rs. 1000, Total Rs. 6000\n8. Brief Note about Importance...`}
+                  className="w-full px-4 py-2.5 font-mono text-xs rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 />
               </div>
 
@@ -708,15 +729,15 @@ export const ApprovalWorkflowPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-xl shadow-lg shadow-orange-500/20"
+                  className="px-5 py-2.5 font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-xl shadow-lg shadow-orange-500/20"
                 >
-                  Submit to Principal
+                  Submit Application to Principal
                 </button>
               </div>
             </form>
@@ -886,13 +907,13 @@ export const ApprovalWorkflowPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-extrabold text-slate-900">Revise & Resubmit Requisition</h3>
+              <h3 className="text-lg font-extrabold text-slate-900">Revise & Resubmit Application</h3>
               <button onClick={() => setShowResubmitModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
             <form onSubmit={handleResubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Requisition Title</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Application Title</label>
                 <input
                   type="text"
                   value={newTitle}
@@ -912,12 +933,12 @@ export const ApprovalWorkflowPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Updated Details & Revisions</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Updated 14-Point Details & Revisions</label>
                 <textarea
-                  rows={4}
+                  rows={6}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200"
+                  className="w-full px-4 py-2.5 text-xs font-mono rounded-xl border border-slate-200"
                 />
               </div>
 
@@ -952,18 +973,18 @@ export const ApprovalWorkflowPage: React.FC = () => {
         </div>
       )}
 
-      {/* FORMAL PRINT APPLICATION MODAL */}
+      {/* FORMAL 14-POINT SANSKRITHI SCHOOL OF ENGINEERING PRINT MODAL */}
       {showPrintModal && selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 space-y-6 my-8">
+          <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 space-y-6 my-8">
             <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
-              <span className="font-bold text-sm text-slate-700">Official Financial Assistance & Requisition Print Preview</span>
+              <span className="font-bold text-sm text-slate-700">Official Financial Assistance Application (14-Point SSE Format)</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => window.print()}
                   className="px-4 py-2 rounded-xl bg-orange-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow"
                 >
-                  <Printer className="w-4 h-4" /> Print Document
+                  <Printer className="w-4 h-4" /> Print Form
                 </button>
                 <button
                   onClick={() => setShowPrintModal(false)}
@@ -974,63 +995,100 @@ export const ApprovalWorkflowPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Printable Form Body */}
-            <div className="space-y-6 text-slate-900 text-sm font-sans p-4 border border-slate-300 rounded-2xl">
-              {/* College Header */}
-              <div className="text-center space-y-1 pb-4 border-b border-slate-300">
-                <h2 className="text-xl font-extrabold tracking-wide uppercase">SANSKRITHI SCHOOL OF ENGINEERING</h2>
-                <p className="text-xs text-slate-600">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
-                <p className="text-[11px] text-slate-500 italic">Affiliated to JNTUA & Approved by AICTE, www.sseptp.org</p>
+            {/* Printable Form Body - Word-for-Word SSE Layout */}
+            <div className="space-y-6 text-slate-900 text-xs font-serif p-8 border border-slate-300 rounded-xl bg-white leading-relaxed">
+              {/* Header */}
+              <div className="text-center space-y-1 pb-4 border-b border-slate-400">
+                <h2 className="text-xl font-bold tracking-wider uppercase font-sans">SANSKRITHI SCHOOL OF ENGINEERING</h2>
+                <p className="text-[11px] text-slate-700 font-sans">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
+                <p className="text-[10px] text-slate-600 italic font-sans">Affiliated to JNTUA & Approved by AICTE, www.sseptp.org</p>
               </div>
 
-              <div className="text-center font-extrabold uppercase text-sm underline tracking-wider py-2">
-                APPLICATION FOR FINANCIAL ASSISTANCE & REQUISITION
+              {/* Title */}
+              <div className="text-center font-bold uppercase text-xs tracking-wider py-3 underline font-sans">
+                {selectedRequest.title || 'APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING GUEST PROGRAM'}
               </div>
 
-              <div className="grid grid-cols-12 gap-y-3 text-xs border-t border-slate-200 pt-4">
-                <div className="col-span-4 font-bold text-slate-700">1. Request Number:</div>
-                <div className="col-span-8 font-semibold">{selectedRequest.request_number}</div>
+              {/* 14-Point Table Format */}
+              <table className="w-full border-collapse border border-slate-400 text-xs my-4">
+                <tbody>
+                  <tr className="border-b border-slate-300">
+                    <td className="w-1/2 p-2 font-semibold border-r border-slate-300">1. Name and address of the Organizing Secretary of the FDP/Program:</td>
+                    <td className="w-1/2 p-2">{selectedRequest.submitted_by_name} ({selectedRequest.department})</td>
+                  </tr>
 
-                <div className="col-span-4 font-bold text-slate-700">2. Organizing Secretary / Submitter:</div>
-                <div className="col-span-8">{selectedRequest.submitted_by_name}</div>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">2. Department under the auspices of which Expert lecture is proposed:</td>
+                    <td className="p-2">{selectedRequest.department}</td>
+                  </tr>
 
-                <div className="col-span-4 font-bold text-slate-700">3. Department:</div>
-                <div className="col-span-8">{selectedRequest.department}</div>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">3. Theme(s) of the FDP/Program:</td>
+                    <td className="p-2">{selectedRequest.category}</td>
+                  </tr>
 
-                <div className="col-span-4 font-bold text-slate-700">4. Program Theme / Title:</div>
-                <div className="col-span-8 font-bold">{selectedRequest.title}</div>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">4. Target Group:</td>
+                    <td className="p-2">HAS Faculties, all First Year Students</td>
+                  </tr>
 
-                <div className="col-span-4 font-bold text-slate-700">5. Category & Purpose:</div>
-                <div className="col-span-8 whitespace-pre-wrap">{selectedRequest.description}</div>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">5. Name(s) & Affiliation of the Resource Person(s):</td>
+                    <td className="p-2">Dr. Padmasuvarna, Professor, Dept of Physics, JNTU Anantapur</td>
+                  </tr>
 
-                <div className="col-span-4 font-bold text-slate-700">6. Total Expenditure Requested:</div>
-                <div className="col-span-8 font-extrabold text-slate-900">₹{parseFloat(selectedRequest.amount || 0).toLocaleString()}</div>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">6. Level of the Expert Lecture:</td>
+                    <td className="p-2">State / Regional Level</td>
+                  </tr>
 
-                <div className="col-span-4 font-bold text-slate-700">7. Principal Approval Status:</div>
-                <div className="col-span-8 font-semibold text-emerald-700">
-                  {selectedRequest.status} {selectedRequest.principal_comments ? `(${selectedRequest.principal_comments})` : ''}
-                </div>
-              </div>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">7. Duration of the Programme:</td>
+                    <td className="p-2">Half Day</td>
+                  </tr>
 
-              {/* Signature Blocks */}
-              <div className="grid grid-cols-3 gap-4 pt-16 text-center text-xs font-bold border-t border-slate-300 mt-12">
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">8. Estimated Expenditure Breakdown:</td>
+                    <td className="p-2 font-mono">
+                      Honorarium: Rs. 5000<br />
+                      Miscellaneous: Rs. 1000<br />
+                      <strong className="text-slate-900">Total Expenditure: Rs. {selectedRequest.amount || 6000}</strong>
+                    </td>
+                  </tr>
+
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">9. Requisition Description & Details:</td>
+                    <td className="p-2 whitespace-pre-wrap">{selectedRequest.description}</td>
+                  </tr>
+
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2 font-semibold border-r border-slate-300">10. Principal Review Status:</td>
+                    <td className="p-2 font-bold text-slate-800">
+                      {selectedRequest.status} {selectedRequest.principal_comments ? `(${selectedRequest.principal_comments})` : ''}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Signature Line Blocks */}
+              <div className="grid grid-cols-3 gap-4 text-center text-xs font-bold pt-16 mt-8 font-sans">
                 <div>
                   <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Signed digitally</div>
-                  <p className="pt-2">Signature of Organizing Secretary / HOD</p>
+                  <p className="pt-2">Signature of Organizing Secretary</p>
                 </div>
 
                 <div>
                   <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
-                    {selectedRequest.principal_action_at ? `Approved on ${new Date(selectedRequest.principal_action_at).toLocaleDateString()}` : 'Pending Signature'}
+                    {selectedRequest.principal_action_at ? `Approved on ${new Date(selectedRequest.principal_action_at).toLocaleDateString()}` : 'Pending Principal Signature'}
                   </div>
                   <p className="pt-2">Signature of Principal</p>
                 </div>
 
                 <div>
                   <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
-                    {selectedRequest.status === 'FULLY_APPROVED' ? 'Verified & Signed' : 'Pending Verification'}
+                    {selectedRequest.status === 'FULLY_APPROVED' ? 'Verified & Signed' : 'Pending Clearance'}
                   </div>
-                  <p className="pt-2">Signature of Director / Chairman / HR & Accounts</p>
+                  <p className="pt-2">Signature of Chairman</p>
                 </div>
               </div>
             </div>
