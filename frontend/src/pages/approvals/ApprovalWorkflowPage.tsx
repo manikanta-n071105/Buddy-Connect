@@ -96,11 +96,13 @@ export const ApprovalWorkflowPage: React.FC = () => {
   const [newDiscussionComment, setNewDiscussionComment] = useState('');
 
   const specialRole = (user?.special_role || user?.specialRole || '').toUpperCase();
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN' || specialRole.includes('PRINCIPAL');
-  const isHR = specialRole.includes('HR') || isSuperAdmin;
-  const isDirector = specialRole.includes('DIRECTOR') || isSuperAdmin;
-  const isAccounts = specialRole.includes('ACCOUNTS') || isSuperAdmin;
-  const isHOD = specialRole.includes('HOD') || user?.role === 'FACULTY' || isSuperAdmin;
+  const userRole = (user?.role || '').toUpperCase();
+
+  const isSuperAdmin = userRole === 'SUPER_ADMIN' || specialRole.includes('PRINCIPAL');
+  const isHR = specialRole.includes('HR') || userRole === 'HR' || isSuperAdmin;
+  const isDirector = specialRole.includes('DIRECTOR') || specialRole.includes('MENTOR') || userRole === 'DIRECTOR' || userRole === 'MENTOR' || userRole === 'ADMIN' || isSuperAdmin;
+  const isAccounts = specialRole.includes('ACCOUNTS') || userRole === 'ACCOUNTS' || isSuperAdmin;
+  const isHOD = specialRole.includes('HOD') || userRole === 'FACULTY' || userRole === 'MENTOR' || userRole === 'DIRECTOR' || isSuperAdmin;
 
   const fetchRequests = async () => {
     try {

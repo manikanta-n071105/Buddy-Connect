@@ -30,14 +30,27 @@ export const getApprovals = async (req: AuthenticatedRequest, res: Response) => 
     `;
     const params: any[] = [];
 
-    // Role-based visibility scoping
-    if (userRole !== 'SUPER_ADMIN' && !specialRole.includes('PRINCIPAL')) {
-      // If user is HR, Director, or Accounts, they see requests in PENDING_DEPARTMENTAL_REVIEW, FULLY_APPROVED, or their own submissions
-      if (specialRole.includes('HR') || specialRole.includes('DIRECTOR') || specialRole.includes('ACCOUNTS')) {
+    // Role-based visibility scoping: Mentors, Directors, HR, Accounts, Admins, Super Admins can view pending departmental reviews & approvals
+    const userRoleUpper = (userRole || '').toUpperCase();
+    const isExecutiveOrReviewer =
+      userRoleUpper === 'SUPER_ADMIN' ||
+      userRoleUpper === 'ADMIN' ||
+      userRoleUpper === 'MENTOR' ||
+      userRoleUpper === 'DIRECTOR' ||
+      userRoleUpper === 'HR' ||
+      userRoleUpper === 'ACCOUNTS' ||
+      specialRole.includes('PRINCIPAL') ||
+      specialRole.includes('DIRECTOR') ||
+      specialRole.includes('MENTOR') ||
+      specialRole.includes('HR') ||
+      specialRole.includes('ACCOUNTS');
+
+    if (userRoleUpper !== 'SUPER_ADMIN' && !specialRole.includes('PRINCIPAL')) {
+      if (isExecutiveOrReviewer) {
         params.push(userId);
-        queryText += ` AND (a.submitted_by_id = $${params.length} OR a.status IN ('PENDING_DEPARTMENTAL_REVIEW', 'FULLY_APPROVED'))`;
+        queryText += ` AND (a.submitted_by_id = $${params.length} OR a.status IN ('PENDING_DEPARTMENTAL_REVIEW', 'FULLY_APPROVED', 'PENDING_PRINCIPAL_APPROVAL', 'CHANGES_REQUESTED', 'REJECTED'))`;
       } else {
-        // Standard HOD / Faculty sees requests submitted by them or within their department
+        // Standard Faculty sees requests submitted by them
         params.push(userId);
         queryText += ` AND a.submitted_by_id = $${params.length}`;
       }
@@ -232,6 +245,20 @@ export const principalAction = async (req: AuthenticatedRequest, res: Response) 
        VALUES ($1, $2, $3, 'APPROVAL')`,
       [currentReq.submitted_by_id, `Principal Decision: ${action}`, `Requisition ${currentReq.request_number} status updated to ${newStatus}.`]
     );
+
+    // If approved by Principal, notify Directors, HR, Accounts, and Mentors for departmental review
+    if (action === 'APPROVE') {
+      await query(
+        `INSERT INTO notifications (recipient_id, title, message, type)
+         SELECT id, 'Requisition Pending Departmental Review', $1, 'APPROVAL'
+         FROM users
+         WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'DIRECTOR', 'HR', 'ACCOUNTS')
+            OR UPPER(COALESCE(special_role, '')) LIKE '%DIRECTOR%'
+            OR UPPER(COALESCE(special_role, '')) LIKE '%HR%'
+            OR UPPER(COALESCE(special_role, '')) LIKE '%ACCOUNTS%'`,
+        [`Requisition ${currentReq.request_number} (${currentReq.title}) was approved by Principal and is now ready for Director / HR / Accounts review.`]
+      );
+    }
 
     return res.json({ success: true, message: `Principal action '${action}' recorded successfully.`, status: newStatus });
   } catch (error: any) {

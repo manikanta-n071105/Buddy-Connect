@@ -605,11 +605,28 @@ ${mom.decisions_reached || mom.decisionsReached}
 
   if (isLoading) return <LoadingState message="Loading Super Admin Command Center..." />;
 
+  const safeStats = stats || {
+    totalMentors: 0,
+    totalSeniors: 0,
+    totalJuniors: 0,
+    totalIssues: 0,
+    openIssues: 0,
+    resolvedIssues: 0,
+    escalatedIssues: 0,
+    reopenedIssues: 0,
+    votingIssues: 0,
+    satisfactionRate: 100,
+    overallOnboardingRate: 0,
+    overallQuestionsRate: 0,
+    categoryBreakdown: [],
+    seniorPerformance: []
+  };
+
   const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
   const rawPieData = [
-    { name: 'Solved Issues', value: stats?.satisfactionBreakdown?.satisfied ?? stats?.resolvedIssues ?? 0 },
-    { name: 'Pending / In-Progress', value: stats?.satisfactionBreakdown?.partiallySatisfied ?? stats?.openIssues ?? 0 },
-    { name: 'Escalated / Reopened', value: stats?.satisfactionBreakdown?.notSatisfied ?? ((stats?.escalatedIssues || 0) + (stats?.reopenedIssues || 0)) }
+    { name: 'Solved Issues', value: safeStats.satisfactionBreakdown?.satisfied ?? safeStats.resolvedIssues ?? 0 },
+    { name: 'Pending / In-Progress', value: safeStats.satisfactionBreakdown?.partiallySatisfied ?? safeStats.openIssues ?? 0 },
+    { name: 'Escalated / Reopened', value: safeStats.satisfactionBreakdown?.notSatisfied ?? ((safeStats.escalatedIssues || 0) + (safeStats.reopenedIssues || 0)) }
   ];
   const activePieData = rawPieData.filter(item => item.value > 0);
   const votePieData = activePieData.length > 0 ? activePieData : [{ name: 'No Active Issues', value: 1 }];
@@ -706,7 +723,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight">
-                <AnimatedCounter value={stats.totalMentors} />
+                <AnimatedCounter value={safeStats.totalMentors} />
               </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Department Heads</div>
             </SpotlightCard>
@@ -719,7 +736,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                 </div>
               </div>
               <p className="text-3xl font-black text-slate-900 mt-3 tracking-tight flex items-baseline gap-1">
-                <AnimatedCounter value={stats.totalSeniors} /> <span className="text-xs font-bold text-slate-400">S</span> / <AnimatedCounter value={stats.totalJuniors} /> <span className="text-xs font-bold text-slate-400">J</span>
+                <AnimatedCounter value={safeStats.totalSeniors} /> <span className="text-xs font-bold text-slate-400">S</span> / <AnimatedCounter value={safeStats.totalJuniors} /> <span className="text-xs font-bold text-slate-400">J</span>
               </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Active Student Hierarchy</div>
             </SpotlightCard>
@@ -732,7 +749,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                 </div>
               </div>
               <p className="text-3xl font-black text-amber-600 mt-3 tracking-tight">
-                <AnimatedCounter value={stats.openIssues} />
+                <AnimatedCounter value={safeStats.openIssues} />
               </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Pending Resolution</div>
             </SpotlightCard>
@@ -745,7 +762,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                 </div>
               </div>
               <p className="text-3xl font-black text-emerald-600 mt-3 tracking-tight">
-                <AnimatedCounter value={stats.satisfactionRate} suffix="%" />
+                <AnimatedCounter value={safeStats.satisfactionRate} suffix="%" />
               </p>
               <div className="mt-2 text-[11px] font-semibold text-slate-400">Feedback Score</div>
             </SpotlightCard>
@@ -808,7 +825,7 @@ ${mom.decisions_reached || mom.decisionsReached}
               </div>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.categoryBreakdown} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                  <BarChart data={safeStats.categoryBreakdown || []} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                     <XAxis dataKey="category" interval={0} tick={{ fontSize: 10, fill: '#0f172a', fontWeight: 800 }} axisLine={{ stroke: '#cbd5e1' }} tickLine={false} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#475569', fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
@@ -858,7 +875,7 @@ ${mom.decisions_reached || mom.decisionsReached}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  {stats.seniorPerformance.map((sen: any) => (
+                  {(safeStats.seniorPerformance || []).map((sen: any) => (
                     <tr key={sen.senior_id} className="hover:bg-slate-50 transition-colors">
                       <td className="p-3.5 font-bold text-slate-900">{sen.senior_name}</td>
                       <td className="p-3.5 text-slate-500 font-mono text-[11px]">{sen.senior_code}</td>
