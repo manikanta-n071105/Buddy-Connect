@@ -45,6 +45,8 @@ export const ApprovalWorkflowPage: React.FC = () => {
   const [newTitle, setNewTitle] = useState('APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON 22 MARCH 2024');
   const [newCategory, setNewCategory] = useState('Guest Program / Lecture');
   const [newDept, setNewDept] = useState(user?.department || 'HAS');
+  const [newDesc, setNewDesc] = useState('');
+  const [newAmount, setNewAmount] = useState('6000');
 
   // 14 Individual Points State
   const [f1OrgSecretary, setF1OrgSecretary] = useState('Dr. R. Nithya, Associate Professor');
