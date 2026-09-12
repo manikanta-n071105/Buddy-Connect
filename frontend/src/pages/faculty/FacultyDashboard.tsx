@@ -4,24 +4,32 @@ import { useAuth } from '../../context/AuthContext';
 import { LoadingState } from '../../components/common/LoadingState';
 import { UserProfileModal } from '../../components/common/UserProfileModal';
 import { ScheduleMeetingModal } from '../../components/common/ScheduleMeetingModal';
+import { FileDisciplinaryComplaintModal } from '../../components/common/FileDisciplinaryComplaintModal';
 import {
   Users,
   BookOpen,
   MessageCircle,
   GraduationCap,
   UserCheck,
-  CheckCircle2,
   AlertCircle,
   ChevronRight,
   Calendar,
   Clock,
   MapPin,
-  Link2,
-  ExternalLink,
   Plus,
   Trash2,
   Check,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sparkles,
+  Gavel,
+  Heart,
+  ShieldCheck,
+  ShieldAlert,
+  Network,
+  Award,
+  FileText,
+  Building2,
+  Layers
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
@@ -36,11 +44,12 @@ export const FacultyDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [showInfractionModal, setShowInfractionModal] = useState(false);
 
   const fetchFacultyData = async () => {
     try {
       setIsLoading(true);
-      // 1. Fetch Faculty's assigned juniors & meetings
+      // Fetch Faculty's assigned juniors, users info, & meetings
       const [junRes, allUsersRes, meetRes] = await Promise.all([
         api.get('/users/faculty/juniors'),
         api.get('/users'),
@@ -92,26 +101,65 @@ export const FacultyDashboard: React.FC = () => {
   const currentCount = assignedJuniors.length;
   const isAtCapacity = currentCount >= maxCapacity;
 
-  if (isLoading) return <LoadingState message="Loading Faculty Portal..." />;
+  // Special Role Detection
+  const specialRole = (facultyInfo?.special_role || user?.special_role || '').trim();
+  const isCounselor = Boolean(facultyInfo?.is_counselor || user?.is_counselor || specialRole.toUpperCase().includes('COUNSELOR'));
+  const isDisciplinary = Boolean(facultyInfo?.is_disciplinary_committee || user?.is_disciplinary_committee || specialRole.toUpperCase().includes('DISCIPLINARY'));
+  const hasSpecialRole = Boolean(specialRole || isCounselor || isDisciplinary);
+
+  const isExecutiveRole = Boolean(
+    specialRole &&
+    ['DIRECTOR', 'VICE PRINCIPAL', 'PRINCIPAL', 'DEAN', 'HOD', 'CONTROLLER OF EXAMINATIONS', 'HR', 'ACCOUNTS DEPT'].some(r => specialRole.toUpperCase().includes(r))
+  );
+
+  if (isLoading) return <LoadingState message="Loading Faculty Dashboard & Special Role Hub..." />;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 p-6 sm:p-8 text-white shadow-xl border border-emerald-700/30">
-        <div className="absolute right-0 top-0 -mr-12 -mt-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      {/* Dynamic Top Banner */}
+      <div className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white shadow-xl border ${
+        hasSpecialRole
+          ? 'bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-purple-500/30'
+          : 'bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 border-emerald-700/30'
+      }`}>
+        <div className={`absolute right-0 top-0 -mr-12 -mt-12 w-64 h-64 rounded-full blur-3xl pointer-events-none ${
+          hasSpecialRole ? 'bg-purple-500/15' : 'bg-emerald-500/10'
+        }`} />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold uppercase tracking-wider">
-              <BookOpen className="w-3.5 h-3.5" />
-              Faculty Academic Portal
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+              hasSpecialRole
+                ? 'bg-purple-500/20 border border-purple-400/30 text-purple-300'
+                : 'bg-emerald-500/20 border border-emerald-400/30 text-emerald-300'
+            }`}>
+              {hasSpecialRole ? (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  {specialRole || (isDisciplinary ? 'DISCIPLINARY COMMITTEE' : 'MENTAL HEALTH COUNSELOR')}
+                </>
+              ) : (
+                <>
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Standard Faculty Academic Portal
+                </>
+              )}
             </div>
+
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Welcome, Prof. {user?.name}
+              Welcome, {specialRole ? specialRole.toLowerCase().includes('director') || specialRole.toLowerCase().includes('principal') ? specialRole : `Prof. ${user?.name}` : `Prof. ${user?.name}`}
             </h1>
-            <p className="text-emerald-100/80 text-sm max-w-xl">
-              View your assigned junior students, schedule mentorship review meetings, and conduct class quizzes from spreadsheets.
+
+            <p className="text-slate-200/90 text-sm max-w-xl">
+              {hasSpecialRole ? (
+                <>
+                  Administrative Leadership Dashboard for <strong className="text-amber-300">{specialRole || 'Special Role Appointee'}</strong>. Manage campus operations, mentorship, and special duties.
+                </>
+              ) : (
+                'View your assigned junior students, schedule mentorship review meetings, and conduct class quizzes from spreadsheets.'
+              )}
             </p>
+
             <div className="pt-1 flex flex-wrap gap-2">
               <button
                 onClick={() => navigate('/quizzes')}
@@ -119,13 +167,23 @@ export const FacultyDashboard: React.FC = () => {
               >
                 <FileSpreadsheet className="w-4 h-4" /> Conduct Class Quiz (Spreadsheet)
               </button>
+              {hasSpecialRole && (
+                <button
+                  onClick={() => navigate('/admin/appointing-hub')}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/25 transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <ShieldCheck className="w-4 h-4" /> Special Roles Hub
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Capacity Card */}
-          <div className="bg-slate-950/60 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-emerald-500/30 min-w-64 w-full md:w-auto shadow-lg">
+          {/* Mentorship Capacity Card */}
+          <div className={`backdrop-blur-md rounded-2xl p-4 sm:p-5 border min-w-64 w-full md:w-auto shadow-lg ${
+            hasSpecialRole ? 'bg-slate-950/70 border-purple-500/30' : 'bg-slate-950/60 border-emerald-500/30'
+          }`}>
             <div className="flex items-center justify-between gap-4 mb-2">
-              <span className="text-xs font-bold text-emerald-200">Mentorship Capacity</span>
+              <span className="text-xs font-bold text-slate-200">Mentorship Capacity</span>
               <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
                 isAtCapacity ? 'bg-amber-500/30 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/30 text-emerald-300'
               }`}>
@@ -138,20 +196,158 @@ export const FacultyDashboard: React.FC = () => {
                   isAtCapacity ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-emerald-500 to-teal-400'
                 }`}
                 style={{ width: `${Math.min(100, (currentCount / maxCapacity) * 100)}%` }}
-              ></div>
+              />
             </div>
             <p className="text-[11px] text-slate-300">
               {isAtCapacity ? (
                 <span className="text-amber-300 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 inline" /> Maximum capacity limit reached (Controlled by SuperAdmin)
+                  <AlertCircle className="w-3 h-3 inline" /> Maximum capacity limit reached (Configurable in Profile)
                 </span>
               ) : (
-                `Mentorship capacity limit set by SuperAdmin: ${maxCapacity} student(s)`
+                `Mentorship capacity limit set: ${maxCapacity} student(s)`
               )}
             </p>
           </div>
         </div>
       </div>
+
+      {/* SPECIAL ROLE DASHBOARD PANELS */}
+
+      {/* Panel 1: Executive Leadership Command Bar (Director, Vice Principal, HOD, Dean, etc.) */}
+      {(isExecutiveRole || hasSpecialRole) && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-2xs p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black">
+                <Award className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                  {specialRole || 'Executive Leadership'} Command Controls
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium">Quick administrative access for {specialRole || 'Special Role Holders'}</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 text-[10px] font-black rounded-full bg-purple-100 text-purple-900 border border-purple-300 uppercase tracking-wider">
+              Special Duty Active
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+            <Link
+              to="/users"
+              className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <Users className="w-5 h-5 text-purple-600 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">User Directory</p>
+              <p className="text-[10px] text-slate-400">Manage Identity</p>
+            </Link>
+
+            <Link
+              to="/hierarchy"
+              className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <Network className="w-5 h-5 text-indigo-600 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">Hierarchy Tree</p>
+              <p className="text-[10px] text-slate-400">Department Structure</p>
+            </Link>
+
+            <Link
+              to="/admin/appointing-hub"
+              className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <Sparkles className="w-5 h-5 text-amber-500 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">Special Roles Hub</p>
+              <p className="text-[10px] text-slate-400">Appoint & Assign</p>
+            </Link>
+
+            <Link
+              to="/admin/appointing-hub"
+              className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <Gavel className="w-5 h-5 text-purple-700 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">Disciplinary Log</p>
+              <p className="text-[10px] text-slate-400">Conduct Records</p>
+            </Link>
+
+            <Link
+              to="/meetings"
+              className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <Calendar className="w-5 h-5 text-teal-600 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">Meetings Calendar</p>
+              <p className="text-[10px] text-slate-400">Schedule Review</p>
+            </Link>
+
+            <Link
+              to="/admin/cr-feedbacks"
+              className="p-3 bg-slate-50 hover:bg-purple-50 rounded-2xl border border-slate-200 hover:border-purple-300 transition-all text-center space-y-1 group cursor-pointer"
+            >
+              <MessageCircle className="w-5 h-5 text-blue-600 mx-auto group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-extrabold text-slate-900">CR Feedbacks</p>
+              <p className="text-[10px] text-slate-400">Class Feedback</p>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Panel 2: Mental Health Counselor Dedicated Panel */}
+      {isCounselor && (
+        <div className="bg-gradient-to-r from-rose-900 via-slate-900 to-pink-950 p-5 rounded-3xl text-white shadow-md border border-rose-700/40 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center shrink-0">
+              <Heart className="w-6 h-6 text-rose-300 fill-rose-300/40" />
+            </div>
+            <div className="space-y-0.5">
+              <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-rose-500/30 text-rose-200 uppercase tracking-wider">
+                Appointed Mental Health Counselor
+              </span>
+              <h4 className="text-sm sm:text-base font-black text-white">Student Well-being & Counseling Portal</h4>
+              <p className="text-xs text-rose-200/80">Manage confidential 1-on-1 student counseling appointments and well-being requests.</p>
+            </div>
+          </div>
+
+          <Link
+            to="/counseling"
+            className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all shrink-0 flex items-center gap-2 cursor-pointer"
+          >
+            <Heart className="w-4 h-4 fill-white" /> Open Counseling Portal
+          </Link>
+        </div>
+      )}
+
+      {/* Panel 3: Disciplinary Committee Member Dedicated Panel */}
+      {isDisciplinary && (
+        <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 p-5 rounded-3xl text-white shadow-md border border-purple-700/40 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center shrink-0">
+              <Gavel className="w-6 h-6 text-purple-300" />
+            </div>
+            <div className="space-y-0.5">
+              <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-purple-500/30 text-purple-200 uppercase tracking-wider">
+                Disciplinary Committee Member
+              </span>
+              <h4 className="text-sm sm:text-base font-black text-white">Student Infractions & Conduct Enforcement</h4>
+              <p className="text-xs text-purple-200/80">File student conduct complaints, review infractions log, and track repeat offenders.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowInfractionModal(true)}
+              className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <ShieldAlert className="w-4 h-4" /> Report Student Infraction
+            </button>
+            <Link
+              to="/admin/appointing-hub"
+              className="px-4 py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Gavel className="w-4 h-4" /> Committee Log
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Action Banners */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -188,7 +384,7 @@ export const FacultyDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Scheduled Meetings Card Section */}
+      {/* Scheduled Meetings Section */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
@@ -289,7 +485,7 @@ export const FacultyDashboard: React.FC = () => {
               Assigned Junior Students ({assignedJuniors.length})
             </h3>
             <p className="text-xs text-slate-500">
-              Student list assigned to your academic mentorship by SuperAdmin
+              Student list assigned to your academic mentorship
             </p>
           </div>
         </div>
@@ -302,7 +498,7 @@ export const FacultyDashboard: React.FC = () => {
             <div className="space-y-1">
               <h4 className="text-sm font-extrabold text-slate-800">No Students Assigned Yet</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                SuperAdmin has not assigned any junior students to your faculty mentorship.
+                No junior students currently assigned to your mentorship.
               </p>
             </div>
           </div>
@@ -386,6 +582,14 @@ export const FacultyDashboard: React.FC = () => {
       <UserProfileModal
         userId={selectedProfileId}
         onClose={() => setSelectedProfileId(null)}
+      />
+
+      {/* Report Student Infraction Modal */}
+      <FileDisciplinaryComplaintModal
+        isOpen={showInfractionModal}
+        onClose={() => setShowInfractionModal(false)}
+        targetStudent={null}
+        onComplaintSubmitted={fetchFacultyData}
       />
     </div>
   );
