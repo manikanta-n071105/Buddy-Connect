@@ -309,11 +309,21 @@ const HallSeatingPreviewCard: React.FC<{
           ))}
         </div>
 
-        {/* SCREEN / STAGE BANNER */}
-        <div className="w-full max-w-lg mt-6 py-3 px-8 bg-gradient-to-r from-sky-100 via-sky-50 to-sky-100 border border-sky-200/80 rounded-2xl text-center shadow-2xs">
-          <span className="text-xs font-black tracking-widest uppercase text-sky-600">
-            SCREEN / STAGE
-          </span>
+        {/* SCREEN / STAGE 3D TRAPEZOID BANNER */}
+        <div className="mt-8 mb-2 w-full flex flex-col items-center">
+          <div className="relative w-full max-w-lg h-11 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-sky-100/90 border-t-4 border-sky-400 rounded-xl shadow-sm"
+              style={{
+                perspective: '500px',
+                transform: 'rotateX(20deg) scale(0.95)',
+                boxShadow: '0 10px 20px -5px rgba(14, 165, 233, 0.15)'
+              }}
+            ></div>
+            <span className="relative z-10 text-[10px] font-black text-sky-600 uppercase tracking-[0.3em]">
+              SCREEN / STAGE
+            </span>
+          </div>
         </div>
       </div>
 
