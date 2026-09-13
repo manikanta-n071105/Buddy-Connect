@@ -64,9 +64,10 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
 const HallSeatingPreviewCard: React.FC<{
   hall: any;
   hallIndex?: number;
+  batchesList?: any[];
   onToggleDisabledSeat?: (seatKey: string) => void;
   onDeleteHall?: () => void;
-}> = ({ hall, hallIndex = 0, onToggleDisabledSeat, onDeleteHall }) => {
+}> = ({ hall, hallIndex = 0, batchesList = [], onToggleDisabledSeat, onDeleteHall }) => {
   const [isBlockModeActive, setIsBlockModeActive] = useState(false);
   const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('ALL');
 
@@ -88,6 +89,35 @@ const HallSeatingPreviewCard: React.FC<{
 
   const previewMap = React.useMemo(() => {
     const map = new Map<string, { roll_number: string; branch: string; grid_row: number; grid_col: number }>();
+    
+    // Build real student lists per branch based on user's student batches
+    const branchQueues: { [branch: string]: string[] } = {};
+
+    if (batchesList && batchesList.length > 0) {
+      batchesList.forEach((b) => {
+        const branchKey = (b.branch || 'BRANCH').trim().toUpperCase();
+        if (!branchQueues[branchKey]) {
+          branchQueues[branchKey] = [];
+        }
+        const fullRange = generateStudentRange(b.start_reg, b.end_reg);
+        const exclSet = new Set(
+          (b.excluded_ids || '')
+            .split(',')
+            .map((s: string) => s.trim().toUpperCase())
+            .filter(Boolean)
+        );
+        const validList = fullRange.filter((r) => !exclSet.has(r));
+        branchQueues[branchKey].push(...validList);
+      });
+    }
+
+    const branches = Object.keys(branchQueues);
+    const branchA = branches[0] || 'CSE';
+    const branchB = branches[1] || 'ECE';
+
+    const queueA = branchQueues[branchA] || [];
+    const queueB = branchQueues[branchB] || [];
+
     const branchSeatsPerHall = Math.floor((rows * cols) / 2);
     let countA = hallIndex * branchSeatsPerHall;
     let countB = hallIndex * branchSeatsPerHall;
@@ -95,26 +125,61 @@ const HallSeatingPreviewCard: React.FC<{
     for (let c = 1; c <= cols; c++) {
       for (let r = 1; r <= rows; r++) {
         const isBranchA = (r + c) % 2 === 0;
-        const branch = isBranchA ? 'CSE' : 'ECE';
-        let rollNum: number;
-        if (isBranchA) {
-          rollNum = 501 + countA;
-          countA++;
-        } else {
-          rollNum = 401 + countB;
-          countB++;
-        }
+        const branchName = isBranchA ? branchA : branchB;
 
-        map.set(`${r}-${c}`, {
-          roll_number: `${rollNum}`,
-          branch,
-          grid_row: r,
-          grid_col: c
-        });
+        if (isBranchA) {
+          if (queueA.length > 0) {
+            if (countA < queueA.length) {
+              map.set(`${r}-${c}`, {
+                roll_number: queueA[countA],
+                branch: branchName,
+                grid_row: r,
+                grid_col: c
+              });
+            }
+            countA++;
+          } else {
+            // Fallback cap if queueA is empty (capped at max 60 demo roll numbers)
+            if (countA < 60) {
+              const rollSuffix = (501 + countA).toString();
+              map.set(`${r}-${c}`, {
+                roll_number: rollSuffix,
+                branch: branchName,
+                grid_row: r,
+                grid_col: c
+              });
+            }
+            countA++;
+          }
+        } else {
+          if (queueB.length > 0) {
+            if (countB < queueB.length) {
+              map.set(`${r}-${c}`, {
+                roll_number: queueB[countB],
+                branch: branchName,
+                grid_row: r,
+                grid_col: c
+              });
+            }
+            countB++;
+          } else {
+            // Fallback cap if queueB is empty (capped at max 60 demo roll numbers)
+            if (countB < 60) {
+              const rollSuffix = (401 + countB).toString();
+              map.set(`${r}-${c}`, {
+                roll_number: rollSuffix,
+                branch: branchName,
+                grid_row: r,
+                grid_col: c
+              });
+            }
+            countB++;
+          }
+        }
       }
     }
     return map;
-  }, [rows, cols, hallIndex]);
+  }, [rows, cols, hallIndex, batchesList]);
 
   return (
     <div className="bg-white text-slate-900 rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-6">
@@ -830,6 +895,7 @@ export const SeatingAllocatorPage: React.FC = () => {
               <HallSeatingPreviewCard
                 hall={roomsList[selectedPreviewHallIdx] || roomsList[0]}
                 hallIndex={selectedPreviewHallIdx}
+                batchesList={batchesList}
                 onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(selectedPreviewHallIdx, seatKey)}
                 onDeleteHall={roomsList.length > 1 ? () => {
                   const newRooms = roomsList.filter((_, i) => i !== selectedPreviewHallIdx);
