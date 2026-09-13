@@ -220,18 +220,24 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
         let selectedStudent: any = null;
         let selectedBatchIdx = -1;
 
-        // Check left neighbor for adjacency prevention
+        // Check left and top neighbors for 2D adjacency prevention (front/back & left/right)
         const leftKey = `${pos.r}-${pos.c - 1}`;
+        const topKey = `${pos.r - 1}-${pos.c}`;
         const leftBranch = gridAllocatedBranches[leftKey];
+        const topBranch = gridAllocatedBranches[topKey];
         const isAisleGap = aisleInterval > 0 && ((pos.c - 1) % aisleInterval === 0);
 
         for (let idx = 0; idx < batchQueues.length; idx++) {
           const queue = batchQueues[idx];
           if (queue.students.length === 0) continue;
 
-          if (preventAdjacency && leftBranch && !isAisleGap && queue.branch === leftBranch) {
-            // Conflict! Left neighbor is same branch across non-aisle bench. Try alternative batch if available.
-            continue;
+          if (preventAdjacency) {
+            if (leftBranch && !isAisleGap && queue.branch === leftBranch) {
+              continue;
+            }
+            if (topBranch && queue.branch === topBranch) {
+              continue;
+            }
           }
 
           selectedBatchIdx = idx;

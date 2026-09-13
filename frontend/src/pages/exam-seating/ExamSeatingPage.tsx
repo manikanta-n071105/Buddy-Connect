@@ -78,7 +78,7 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
 }
 
 // ============================================================================
-// HALL SEATING PREVIEW CARD COMPONENT (MATCHING EXACT USER SCREENSHOT 3)
+// HALL SEATING PREVIEW CARD COMPONENT (UNIQUE SEQUENTIAL BRANCH ALLOCATION)
 // ============================================================================
 const HallSeatingPreviewCard: React.FC<{
   hall: any;
@@ -108,21 +108,43 @@ const HallSeatingPreviewCard: React.FC<{
 
   const getRowLetter = (r: number) => String.fromCharCode(64 + r);
 
-  // Sample roll numbers generator for preview if seatings array is empty (in modal creation mode)
+  // Pre-calculate preview grid map matching alternating Branch A / Branch B seating pattern
+  const previewMap = React.useMemo(() => {
+    const map = new Map<string, { roll_number: string; branch: string; grid_row: number; grid_col: number }>();
+    let countA = 0;
+    let countB = 0;
+
+    for (let c = 1; c <= cols; c++) {
+      for (let r = 1; r <= rows; r++) {
+        // Alternating Branch A (CSE) and Branch B (ECE) vertically behind each other
+        const isBranchA = (r + c) % 2 === 0;
+        const branch = isBranchA ? 'CSE' : 'ECE';
+        let rollNum: number;
+        if (isBranchA) {
+          rollNum = 501 + countA;
+          countA++;
+        } else {
+          rollNum = 401 + countB;
+          countB++;
+        }
+
+        map.set(`${r}-${c}`, {
+          roll_number: `${rollNum}`,
+          branch,
+          grid_row: r,
+          grid_col: c
+        });
+      }
+    }
+    return map;
+  }, [rows, cols]);
+
+  // Unique sequential branch allocation preview generator (no duplicates)
   const getPreviewSeatInfo = (r: number, c: number) => {
     if (seatings && seatings.length > 0) {
       return seatings.find((s: any) => s.grid_row === r && s.grid_col === c);
     }
-    // Dummy preview allocation for hall setup
-    const idx = (c - 1) * rows + (r - 1);
-    const branch = c % 2 === 1 ? 'CSE' : 'ECE';
-    const baseRoll = branch === 'CSE' ? 501 + Math.floor(idx / 2) : 401 + Math.floor(idx / 2);
-    return {
-      roll_number: `${baseRoll}`,
-      branch: branch,
-      grid_row: r,
-      grid_col: c
-    };
+    return previewMap.get(`${r}-${c}`);
   };
 
   const handleSeatClick = (r: number, c: number) => {
@@ -134,7 +156,7 @@ const HallSeatingPreviewCard: React.FC<{
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-6">
-      {/* Top Toolbar / Legend Header matching Image 3 */}
+      {/* Top Toolbar Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
         <div className="flex flex-wrap items-center gap-3">
           {/* Block Seat Toggle Button */}
@@ -231,7 +253,7 @@ const HallSeatingPreviewCard: React.FC<{
                   );
                 }
 
-                // Color coding pills based on branch (matching Image 3)
+                // Color coding pills based on branch
                 const branch = (seatInfo.branch || '').toUpperCase();
                 let borderClass = 'border-2 border-blue-500 text-blue-900 bg-white shadow-2xs hover:scale-105';
 
@@ -252,7 +274,7 @@ const HallSeatingPreviewCard: React.FC<{
                     key={c}
                     onClick={() => handleSeatClick(r, c)}
                     className={`w-16 h-12 rounded-2xl ${borderClass} flex flex-col items-center justify-center font-extrabold font-mono text-xs transition-all cursor-pointer`}
-                    title={`${seatInfo.roll_number} (${seatInfo.branch}) - Click to Block/Modify`}
+                    title={`${seatInfo.roll_number} (${seatInfo.branch}) - Click to Block/Unblock`}
                   >
                     <span>{shortRoll}</span>
                   </div>
@@ -267,7 +289,7 @@ const HallSeatingPreviewCard: React.FC<{
           ))}
         </div>
 
-        {/* SCREEN / STAGE BANNER - MATCHING EXACT IMAGE 3 */}
+        {/* SCREEN / STAGE BANNER */}
         <div className="w-full max-w-lg mt-6 py-3 px-8 bg-gradient-to-r from-sky-100 via-sky-50 to-sky-100 border border-sky-200/80 rounded-2xl text-center shadow-2xs">
           <span className="text-xs font-black tracking-widest uppercase text-sky-600">
             SCREEN / STAGE
@@ -275,7 +297,7 @@ const HallSeatingPreviewCard: React.FC<{
         </div>
       </div>
 
-      {/* Bottom Branch Legends Bar - MATCHING EXACT IMAGE 3 */}
+      {/* Bottom Branch Legends Bar */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-[11px] font-bold text-slate-500">
         <span className="px-3 py-1 rounded-xl border-2 border-blue-500 text-blue-800 bg-white">CSE</span>
         <span className="px-3 py-1 rounded-xl border-2 border-emerald-500 text-emerald-800 bg-white">ECE</span>
@@ -322,6 +344,9 @@ export const ExamSeatingPage: React.FC = () => {
 
   // Invigilation Duty State
   const [invigilationDuties, setInvigilationDuties] = useState<any[]>([]);
+
+  // Selected Active Hall Preview Tab in Modal
+  const [selectedPreviewHallIdx, setSelectedPreviewHallIdx] = useState(0);
 
   // --------------------------------------------------------------------------
   // CREATE EXAM FORM STATE
@@ -873,7 +898,7 @@ export const ExamSeatingPage: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: RUN AUTOMATIC SEATING ALLOCATION ENGINE (MATCHES EXPLICIT SCREENSHOTS) */}
+      {/* MODAL: RUN AUTOMATIC SEATING ALLOCATION ENGINE */}
       {/* ========================================================================= */}
       {showCreateExamModal && isController && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 flex items-start sm:items-center justify-center">
@@ -1102,13 +1127,17 @@ export const ExamSeatingPage: React.FC = () => {
                 })}
               </div>
 
-              {/* Exam Halls Setup & Live Interactive Preview Cards */}
+              {/* Exam Halls Setup & Single Active Live Preview Card */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-slate-900 text-sm">2. Exam Halls & Grid Strategy (Click Seats to Block/Unblock)</h4>
+                  <h4 className="font-extrabold text-slate-900 text-sm">2. Exam Halls & Grid Strategy</h4>
                   <button
                     type="button"
-                    onClick={() => setRoomsList([...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }])}
+                    onClick={() => {
+                      const newRooms = [...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }];
+                      setRoomsList(newRooms);
+                      setSelectedPreviewHallIdx(newRooms.length - 1);
+                    }}
                     className="px-3 py-1.5 bg-indigo-50 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Exam Hall
@@ -1116,7 +1145,7 @@ export const ExamSeatingPage: React.FC = () => {
                 </div>
 
                 {roomsList.map((room, idx) => (
-                  <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-3xl space-y-4">
+                  <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold text-slate-500 mb-1">Hall Name</label>
@@ -1128,7 +1157,7 @@ export const ExamSeatingPage: React.FC = () => {
                             updated[idx].hall_name = e.target.value;
                             setRoomsList(updated);
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-800"
                         />
                       </div>
 
@@ -1143,7 +1172,7 @@ export const ExamSeatingPage: React.FC = () => {
                               updated[idx].rows = e.target.value;
                               setRoomsList(updated);
                             }}
-                            className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-center font-bold"
                           />
                           <span className="font-bold text-slate-400">x</span>
                           <input
@@ -1154,7 +1183,7 @@ export const ExamSeatingPage: React.FC = () => {
                               updated[idx].cols = e.target.value;
                               setRoomsList(updated);
                             }}
-                            className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-center font-bold"
                           />
                         </div>
                       </div>
@@ -1168,25 +1197,50 @@ export const ExamSeatingPage: React.FC = () => {
                             updated[idx].fill_strategy = e.target.value;
                             setRoomsList(updated);
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
                         >
                           <option value="col">Column-Major (Recommended)</option>
                           <option value="row">Row-Major</option>
                         </select>
                       </div>
                     </div>
-
-                    {/* Interactive Preview Canvas matching Image 3 */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-extrabold text-slate-500">Live Hall Interactive Seating Preview (Click any seat to Block / Unblock):</p>
-                      <HallSeatingPreviewCard
-                        hall={room}
-                        onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(idx, seatKey)}
-                        onDeleteHall={roomsList.length > 1 ? () => setRoomsList(roomsList.filter((_, i) => i !== idx)) : undefined}
-                      />
-                    </div>
                   </div>
                 ))}
+
+                {/* SINGLE ACTIVE LIVE HALL PREVIEW CARD WITH HALL SELECTOR TABS */}
+                {roomsList.length > 0 && (
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-700">Select Hall Preview:</span>
+                      <div className="flex items-center gap-1.5 overflow-x-auto">
+                        {roomsList.map((r, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setSelectedPreviewHallIdx(i)}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              selectedPreviewHallIdx === i
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            {r.hall_name || `Hall ${i + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <HallSeatingPreviewCard
+                      hall={roomsList[selectedPreviewHallIdx] || roomsList[0]}
+                      onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(selectedPreviewHallIdx, seatKey)}
+                      onDeleteHall={roomsList.length > 1 ? () => {
+                        const newRooms = roomsList.filter((_, i) => i !== selectedPreviewHallIdx);
+                        setRoomsList(newRooms);
+                        setSelectedPreviewHallIdx(0);
+                      } : undefined}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
