@@ -89,16 +89,13 @@ const HallSeatingPreviewCard: React.FC<{
 
   const previewMap = React.useMemo(() => {
     const map = new Map<string, { roll_number: string; branch: string; grid_row: number; grid_col: number }>();
-    
-    // Build real student lists per branch based on user's student batches
-    const branchQueues: { [branch: string]: string[] } = {};
+
+    // 1. Build queues for ALL branches in batchesList
+    const batchQueues: { branch: string; students: string[] }[] = [];
 
     if (batchesList && batchesList.length > 0) {
       batchesList.forEach((b) => {
-        const branchKey = (b.branch || 'BRANCH').trim().toUpperCase();
-        if (!branchQueues[branchKey]) {
-          branchQueues[branchKey] = [];
-        }
+        const branchName = (b.branch || 'BRANCH').trim().toUpperCase();
         const fullRange = generateStudentRange(b.start_reg, b.end_reg);
         const exclSet = new Set(
           (b.excluded_ids || '')
@@ -107,79 +104,79 @@ const HallSeatingPreviewCard: React.FC<{
             .filter(Boolean)
         );
         const validList = fullRange.filter((r) => !exclSet.has(r));
-        branchQueues[branchKey].push(...validList);
+        if (validList.length > 0) {
+          batchQueues.push({
+            branch: branchName,
+            students: [...validList]
+          });
+        }
       });
     }
 
-    const branches = Object.keys(branchQueues);
-    const branchA = branches[0] || 'CSE';
-    const branchB = branches[1] || 'ECE';
+    // Fallback default queues if user hasn't added batches yet
+    if (batchQueues.length === 0) {
+      batchQueues.push(
+        { branch: 'CSE', students: Array.from({ length: 60 }, (_, i) => `21121A05${(i + 1).toString().padStart(2, '0')}`) },
+        { branch: 'ECE', students: Array.from({ length: 60 }, (_, i) => `21121A04${(i + 1).toString().padStart(2, '0')}`) }
+      );
+    }
 
-    const queueA = branchQueues[branchA] || [];
-    const queueB = branchQueues[branchB] || [];
+    // 2. Simulate room-by-room seating allocation up to hallIndex
+    for (let h = 0; h <= hallIndex; h++) {
+      const isTargetHall = h === hallIndex;
 
-    const branchSeatsPerHall = Math.floor((rows * cols) / 2);
-    let countA = hallIndex * branchSeatsPerHall;
-    let countB = hallIndex * branchSeatsPerHall;
+      for (let c = 1; c <= cols; c++) {
+        for (let r = 1; r <= rows; r++) {
+          const seatKey = `${r}-${c}`;
+          if (disabledSet.has(seatKey)) continue;
 
-    for (let c = 1; c <= cols; c++) {
-      for (let r = 1; r <= rows; r++) {
-        const isBranchA = (r + c) % 2 === 0;
-        const branchName = isBranchA ? branchA : branchB;
+          // Checkerboard parity offset: (r + c) % 2
+          const parityOffset = (r + c) % 2;
+          let assigned = false;
 
-        if (isBranchA) {
-          if (queueA.length > 0) {
-            if (countA < queueA.length) {
-              map.set(`${r}-${c}`, {
-                roll_number: queueA[countA],
-                branch: branchName,
-                grid_row: r,
-                grid_col: c
-              });
+          // Attempt to assign from branch queue matching parity offset or next available branch
+          for (let i = 0; i < batchQueues.length; i++) {
+            const idx = (i + parityOffset) % batchQueues.length;
+            const q = batchQueues[idx];
+            if (q.students.length > 0) {
+              const roll = q.students.shift()!;
+              if (isTargetHall) {
+                map.set(seatKey, {
+                  roll_number: roll,
+                  branch: q.branch,
+                  grid_row: r,
+                  grid_col: c
+                });
+              }
+              assigned = true;
+              break;
             }
-            countA++;
-          } else {
-            // Fallback cap if queueA is empty (capped at max 60 demo roll numbers)
-            if (countA < 60) {
-              const rollSuffix = (501 + countA).toString();
-              map.set(`${r}-${c}`, {
-                roll_number: rollSuffix,
-                branch: branchName,
-                grid_row: r,
-                grid_col: c
-              });
-            }
-            countA++;
           }
-        } else {
-          if (queueB.length > 0) {
-            if (countB < queueB.length) {
-              map.set(`${r}-${c}`, {
-                roll_number: queueB[countB],
-                branch: branchName,
-                grid_row: r,
-                grid_col: c
-              });
+
+          // If no parity queue matched, pick ANY remaining branch queue that has students
+          if (!assigned) {
+            for (let idx = 0; idx < batchQueues.length; idx++) {
+              const q = batchQueues[idx];
+              if (q.students.length > 0) {
+                const roll = q.students.shift()!;
+                if (isTargetHall) {
+                  map.set(seatKey, {
+                    roll_number: roll,
+                    branch: q.branch,
+                    grid_row: r,
+                    grid_col: c
+                  });
+                }
+                break;
+              }
             }
-            countB++;
-          } else {
-            // Fallback cap if queueB is empty (capped at max 60 demo roll numbers)
-            if (countB < 60) {
-              const rollSuffix = (401 + countB).toString();
-              map.set(`${r}-${c}`, {
-                roll_number: rollSuffix,
-                branch: branchName,
-                grid_row: r,
-                grid_col: c
-              });
-            }
-            countB++;
           }
         }
       }
     }
+
     return map;
-  }, [rows, cols, hallIndex, batchesList]);
+  }, [rows, cols, hallIndex, batchesList, disabledSet]);
 
   return (
     <div className="bg-white text-slate-900 rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-6">
@@ -329,13 +326,39 @@ const HallSeatingPreviewCard: React.FC<{
 
       {/* Bottom Branch Legends Bar */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-[11px] font-bold text-slate-500">
-        <span className="px-3 py-1 rounded-xl border-2 border-blue-500 text-blue-800 bg-white">CSE</span>
-        <span className="px-3 py-1 rounded-xl border-2 border-emerald-500 text-emerald-800 bg-white">ECE</span>
-        <span className="px-3 py-1 rounded-xl border-2 border-purple-500 text-purple-800 bg-white">EEE</span>
-        <span className="px-3 py-1 rounded-xl border-2 border-amber-500 text-amber-800 bg-white">MECH</span>
-        <span className="px-3 py-1 rounded-xl border-2 border-rose-500 text-rose-800 bg-white">CIVIL</span>
-        <span className="px-3 py-1 rounded-xl border-2 border-slate-200 text-slate-400 bg-white">EMPTY</span>
-        <span className="px-3 py-1 rounded-xl bg-slate-200 border-2 border-slate-300 text-slate-500 font-bold">BLOCKED</span>
+        {(() => {
+          const activeBranches = Array.from(
+            new Set(
+              (batchesList && batchesList.length > 0
+                ? batchesList.map((b) => (b.branch || '').trim().toUpperCase()).filter(Boolean)
+                : ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL'])
+            )
+          );
+
+          const getBadgeStyle = (bName: string) => {
+            const b = bName.toUpperCase();
+            if (b.includes('CSE')) return 'border-2 border-blue-500 text-blue-800 bg-white';
+            if (b.includes('ECE')) return 'border-2 border-emerald-500 text-emerald-800 bg-white';
+            if (b.includes('EEE')) return 'border-2 border-purple-500 text-purple-800 bg-white';
+            if (b.includes('MECH')) return 'border-2 border-amber-500 text-amber-800 bg-white';
+            if (b.includes('CIVIL')) return 'border-2 border-rose-500 text-rose-800 bg-white';
+            if (b.includes('IT')) return 'border-2 border-cyan-500 text-cyan-800 bg-white';
+            if (b.includes('AI')) return 'border-2 border-indigo-500 text-indigo-800 bg-white';
+            return 'border-2 border-teal-500 text-teal-800 bg-white';
+          };
+
+          return (
+            <>
+              {activeBranches.map((bName) => (
+                <span key={bName} className={`px-3 py-1 rounded-xl font-black ${getBadgeStyle(bName)}`}>
+                  {bName}
+                </span>
+              ))}
+              <span className="px-3 py-1 rounded-xl border-2 border-slate-200 text-slate-400 bg-white font-bold">EMPTY</span>
+              <span className="px-3 py-1 rounded-xl bg-slate-200 border-2 border-slate-300 text-slate-500 font-bold">BLOCKED</span>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
