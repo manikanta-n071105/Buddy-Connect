@@ -40,6 +40,7 @@ import { QuizPage } from '../pages/quiz/QuizPage';
 import { BloodBankPage } from '../pages/blood/BloodBankPage';
 import { ApprovalWorkflowPage } from '../pages/approvals/ApprovalWorkflowPage';
 import { ExamSeatingPage } from '../pages/exam-seating/ExamSeatingPage';
+import { SeatingAllocatorPage } from '../pages/exam-seating/SeatingAllocatorPage';
 
 const DashboardDispatcher: React.FC = () => {
   const { user } = useAuth();
@@ -75,6 +76,8 @@ export const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<ProtectedRoute />}>
+        <Route path="/exam-seating/allocator" element={<SeatingAllocatorPage />} />
+
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardDispatcher />} />
           <Route path="/hierarchy" element={<HierarchyPage />} />
