@@ -78,91 +78,212 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
 }
 
 // ============================================================================
-// SEATING GRID MATRIX COMPONENT (MATCHING EXACT USER SCREENSHOT)
+// HALL SEATING PREVIEW CARD COMPONENT (MATCHING EXACT USER SCREENSHOT 3)
 // ============================================================================
-const SeatingGridMatrix: React.FC<{ hall: any; seatings: any[] }> = ({ hall, seatings }) => {
-  const rows = hall.rows_count || hall.rows || 6;
-  const cols = hall.cols_count || hall.cols || 4;
-  const disabledSet = new Set<string>(hall.disabled_seats_json || []);
+const HallSeatingPreviewCard: React.FC<{
+  hall: any;
+  seatings?: any[];
+  onToggleDisabledSeat?: (seatKey: string) => void;
+  onDeleteHall?: () => void;
+}> = ({ hall, seatings = [], onToggleDisabledSeat, onDeleteHall }) => {
+  const [isBlockModeActive, setIsBlockModeActive] = useState(false);
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('ALL');
 
-  // Columns from cols down to 1 (e.g. 4, 3, 2, 1 matching Image 2)
+  const rows = parseInt(hall.rows_count || hall.rows || 6);
+  const cols = parseInt(hall.cols_count || hall.cols || 4);
+
+  // Parse disabled seats array / string
+  let disabledArr: string[] = [];
+  if (Array.isArray(hall.disabled_seats_json)) {
+    disabledArr = hall.disabled_seats_json;
+  } else if (typeof hall.disabled_seats === 'string') {
+    disabledArr = hall.disabled_seats.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+  const disabledSet = new Set<string>(disabledArr);
+
+  // Columns from cols down to 1 (e.g. 4, 3, 2, 1)
   const colIndices = Array.from({ length: cols }, (_, i) => cols - i);
-  // Rows from rows down to 1 mapped to letters F, E, D, C, B, A
+  // Rows from rows down to 1 (e.g. F, E, D, C, B, A)
   const rowIndices = Array.from({ length: rows }, (_, i) => rows - i);
 
   const getRowLetter = (r: number) => String.fromCharCode(64 + r);
 
+  // Sample roll numbers generator for preview if seatings array is empty (in modal creation mode)
+  const getPreviewSeatInfo = (r: number, c: number) => {
+    if (seatings && seatings.length > 0) {
+      return seatings.find((s: any) => s.grid_row === r && s.grid_col === c);
+    }
+    // Dummy preview allocation for hall setup
+    const idx = (c - 1) * rows + (r - 1);
+    const branch = c % 2 === 1 ? 'CSE' : 'ECE';
+    const baseRoll = branch === 'CSE' ? 501 + Math.floor(idx / 2) : 401 + Math.floor(idx / 2);
+    return {
+      roll_number: `${baseRoll}`,
+      branch: branch,
+      grid_row: r,
+      grid_col: c
+    };
+  };
+
+  const handleSeatClick = (r: number, c: number) => {
+    const seatKey = `${r}-${c}`;
+    if (onToggleDisabledSeat) {
+      onToggleDisabledSeat(seatKey);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-3xl border border-slate-200 shadow-inner overflow-x-auto min-w-[360px]">
-      {/* Top Column Number Headers (4, 3, 2, 1) */}
-      <div className="flex items-center gap-4 mb-3">
-        {colIndices.map((c) => (
-          <div key={c} className="w-16 text-center text-xs font-bold text-slate-400">
-            {c}
+    <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-6">
+      {/* Top Toolbar / Legend Header matching Image 3 */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Block Seat Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsBlockModeActive(!isBlockModeActive)}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+              isBlockModeActive
+                ? 'bg-red-600 text-white ring-2 ring-red-400 scale-105'
+                : 'bg-red-500 hover:bg-red-600 text-white'
+            }`}
+          >
+            <span className="w-3 h-3 rounded-md bg-white/40" />
+            Block Seat
+          </button>
+
+          {/* Branch Badges Filter Radio Options */}
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-600">
+            {['CSE-A', 'ECE-A', 'EEE-A', 'MECH-A', 'CIVIL-A'].map((b) => (
+              <label
+                key={b}
+                onClick={() => setSelectedBranchFilter(selectedBranchFilter === b ? 'ALL' : b)}
+                className={`px-2.5 py-1 rounded-full border cursor-pointer transition-all flex items-center gap-1.5 ${
+                  selectedBranchFilter === b
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${
+                  b.includes('CSE') ? 'bg-blue-500' : b.includes('ECE') ? 'bg-emerald-500' : b.includes('EEE') ? 'bg-purple-500' : b.includes('MECH') ? 'bg-amber-500' : 'bg-rose-500'
+                }`} />
+                {b}
+              </label>
+            ))}
           </div>
-        ))}
-        <div className="w-6" />
+        </div>
+
+        {/* Delete Hall Button */}
+        {onDeleteHall && (
+          <button
+            type="button"
+            onClick={onDeleteHall}
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+            title="Delete Hall"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Grid Rows */}
-      <div className="space-y-3">
-        {rowIndices.map((r) => {
-          return (
+      {/* Main Seating Canvas */}
+      <div className="flex flex-col items-center justify-center p-6 bg-slate-50/50 rounded-3xl border border-slate-200/80 shadow-inner overflow-x-auto min-w-[340px]">
+        {/* Column Number Headers (4, 3, 2, 1) */}
+        <div className="flex items-center gap-4 mb-3">
+          {colIndices.map((c) => (
+            <div key={c} className="w-16 text-center text-xs font-bold text-slate-400">
+              {c}
+            </div>
+          ))}
+          <div className="w-6" />
+        </div>
+
+        {/* Rows Grid */}
+        <div className="space-y-3">
+          {rowIndices.map((r) => (
             <div key={r} className="flex items-center gap-4">
               {colIndices.map((c) => {
                 const seatKey = `${r}-${c}`;
-                const isBroken = disabledSet.has(seatKey);
-                const matchedSeat = seatings.find((s: any) => s.grid_row === r && s.grid_col === c);
+                const isBlocked = disabledSet.has(seatKey);
+                const seatInfo = getPreviewSeatInfo(r, c);
 
-                if (isBroken) {
+                if (isBlocked) {
                   return (
                     <div
                       key={c}
-                      className="w-16 h-12 rounded-2xl border-2 border-dashed border-rose-300 bg-rose-50 flex items-center justify-center text-[10px] text-rose-400 font-bold"
+                      onClick={() => handleSeatClick(r, c)}
+                      className="w-16 h-12 rounded-2xl bg-slate-200 border-2 border-slate-300 text-slate-400 flex items-center justify-center text-[10px] font-bold cursor-pointer hover:bg-slate-300 transition-all"
+                      title={`Blocked Seat R${r}-C${c} (Click to Unblock)`}
                     >
-                      Disabled
+                      BLOCKED
                     </div>
                   );
                 }
 
-                if (!matchedSeat) {
+                if (!seatInfo) {
                   return (
                     <div
                       key={c}
-                      className="w-16 h-12 rounded-2xl border-2 border-slate-200 bg-slate-50 flex items-center justify-center text-[10px] text-slate-300 font-semibold"
+                      onClick={() => handleSeatClick(r, c)}
+                      className="w-16 h-12 rounded-2xl border-2 border-slate-200 bg-white text-slate-300 flex items-center justify-center text-[10px] font-semibold cursor-pointer hover:border-slate-300"
                     >
-                      -
+                      EMPTY
                     </div>
                   );
                 }
 
-                // Alternating branch borders (Blue vs Emerald matching Image 2)
-                const branchUpper = (matchedSeat.branch || '').toUpperCase();
-                const isBlueBranch = branchUpper.includes('ECE') || branchUpper.includes('EEE') || (c % 2 === 0);
-                const borderClass = isBlueBranch
-                  ? 'border-2 border-blue-500 text-blue-900 bg-white shadow-2xs hover:scale-105'
-                  : 'border-2 border-emerald-500 text-emerald-900 bg-white shadow-2xs hover:scale-105';
+                // Color coding pills based on branch (matching Image 3)
+                const branch = (seatInfo.branch || '').toUpperCase();
+                let borderClass = 'border-2 border-blue-500 text-blue-900 bg-white shadow-2xs hover:scale-105';
 
-                const shortRoll = matchedSeat.roll_number.length > 3 ? matchedSeat.roll_number.slice(-3) : matchedSeat.roll_number;
+                if (branch.includes('ECE')) {
+                  borderClass = 'border-2 border-emerald-500 text-emerald-900 bg-white shadow-2xs hover:scale-105';
+                } else if (branch.includes('EEE')) {
+                  borderClass = 'border-2 border-purple-500 text-purple-900 bg-white shadow-2xs hover:scale-105';
+                } else if (branch.includes('MECH')) {
+                  borderClass = 'border-2 border-amber-500 text-amber-900 bg-white shadow-2xs hover:scale-105';
+                } else if (branch.includes('CIVIL')) {
+                  borderClass = 'border-2 border-rose-500 text-rose-900 bg-white shadow-2xs hover:scale-105';
+                }
+
+                const shortRoll = seatInfo.roll_number.length > 3 ? seatInfo.roll_number.slice(-3) : seatInfo.roll_number;
 
                 return (
                   <div
                     key={c}
-                    className={`w-16 h-12 rounded-2xl ${borderClass} flex flex-col items-center justify-center font-extrabold font-mono text-xs transition-all cursor-default`}
-                    title={`${matchedSeat.roll_number} - ${matchedSeat.student_name || matchedSeat.branch}`}
+                    onClick={() => handleSeatClick(r, c)}
+                    className={`w-16 h-12 rounded-2xl ${borderClass} flex flex-col items-center justify-center font-extrabold font-mono text-xs transition-all cursor-pointer`}
+                    title={`${seatInfo.roll_number} (${seatInfo.branch}) - Click to Block/Modify`}
                   >
                     <span>{shortRoll}</span>
                   </div>
                 );
               })}
 
-              {/* Row Letter Label on Right (A, B, C, D, E, F...) */}
+              {/* Row Letter on Right (F, E, D, C, B, A) */}
               <div className="w-6 text-left text-xs font-bold text-slate-400">
                 {getRowLetter(r)}
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* SCREEN / STAGE BANNER - MATCHING EXACT IMAGE 3 */}
+        <div className="w-full max-w-lg mt-6 py-3 px-8 bg-gradient-to-r from-sky-100 via-sky-50 to-sky-100 border border-sky-200/80 rounded-2xl text-center shadow-2xs">
+          <span className="text-xs font-black tracking-widest uppercase text-sky-600">
+            SCREEN / STAGE
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom Branch Legends Bar - MATCHING EXACT IMAGE 3 */}
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-[11px] font-bold text-slate-500">
+        <span className="px-3 py-1 rounded-xl border-2 border-blue-500 text-blue-800 bg-white">CSE</span>
+        <span className="px-3 py-1 rounded-xl border-2 border-emerald-500 text-emerald-800 bg-white">ECE</span>
+        <span className="px-3 py-1 rounded-xl border-2 border-purple-500 text-purple-800 bg-white">EEE</span>
+        <span className="px-3 py-1 rounded-xl border-2 border-amber-500 text-amber-800 bg-white">MECH</span>
+        <span className="px-3 py-1 rounded-xl border-2 border-rose-500 text-rose-800 bg-white">CIVIL</span>
+        <span className="px-3 py-1 rounded-xl border-2 border-slate-200 text-slate-400 bg-white">EMPTY</span>
+        <span className="px-3 py-1 rounded-xl bg-slate-200 border-2 border-slate-300 text-slate-500 font-bold">BLOCKED</span>
       </div>
     </div>
   );
@@ -325,6 +446,24 @@ export const ExamSeatingPage: React.FC = () => {
 
     updated[batchIdx].excluded_ids = currentExclArr.join(', ');
     setBatchesList(updated);
+  };
+
+  // Toggle Disabled Seat in Room Setup
+  const toggleDisabledSeatInRoom = (roomIdx: number, seatKey: string) => {
+    const updated = [...roomsList];
+    let currentDisabled = (updated[roomIdx].disabled_seats || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+
+    if (currentDisabled.includes(seatKey)) {
+      currentDisabled = currentDisabled.filter((s: string) => s !== seatKey);
+    } else {
+      currentDisabled.push(seatKey);
+    }
+
+    updated[roomIdx].disabled_seats = currentDisabled.join(', ');
+    setRoomsList(updated);
   };
 
   // Run Automatic Seating Allocation Engine
@@ -581,14 +720,14 @@ export const ExamSeatingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Halls Seating Grid Matrix */}
+                {/* Halls Seating Grid Matrix Preview Cards matching Screenshot 3 */}
                 <div className="space-y-6">
                   {selectedExamDetails.halls.map((hall: any) => {
                     const hallSeats = selectedExamDetails.seatings.filter((s: any) => s.hall_name === hall.hall_name);
 
                     return (
-                      <div key={hall.id} className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-slate-50/50">
-                        <div className="flex items-center justify-between">
+                      <div key={hall.id} className="space-y-3">
+                        <div className="flex items-center justify-between px-2">
                           <div className="flex items-center gap-2">
                             <Building2 className="w-5 h-5 text-indigo-600" />
                             <h4 className="font-extrabold text-sm text-slate-900">{hall.hall_name}</h4>
@@ -598,13 +737,13 @@ export const ExamSeatingPage: React.FC = () => {
                           </div>
 
                           <div className="flex items-center gap-2 text-[10px] font-bold">
-                            <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">Column-Major Strategy</span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Anti-Cheating Active</span>
+                            <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700">Column-Major Strategy</span>
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">Anti-Cheating Active</span>
                           </div>
                         </div>
 
-                        {/* Rendering Matrix matching Image 2 */}
-                        <SeatingGridMatrix hall={hall} seatings={hallSeats} />
+                        {/* Rendering Complete Interactive Hall Preview Card */}
+                        <HallSeatingPreviewCard hall={hall} seatings={hallSeats} />
                       </div>
                     );
                   })}
@@ -938,7 +1077,6 @@ export const ExamSeatingPage: React.FC = () => {
                           <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-white rounded-xl border border-slate-200">
                             {generatedRolls.map((roll) => {
                               const isExcluded = exclSet.has(roll);
-                              // Display short suffix (e.g. 501, 502, 5A2) matching Screenshot 1
                               const shortRoll = roll.length > 3 ? roll.slice(-3) : roll;
                               return (
                                 <button
@@ -964,10 +1102,10 @@ export const ExamSeatingPage: React.FC = () => {
                 })}
               </div>
 
-              {/* Exam Halls Setup */}
-              <div className="space-y-3">
+              {/* Exam Halls Setup & Live Interactive Preview Cards */}
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-slate-900 text-sm">2. Exam Halls & Grid Strategy</h4>
+                  <h4 className="font-extrabold text-slate-900 text-sm">2. Exam Halls & Grid Strategy (Click Seats to Block/Unblock)</h4>
                   <button
                     type="button"
                     onClick={() => setRoomsList([...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }])}
@@ -978,7 +1116,7 @@ export const ExamSeatingPage: React.FC = () => {
                 </div>
 
                 {roomsList.map((room, idx) => (
-                  <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-3xl space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold text-slate-500 mb-1">Hall Name</label>
@@ -990,7 +1128,7 @@ export const ExamSeatingPage: React.FC = () => {
                             updated[idx].hall_name = e.target.value;
                             setRoomsList(updated);
                           }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
                         />
                       </div>
 
@@ -1005,9 +1143,9 @@ export const ExamSeatingPage: React.FC = () => {
                               updated[idx].rows = e.target.value;
                               setRoomsList(updated);
                             }}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-center font-bold"
+                            className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
                           />
-                          <span>x</span>
+                          <span className="font-bold text-slate-400">x</span>
                           <input
                             type="number"
                             value={room.cols}
@@ -1016,7 +1154,7 @@ export const ExamSeatingPage: React.FC = () => {
                               updated[idx].cols = e.target.value;
                               setRoomsList(updated);
                             }}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-center font-bold"
+                            className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
                           />
                         </div>
                       </div>
@@ -1030,7 +1168,7 @@ export const ExamSeatingPage: React.FC = () => {
                             updated[idx].fill_strategy = e.target.value;
                             setRoomsList(updated);
                           }}
-                          className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
                         >
                           <option value="col">Column-Major (Recommended)</option>
                           <option value="row">Row-Major</option>
@@ -1038,48 +1176,14 @@ export const ExamSeatingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Disabled Seats</label>
-                        <input
-                          type="text"
-                          placeholder="1-2, 4-5"
-                          value={room.disabled_seats}
-                          onChange={(e) => {
-                            const updated = [...roomsList];
-                            updated[idx].disabled_seats = e.target.value;
-                            setRoomsList(updated);
-                          }}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white font-mono"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-4">
-                        <input
-                          type="checkbox"
-                          id={`prev-${idx}`}
-                          checked={room.prevent_adjacency}
-                          onChange={(e) => {
-                            const updated = [...roomsList];
-                            updated[idx].prevent_adjacency = e.target.checked;
-                            setRoomsList(updated);
-                          }}
-                          className="w-4 h-4 text-indigo-600 rounded"
-                        />
-                        <label htmlFor={`prev-${idx}`} className="font-bold text-slate-700">Prevent Adjacent Same Branch</label>
-                      </div>
-
-                      <div className="flex items-center justify-end pt-4">
-                        {roomsList.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => setRoomsList(roomsList.filter((_, i) => i !== idx))}
-                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" /> Remove Hall
-                          </button>
-                        )}
-                      </div>
+                    {/* Interactive Preview Canvas matching Image 3 */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-extrabold text-slate-500">Live Hall Interactive Seating Preview (Click any seat to Block / Unblock):</p>
+                      <HallSeatingPreviewCard
+                        hall={room}
+                        onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(idx, seatKey)}
+                        onDeleteHall={roomsList.length > 1 ? () => setRoomsList(roomsList.filter((_, i) => i !== idx)) : undefined}
+                      />
                     </div>
                   </div>
                 ))}
