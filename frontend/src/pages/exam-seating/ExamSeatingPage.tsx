@@ -32,7 +32,8 @@ import {
   X,
   ArrowLeft,
   Settings,
-  Cpu
+  Cpu,
+  Maximize2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -81,14 +82,15 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
 }
 
 // ============================================================================
-// HALL SEATING PREVIEW CARD COMPONENT (VERTICALLY ALTERNATING BRANCH ALLOCATION)
+// HALL SEATING PREVIEW CARD COMPONENT (UNIQUE SEATING PER HALL VIA HALL INDEX)
 // ============================================================================
 const HallSeatingPreviewCard: React.FC<{
   hall: any;
+  hallIndex?: number;
   seatings?: any[];
   onToggleDisabledSeat?: (seatKey: string) => void;
   onDeleteHall?: () => void;
-}> = ({ hall, seatings = [], onToggleDisabledSeat, onDeleteHall }) => {
+}> = ({ hall, hallIndex = 0, seatings = [], onToggleDisabledSeat, onDeleteHall }) => {
   const [isBlockModeActive, setIsBlockModeActive] = useState(false);
   const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('ALL');
 
@@ -111,11 +113,12 @@ const HallSeatingPreviewCard: React.FC<{
 
   const getRowLetter = (r: number) => String.fromCharCode(64 + r);
 
-  // Pre-calculate preview grid map matching alternating Branch A / Branch B seating pattern
+  // Pre-calculate preview grid map with hallIndex offset so Hall A and Hall B have DIFFERENT roll numbers!
   const previewMap = React.useMemo(() => {
     const map = new Map<string, { roll_number: string; branch: string; grid_row: number; grid_col: number }>();
-    let countA = 0;
-    let countB = 0;
+    const branchSeatsPerHall = Math.floor((rows * cols) / 2);
+    let countA = hallIndex * branchSeatsPerHall;
+    let countB = hallIndex * branchSeatsPerHall;
 
     for (let c = 1; c <= cols; c++) {
       for (let r = 1; r <= rows; r++) {
@@ -140,7 +143,7 @@ const HallSeatingPreviewCard: React.FC<{
       }
     }
     return map;
-  }, [rows, cols]);
+  }, [rows, cols, hallIndex]);
 
   const getPreviewSeatInfo = (r: number, c: number) => {
     if (seatings && seatings.length > 0) {
@@ -157,7 +160,7 @@ const HallSeatingPreviewCard: React.FC<{
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-6">
+    <div className="bg-white text-slate-900 rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-6">
       {/* Top Toolbar Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
         <div className="flex flex-wrap items-center gap-3">
@@ -623,7 +626,7 @@ export const ExamSeatingPage: React.FC = () => {
                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
             }`}
           >
-            <Cpu className="w-4 h-4" /> Run Seating Allocator (Full Page)
+            <Cpu className="w-4 h-4" /> Run Seating Allocator
           </button>
         )}
 
@@ -653,464 +656,467 @@ export const ExamSeatingPage: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* FULL PAGE VIEW: RUN AUTOMATIC SEATING ALLOCATOR WORKFLOW */}
+      {/* FULL SCREEN OVERLAY VIEW: RUN AUTOMATIC SEATING ALLOCATOR WORKFLOW */}
       {/* ========================================================================= */}
       {activeTab === 'CREATE_SEATING_PLAN' && isController && (
-        <div className="space-y-8 animate-in fade-in">
-          {/* Algorithm Breakdown Header Card */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-widest">
-                  <Cpu className="w-3.5 h-3.5" /> Anti-Cheating Allocation Engine v2.0
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Configure Exam & Seating Allocator</h2>
-                <p className="text-xs text-slate-500">Full-Page Seating Matrix Setup & Custom Anti-Cheating Rules</p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('EXAMS_LIST')}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back to Plans
-              </button>
-            </div>
-
-            {/* 7-Step Algorithm Breakdown Diagram Cards */}
-            <div className="space-y-3">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Multi-Stage Allocation Algorithm Breakdown:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
-                <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-black inline-flex items-center justify-center">1</span>
-                  <p className="text-[11px] font-bold text-indigo-950">Student Queue</p>
-                  <p className="text-[9px] text-indigo-700">JNTUA Alphanumeric Decode</p>
-                </div>
-
-                <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-black inline-flex items-center justify-center">2</span>
-                  <p className="text-[11px] font-bold text-blue-950">Room Matrix</p>
-                  <p className="text-[9px] text-blue-700">Rows x Cols Layout</p>
-                </div>
-
-                <div className="p-3 bg-purple-50/60 border border-purple-100 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[10px] font-black inline-flex items-center justify-center">3</span>
-                  <p className="text-[11px] font-bold text-purple-950">Fill Strategy</p>
-                  <p className="text-[9px] text-purple-700">Column vs Row Iteration</p>
-                </div>
-
-                <div className="p-3 bg-amber-50/60 border border-amber-100 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-black inline-flex items-center justify-center">4</span>
-                  <p className="text-[11px] font-bold text-amber-950">Disabled Seats</p>
-                  <p className="text-[9px] text-amber-700">Pillar & Broken Filter</p>
-                </div>
-
-                <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black inline-flex items-center justify-center">5</span>
-                  <p className="text-[11px] font-bold text-emerald-950">Anti-Cheating</p>
-                  <p className="text-[9px] text-emerald-700">Same Branch/Paper Blocking</p>
-                </div>
-
-                <div className="p-3 bg-rose-50/60 border border-rose-100 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black inline-flex items-center justify-center">6</span>
-                  <p className="text-[11px] font-bold text-rose-950">Checkerboard</p>
-                  <p className="text-[9px] text-rose-700">(r+c)%2 Parity Slot Selection</p>
-                </div>
-
-                <div className="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1">
-                  <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] font-black inline-flex items-center justify-center">7</span>
-                  <p className="text-[11px] font-bold text-slate-900">Seat Assignment</p>
-                  <p className="text-[9px] text-slate-600">Door Charts & DB Save</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <form onSubmit={handleCreateExam} className="space-y-8">
-            {/* SUBJECT (OPTIONAL) INPUT FIELD - MATCHING SCREENSHOT 1 */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-2">
-              <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">Examination Paper / Subject Name (Optional)</label>
-              <input
-                type="text"
-                placeholder="SUBJECT (OPTIONAL)"
-                value={examForm.subject}
-                onChange={(e) => setExamForm({ ...examForm, subject: e.target.value })}
-                className="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-white font-bold text-sm uppercase tracking-wider text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 shadow-2xs"
-              />
-            </div>
-
-            {/* SECTION 1: EXAMINATION METADATA */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-4">
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-600" /> 1. Examination Details & Schedule
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Examination Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={examForm.name}
-                    onChange={(e) => setExamForm({ ...examForm, name: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Exam Code</label>
-                  <input
-                    type="text"
-                    value={examForm.exam_code}
-                    onChange={(e) => setExamForm({ ...examForm, exam_code: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={examForm.date}
-                    onChange={(e) => setExamForm({ ...examForm, date: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Time Slot *</label>
-                  <input
-                    type="text"
-                    required
-                    value={examForm.time}
-                    onChange={(e) => setExamForm({ ...examForm, time: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Session</label>
-                  <select
-                    value={examForm.session}
-                    onChange={(e) => setExamForm({ ...examForm, session: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm"
-                  >
-                    <option value="FN">Forenoon (FN)</option>
-                    <option value="AN">Afternoon (AN)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* SECTION 2: STUDENT BATCHES & EXCLUSIONS - MATCHING SCREENSHOT 1 */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-indigo-600" /> 2. Student Batches (JNTUA Alphanumeric Range Generator)
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs font-extrabold mt-1">
-                    <span className="flex items-center gap-1.5 text-emerald-600">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      {totalReadyStudents} Students ready
-                    </span>
-                    {totalExcludedCount > 0 && (
-                      <span className="text-red-600 font-extrabold">
-                        ({totalExcludedCount} Excluded)
-                      </span>
-                    )}
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/95 backdrop-blur-md p-4 sm:p-8 text-slate-100 animate-in fade-in">
+          <div className="max-w-6xl mx-auto space-y-8 my-4">
+            {/* Algorithm Breakdown Header Card */}
+            <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                    <Cpu className="w-3.5 h-3.5" /> Anti-Cheating Allocation Engine v2.0
                   </div>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Configure Exam & Seating Allocator</h2>
+                  <p className="text-xs text-slate-400">Full-Screen Seating Matrix Setup & Custom Anti-Cheating Rules</p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setBatchesList([...batchesList, { branch: 'EEE', subject: '', year_batch: 'III Year', start_reg: '', end_reg: '', excluded_ids: '' }])}
-                  className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  onClick={() => setActiveTab('EXAMS_LIST')}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer border border-white/10"
                 >
-                  <Plus className="w-4 h-4" /> Add Branch Batch
+                  <ArrowLeft className="w-4 h-4" /> Exit Full Screen
                 </button>
               </div>
 
-              {batchesList.map((batch, idx) => {
-                const generatedRolls = generateStudentRange(batch.start_reg, batch.end_reg);
-                const exclSet = new Set((batch.excluded_ids || '').split(',').map((x: string) => x.trim().toUpperCase()).filter(Boolean));
+              {/* 7-Step Algorithm Breakdown Diagram Cards */}
+              <div className="space-y-3">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Multi-Stage Allocation Algorithm Breakdown:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+                  <div className="p-3 bg-indigo-950/60 border border-indigo-800/60 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-indigo-500 text-white text-[10px] font-black inline-flex items-center justify-center">1</span>
+                    <p className="text-[11px] font-bold text-indigo-200">Student Queue</p>
+                    <p className="text-[9px] text-indigo-400">JNTUA Alphanumeric Decode</p>
+                  </div>
 
-                return (
-                  <div key={idx} className="p-6 bg-slate-50/70 border border-slate-200 rounded-3xl space-y-4 shadow-2xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-6 gap-4 items-center text-xs">
-                      <div>
-                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">Branch</label>
-                        <input
-                          type="text"
-                          value={batch.branch}
-                          onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].branch = e.target.value;
-                            setBatchesList(updated);
-                          }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold bg-white text-slate-800"
-                        />
+                  <div className="p-3 bg-blue-950/60 border border-blue-800/60 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-black inline-flex items-center justify-center">2</span>
+                    <p className="text-[11px] font-bold text-blue-200">Room Matrix</p>
+                    <p className="text-[9px] text-blue-400">Rows x Cols Layout</p>
+                  </div>
+
+                  <div className="p-3 bg-purple-950/60 border border-purple-800/60 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-black inline-flex items-center justify-center">3</span>
+                    <p className="text-[11px] font-bold text-purple-200">Fill Strategy</p>
+                    <p className="text-[9px] text-purple-400">Column vs Row Iteration</p>
+                  </div>
+
+                  <div className="p-3 bg-amber-950/60 border border-amber-800/60 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black inline-flex items-center justify-center">4</span>
+                    <p className="text-[11px] font-bold text-amber-200">Disabled Seats</p>
+                    <p className="text-[9px] text-amber-400">Pillar & Broken Filter</p>
+                  </div>
+
+                  <div className="p-3 bg-emerald-950/60 border border-emerald-800/60 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-black inline-flex items-center justify-center">5</span>
+                    <p className="text-[11px] font-bold text-emerald-200">Anti-Cheating</p>
+                    <p className="text-[9px] text-emerald-400">Same Branch/Paper Blocking</p>
+                  </div>
+
+                  <div className="p-3 bg-rose-950/60 border border-rose-800/60 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black inline-flex items-center justify-center">6</span>
+                    <p className="text-[11px] font-bold text-rose-200">Checkerboard</p>
+                    <p className="text-[9px] text-rose-400">(r+c)%2 Parity Slot Selection</p>
+                  </div>
+
+                  <div className="p-3 bg-slate-800 border border-slate-700 rounded-2xl space-y-1">
+                    <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-900 text-[10px] font-black inline-flex items-center justify-center">7</span>
+                    <p className="text-[11px] font-bold text-slate-200">Seat Assignment</p>
+                    <p className="text-[9px] text-slate-400">Door Charts & DB Save</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateExam} className="space-y-8">
+              {/* SUBJECT (OPTIONAL) INPUT FIELD - MATCHING SCREENSHOT 1 */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 shadow-xl space-y-2">
+                <label className="block text-xs font-black text-slate-300 uppercase tracking-wider">Examination Paper / Subject Name (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="SUBJECT (OPTIONAL)"
+                  value={examForm.subject}
+                  onChange={(e) => setExamForm({ ...examForm, subject: e.target.value })}
+                  className="w-full px-5 py-4 rounded-2xl border border-slate-700 bg-slate-800 font-bold text-sm uppercase tracking-wider text-white focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 placeholder:text-slate-500 shadow-2xs"
+                />
+              </div>
+
+              {/* SECTION 1: EXAMINATION METADATA */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-xl space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-indigo-400" /> 1. Examination Details & Schedule
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Examination Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={examForm.name}
+                      onChange={(e) => setExamForm({ ...examForm, name: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-bold text-sm focus:ring-2 focus:ring-indigo-500/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Exam Code</label>
+                    <input
+                      type="text"
+                      value={examForm.exam_code}
+                      onChange={(e) => setExamForm({ ...examForm, exam_code: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-mono font-bold text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={examForm.date}
+                      onChange={(e) => setExamForm({ ...examForm, date: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-bold text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Time Slot *</label>
+                    <input
+                      type="text"
+                      required
+                      value={examForm.time}
+                      onChange={(e) => setExamForm({ ...examForm, time: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-bold text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Session</label>
+                    <select
+                      value={examForm.session}
+                      onChange={(e) => setExamForm({ ...examForm, session: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-white font-bold text-sm"
+                    >
+                      <option value="FN">Forenoon (FN)</option>
+                      <option value="AN">Afternoon (AN)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: STUDENT BATCHES & EXCLUSIONS - MATCHING SCREENSHOT 1 */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-white flex items-center gap-2">
+                      <Users className="w-5 h-5 text-indigo-400" /> 2. Student Batches (JNTUA Alphanumeric Range Generator)
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs font-extrabold mt-1">
+                      <span className="flex items-center gap-1.5 text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        {totalReadyStudents} Students ready
+                      </span>
+                      {totalExcludedCount > 0 && (
+                        <span className="text-red-400 font-extrabold">
+                          ({totalExcludedCount} Excluded)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setBatchesList([...batchesList, { branch: 'EEE', subject: '', year_batch: 'III Year', start_reg: '', end_reg: '', excluded_ids: '' }])}
+                    className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Add Branch Batch
+                  </button>
+                </div>
+
+                {batchesList.map((batch, idx) => {
+                  const generatedRolls = generateStudentRange(batch.start_reg, batch.end_reg);
+                  const exclSet = new Set((batch.excluded_ids || '').split(',').map((x: string) => x.trim().toUpperCase()).filter(Boolean));
+
+                  return (
+                    <div key={idx} className="p-6 bg-slate-800/80 border border-slate-700/80 rounded-3xl space-y-4 shadow-2xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-4 items-center text-xs">
+                        <div>
+                          <label className="block text-[11px] font-extrabold text-slate-300 mb-1">Branch</label>
+                          <input
+                            type="text"
+                            value={batch.branch}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].branch = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-700 font-bold bg-slate-900 text-white"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-extrabold text-slate-300 mb-1">Subject Paper (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Data Structures"
+                            value={batch.subject}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].subject = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-700 font-semibold bg-slate-900 text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-extrabold text-slate-300 mb-1">Start Roll No</label>
+                          <input
+                            type="text"
+                            placeholder="21121A0501"
+                            value={batch.start_reg}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].start_reg = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-700 font-mono font-bold bg-slate-900 text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-extrabold text-slate-300 mb-1">End Roll No</label>
+                          <input
+                            type="text"
+                            placeholder="21121A0560"
+                            value={batch.end_reg}
+                            onChange={(e) => {
+                              const updated = [...batchesList];
+                              updated[idx].end_reg = e.target.value;
+                              setBatchesList(updated);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl border border-slate-700 font-mono font-bold bg-slate-900 text-white"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end pt-5">
+                          {batchesList.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setBatchesList(batchesList.filter((_, i) => i !== idx))}
+                              className="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
+                      {/* SELECT TO EXCLUDE (RED = EXCLUDED) CONTAINER - MATCHES SCREENSHOT 1 */}
+                      {generatedRolls.length > 0 && (
+                        <div className="p-4 bg-slate-900 border border-slate-700/80 rounded-2xl space-y-2">
+                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>SELECT TO EXCLUDE (RED = EXCLUDED)</span>
+                            <span>{generatedRolls.length} Roll Numbers Generated</span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-slate-950 rounded-xl border border-slate-800">
+                            {generatedRolls.map((roll) => {
+                              const isExcluded = exclSet.has(roll);
+                              const shortRoll = roll.length > 3 ? roll.slice(-3) : roll;
+                              return (
+                                <button
+                                  type="button"
+                                  key={roll}
+                                  onClick={() => toggleRollExclusion(idx, roll)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer shadow-2xs ${
+                                    isExcluded
+                                      ? 'bg-red-600 text-white border border-red-500 font-extrabold shadow-sm scale-105'
+                                      : 'bg-slate-800 text-slate-200 border border-slate-700 hover:border-slate-600'
+                                  }`}
+                                  title={isExcluded ? `Excluded: ${roll} (Click to Include)` : `Included: ${roll} (Click to Exclude)`}
+                                >
+                                  {shortRoll}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* SECTION 3: EXAM HALLS & LIVE INTERACTIVE SEATING PREVIEW */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-white flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-indigo-400" /> 3. Exam Halls Setup & Interactive Grid Matrix
+                    </h3>
+                    <p className="text-xs text-slate-400">Define hall dimensions, fill strategy, and click seats on the live canvas to block/unblock.</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newRooms = [...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' }];
+                      setRoomsList(newRooms);
+                      setSelectedPreviewHallIdx(newRooms.length - 1);
+                    }}
+                    className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Add Exam Hall
+                  </button>
+                </div>
+
+                {roomsList.map((room, idx) => (
+                  <div key={idx} className="p-5 bg-slate-800/80 border border-slate-700/80 rounded-3xl space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
                       <div className="sm:col-span-2">
-                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">Subject Paper (Optional)</label>
+                        <label className="block text-[11px] font-bold text-slate-300 mb-1">Hall Name</label>
                         <input
                           type="text"
-                          placeholder="e.g. Data Structures"
-                          value={batch.subject}
+                          value={room.hall_name}
                           onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].subject = e.target.value;
-                            setBatchesList(updated);
+                            const updated = [...roomsList];
+                            updated[idx].hall_name = e.target.value;
+                            setRoomsList(updated);
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold bg-white"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900 font-bold text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">Start Roll No</label>
-                        <input
-                          type="text"
-                          placeholder="21121A0501"
-                          value={batch.start_reg}
-                          onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].start_reg = e.target.value;
-                            setBatchesList(updated);
-                          }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold bg-white text-slate-800"
-                        />
+                        <label className="block text-[11px] font-bold text-slate-300 mb-1">Rows x Columns</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={room.rows}
+                            onChange={(e) => {
+                              const updated = [...roomsList];
+                              updated[idx].rows = e.target.value;
+                              setRoomsList(updated);
+                            }}
+                            className="w-full px-2 py-2 rounded-xl border border-slate-700 bg-slate-900 text-center font-bold text-white"
+                          />
+                          <span className="font-bold text-slate-400">x</span>
+                          <input
+                            type="number"
+                            value={room.cols}
+                            onChange={(e) => {
+                              const updated = [...roomsList];
+                              updated[idx].cols = e.target.value;
+                              setRoomsList(updated);
+                            }}
+                            className="w-full px-2 py-2 rounded-xl border border-slate-700 bg-slate-900 text-center font-bold text-white"
+                          />
+                        </div>
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">End Roll No</label>
-                        <input
-                          type="text"
-                          placeholder="21121A0560"
-                          value={batch.end_reg}
+                        <label className="block text-[11px] font-bold text-slate-300 mb-1">Fill Strategy</label>
+                        <select
+                          value={room.fill_strategy}
                           onChange={(e) => {
-                            const updated = [...batchesList];
-                            updated[idx].end_reg = e.target.value;
-                            setBatchesList(updated);
+                            const updated = [...roomsList];
+                            updated[idx].fill_strategy = e.target.value;
+                            setRoomsList(updated);
                           }}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold bg-white text-slate-800"
-                        />
+                          className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900 font-bold text-white"
+                        >
+                          <option value="col">Column-Wise (Vertical)</option>
+                          <option value="row">Row-Wise (Horizontal)</option>
+                        </select>
                       </div>
 
                       <div className="flex items-center justify-end pt-5">
-                        {batchesList.length > 1 && (
+                        {roomsList.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => setBatchesList(batchesList.filter((_, i) => i !== idx))}
-                            className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl cursor-pointer"
+                            onClick={() => {
+                              const newRooms = roomsList.filter((_, i) => i !== idx);
+                              setRoomsList(newRooms);
+                              setSelectedPreviewHallIdx(0);
+                            }}
+                            className="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl cursor-pointer"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" /> Remove
                           </button>
                         )}
                       </div>
                     </div>
-
-                    {/* SELECT TO EXCLUDE (RED = EXCLUDED) CONTAINER - MATCHES SCREENSHOT 1 */}
-                    {generatedRolls.length > 0 && (
-                      <div className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-2">
-                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                          <span>SELECT TO EXCLUDE (RED = EXCLUDED)</span>
-                          <span>{generatedRolls.length} Roll Numbers Generated</span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
-                          {generatedRolls.map((roll) => {
-                            const isExcluded = exclSet.has(roll);
-                            const shortRoll = roll.length > 3 ? roll.slice(-3) : roll;
-                            return (
-                              <button
-                                type="button"
-                                key={roll}
-                                onClick={() => toggleRollExclusion(idx, roll)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer shadow-2xs ${
-                                  isExcluded
-                                    ? 'bg-red-500 text-white border border-red-600 font-extrabold shadow-sm scale-105'
-                                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
-                                }`}
-                                title={isExcluded ? `Excluded: ${roll} (Click to Include)` : `Included: ${roll} (Click to Exclude)`}
-                              >
-                                {shortRoll}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                );
-              })}
-            </div>
+                ))}
 
-            {/* SECTION 3: EXAM HALLS & LIVE INTERACTIVE SEATING PREVIEW */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                {/* SINGLE ACTIVE LIVE HALL PREVIEW CARD WITH HALL SELECTOR TABS */}
+                {roomsList.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-slate-800">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">Select Hall Preview Canvas:</span>
+                      <div className="flex items-center gap-2 overflow-x-auto">
+                        {roomsList.map((r, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setSelectedPreviewHallIdx(i)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              selectedPreviewHallIdx === i
+                                ? 'bg-indigo-600 text-white shadow-md'
+                                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                          >
+                            {r.hall_name || `Hall ${i + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <HallSeatingPreviewCard
+                      hall={roomsList[selectedPreviewHallIdx] || roomsList[0]}
+                      hallIndex={selectedPreviewHallIdx}
+                      onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(selectedPreviewHallIdx, seatKey)}
+                      onDeleteHall={roomsList.length > 1 ? () => {
+                        const newRooms = roomsList.filter((_, i) => i !== selectedPreviewHallIdx);
+                        setRoomsList(newRooms);
+                        setSelectedPreviewHallIdx(0);
+                      } : undefined}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* ACTION SUBMIT FOOTER */}
+              <div className="flex items-center justify-between p-6 bg-slate-900 border border-slate-800 text-white rounded-3xl shadow-xl">
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-indigo-600" /> 3. Exam Halls Setup & Interactive Grid Matrix
-                  </h3>
-                  <p className="text-xs text-slate-500">Define hall dimensions, fill strategy, and click seats on the live canvas to block/unblock.</p>
+                  <h4 className="font-extrabold text-base">Ready to Allocate Seating?</h4>
+                  <p className="text-xs text-slate-400">Click below to execute the 7-stage anti-cheating seating engine and save allocations.</p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newRooms = [...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' }];
-                    setRoomsList(newRooms);
-                    setSelectedPreviewHallIdx(newRooms.length - 1);
-                  }}
-                  className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" /> Add Exam Hall
-                </button>
-              </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('EXAMS_LIST')}
+                    className="px-5 py-3 rounded-xl font-bold text-xs text-slate-300 hover:bg-white/10 cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
 
-              {roomsList.map((room, idx) => (
-                <div key={idx} className="p-5 bg-slate-50/70 border border-slate-200 rounded-3xl space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Hall Name</label>
-                      <input
-                        type="text"
-                        value={room.hall_name}
-                        onChange={(e) => {
-                          const updated = [...roomsList];
-                          updated[idx].hall_name = e.target.value;
-                          setRoomsList(updated);
-                        }}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Rows x Columns</label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={room.rows}
-                          onChange={(e) => {
-                            const updated = [...roomsList];
-                            updated[idx].rows = e.target.value;
-                            setRoomsList(updated);
-                          }}
-                          className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
-                        />
-                        <span className="font-bold text-slate-400">x</span>
-                        <input
-                          type="number"
-                          value={room.cols}
-                          onChange={(e) => {
-                            const updated = [...roomsList];
-                            updated[idx].cols = e.target.value;
-                            setRoomsList(updated);
-                          }}
-                          className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Fill Strategy</label>
-                      <select
-                        value={room.fill_strategy}
-                        onChange={(e) => {
-                          const updated = [...roomsList];
-                          updated[idx].fill_strategy = e.target.value;
-                          setRoomsList(updated);
-                        }}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
-                      >
-                        <option value="col">Column-Wise (Vertical)</option>
-                        <option value="row">Row-Wise (Horizontal)</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center justify-end pt-5">
-                      {roomsList.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newRooms = roomsList.filter((_, i) => i !== idx);
-                            setRoomsList(newRooms);
-                            setSelectedPreviewHallIdx(0);
-                          }}
-                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" /> Remove
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingExam}
+                    className="px-8 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-500 hover:from-indigo-600 hover:to-purple-700 shadow-xl cursor-pointer disabled:opacity-50 transform hover:-translate-y-0.5"
+                  >
+                    {isSubmittingExam ? 'Executing Seating Engine...' : 'Run Automatic Seating Engine'}
+                  </button>
                 </div>
-              ))}
-
-              {/* SINGLE ACTIVE LIVE HALL PREVIEW CARD WITH HALL SELECTOR TABS */}
-              {roomsList.length > 0 && (
-                <div className="space-y-4 pt-4 border-t border-slate-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-700">Select Hall Preview Canvas:</span>
-                    <div className="flex items-center gap-2 overflow-x-auto">
-                      {roomsList.map((r, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setSelectedPreviewHallIdx(i)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            selectedPreviewHallIdx === i
-                              ? 'bg-slate-900 text-white shadow-md'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                        >
-                          {r.hall_name || `Hall ${i + 1}`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <HallSeatingPreviewCard
-                    hall={roomsList[selectedPreviewHallIdx] || roomsList[0]}
-                    onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(selectedPreviewHallIdx, seatKey)}
-                    onDeleteHall={roomsList.length > 1 ? () => {
-                      const newRooms = roomsList.filter((_, i) => i !== selectedPreviewHallIdx);
-                      setRoomsList(newRooms);
-                      setSelectedPreviewHallIdx(0);
-                    } : undefined}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* ACTION SUBMIT FOOTER */}
-            <div className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-3xl shadow-xl">
-              <div>
-                <h4 className="font-extrabold text-base">Ready to Allocate Seating?</h4>
-                <p className="text-xs text-slate-400">Click below to execute the 7-stage anti-cheating seating engine and save allocations.</p>
               </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('EXAMS_LIST')}
-                  className="px-5 py-3 rounded-xl font-bold text-xs text-slate-300 hover:bg-white/10 cursor-pointer transition-colors"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSubmittingExam}
-                  className="px-8 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-500 hover:from-indigo-600 hover:to-purple-700 shadow-xl cursor-pointer disabled:opacity-50 transform hover:-translate-y-0.5"
-                >
-                  {isSubmittingExam ? 'Executing Seating Engine...' : 'Run Automatic Seating Engine'}
-                </button>
-              </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       )}
 
@@ -1225,11 +1231,13 @@ export const ExamSeatingPage: React.FC = () => {
 
                 {/* Halls Seating Grid Matrix Preview Cards matching Screenshot 3 */}
                 <div className="space-y-6">
-                  {selectedExamDetails.halls.map((hall: any) => {
-                    const hallSeats = selectedExamDetails.seatings.filter((s: any) => s.hall_name === hall.hall_name);
+                  {selectedExamDetails.halls.map((hall: any, hIdx: number) => {
+                    const hallSeats = selectedExamDetails.seatings.filter((s: any) =>
+                      (s.hall_id && hall.id && s.hall_id === hall.id) || (s.hall_name === hall.hall_name)
+                    );
 
                     return (
-                      <div key={hall.id} className="space-y-3">
+                      <div key={hall.id || hIdx} className="space-y-3">
                         <div className="flex items-center justify-between px-2">
                           <div className="flex items-center gap-2">
                             <Building2 className="w-5 h-5 text-indigo-600" />
@@ -1245,8 +1253,8 @@ export const ExamSeatingPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Rendering Complete Interactive Hall Preview Card */}
-                        <HallSeatingPreviewCard hall={hall} seatings={hallSeats} />
+                        {/* Rendering Complete Interactive Hall Preview Card with hallIndex offset */}
+                        <HallSeatingPreviewCard hall={hall} hallIndex={hIdx} seatings={hallSeats} />
                       </div>
                     );
                   })}
