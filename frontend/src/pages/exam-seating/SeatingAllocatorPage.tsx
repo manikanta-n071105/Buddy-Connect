@@ -124,51 +124,76 @@ const HallSeatingPreviewCard: React.FC<{
     // 2. Simulate room-by-room seating allocation up to hallIndex
     for (let h = 0; h <= hallIndex; h++) {
       const isTargetHall = h === hallIndex;
+      const gridAllocatedBranches: { [key: string]: string } = {};
 
       for (let c = 1; c <= cols; c++) {
         for (let r = 1; r <= rows; r++) {
           const seatKey = `${r}-${c}`;
           if (disabledSet.has(seatKey)) continue;
 
-          // Checkerboard parity offset: (r + c) % 2
-          const parityOffset = (r + c) % 2;
-          let assigned = false;
+          // Parity slot: (r + c) % 2
+          const paritySlot = (r + c) % 2;
 
-          // Attempt to assign from branch queue matching parity offset or next available branch
+          const leftBranch = gridAllocatedBranches[`${r}-${c - 1}`];
+          const topBranch = gridAllocatedBranches[`${r - 1}-${c}`];
+
+          // 1. Try non-empty queues matching paritySlot that pass 2D adjacency
+          let selectedIdx = -1;
           for (let i = 0; i < batchQueues.length; i++) {
-            const idx = (i + parityOffset) % batchQueues.length;
-            const q = batchQueues[idx];
-            if (q.students.length > 0) {
-              const roll = q.students.shift()!;
-              if (isTargetHall) {
-                map.set(seatKey, {
-                  roll_number: roll,
-                  branch: q.branch,
-                  grid_row: r,
-                  grid_col: c
-                });
+            if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
+              const b = batchQueues[i].branch;
+              if (b !== leftBranch && b !== topBranch) {
+                selectedIdx = i;
+                break;
               }
-              assigned = true;
-              break;
             }
           }
 
-          // If no parity queue matched, pick ANY remaining branch queue that has students
-          if (!assigned) {
-            for (let idx = 0; idx < batchQueues.length; idx++) {
-              const q = batchQueues[idx];
-              if (q.students.length > 0) {
-                const roll = q.students.shift()!;
-                if (isTargetHall) {
-                  map.set(seatKey, {
-                    roll_number: roll,
-                    branch: q.branch,
-                    grid_row: r,
-                    grid_col: c
-                  });
-                }
+          // 2. If parity slot queues pass or are exhausted, try any matching parity queue with students
+          if (selectedIdx === -1) {
+            for (let i = 0; i < batchQueues.length; i++) {
+              if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
+                selectedIdx = i;
                 break;
               }
+            }
+          }
+
+          // 3. If parity slot is completely exhausted, dynamically advance to ANY next available queue with students
+          if (selectedIdx === -1) {
+            for (let i = 0; i < batchQueues.length; i++) {
+              if (batchQueues[i].students.length > 0) {
+                const b = batchQueues[i].branch;
+                if (b !== leftBranch && b !== topBranch) {
+                  selectedIdx = i;
+                  break;
+                }
+              }
+            }
+          }
+
+          // 4. Final fallback to any remaining non-empty queue
+          if (selectedIdx === -1) {
+            for (let i = 0; i < batchQueues.length; i++) {
+              if (batchQueues[i].students.length > 0) {
+                selectedIdx = i;
+                break;
+              }
+            }
+          }
+
+          if (selectedIdx !== -1) {
+            const q = batchQueues[selectedIdx];
+            const roll = q.students.shift()!;
+            gridAllocatedBranches[seatKey] = q.branch;
+
+            if (isTargetHall) {
+              map.set(seatKey, {
+                roll_number: roll,
+                branch: q.branch,
+                grid_row: r,
+                grid_col: c
+              });
             }
           }
         }

@@ -228,42 +228,63 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
         const isAisleGap = aisleInterval > 0 && ((pos.c - 1) % aisleInterval === 0);
 
         // Parity slot selection for checkerboard allocation ((r + c) % 2 parity)
-        const parityOffset = (pos.r + pos.c) % 2;
-        const candidateQueueIndices: number[] = [];
+        const paritySlot = (pos.r + pos.c) % 2;
+
+        // 1. Try non-empty queues matching paritySlot that pass 2D adjacency
         for (let i = 0; i < batchQueues.length; i++) {
-          candidateQueueIndices.push((i + parityOffset) % batchQueues.length);
-        }
-
-        for (const idx of candidateQueueIndices) {
-          const queue = batchQueues[idx];
-          if (queue.students.length === 0) continue;
-
-          if (preventAdjacency) {
-            if (leftBranch && !isAisleGap && queue.branch === leftBranch) {
-              continue;
+          if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
+            const b = batchQueues[i].branch;
+            if (preventAdjacency) {
+              if (leftBranch && !isAisleGap && b === leftBranch) continue;
+              if (topBranch && b === topBranch) continue;
             }
-            if (topBranch && queue.branch === topBranch) {
-              continue;
-            }
+            selectedBatchIdx = i;
+            break;
           }
-
-          selectedBatchIdx = idx;
-          selectedStudent = queue.students.shift();
-          break;
         }
 
-        // If all candidate queues were skipped due to strict adjacency, grab from first non-empty queue
-        if (!selectedStudent) {
-          for (let idx = 0; idx < batchQueues.length; idx++) {
-            if (batchQueues[idx].students.length > 0) {
-              selectedBatchIdx = idx;
-              selectedStudent = batchQueues[idx].students.shift();
+        // 2. Try any matching parity queue with students
+        if (selectedBatchIdx === -1) {
+          for (let i = 0; i < batchQueues.length; i++) {
+            if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
+              selectedBatchIdx = i;
               break;
             }
           }
         }
 
-        if (!selectedStudent) break; // All students allocated!
+        // 3. Dynamically advance to ANY next available branch queue with students passing 2D adjacency
+        if (selectedBatchIdx === -1) {
+          for (let i = 0; i < batchQueues.length; i++) {
+            if (batchQueues[i].students.length > 0) {
+              const b = batchQueues[i].branch;
+              if (preventAdjacency) {
+                if (leftBranch && !isAisleGap && b === leftBranch) continue;
+                if (topBranch && b === topBranch) continue;
+              }
+              selectedBatchIdx = i;
+              break;
+            }
+          }
+        }
+
+        // 4. Final fallback to any remaining non-empty queue
+        if (selectedBatchIdx === -1) {
+          for (let i = 0; i < batchQueues.length; i++) {
+            if (batchQueues[i].students.length > 0) {
+              selectedBatchIdx = i;
+              break;
+            }
+          }
+        }
+
+        if (selectedBatchIdx !== -1) {
+          const queue = batchQueues[selectedBatchIdx];
+          selectedStudent = queue.students.shift();
+          gridAllocatedBranches[seatKey] = queue.branch;
+        }
+
+        if (!selectedStudent) continue; // Seat stays EMPTY if no queue satisfies conditions
 
         const seatNumber = `R${pos.r}-C${pos.c}`;
         const batchInfo = batchQueues[selectedBatchIdx];
