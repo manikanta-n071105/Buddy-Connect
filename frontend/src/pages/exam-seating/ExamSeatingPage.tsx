@@ -29,7 +29,10 @@ import {
   FileWarning,
   Sliders,
   Grid,
-  X
+  X,
+  ArrowLeft,
+  Settings,
+  Cpu
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -78,7 +81,7 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
 }
 
 // ============================================================================
-// HALL SEATING PREVIEW CARD COMPONENT (UNIQUE SEQUENTIAL BRANCH ALLOCATION)
+// HALL SEATING PREVIEW CARD COMPONENT (VERTICALLY ALTERNATING BRANCH ALLOCATION)
 // ============================================================================
 const HallSeatingPreviewCard: React.FC<{
   hall: any;
@@ -139,7 +142,6 @@ const HallSeatingPreviewCard: React.FC<{
     return map;
   }, [rows, cols]);
 
-  // Unique sequential branch allocation preview generator (no duplicates)
   const getPreviewSeatInfo = (r: number, c: number) => {
     if (seatings && seatings.length > 0) {
       return seatings.find((s: any) => s.grid_row === r && s.grid_col === c);
@@ -325,7 +327,7 @@ export const ExamSeatingPage: React.FC = () => {
   const isFaculty = (userRole === 'FACULTY' || userRole === 'MENTOR') && !isController;
   const isStudent = userRole === 'JUNIOR' || userRole === 'SENIOR';
 
-  const [activeTab, setActiveTab] = useState<'EXAMS_LIST' | 'STUDENT_LOOKUP' | 'INVIGILATION_DUTIES'>(
+  const [activeTab, setActiveTab] = useState<'EXAMS_LIST' | 'STUDENT_LOOKUP' | 'INVIGILATION_DUTIES' | 'CREATE_SEATING_PLAN'>(
     isController ? 'EXAMS_LIST' : isFaculty ? 'INVIGILATION_DUTIES' : 'STUDENT_LOOKUP'
   );
 
@@ -334,7 +336,6 @@ export const ExamSeatingPage: React.FC = () => {
   const [selectedExamDetails, setSelectedExamDetails] = useState<any | null>(null);
 
   // Modals
-  const [showCreateExamModal, setShowCreateExamModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
 
   // Student Lookup Search
@@ -345,11 +346,11 @@ export const ExamSeatingPage: React.FC = () => {
   // Invigilation Duty State
   const [invigilationDuties, setInvigilationDuties] = useState<any[]>([]);
 
-  // Selected Active Hall Preview Tab in Modal
+  // Selected Active Hall Preview Tab in Full Page Allocator
   const [selectedPreviewHallIdx, setSelectedPreviewHallIdx] = useState(0);
 
   // --------------------------------------------------------------------------
-  // CREATE EXAM FORM STATE
+  // CREATE EXAM FORM STATE & ENGINE CONFIG OPTIONS
   // --------------------------------------------------------------------------
   const [examForm, setExamForm] = useState({
     name: 'JNTUA B.Tech III-I Regular Examinations 2026',
@@ -363,13 +364,13 @@ export const ExamSeatingPage: React.FC = () => {
   });
 
   const [batchesList, setBatchesList] = useState<any[]>([
-    { branch: 'CSE', year_batch: 'III Year', start_reg: '21121A0501', end_reg: '21121A0560', excluded_ids: '21121A0502, 21121A0504' },
-    { branch: 'ECE', year_batch: 'III Year', start_reg: '21121A0401', end_reg: '21121A0460', excluded_ids: '' }
+    { branch: 'CSE', subject: 'Data Structures', year_batch: 'III Year', start_reg: '21121A0501', end_reg: '21121A0560', excluded_ids: '21121A0502, 21121A0504' },
+    { branch: 'ECE', subject: 'Digital Signal Processing', year_batch: 'III Year', start_reg: '21121A0401', end_reg: '21121A0460', excluded_ids: '' }
   ]);
 
   const [roomsList, setRoomsList] = useState<any[]>([
-    { hall_name: 'Hall A (Knowledge Park)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' },
-    { hall_name: 'Hall B (Main Block)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }
+    { hall_name: 'Hall A (Knowledge Park)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' },
+    { hall_name: 'Hall B (Main Block)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' }
   ]);
 
   const [isSubmittingExam, setIsSubmittingExam] = useState(false);
@@ -503,6 +504,7 @@ export const ExamSeatingPage: React.FC = () => {
       setIsSubmittingExam(true);
       const parsedBatches = batchesList.map(b => ({
         branch: b.branch,
+        subject: b.subject,
         year_batch: b.year_batch,
         start_reg: b.start_reg,
         end_reg: b.end_reg,
@@ -515,6 +517,7 @@ export const ExamSeatingPage: React.FC = () => {
         cols: parseInt(r.cols) || 4,
         fill_strategy: r.fill_strategy,
         prevent_adjacency: r.prevent_adjacency,
+        strict_flow: r.strict_flow,
         aisle_interval: parseInt(r.aisle_interval) || 2,
         disabled_seats: r.disabled_seats ? r.disabled_seats.split(',').map((x: string) => x.trim()) : []
       }));
@@ -527,7 +530,7 @@ export const ExamSeatingPage: React.FC = () => {
       });
 
       toast.success(res.data.message || 'Exam Seating Allocation Completed!');
-      setShowCreateExamModal(false);
+      setActiveTab('EXAMS_LIST');
       fetchExams();
       if (res.data.data?.id) {
         fetchExamDetails(res.data.data.id);
@@ -578,10 +581,10 @@ export const ExamSeatingPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             {isController && (
               <button
-                onClick={() => setShowCreateExamModal(true)}
+                onClick={() => setActiveTab('CREATE_SEATING_PLAN')}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg shadow-indigo-500/25 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
               >
-                <Plus className="w-4 h-4" /> Run Seating Allocator
+                <Cpu className="w-4 h-4" /> Run Seating Allocator
               </button>
             )}
 
@@ -596,7 +599,7 @@ export const ExamSeatingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs Bar */}
+      {/* Navigation Tabs Bar */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         {isController && (
           <button
@@ -611,11 +614,24 @@ export const ExamSeatingPage: React.FC = () => {
           </button>
         )}
 
+        {isController && (
+          <button
+            onClick={() => setActiveTab('CREATE_SEATING_PLAN')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
+              activeTab === 'CREATE_SEATING_PLAN'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Cpu className="w-4 h-4" /> Run Seating Allocator (Full Page)
+          </button>
+        )}
+
         <button
           onClick={() => setActiveTab('STUDENT_LOOKUP')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 ${
             activeTab === 'STUDENT_LOOKUP'
-              ? 'bg-indigo-600 text-white shadow-md'
+              ? 'bg-blue-600 text-white shadow-md'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
@@ -635,6 +651,468 @@ export const ExamSeatingPage: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* ========================================================================= */}
+      {/* FULL PAGE VIEW: RUN AUTOMATIC SEATING ALLOCATOR WORKFLOW */}
+      {/* ========================================================================= */}
+      {activeTab === 'CREATE_SEATING_PLAN' && isController && (
+        <div className="space-y-8 animate-in fade-in">
+          {/* Algorithm Breakdown Header Card */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-widest">
+                  <Cpu className="w-3.5 h-3.5" /> Anti-Cheating Allocation Engine v2.0
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Configure Exam & Seating Allocator</h2>
+                <p className="text-xs text-slate-500">Full-Page Seating Matrix Setup & Custom Anti-Cheating Rules</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('EXAMS_LIST')}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back to Plans
+              </button>
+            </div>
+
+            {/* 7-Step Algorithm Breakdown Diagram Cards */}
+            <div className="space-y-3">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Multi-Stage Allocation Algorithm Breakdown:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+                <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-black inline-flex items-center justify-center">1</span>
+                  <p className="text-[11px] font-bold text-indigo-950">Student Queue</p>
+                  <p className="text-[9px] text-indigo-700">JNTUA Alphanumeric Decode</p>
+                </div>
+
+                <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-black inline-flex items-center justify-center">2</span>
+                  <p className="text-[11px] font-bold text-blue-950">Room Matrix</p>
+                  <p className="text-[9px] text-blue-700">Rows x Cols Layout</p>
+                </div>
+
+                <div className="p-3 bg-purple-50/60 border border-purple-100 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[10px] font-black inline-flex items-center justify-center">3</span>
+                  <p className="text-[11px] font-bold text-purple-950">Fill Strategy</p>
+                  <p className="text-[9px] text-purple-700">Column vs Row Iteration</p>
+                </div>
+
+                <div className="p-3 bg-amber-50/60 border border-amber-100 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[10px] font-black inline-flex items-center justify-center">4</span>
+                  <p className="text-[11px] font-bold text-amber-950">Disabled Seats</p>
+                  <p className="text-[9px] text-amber-700">Pillar & Broken Filter</p>
+                </div>
+
+                <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-black inline-flex items-center justify-center">5</span>
+                  <p className="text-[11px] font-bold text-emerald-950">Anti-Cheating</p>
+                  <p className="text-[9px] text-emerald-700">Same Branch/Paper Blocking</p>
+                </div>
+
+                <div className="p-3 bg-rose-50/60 border border-rose-100 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-rose-600 text-white text-[10px] font-black inline-flex items-center justify-center">6</span>
+                  <p className="text-[11px] font-bold text-rose-950">Checkerboard</p>
+                  <p className="text-[9px] text-rose-700">(r+c)%2 Parity Slot Selection</p>
+                </div>
+
+                <div className="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1">
+                  <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] font-black inline-flex items-center justify-center">7</span>
+                  <p className="text-[11px] font-bold text-slate-900">Seat Assignment</p>
+                  <p className="text-[9px] text-slate-600">Door Charts & DB Save</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleCreateExam} className="space-y-8">
+            {/* SUBJECT (OPTIONAL) INPUT FIELD - MATCHING SCREENSHOT 1 */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-2">
+              <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">Examination Paper / Subject Name (Optional)</label>
+              <input
+                type="text"
+                placeholder="SUBJECT (OPTIONAL)"
+                value={examForm.subject}
+                onChange={(e) => setExamForm({ ...examForm, subject: e.target.value })}
+                className="w-full px-5 py-4 rounded-2xl border border-slate-200 bg-white font-bold text-sm uppercase tracking-wider text-slate-800 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 shadow-2xs"
+              />
+            </div>
+
+            {/* SECTION 1: EXAMINATION METADATA */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-4">
+              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-600" /> 1. Examination Details & Schedule
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Examination Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={examForm.name}
+                    onChange={(e) => setExamForm({ ...examForm, name: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm focus:ring-2 focus:ring-indigo-500/20 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Exam Code</label>
+                  <input
+                    type="text"
+                    value={examForm.exam_code}
+                    onChange={(e) => setExamForm({ ...examForm, exam_code: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-mono font-bold text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={examForm.date}
+                    onChange={(e) => setExamForm({ ...examForm, date: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Time Slot *</label>
+                  <input
+                    type="text"
+                    required
+                    value={examForm.time}
+                    onChange={(e) => setExamForm({ ...examForm, time: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Session</label>
+                  <select
+                    value={examForm.session}
+                    onChange={(e) => setExamForm({ ...examForm, session: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-sm"
+                  >
+                    <option value="FN">Forenoon (FN)</option>
+                    <option value="AN">Afternoon (AN)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: STUDENT BATCHES & EXCLUSIONS - MATCHING SCREENSHOT 1 */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-600" /> 2. Student Batches (JNTUA Alphanumeric Range Generator)
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs font-extrabold mt-1">
+                    <span className="flex items-center gap-1.5 text-emerald-600">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      {totalReadyStudents} Students ready
+                    </span>
+                    {totalExcludedCount > 0 && (
+                      <span className="text-red-600 font-extrabold">
+                        ({totalExcludedCount} Excluded)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setBatchesList([...batchesList, { branch: 'EEE', subject: '', year_batch: 'III Year', start_reg: '', end_reg: '', excluded_ids: '' }])}
+                  className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Add Branch Batch
+                </button>
+              </div>
+
+              {batchesList.map((batch, idx) => {
+                const generatedRolls = generateStudentRange(batch.start_reg, batch.end_reg);
+                const exclSet = new Set((batch.excluded_ids || '').split(',').map((x: string) => x.trim().toUpperCase()).filter(Boolean));
+
+                return (
+                  <div key={idx} className="p-6 bg-slate-50/70 border border-slate-200 rounded-3xl space-y-4 shadow-2xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-6 gap-4 items-center text-xs">
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">Branch</label>
+                        <input
+                          type="text"
+                          value={batch.branch}
+                          onChange={(e) => {
+                            const updated = [...batchesList];
+                            updated[idx].branch = e.target.value;
+                            setBatchesList(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold bg-white text-slate-800"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">Subject Paper (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Data Structures"
+                          value={batch.subject}
+                          onChange={(e) => {
+                            const updated = [...batchesList];
+                            updated[idx].subject = e.target.value;
+                            setBatchesList(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">Start Roll No</label>
+                        <input
+                          type="text"
+                          placeholder="21121A0501"
+                          value={batch.start_reg}
+                          onChange={(e) => {
+                            const updated = [...batchesList];
+                            updated[idx].start_reg = e.target.value;
+                            setBatchesList(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold bg-white text-slate-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-extrabold text-slate-600 mb-1">End Roll No</label>
+                        <input
+                          type="text"
+                          placeholder="21121A0560"
+                          value={batch.end_reg}
+                          onChange={(e) => {
+                            const updated = [...batchesList];
+                            updated[idx].end_reg = e.target.value;
+                            setBatchesList(updated);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-bold bg-white text-slate-800"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end pt-5">
+                        {batchesList.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setBatchesList(batchesList.filter((_, i) => i !== idx))}
+                            className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* SELECT TO EXCLUDE (RED = EXCLUDED) CONTAINER - MATCHES SCREENSHOT 1 */}
+                    {generatedRolls.length > 0 && (
+                      <div className="p-4 bg-white border border-slate-200/90 rounded-2xl space-y-2">
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                          <span>SELECT TO EXCLUDE (RED = EXCLUDED)</span>
+                          <span>{generatedRolls.length} Roll Numbers Generated</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          {generatedRolls.map((roll) => {
+                            const isExcluded = exclSet.has(roll);
+                            const shortRoll = roll.length > 3 ? roll.slice(-3) : roll;
+                            return (
+                              <button
+                                type="button"
+                                key={roll}
+                                onClick={() => toggleRollExclusion(idx, roll)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer shadow-2xs ${
+                                  isExcluded
+                                    ? 'bg-red-500 text-white border border-red-600 font-extrabold shadow-sm scale-105'
+                                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
+                                }`}
+                                title={isExcluded ? `Excluded: ${roll} (Click to Include)` : `Included: ${roll} (Click to Exclude)`}
+                              >
+                                {shortRoll}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* SECTION 3: EXAM HALLS & LIVE INTERACTIVE SEATING PREVIEW */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-indigo-600" /> 3. Exam Halls Setup & Interactive Grid Matrix
+                  </h3>
+                  <p className="text-xs text-slate-500">Define hall dimensions, fill strategy, and click seats on the live canvas to block/unblock.</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newRooms = [...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' }];
+                    setRoomsList(newRooms);
+                    setSelectedPreviewHallIdx(newRooms.length - 1);
+                  }}
+                  className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" /> Add Exam Hall
+                </button>
+              </div>
+
+              {roomsList.map((room, idx) => (
+                <div key={idx} className="p-5 bg-slate-50/70 border border-slate-200 rounded-3xl space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Hall Name</label>
+                      <input
+                        type="text"
+                        value={room.hall_name}
+                        onChange={(e) => {
+                          const updated = [...roomsList];
+                          updated[idx].hall_name = e.target.value;
+                          setRoomsList(updated);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Rows x Columns</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={room.rows}
+                          onChange={(e) => {
+                            const updated = [...roomsList];
+                            updated[idx].rows = e.target.value;
+                            setRoomsList(updated);
+                          }}
+                          className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                        />
+                        <span className="font-bold text-slate-400">x</span>
+                        <input
+                          type="number"
+                          value={room.cols}
+                          onChange={(e) => {
+                            const updated = [...roomsList];
+                            updated[idx].cols = e.target.value;
+                            setRoomsList(updated);
+                          }}
+                          className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Fill Strategy</label>
+                      <select
+                        value={room.fill_strategy}
+                        onChange={(e) => {
+                          const updated = [...roomsList];
+                          updated[idx].fill_strategy = e.target.value;
+                          setRoomsList(updated);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
+                      >
+                        <option value="col">Column-Wise (Vertical)</option>
+                        <option value="row">Row-Wise (Horizontal)</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-end pt-5">
+                      {roomsList.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newRooms = roomsList.filter((_, i) => i !== idx);
+                            setRoomsList(newRooms);
+                            setSelectedPreviewHallIdx(0);
+                          }}
+                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" /> Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* SINGLE ACTIVE LIVE HALL PREVIEW CARD WITH HALL SELECTOR TABS */}
+              {roomsList.length > 0 && (
+                <div className="space-y-4 pt-4 border-t border-slate-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-700">Select Hall Preview Canvas:</span>
+                    <div className="flex items-center gap-2 overflow-x-auto">
+                      {roomsList.map((r, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSelectedPreviewHallIdx(i)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            selectedPreviewHallIdx === i
+                              ? 'bg-slate-900 text-white shadow-md'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          {r.hall_name || `Hall ${i + 1}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <HallSeatingPreviewCard
+                    hall={roomsList[selectedPreviewHallIdx] || roomsList[0]}
+                    onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(selectedPreviewHallIdx, seatKey)}
+                    onDeleteHall={roomsList.length > 1 ? () => {
+                      const newRooms = roomsList.filter((_, i) => i !== selectedPreviewHallIdx);
+                      setRoomsList(newRooms);
+                      setSelectedPreviewHallIdx(0);
+                    } : undefined}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* ACTION SUBMIT FOOTER */}
+            <div className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-3xl shadow-xl">
+              <div>
+                <h4 className="font-extrabold text-base">Ready to Allocate Seating?</h4>
+                <p className="text-xs text-slate-400">Click below to execute the 7-stage anti-cheating seating engine and save allocations.</p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('EXAMS_LIST')}
+                  className="px-5 py-3 rounded-xl font-bold text-xs text-slate-300 hover:bg-white/10 cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingExam}
+                  className="px-8 py-3.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-500 hover:from-indigo-600 hover:to-purple-700 shadow-xl cursor-pointer disabled:opacity-50 transform hover:-translate-y-0.5"
+                >
+                  {isSubmittingExam ? 'Executing Seating Engine...' : 'Run Automatic Seating Engine'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* TAB 1: EXAMS LIST & SEATING MATRIX (CONTROLLER & SUPER ADMIN ONLY) */}
@@ -894,374 +1372,6 @@ export const ExamSeatingPage: React.FC = () => {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: RUN AUTOMATIC SEATING ALLOCATION ENGINE */}
-      {/* ========================================================================= */}
-      {showCreateExamModal && isController && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 flex items-start sm:items-center justify-center">
-          <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-auto max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 sticky top-0 bg-white z-20">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                  Automatic Engine
-                </span>
-                <h3 className="text-xl font-extrabold text-slate-900 mt-1">Configure Exam & Seating Allocator</h3>
-              </div>
-              <button
-                onClick={() => setShowCreateExamModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center font-bold transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateExam} className="space-y-6 text-xs font-medium">
-              {/* SUBJECT (OPTIONAL) FIELD - MATCHING SCREENSHOT 1 */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="SUBJECT (OPTIONAL)"
-                  value={examForm.subject}
-                  onChange={(e) => setExamForm({ ...examForm, subject: e.target.value })}
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 bg-white font-bold text-xs uppercase tracking-wider text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400 shadow-2xs"
-                />
-              </div>
-
-              {/* Exam Metadata */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1">Examination Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={examForm.name}
-                    onChange={(e) => setExamForm({ ...examForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Exam Code</label>
-                  <input
-                    type="text"
-                    value={examForm.exam_code}
-                    onChange={(e) => setExamForm({ ...examForm, exam_code: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={examForm.date}
-                    onChange={(e) => setExamForm({ ...examForm, date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Time Slot *</label>
-                  <input
-                    type="text"
-                    required
-                    value={examForm.time}
-                    onChange={(e) => setExamForm({ ...examForm, time: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Session</label>
-                  <select
-                    value={examForm.session}
-                    onChange={(e) => setExamForm({ ...examForm, session: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white"
-                  >
-                    <option value="FN">Forenoon (FN)</option>
-                    <option value="AN">Afternoon (AN)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* STUDENT ROLL NUMBER EXCLUSION SECTION - MATCHING EXACT SCREENSHOT 1 */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-sm font-extrabold">
-                    <span className="flex items-center gap-1.5 text-emerald-600">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      {totalReadyStudents} Students ready
-                    </span>
-                    {totalExcludedCount > 0 && (
-                      <span className="text-red-600 font-extrabold">
-                        ({totalExcludedCount} Excluded)
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setBatchesList([...batchesList, { branch: 'EEE', year_batch: 'III Year', start_reg: '', end_reg: '', excluded_ids: '' }])}
-                    className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Branch Batch
-                  </button>
-                </div>
-
-                {batchesList.map((batch, idx) => {
-                  const generatedRolls = generateStudentRange(batch.start_reg, batch.end_reg);
-                  const exclSet = new Set((batch.excluded_ids || '').split(',').map((x: string) => x.trim().toUpperCase()).filter(Boolean));
-
-                  return (
-                    <div key={idx} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
-                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 items-center">
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Branch</label>
-                          <input
-                            type="text"
-                            value={batch.branch}
-                            onChange={(e) => {
-                              const updated = [...batchesList];
-                              updated[idx].branch = e.target.value;
-                              setBatchesList(updated);
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold bg-slate-50"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Start Roll No</label>
-                          <input
-                            type="text"
-                            placeholder="21121A0501"
-                            value={batch.start_reg}
-                            onChange={(e) => {
-                              const updated = [...batchesList];
-                              updated[idx].start_reg = e.target.value;
-                              setBatchesList(updated);
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[10px] font-bold text-slate-500 mb-1">End Roll No</label>
-                          <input
-                            type="text"
-                            placeholder="21121A0560"
-                            value={batch.end_reg}
-                            onChange={(e) => {
-                              const updated = [...batchesList];
-                              updated[idx].end_reg = e.target.value;
-                              setBatchesList(updated);
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
-                          />
-                        </div>
-
-                        <div className="sm:col-span-2">
-                          <label className="block text-[10px] font-bold text-slate-500 mb-1">Excluded Roll Numbers</label>
-                          <input
-                            type="text"
-                            placeholder="Click chips below to exclude"
-                            value={batch.excluded_ids}
-                            onChange={(e) => {
-                              const updated = [...batchesList];
-                              updated[idx].excluded_ids = e.target.value;
-                              setBatchesList(updated);
-                            }}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-end">
-                          {batchesList.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => setBatchesList(batchesList.filter((_, i) => i !== idx))}
-                              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* SELECT TO EXCLUDE (RED = EXCLUDED) CHIP CONTAINER - MATCHES SCREENSHOT 1 */}
-                      {generatedRolls.length > 0 && (
-                        <div className="p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl space-y-2">
-                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                            SELECT TO EXCLUDE (RED = EXCLUDED)
-                          </div>
-
-                          <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-white rounded-xl border border-slate-200">
-                            {generatedRolls.map((roll) => {
-                              const isExcluded = exclSet.has(roll);
-                              const shortRoll = roll.length > 3 ? roll.slice(-3) : roll;
-                              return (
-                                <button
-                                  type="button"
-                                  key={roll}
-                                  onClick={() => toggleRollExclusion(idx, roll)}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer shadow-2xs ${
-                                    isExcluded
-                                      ? 'bg-red-500 text-white border border-red-600 font-extrabold shadow-sm scale-105'
-                                      : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
-                                  }`}
-                                  title={isExcluded ? `Excluded: ${roll} (Click to Include)` : `Included: ${roll} (Click to Exclude)`}
-                                >
-                                  {shortRoll}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Exam Halls Setup & Single Active Live Preview Card */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-slate-900 text-sm">2. Exam Halls & Grid Strategy</h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newRooms = [...roomsList, { hall_name: `Hall ${String.fromCharCode(65 + roomsList.length)}`, rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, disabled_seats: '' }];
-                      setRoomsList(newRooms);
-                      setSelectedPreviewHallIdx(newRooms.length - 1);
-                    }}
-                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Exam Hall
-                  </button>
-                </div>
-
-                {roomsList.map((room, idx) => (
-                  <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      <div className="sm:col-span-2">
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Hall Name</label>
-                        <input
-                          type="text"
-                          value={room.hall_name}
-                          onChange={(e) => {
-                            const updated = [...roomsList];
-                            updated[idx].hall_name = e.target.value;
-                            setRoomsList(updated);
-                          }}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-bold text-slate-800"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Rows x Columns</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            value={room.rows}
-                            onChange={(e) => {
-                              const updated = [...roomsList];
-                              updated[idx].rows = e.target.value;
-                              setRoomsList(updated);
-                            }}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-center font-bold"
-                          />
-                          <span className="font-bold text-slate-400">x</span>
-                          <input
-                            type="number"
-                            value={room.cols}
-                            onChange={(e) => {
-                              const updated = [...roomsList];
-                              updated[idx].cols = e.target.value;
-                              setRoomsList(updated);
-                            }}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-center font-bold"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1">Fill Strategy</label>
-                        <select
-                          value={room.fill_strategy}
-                          onChange={(e) => {
-                            const updated = [...roomsList];
-                            updated[idx].fill_strategy = e.target.value;
-                            setRoomsList(updated);
-                          }}
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white font-bold"
-                        >
-                          <option value="col">Column-Major (Recommended)</option>
-                          <option value="row">Row-Major</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* SINGLE ACTIVE LIVE HALL PREVIEW CARD WITH HALL SELECTOR TABS */}
-                {roomsList.length > 0 && (
-                  <div className="space-y-3 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-extrabold text-slate-700">Select Hall Preview:</span>
-                      <div className="flex items-center gap-1.5 overflow-x-auto">
-                        {roomsList.map((r, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => setSelectedPreviewHallIdx(i)}
-                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                              selectedPreviewHallIdx === i
-                                ? 'bg-indigo-600 text-white shadow-xs'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                            }`}
-                          >
-                            {r.hall_name || `Hall ${i + 1}`}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <HallSeatingPreviewCard
-                      hall={roomsList[selectedPreviewHallIdx] || roomsList[0]}
-                      onToggleDisabledSeat={(seatKey) => toggleDisabledSeatInRoom(selectedPreviewHallIdx, seatKey)}
-                      onDeleteHall={roomsList.length > 1 ? () => {
-                        const newRooms = roomsList.filter((_, i) => i !== selectedPreviewHallIdx);
-                        setRoomsList(newRooms);
-                        setSelectedPreviewHallIdx(0);
-                      } : undefined}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateExamModal(false)}
-                  className="px-4 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSubmittingExam}
-                  className="px-6 py-2.5 rounded-xl font-extrabold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmittingExam ? 'Allocating Seating...' : 'Run Automatic Seating Engine'}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 

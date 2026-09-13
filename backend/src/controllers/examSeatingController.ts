@@ -227,7 +227,14 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
         const topBranch = gridAllocatedBranches[topKey];
         const isAisleGap = aisleInterval > 0 && ((pos.c - 1) % aisleInterval === 0);
 
-        for (let idx = 0; idx < batchQueues.length; idx++) {
+        // Parity slot selection for checkerboard allocation ((r + c) % 2 parity)
+        const parityOffset = (pos.r + pos.c) % 2;
+        const candidateQueueIndices: number[] = [];
+        for (let i = 0; i < batchQueues.length; i++) {
+          candidateQueueIndices.push((i + parityOffset) % batchQueues.length);
+        }
+
+        for (const idx of candidateQueueIndices) {
           const queue = batchQueues[idx];
           if (queue.students.length === 0) continue;
 
