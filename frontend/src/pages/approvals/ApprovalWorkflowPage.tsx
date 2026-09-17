@@ -1273,51 +1273,33 @@ export const ApprovalWorkflowPage: React.FC = () => {
                   </button>
                 )}
 
-                {/* Submit / Edit Post-Event Outcome Report Button */}
+                {/* 1. Submit / Edit Post-Event Outcome Report Form */}
                 {(selectedRequest.submitted_by_id === user?.id || isSuperAdmin) && (
                   <button
                     onClick={() => openReportModal(selectedRequest)}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-xs transition-all shadow-md"
                   >
-                    <Camera className="w-4 h-4" /> {selectedRequest.report_summary ? 'Edit Post-Event Report & Photos' : 'Submit Event Outcome Report & Photos'}
+                    <Camera className="w-4 h-4" /> {selectedRequest.report_summary ? 'Edit Post-Event Report' : 'Submit Post-Event Report'}
                   </button>
                 )}
 
-                {/* Print Post-Event Outcome Report (with Photos) */}
+                {/* 2. Formal Application Form (Print / Word Export) */}
+                <button
+                  onClick={() => setShowPrintModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-all border border-slate-700 shadow-md"
+                >
+                  <FileText className="w-4 h-4 text-orange-400" /> Application Form (Print / Word)
+                </button>
+
+                {/* 3. Post-Event Outcome Report (Print / Word Export) */}
                 {(selectedRequest.report_summary || selectedRequest.report_submitted_at) && (
                   <button
                     onClick={() => setShowPrintReportModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs transition-all border border-teal-500 shadow-md"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs transition-all border border-teal-600 shadow-md"
                   >
-                    <Printer className="w-4 h-4 text-teal-300" /> Print Outcome Report (with Photos)
+                    <Award className="w-4 h-4 text-emerald-300" /> Event Outcome Report (Print / Word)
                   </button>
                 )}
-
-                {/* Export Outcome Report to Word (.doc) */}
-                {(selectedRequest.report_summary || selectedRequest.report_submitted_at) && (
-                  <button
-                    onClick={() => exportReportToWord(selectedRequest)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs transition-all border border-blue-500 shadow-md"
-                  >
-                    <FileDown className="w-4 h-4 text-blue-200" /> Export Outcome Report (Word .doc)
-                  </button>
-                )}
-
-                {/* Print Official Format */}
-                <button
-                  onClick={() => setShowPrintModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all border border-white/20"
-                >
-                  <Printer className="w-4 h-4" /> Print Formal Application
-                </button>
-
-                {/* Export Application to Word (.doc) */}
-                <button
-                  onClick={() => exportApplicationToWord(selectedRequest)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-all border border-slate-600 shadow-md"
-                >
-                  <FileDown className="w-4 h-4 text-amber-400" /> Export Application (Word .doc)
-                </button>
               </div>
 
               {/* Post-Event Outcome Report Card (if submitted) */}
