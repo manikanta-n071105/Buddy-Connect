@@ -56,6 +56,19 @@ export function generateStudentRange(startReg: string, endReg: string): string[]
   return list;
 }
 
+export function isStudentInBatchRange(regNo: string, startReg: string, endReg: string): boolean {
+  if (!regNo || !startReg || !endReg) return false;
+  const regObj = parseRollNumber(regNo);
+  const startObj = parseRollNumber(startReg);
+  const endObj = parseRollNumber(endReg);
+
+  if (regObj.prefix !== startObj.prefix || regObj.prefix !== endObj.prefix) {
+    return false;
+  }
+
+  return regObj.value >= startObj.value && regObj.value <= endObj.value;
+}
+
 // Helper to check if user is Controller of Examinations or Admin
 const isControllerOrAdmin = (req: AuthenticatedRequest) => {
   const userRole = (req.user?.role || '').toUpperCase();
@@ -82,7 +95,29 @@ export const getExams = async (req: AuthenticatedRequest, res: Response) => {
     sql += ` ORDER BY date DESC, created_at DESC`;
 
     const result = await query(sql);
-    return res.json({ success: true, data: result.rows });
+    const exams = result.rows;
+
+    for (const exam of exams) {
+      const hallsRes = await query(
+        `SELECT id, hall_name, capacity, rows_count, cols_count, fill_strategy
+         FROM exam_halls
+         WHERE exam_id = $1`,
+        [exam.id]
+      );
+      if (hallsRes.rows.length > 0) {
+        exam.halls = hallsRes.rows;
+      } else if (Array.isArray(exam.rooms_json) && exam.rooms_json.length > 0) {
+        exam.halls = exam.rooms_json.map((r: any, idx: number) => ({
+          id: r.id || `hall-${idx}`,
+          hall_name: r.hall_name || `Hall ${idx + 1}`,
+          capacity: (parseInt(r.rows) || 8) * (parseInt(r.cols) || 6)
+        }));
+      } else {
+        exam.halls = [];
+      }
+    }
+
+    return res.json({ success: true, data: exams });
   } catch (error: any) {
     logger.error('Error fetching exams:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch exams', error: error.message });
@@ -122,27 +157,57 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
     }
 
     // 1. Expand Student Queues from JNTUA Ranges
-    const batchQueues: { branch: string; year_batch: string; students: { roll_number: string; student_id?: string; student_name?: string }[] }[] = [];
-    let grandTotalStudents = 0;
+    const batchRollsMap: { branch: string; year_batch: string; filteredRolls: string[] }[] = [];
+    const allFilteredRolls: string[] = [];
 
     for (const b of batches) {
-      const excludedSet = new Set((b.excluded_ids || []).map((x: string) => x.trim().toUpperCase()));
+      let excludedSet: Set<string>;
+      if (Array.isArray(b.excluded_ids)) {
+        excludedSet = new Set(b.excluded_ids.map((x: any) => String(x).trim().toUpperCase()));
+      } else {
+        excludedSet = new Set(
+          (b.excluded_ids || '')
+            .split(',')
+            .map((x: string) => x.trim().toUpperCase())
+            .filter(Boolean)
+        );
+      }
+
       const rawRolls = generateStudentRange(b.start_reg, b.end_reg);
       const filteredRolls = rawRolls.filter(r => !excludedSet.has(r));
 
-      // Attempt to map roll numbers to registered user records in DB for rich name/id lookup
-      const userMatchRes = await query(
-        `SELECT id, name, username FROM users WHERE UPPER(username) = ANY($1::text[]) OR UPPER(email) LIKE ANY($2::text[])`,
-        [filteredRolls, filteredRolls.map(r => `${r.toLowerCase()}@%`)]
-      );
-
-      const userMap = new Map<string, { id: string; name: string }>();
-      userMatchRes.rows.forEach(u => {
-        userMap.set(u.username.toUpperCase(), { id: u.id, name: u.name });
+      batchRollsMap.push({
+        branch: b.branch || 'GENERAL',
+        year_batch: b.year_batch || b.year || 'III Year',
+        filteredRolls
       });
 
-      const studentList = filteredRolls.map(roll => {
-        const matchedUser = userMap.get(roll);
+      allFilteredRolls.push(...filteredRolls);
+    }
+
+    // Single fast B-tree indexed lookup for user details
+    const userMap = new Map<string, { id: string; name: string }>();
+    if (allFilteredRolls.length > 0) {
+      const uniqueRolls = Array.from(new Set(allFilteredRolls.map(r => r.toUpperCase())));
+      const userMatchRes = await query(
+        `SELECT id, name, username, email FROM users WHERE UPPER(username) = ANY($1::text[]) OR UPPER(SPLIT_PART(email, '@', 1)) = ANY($1::text[])`,
+        [uniqueRolls]
+      );
+      userMatchRes.rows.forEach(u => {
+        if (u.username) userMap.set(u.username.toUpperCase(), { id: u.id, name: u.name });
+        if (u.email) {
+          const emailPrefix = u.email.split('@')[0].toUpperCase();
+          if (!userMap.has(emailPrefix)) userMap.set(emailPrefix, { id: u.id, name: u.name });
+        }
+      });
+    }
+
+    const batchQueues: { branch: string; year_batch: string; students: { roll_number: string; student_id?: string; student_name?: string }[] }[] = [];
+    let grandTotalStudents = 0;
+
+    for (const item of batchRollsMap) {
+      const studentList = item.filteredRolls.map(roll => {
+        const matchedUser = userMap.get(roll.toUpperCase());
         return {
           roll_number: roll,
           student_id: matchedUser?.id,
@@ -151,8 +216,8 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
       });
 
       batchQueues.push({
-        branch: b.branch || 'GENERAL',
-        year_batch: b.year_batch || b.year || 'III Year',
+        branch: item.branch,
+        year_batch: item.year_batch,
         students: studentList
       });
 
@@ -185,6 +250,24 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
     let totalAssigned = 0;
     const branchesList = batchQueues.map(b => b.branch);
 
+    // Initialize Double-Branch Alternating seating slots
+    let activeBatch1: number | null = null;
+    let activeBatch2: number | null = null;
+
+    for (let i = 0; i < batchQueues.length; i++) {
+      if (batchQueues[i] && batchQueues[i].students.length > 0) {
+        activeBatch1 = i;
+        break;
+      }
+    }
+
+    for (let i = 0; i < batchQueues.length; i++) {
+      if (i !== activeBatch1 && batchQueues[i] && batchQueues[i].students.length > 0) {
+        activeBatch2 = i;
+        break;
+      }
+    }
+
     for (const roomConfig of rooms) {
       const rows = parseInt(roomConfig.rows) || 8;
       const cols = parseInt(roomConfig.cols) || 6;
@@ -216,75 +299,76 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
         const seatKey = `${pos.r}-${pos.c}`;
         if (disabledSeats.has(seatKey)) continue;
 
-        // Find next student to assign
         let selectedStudent: any = null;
         let selectedBatchIdx = -1;
 
-        // Check left and top neighbors for 2D adjacency prevention (front/back & left/right)
+        // Check left and top neighbors for 2D adjacency prevention
         const leftKey = `${pos.r}-${pos.c - 1}`;
         const topKey = `${pos.r - 1}-${pos.c}`;
         const leftBranch = gridAllocatedBranches[leftKey];
         const topBranch = gridAllocatedBranches[topKey];
         const isAisleGap = aisleInterval > 0 && ((pos.c - 1) % aisleInterval === 0);
 
-        // Parity slot selection for checkerboard allocation ((r + c) % 2 parity)
-        const paritySlot = (pos.r + pos.c) % 2;
-
-        // 1. Try non-empty queues matching paritySlot that pass 2D adjacency
-        for (let i = 0; i < batchQueues.length; i++) {
-          if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
-            const b = batchQueues[i].branch;
-            if (preventAdjacency) {
-              if (leftBranch && !isAisleGap && b === leftBranch) continue;
-              if (topBranch && b === topBranch) continue;
+        const blockedBatches = new Set<number>();
+        if (preventAdjacency) {
+          batchQueues.forEach((q, idx) => {
+            if (leftBranch && !isAisleGap && q.branch === leftBranch) {
+              blockedBatches.add(idx);
             }
-            selectedBatchIdx = i;
-            break;
-          }
+            if (topBranch && q.branch === topBranch) {
+              blockedBatches.add(idx);
+            }
+          });
         }
 
-        // 2. Try any matching parity queue with students
-        if (selectedBatchIdx === -1) {
+        // Ensure activeBatch1 has students, or find next
+        if (activeBatch1 !== null && batchQueues[activeBatch1].students.length === 0) {
+          let nextBatch: number | null = null;
           for (let i = 0; i < batchQueues.length; i++) {
-            if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
-              selectedBatchIdx = i;
+            if (i !== activeBatch2 && batchQueues[i] && batchQueues[i].students.length > 0) {
+              nextBatch = i;
               break;
             }
           }
+          activeBatch1 = nextBatch;
         }
 
-        // 3. Dynamically advance to ANY next available branch queue with students passing 2D adjacency
-        if (selectedBatchIdx === -1) {
+        // Ensure activeBatch2 has students, or find next
+        if (activeBatch2 !== null && batchQueues[activeBatch2].students.length === 0) {
+          let nextBatch: number | null = null;
           for (let i = 0; i < batchQueues.length; i++) {
-            if (batchQueues[i].students.length > 0) {
-              const b = batchQueues[i].branch;
-              if (preventAdjacency) {
-                if (leftBranch && !isAisleGap && b === leftBranch) continue;
-                if (topBranch && b === topBranch) continue;
-              }
-              selectedBatchIdx = i;
+            if (i !== activeBatch1 && batchQueues[i] && batchQueues[i].students.length > 0) {
+              nextBatch = i;
               break;
             }
           }
+          activeBatch2 = nextBatch;
         }
 
-        // 4. Final fallback to any remaining non-empty queue
-        if (selectedBatchIdx === -1) {
-          for (let i = 0; i < batchQueues.length; i++) {
-            if (batchQueues[i].students.length > 0) {
-              selectedBatchIdx = i;
-              break;
-            }
+        let chosenBatch: number | null = null;
+        const preferredSlot = (pos.r + pos.c) % 2 === 0 ? 1 : 2;
+
+        if (preferredSlot === 1) {
+          if (activeBatch1 !== null && batchQueues[activeBatch1].students.length > 0 && !blockedBatches.has(activeBatch1)) {
+            chosenBatch = activeBatch1;
+          } else if (activeBatch2 !== null && batchQueues[activeBatch2].students.length > 0 && !blockedBatches.has(activeBatch2)) {
+            chosenBatch = activeBatch2;
+          }
+        } else {
+          if (activeBatch2 !== null && batchQueues[activeBatch2].students.length > 0 && !blockedBatches.has(activeBatch2)) {
+            chosenBatch = activeBatch2;
+          } else if (activeBatch1 !== null && batchQueues[activeBatch1].students.length > 0 && !blockedBatches.has(activeBatch1)) {
+            chosenBatch = activeBatch1;
           }
         }
 
-        if (selectedBatchIdx !== -1) {
-          const queue = batchQueues[selectedBatchIdx];
-          selectedStudent = queue.students.shift();
-          gridAllocatedBranches[seatKey] = queue.branch;
+        if (chosenBatch !== null) {
+          selectedBatchIdx = chosenBatch;
+          selectedStudent = batchQueues[chosenBatch].students.shift();
+          gridAllocatedBranches[seatKey] = batchQueues[chosenBatch].branch;
         }
 
-        if (!selectedStudent) continue; // Seat stays EMPTY if no queue satisfies conditions
+        if (!selectedStudent) continue; // Seat stays EMPTY if no batch can be placed without violating adjacency
 
         const seatNumber = `R${pos.r}-C${pos.c}`;
         const batchInfo = batchQueues[selectedBatchIdx];
@@ -323,8 +407,8 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
     const newExam = await executeTransaction(async (client) => {
       const examRes = await client.query(
         `INSERT INTO exams (
-          name, exam_code, date, time, session, academic_year, year_semester, branches, created_by_id, status, published, total_students, total_halls
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ALLOCATED', false, $10, $11)
+          name, exam_code, date, time, session, academic_year, year_semester, branches, batches_json, rooms_json, created_by_id, status, published, total_students, total_halls
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'ALLOCATED', false, $12, $13)
         RETURNING *`,
         [
           name,
@@ -335,6 +419,8 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
           academic_year || '2026',
           year_semester || 'III-I',
           JSON.stringify(branchesList),
+          JSON.stringify(batches || []),
+          JSON.stringify(rooms || []),
           req.user!.id,
           totalAssigned,
           allocationResults.length
@@ -364,12 +450,16 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
 
         const hallRecord = hallRes.rows[0];
 
-        for (const s of hall.seatings) {
-          await client.query(
-            `INSERT INTO exam_seatings (
-              exam_id, hall_id, hall_name, seat_number, grid_row, grid_col, student_id, roll_number, student_name, branch, year_batch, attendance_status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING')`,
-            [
+        if (hall.seatings.length > 0) {
+          const values: any[] = [];
+          const valueRows: string[] = [];
+          let paramIdx = 1;
+
+          for (const s of hall.seatings) {
+            valueRows.push(
+              `($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, 'PENDING')`
+            );
+            values.push(
               examRecord.id,
               hallRecord.id,
               hall.hall_name,
@@ -381,7 +471,14 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
               s.student_name,
               s.branch,
               s.year_batch
-            ]
+            );
+          }
+
+          await client.query(
+            `INSERT INTO exam_seatings (
+              exam_id, hall_id, hall_name, seat_number, grid_row, grid_col, student_id, roll_number, student_name, branch, year_batch, attendance_status
+            ) VALUES ${valueRows.join(', ')}`,
+            values
           );
         }
       }
@@ -400,6 +497,56 @@ export const createExamWithAllocation = async (req: AuthenticatedRequest, res: R
     return res.status(500).json({ success: false, message: 'Failed to create exam seating allocation', error: error.message });
   }
 };
+
+export function reconstructBatchesFromSeatings(seatings: any[]) {
+  if (!seatings || !seatings.length) return [];
+
+  const branchMap = new Map<string, { branch: string; year_batch: string; rolls: string[] }>();
+
+  seatings.forEach(s => {
+    const branchKey = (s.branch || 'GENERAL').trim().toUpperCase();
+    if (!branchMap.has(branchKey)) {
+      branchMap.set(branchKey, {
+        branch: branchKey,
+        year_batch: s.year_batch || 'III Year',
+        rolls: []
+      });
+    }
+    if (s.roll_number) {
+      branchMap.get(branchKey)!.rolls.push(s.roll_number.trim().toUpperCase());
+    }
+  });
+
+  const reconstructedBatches: any[] = [];
+
+  branchMap.forEach((data, branchKey) => {
+    if (data.rolls.length === 0) return;
+
+    data.rolls.sort((a, b) => {
+      const pA = parseRollNumber(a);
+      const pB = parseRollNumber(b);
+      if (pA.prefix !== pB.prefix) return pA.prefix.localeCompare(pB.prefix);
+      return pA.value - pB.value;
+    });
+
+    const startReg = data.rolls[0];
+    const endReg = data.rolls[data.rolls.length - 1];
+    const expectedRange = generateStudentRange(startReg, endReg);
+    const rollsSet = new Set(data.rolls);
+    const excludedList = expectedRange.filter(r => !rollsSet.has(r));
+
+    reconstructedBatches.push({
+      branch: branchKey,
+      subject: '',
+      year_batch: data.year_batch,
+      start_reg: startReg,
+      end_reg: endReg,
+      excluded_ids: excludedList.join(', ')
+    });
+  });
+
+  return reconstructedBatches;
+}
 
 /**
  * GET /api/exam-seating/exams/:id
@@ -423,10 +570,17 @@ export const getExamDetails = async (req: AuthenticatedRequest, res: Response) =
       query(`SELECT * FROM exam_malpractices WHERE exam_id = $1 ORDER BY logged_at DESC`, [id])
     ]);
 
+    let activeBatches = exam.batches_json;
+    if (!Array.isArray(activeBatches) || activeBatches.length === 0) {
+      activeBatches = reconstructBatchesFromSeatings(seatingsRes.rows);
+    }
+
     return res.json({
       success: true,
       data: {
         ...exam,
+        batches: activeBatches,
+        rooms: exam.rooms_json || [],
         halls: hallsRes.rows,
         seatings: seatingsRes.rows,
         invigilators: invigRes.rows,
@@ -514,22 +668,52 @@ export const deleteExam = async (req: AuthenticatedRequest, res: Response) => {
  */
 export const getMySeat = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
-    const username = (req.user?.username || '').toUpperCase();
+    const userId = req.user?.id || '';
+    const username = (req.user?.username || '').toUpperCase().trim();
+    const userRegNo = ((req.user as any)?.register_number || (req.user as any)?.reg_no || '').toUpperCase().trim();
+    const rollNoQuery = (req.query.roll || req.query.roll_number || req.query.rollNumber || '').toString().toUpperCase().trim();
 
-    const seatingRes = await query(
-      `SELECT s.*, e.name as exam_name, e.date as exam_date, e.time as exam_time, e.session as exam_session, e.academic_year, e.year_semester
-       FROM exam_seatings s
-       JOIN exams e ON s.exam_id = e.id
-       WHERE (s.student_id = $1 OR UPPER(s.roll_number) = $2)
-         AND e.published = true
-       ORDER BY e.date ASC`,
-      [userId, username]
+    const sql = `
+      SELECT s.*, 
+             e.name as exam_name, e.date as exam_date, e.time as exam_time, e.session as exam_session, e.academic_year, e.year_semester,
+             h.id as hall_id, h.hall_name, h.capacity as hall_capacity, h.rows_count as hall_rows, h.cols_count as hall_cols, h.disabled_seats_json
+      FROM exam_seatings s
+      JOIN exams e ON s.exam_id = e.id
+      LEFT JOIN exam_halls h ON (s.hall_id IS NOT NULL AND s.hall_id = h.id) OR (s.hall_name IS NOT NULL AND LOWER(s.hall_name) = LOWER(h.hall_name))
+      WHERE e.published = true
+        AND (
+          ($1 != '' AND UPPER(s.roll_number) = $1)
+          OR ($2 != '' AND UPPER(s.roll_number) = $2)
+          OR ($3 != '' AND s.student_id = $3)
+          OR ($4 != '' AND UPPER(s.roll_number) = $4)
+        )
+      ORDER BY e.date ASC`;
+
+    const seatingRes = await query(sql, [rollNoQuery, username, userId, userRegNo]);
+
+    // Attach full seating grid of each matched hall for visual seat location preview
+    const seatsWithHallGrid = await Promise.all(
+      seatingRes.rows.map(async (seat: any) => {
+        let hallSeatings: any[] = [];
+        if (seat.exam_id && (seat.hall_id || seat.hall_name)) {
+          const gridRes = await query(
+            `SELECT id, roll_number, student_name, branch, grid_row, grid_col, seat_number, hall_name
+             FROM exam_seatings
+             WHERE exam_id = $1 AND ((hall_id IS NOT NULL AND hall_id = $2) OR (LOWER(hall_name) = LOWER($3)))`,
+            [seat.exam_id, seat.hall_id, seat.hall_name]
+          );
+          hallSeatings = gridRes.rows;
+        }
+        return {
+          ...seat,
+          hall_seatings: hallSeatings
+        };
+      })
     );
 
     return res.json({
       success: true,
-      data: seatingRes.rows
+      data: seatsWithHallGrid
     });
   } catch (error: any) {
     logger.error('Error fetching student seating lookup:', error);
@@ -609,8 +793,8 @@ export const assignInvigilator = async (req: AuthenticatedRequest, res: Response
 
     const { examId, hallId, hallName, facultyId } = req.body;
 
-    if (!examId || !hallId || !facultyId) {
-      return res.status(400).json({ success: false, message: 'examId, hallId, and facultyId are required.' });
+    if (!examId || !facultyId) {
+      return res.status(400).json({ success: false, message: 'examId and facultyId are required.' });
     }
 
     const facRes = await query(`SELECT id, name, department FROM users WHERE id = $1`, [facultyId]);
@@ -620,22 +804,31 @@ export const assignInvigilator = async (req: AuthenticatedRequest, res: Response
 
     const fac = facRes.rows[0];
 
+    if (hallId) {
+      await query(`DELETE FROM exam_invigilators WHERE exam_id = $1 AND hall_id = $2`, [examId, hallId]);
+    } else if (hallName) {
+      await query(`DELETE FROM exam_invigilators WHERE exam_id = $1 AND hall_name = $2`, [examId, hallName]);
+    }
+
     const assignRes = await query(
       `INSERT INTO exam_invigilators (exam_id, hall_id, hall_name, faculty_id, faculty_name, department)
        VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (exam_id, hall_id, faculty_id) DO UPDATE SET assigned_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [examId, hallId, hallName || 'Exam Hall', fac.id, fac.name, fac.department || 'General']
+      [examId, hallId || null, hallName || 'Exam Hall', fac.id, fac.name, fac.department || 'General']
     );
 
     // Notify Faculty
-    await query(
-      `INSERT INTO notifications (recipient_id, title, message, type)
-       VALUES ($1, 'New Exam Invigilation Duty Assigned', $2, 'EXAM')`,
-      [fac.id, `You have been assigned as invigilator for hall ${hallName} for upcoming examination.`]
-    );
+    try {
+      await query(
+        `INSERT INTO notifications (recipient_id, title, message, type)
+         VALUES ($1, 'New Exam Invigilation Duty Assigned', $2, 'EXAM')`,
+        [fac.id, `You have been assigned as invigilator for hall ${hallName || 'Exam Hall'} for upcoming examination.`]
+      );
+    } catch (nErr) {
+      // Ignore notification failures
+    }
 
-    return res.json({ success: true, message: `Invigilator ${fac.name} assigned to ${hallName} successfully.`, data: assignRes.rows[0] });
+    return res.json({ success: true, message: `Invigilator ${fac.name} assigned to ${hallName || 'hall'} successfully.`, data: assignRes.rows[0] });
   } catch (error: any) {
     logger.error('Error assigning invigilator:', error);
     return res.status(500).json({ success: false, message: 'Failed to assign invigilator', error: error.message });
@@ -680,5 +873,203 @@ export const logMalpracticeIncident = async (req: AuthenticatedRequest, res: Res
   } catch (error: any) {
     logger.error('Error logging malpractice:', error);
     return res.status(500).json({ success: false, message: 'Failed to log malpractice incident', error: error.message });
+  }
+};
+
+/**
+ * GET /api/exam-seating/faculty-list
+ * Fetch list of all faculty members for invigilation duty selection
+ */
+export const getFacultyList = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    let result = await query(
+      `SELECT DISTINCT
+         u.id,
+         u.name,
+         u.email,
+         COALESCE(f.department, m.department, 'General') as department,
+         u.role,
+         u.special_role,
+         f.faculty_code
+       FROM users u
+       LEFT JOIN faculty f ON f.user_id = u.id
+       LEFT JOIN mentors m ON m.user_id = u.id
+       WHERE UPPER(u.role) IN ('FACULTY', 'MENTOR', 'ADMIN', 'SUPER_ADMIN', 'WARDEN')
+          OR u.is_faculty = true
+          OR f.id IS NOT NULL
+          OR m.id IS NOT NULL
+          OR (u.special_role IS NOT NULL AND u.special_role != '')
+       ORDER BY u.name ASC`
+    );
+
+    if (result.rows.length === 0) {
+      result = await query(
+        `SELECT u.id, u.name, u.email, u.role, u.special_role, COALESCE(f.department, m.department, 'General') as department
+         FROM users u
+         LEFT JOIN faculty f ON f.user_id = u.id
+         LEFT JOIN mentors m ON m.user_id = u.id
+         WHERE UPPER(u.role) NOT IN ('JUNIOR', 'SENIOR', 'STUDENT')
+         ORDER BY u.name ASC`
+      );
+    }
+
+    if (result.rows.length === 0) {
+      result = await query(
+        `SELECT id, name, email, role, special_role, 'General' as department
+         FROM users
+         ORDER BY name ASC`
+      );
+    }
+
+    return res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    logger.error('Error fetching faculty list:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch faculty list', error: error.message });
+  }
+};
+
+/**
+ * POST /api/exam-seating/invigilators/auto-assign
+ * Automatically assign available faculty members to exam halls
+ */
+export const autoAssignInvigilators = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!isControllerOrAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Access denied: Controller of Examinations permission required.' });
+    }
+
+    const { examId } = req.body;
+
+    let examsSql = `SELECT id, name FROM exams WHERE 1=1`;
+    const examsParams: any[] = [];
+    if (examId) {
+      examsSql += ` AND id = $1`;
+      examsParams.push(examId);
+    } else {
+      examsSql += ` AND published = true`;
+    }
+    const examsRes = await query(examsSql, examsParams);
+
+    if (examsRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'No published or active exams found for invigilator allocation.' });
+    }
+
+    let facultyRes = await query(
+      `SELECT DISTINCT
+         u.id,
+         u.name,
+         u.email,
+         COALESCE(f.department, m.department, 'General') as department
+       FROM users u
+       LEFT JOIN faculty f ON f.user_id = u.id
+       LEFT JOIN mentors m ON m.user_id = u.id
+       WHERE UPPER(u.role) IN ('FACULTY', 'MENTOR', 'ADMIN', 'SUPER_ADMIN', 'WARDEN')
+          OR u.is_faculty = true
+          OR f.id IS NOT NULL
+          OR m.id IS NOT NULL
+          OR (u.special_role IS NOT NULL AND u.special_role != '')
+       ORDER BY u.name ASC`
+    );
+
+    if (facultyRes.rows.length === 0) {
+      facultyRes = await query(
+        `SELECT u.id, u.name, u.email, COALESCE(f.department, m.department, 'General') as department
+         FROM users u
+         LEFT JOIN faculty f ON f.user_id = u.id
+         LEFT JOIN mentors m ON m.user_id = u.id
+         WHERE UPPER(u.role) NOT IN ('JUNIOR', 'SENIOR', 'STUDENT')
+         ORDER BY u.name ASC`
+      );
+    }
+
+    if (facultyRes.rows.length === 0) {
+      facultyRes = await query(`SELECT id, name, email, 'General' as department FROM users ORDER BY name ASC`);
+    }
+
+    if (facultyRes.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'No faculty members found in the system.' });
+    }
+
+    const facultyList = facultyRes.rows;
+    let facultyIdx = 0;
+    let totalAssignments = 0;
+
+    for (const exam of examsRes.rows) {
+      let hallsRes = await query(
+        `SELECT id as hall_id, hall_name
+         FROM exam_halls
+         WHERE exam_id = $1`,
+        [exam.id]
+      );
+
+      let halls = hallsRes.rows;
+      if (halls.length === 0) {
+        const seatHallsRes = await query(
+          `SELECT DISTINCT hall_id, hall_name
+           FROM exam_seatings
+           WHERE exam_id = $1 AND hall_id IS NOT NULL`,
+          [exam.id]
+        );
+        halls = seatHallsRes.rows;
+      }
+
+      for (const hall of halls) {
+        const fac = facultyList[facultyIdx % facultyList.length];
+        facultyIdx++;
+
+        if (hall.hall_id) {
+          await query(`DELETE FROM exam_invigilators WHERE exam_id = $1 AND hall_id = $2`, [exam.id, hall.hall_id]);
+        } else {
+          await query(`DELETE FROM exam_invigilators WHERE exam_id = $1 AND hall_name = $2`, [exam.id, hall.hall_name]);
+        }
+
+        await query(
+          `INSERT INTO exam_invigilators (exam_id, hall_id, hall_name, faculty_id, faculty_name, department)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [exam.id, hall.hall_id || null, hall.hall_name, fac.id, fac.name, fac.department || 'General']
+        );
+
+        try {
+          await query(
+            `INSERT INTO notifications (recipient_id, title, message, type)
+             VALUES ($1, 'New Exam Invigilation Duty Assigned', $2, 'EXAM')`,
+            [fac.id, `Automatically assigned invigilation duty for ${exam.name} at hall ${hall.hall_name}.`]
+          );
+        } catch (nErr) {
+          // ignore notification error
+        }
+
+        totalAssignments++;
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: `Successfully auto-assigned faculty invigilators across ${totalAssignments} hall assignments.`,
+      count: totalAssignments
+    });
+  } catch (error: any) {
+    logger.error('Error auto-assigning invigilators:', error);
+    return res.status(500).json({ success: false, message: 'Failed to auto-assign invigilators', error: error.message });
+  }
+};
+
+/**
+ * DELETE /api/exam-seating/invigilators/:id
+ * Remove/Unassign an invigilator duty
+ */
+export const removeInvigilator = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!isControllerOrAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Access denied: Controller permission required.' });
+    }
+
+    const { id } = req.params;
+    await query(`DELETE FROM exam_invigilators WHERE id = $1`, [id]);
+
+    return res.json({ success: true, message: 'Invigilation duty assignment removed.' });
+  } catch (error: any) {
+    logger.error('Error removing invigilator assignment:', error);
+    return res.status(500).json({ success: false, message: 'Failed to remove invigilator assignment', error: error.message });
   }
 };

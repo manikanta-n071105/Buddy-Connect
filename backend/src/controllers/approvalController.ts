@@ -184,8 +184,8 @@ export const principalAction = async (req: AuthenticatedRequest, res: Response) 
     const { action, comments } = req.body; // action: 'APPROVE' | 'REQUEST_CHANGES' | 'REJECT'
     const userId = req.user?.id;
     const userName = req.user?.name || 'Principal';
-    const userRole = req.user?.role;
-    const specialRole = (req.user?.specialRole || '').toUpperCase();
+    const userRole = (req.user?.role || '').toUpperCase();
+    const specialRole = (req.user?.specialRole || req.user?.special_role || '').toUpperCase();
 
     // Verify Principal / Super Admin authorization
     if (userRole !== 'SUPER_ADMIN' && !specialRole.includes('PRINCIPAL')) {
@@ -295,7 +295,10 @@ export const resubmitApproval = async (req: AuthenticatedRequest, res: Response)
 
     await query(
       `UPDATE approval_requests
-       SET title = $1, category = $2, description = $3, amount = $4, status = 'PENDING_PRINCIPAL_APPROVAL', updated_at = CURRENT_TIMESTAMP
+       SET title = $1, category = $2, description = $3, amount = $4, status = 'PENDING_PRINCIPAL_APPROVAL',
+           hr_status = NULL, director_status = NULL, accounts_status = NULL,
+           hr_comments = NULL, director_comments = NULL, accounts_comments = NULL,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $5`,
       [updatedTitle, updatedCategory, updatedDesc, updatedAmount, id]
     );
@@ -335,6 +338,20 @@ export const departmentAction = async (req: AuthenticatedRequest, res: Response)
 
     if (!['HR', 'DIRECTOR', 'ACCOUNTS'].includes(departmentRole)) {
       return res.status(400).json({ success: false, message: 'Invalid department role. Must be HR, DIRECTOR, or ACCOUNTS.' });
+    }
+
+    const userRoleUpper = (req.user?.role || '').toUpperCase();
+    const specialRole = (req.user?.specialRole || req.user?.special_role || '').toUpperCase();
+
+    const isAllowed =
+      userRoleUpper === 'SUPER_ADMIN' ||
+      userRoleUpper === 'ADMIN' ||
+      userRoleUpper === departmentRole ||
+      specialRole.includes(departmentRole) ||
+      (departmentRole === 'DIRECTOR' && (userRoleUpper === 'MENTOR' || specialRole.includes('MENTOR')));
+
+    if (!isAllowed) {
+      return res.status(403).json({ success: false, message: `Access denied: You do not have permission to sign off for ${departmentRole}.` });
     }
 
     if (!comments || !comments.trim()) {
@@ -430,3 +447,55 @@ export const addComment = async (req: AuthenticatedRequest, res: Response) => {
     return res.status(500).json({ success: false, message: 'Failed to add comment', error: error.message });
   }
 };
+
+/**
+ * POST /api/approvals/:id/report
+ * Submit Post-Event Outcome & Completion Report with photos
+ */
+export const saveCompletionReport = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reportSummary, reportOutcomes, reportParticipantsCount, reportEventDate, reportActualExpenditure, reportPhotos } = req.body;
+    const userId = req.user?.id;
+    const userName = req.user?.name || 'HOD / Submitter';
+
+    const checkReq = await query(`SELECT * FROM approval_requests WHERE id = $1`, [id]);
+    if (checkReq.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Approval request not found' });
+    }
+
+    const currentReq = checkReq.rows[0];
+    if (currentReq.submitted_by_id !== userId && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ success: false, message: 'Only the original submitter or Super Admin can submit the completion report.' });
+    }
+
+    const photosJson = JSON.stringify(reportPhotos || []);
+
+    await query(
+      `UPDATE approval_requests
+       SET report_summary = $1,
+           report_outcomes = $2,
+           report_participants_count = $3,
+           report_event_date = $4,
+           report_actual_expenditure = $5,
+           report_photos = $6::jsonb,
+           report_submitted_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7`,
+      [reportSummary, reportOutcomes, reportParticipantsCount, reportEventDate, reportActualExpenditure || 0, photosJson, id]
+    );
+
+    // Record audit log comment
+    await query(
+      `INSERT INTO approval_request_comments (request_id, author_id, author_name, author_role, comment, stage)
+       VALUES ($1, $2, $3, 'HOD', $4, 'EVENT_REPORT_SUBMITTED')`,
+      [id, userId, userName, `[Post-Event Report Submitted] HOD submitted the formal event completion report with ${(reportPhotos || []).length} photo(s).`]
+    );
+
+    return res.json({ success: true, message: 'Post-event completion report with photos saved successfully.' });
+  } catch (error: any) {
+    logger.error('Error saving event completion report:', error);
+    return res.status(500).json({ success: false, message: 'Failed to save completion report', error: error.message });
+  }
+};
+

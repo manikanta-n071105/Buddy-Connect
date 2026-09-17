@@ -373,6 +373,8 @@ export const initExamSeatingTables = async () => {
         academic_year VARCHAR(50),
         year_semester VARCHAR(50),
         branches JSONB DEFAULT '[]'::jsonb,
+        batches_json JSONB DEFAULT '[]'::jsonb,
+        rooms_json JSONB DEFAULT '[]'::jsonb,
         created_by_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
         status VARCHAR(30) DEFAULT 'SCHEDULED',
         published BOOLEAN DEFAULT false,
@@ -381,6 +383,9 @@ export const initExamSeatingTables = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      ALTER TABLE exams ADD COLUMN IF NOT EXISTS batches_json JSONB DEFAULT '[]'::jsonb;
+      ALTER TABLE exams ADD COLUMN IF NOT EXISTS rooms_json JSONB DEFAULT '[]'::jsonb;
 
       CREATE TABLE IF NOT EXISTS exam_halls (
         id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,

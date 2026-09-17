@@ -7,7 +7,8 @@ import {
   principalAction,
   resubmitApproval,
   departmentAction,
-  addComment
+  addComment,
+  saveCompletionReport
 } from '../controllers/approvalController';
 
 const router = Router();
@@ -34,5 +35,8 @@ router.post('/:id/department-action', departmentAction);
 
 // Add general comment to discussion thread
 router.post('/:id/comments', addComment);
+
+// Save Post-Event Outcome & Completion Report with photos (HOD)
+router.post('/:id/report', saveCompletionReport);
 
 export default router;

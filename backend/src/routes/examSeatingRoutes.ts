@@ -10,6 +10,9 @@ import {
   getInvigilationDuties,
   markHallAttendance,
   assignInvigilator,
+  autoAssignInvigilators,
+  removeInvigilator,
+  getFacultyList,
   logMalpracticeIncident
 } from '../controllers/examSeatingController';
 
@@ -20,10 +23,13 @@ router.use(authenticate);
 // Student Lookup Endpoint
 router.get('/my-seat', getMySeat);
 
-// Invigilation Duty Endpoints
+// Invigilation Duty & Faculty Management Endpoints
 router.get('/invigilation', getInvigilationDuties);
 router.post('/invigilation/attendance', markHallAttendance);
+router.get('/faculty-list', getFacultyList);
 router.post('/invigilators/assign', assignInvigilator);
+router.post('/invigilators/auto-assign', autoAssignInvigilators);
+router.delete('/invigilators/:id', removeInvigilator);
 router.post('/malpractice', logMalpracticeIncident);
 
 // Exam Seating Engine Endpoints (Controller of Examinations / Admin)

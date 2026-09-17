@@ -22,7 +22,13 @@ import {
   Edit3,
   Sparkles,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Image,
+  Camera,
+  Trash2,
+  Upload,
+  Award,
+  FileDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +46,21 @@ export const ApprovalWorkflowPage: React.FC = () => {
   const [showDeptModal, setShowDeptModal] = useState(false);
   const [showResubmitModal, setShowResubmitModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+
+  // Post-Event Completion Report Modals & Form State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showPrintReportModal, setShowPrintReportModal] = useState(false);
+
+  const [reportEventDate, setReportEventDate] = useState('');
+  const [reportParticipantsCount, setReportParticipantsCount] = useState('');
+  const [reportActualExpenditure, setReportActualExpenditure] = useState('');
+  const [reportSummary, setReportSummary] = useState('');
+  const [reportOutcomes, setReportOutcomes] = useState('');
+  const [reportPhotos, setReportPhotos] = useState<{ url: string; caption: string }[]>([]);
+
+  // Temp photo input state
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
+  const [photoCaptionInput, setPhotoCaptionInput] = useState('');
 
   // Form States for 14-Point SSE Financial Assistance Application (Blank initial state, sample data shown in placeholders)
   const [newTitle, setNewTitle] = useState('');
@@ -94,6 +115,574 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
   // Discussion Comment State
   const [newDiscussionComment, setNewDiscussionComment] = useState('');
+
+  // Photo Attachment Handlers
+  const handlePhotoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Url = event.target?.result as string;
+        if (base64Url) {
+          setReportPhotos((prev) => [
+            ...prev,
+            { url: base64Url, caption: photoCaptionInput.trim() || file.name.replace(/\.[^/.]+$/, '') }
+          ]);
+          setPhotoCaptionInput('');
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAddPhotoFromUrl = () => {
+    if (!photoUrlInput.trim()) {
+      toast.error('Please enter image URL or select a photo file');
+      return;
+    }
+    setReportPhotos((prev) => [
+      ...prev,
+      { url: photoUrlInput.trim(), caption: photoCaptionInput.trim() || 'Event Photo' }
+    ]);
+    setPhotoUrlInput('');
+    setPhotoCaptionInput('');
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setReportPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAutoFillSampleReport = () => {
+    setReportEventDate('22 March 2024');
+    setReportParticipantsCount('145 First-Year Students & 12 Faculty Members');
+    setReportActualExpenditure('6000');
+    setReportSummary(
+      'The One-Day Guest Lecture on "Physics & Engineering Applications" was conducted successfully at SSE Main Auditorium. Chief Guest Dr. Padmasuvarna delivered an insightful keynote on quantum mechanics, semiconductor physics, and modern engineering applications.'
+    );
+    setReportOutcomes(
+      '1. Students gained deep clarity on physics concepts applied in semiconductor manufacturing.\n2. Interactive Q&A session addressed career prospects in R&D and higher studies.\n3. Outstanding student feedback rating of 4.8/5.0.'
+    );
+    setReportPhotos([
+      {
+        url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop',
+        caption: 'Chief Guest Dr. Padmasuvarna inaugurating the Guest Program'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=800&auto=format&fit=crop',
+        caption: 'HOD presenting memento & felicitation to Resource Person'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop',
+        caption: 'Interactive Q&A Session with First Year Students'
+      },
+      {
+        url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop',
+        caption: 'Group photo of Faculty Organizers with Dr. Padmasuvarna'
+      }
+    ]);
+  };
+
+  const openReportModal = (reqItem: any) => {
+    setReportEventDate(reqItem.report_event_date || '22 March 2024');
+    setReportParticipantsCount(reqItem.report_participants_count || '145 Students & 12 Faculty');
+    setReportActualExpenditure(
+      reqItem.report_actual_expenditure !== undefined && reqItem.report_actual_expenditure !== null
+        ? reqItem.report_actual_expenditure.toString()
+        : reqItem.amount ? reqItem.amount.toString() : '6000'
+    );
+    setReportSummary(reqItem.report_summary || '');
+    setReportOutcomes(reqItem.report_outcomes || '');
+
+    let photos = [];
+    if (reqItem.report_photos) {
+      try {
+        photos = typeof reqItem.report_photos === 'string' ? JSON.parse(reqItem.report_photos) : reqItem.report_photos;
+      } catch (e) {
+        photos = [];
+      }
+    }
+    setReportPhotos(photos || []);
+    setShowReportModal(true);
+  };
+
+  const handleSaveReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRequest) return;
+    if (!reportSummary.trim()) {
+      toast.error('Please enter executive summary of the program');
+      return;
+    }
+    try {
+      await api.post(`/approvals/${selectedRequest.id}/report`, {
+        reportSummary,
+        reportOutcomes,
+        reportParticipantsCount,
+        reportEventDate,
+        reportActualExpenditure: parseFloat(reportActualExpenditure) || selectedRequest.amount,
+        reportPhotos
+      });
+      toast.success('Post-Event Outcome & Completion Report saved with photos!');
+      setShowReportModal(false);
+      fetchRequests();
+      if (selectedRequest) {
+        fetchRequestDetails(selectedRequest.id);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save completion report');
+    }
+  };
+
+  const fetchAsBase64 = async (url: string): Promise<string> => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string) || url);
+        reader.onerror = () => resolve(url);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      return url;
+    }
+  };
+
+  const parseOutcomePoints = (text: string): string[] => {
+    if (!text || !text.trim()) return [];
+    let raw = text.trim();
+    let lines = raw.split(/\r?\n+/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 1 && /\d+\.\s+/.test(lines[0])) {
+      lines = lines[0].split(/(?=\d+\.\s+)/).map((l) => l.trim()).filter(Boolean);
+    }
+    return lines.map((line) => line.replace(/^(\d+[\.\)]|[-*•])\s*/, '').trim()).filter(Boolean);
+  };
+
+  const exportReportToWord = async (req: any) => {
+    if (!req) return;
+    toast.info('Preparing Word document export...');
+
+    // Convert uploaded college header logo to Base64 so Word displays it offline & reliably
+    const logoBase64 = await fetchAsBase64('/assets/sse-header-logo.png');
+
+    let photos = [];
+    try {
+      photos = typeof req.report_photos === 'string' ? JSON.parse(req.report_photos) : req.report_photos;
+    } catch (e) {
+      photos = [];
+    }
+
+    // Convert photo URLs to Base64 if needed for offline Word rendering
+    const processedPhotos = await Promise.all(
+      (photos || []).map(async (p: any) => {
+        let b64 = p.url;
+        if (p.url && !p.url.startsWith('data:')) {
+          b64 = await fetchAsBase64(p.url);
+        }
+        return {
+          ...p,
+          url: b64
+        };
+      })
+    );
+
+    let photosHTML = '';
+    if (processedPhotos && processedPhotos.length > 0) {
+      photosHTML = `
+        <h3 style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #0f172a; border-bottom: 2pt solid #0f172a; padding-bottom: 3pt; margin-top: 16pt; margin-bottom: 8pt; page-break-after: avoid;">
+          EVENT PHOTOGRAPHS & VISUAL EVIDENCE
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 6pt; page-break-inside: avoid;" class="no-border">
+          <tr>
+            ${processedPhotos
+              .map(
+                (p: any, idx: number) => `
+              <td style="width: 50%; padding: 4pt; vertical-align: top; border: none; page-break-inside: avoid;" align="center">
+                <div style="border: 1.5pt solid #0f172a; background-color: #ffffff; padding: 6pt; text-align: center; border-radius: 4pt; width: 230px; margin: 0 auto;">
+                  <table style="width: 100%; border: none;" class="no-border">
+                    <tr style="border: none;">
+                      <td style="border: none; text-align: center; vertical-align: middle; height: 140px; background-color: #f8fafc; padding: 2px;" align="center">
+                        <img src="${p.url}" width="220" height="135" alt="${p.caption || 'Event Photo'}" style="width: 220px; height: 135px; border: 1pt solid #cbd5e1; display: block; margin: 0 auto;" />
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="font-family: Arial, sans-serif; font-size: 8.5pt; font-weight: bold; font-style: italic; color: #1e293b; background-color: #f1f5f9; padding: 4pt; margin-top: 5pt; margin-bottom: 0; border: 1pt solid #cbd5e1; border-radius: 3pt; text-align: center;">
+                    ${p.caption || `Photo ${idx + 1}`}
+                  </p>
+                </div>
+              </td>
+              ${(idx + 1) % 2 === 0 && idx < processedPhotos.length - 1 ? '</tr><tr style="page-break-inside: avoid;">' : ''}
+            `
+              )
+              .join('')}
+          </tr>
+        </table>
+      `;
+    }
+
+    const outcomeList = parseOutcomePoints(req.report_outcomes);
+
+    const wordHtml = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${req.title || 'Event Completion Report'}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          @page Section1 {
+            size: 210mm 297mm;
+            margin: 15mm 15mm 15mm 15mm;
+            mso-header-margin: 10mm;
+            mso-footer-margin: 10mm;
+          }
+          div.Section1 { page: Section1; }
+          body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; color: #0f172a; line-height: 1.4; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10pt; }
+          th, td { border: 1pt solid #64748b; padding: 6pt 8pt; font-size: 10pt; vertical-align: top; }
+          tr { page-break-inside: avoid; }
+          .no-border, .no-border td { border: none !important; }
+          .banner { background-color: #f1f5f9; text-align: center; font-weight: bold; font-size: 12pt; padding: 8pt; border: 1pt solid #475569; margin-top: 12pt; margin-bottom: 12pt; text-transform: uppercase; }
+          .section-heading { font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #0f172a; border-bottom: 2pt solid #0f172a; padding-bottom: 3pt; margin-top: 16pt; margin-bottom: 6pt; page-break-after: avoid; }
+          .text-box { background-color: #f8fafc; border: 1pt solid #cbd5e1; padding: 8pt 10pt; font-size: 10pt; line-height: 1.5; margin-top: 4pt; }
+        </style>
+      </head>
+      <body>
+        <div class="Section1">
+          <div style="text-align: center; margin-bottom: 10pt; border-bottom: 2pt solid #0f172a; padding-bottom: 8pt;">
+            <img src="${logoBase64}" width="480" alt="Sanskrithi School of Engineering Logo" style="max-width: 100%; width: 480px; height: auto; display: block; margin: 0 auto;" />
+            <div style="font-size: 9.5pt; font-weight: bold; color: #334155; margin-top: 6pt; text-align: center;">
+              Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134
+            </div>
+            <div style="font-size: 8.5pt; color: #64748b; font-style: italic; margin-top: 2pt; text-align: center;">
+              Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org
+            </div>
+          </div>
+
+          <div class="banner">POST-EVENT OUTCOME & COMPLETION REPORT</div>
+
+          <table>
+            <tr>
+              <td style="width: 32%; font-weight: bold; background-color: #f1f5f9;">Program / Event Title:</td>
+              <td style="width: 68%; font-weight: bold; color: #0f172a;">${req.title}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">Organizing Department & Secretary:</td>
+              <td>${req.submitted_by_name} (${req.department} Dept)</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f1f5f9;">Event Execution Date:</td>
+              <td>${req.report_event_date || '22 March 2024'}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">Total Participants / Beneficiaries:</td>
+              <td>${req.report_participants_count || '145 Students & 12 Faculty'}</td>
+            </tr>
+          </table>
+
+          <div class="section-heading">Executive Summary & Highlights of the Program</div>
+          <div class="text-box">
+            ${req.report_summary || 'The program was executed successfully as per approved requisition schedule.'}
+          </div>
+
+          ${
+            outcomeList.length > 0
+              ? `
+            <div class="section-heading">Key Outcomes & Learning Impact</div>
+            <div class="text-box">
+              <ol style="margin: 0; padding-left: 18pt; font-size: 10pt; line-height: 1.6; color: #0f172a;">
+                ${outcomeList.map((pt) => `<li style="margin-bottom: 4pt; font-weight: 500;">${pt}</li>`).join('')}
+              </ol>
+            </div>
+          `
+              : ''
+          }
+
+          ${photosHTML}
+
+          <table style="width: 100%; border: none; margin-top: 35pt; page-break-inside: avoid;" class="no-border">
+            <tr style="border: none; text-align: center; font-weight: bold;">
+              <td style="border: none; width: 25%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Signed digitally</div>
+                Organizing Secretary
+              </td>
+              <td style="border: none; width: 25%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Verified & Signed</div>
+                Head of Dept (HOD)
+              </td>
+              <td style="border: none; width: 25%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Approved</div>
+                Principal
+              </td>
+              <td style="border: none; width: 25%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Approved</div>
+                Chairman
+              </td>
+            </tr>
+          </table>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${req.request_number || 'Report'}_Event_Outcome_Report.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Word document (.doc) exported with clean layout!');
+  };
+
+  const exportApplicationToWord = async (req: any) => {
+    if (!req) return;
+    toast.info('Preparing Word document export...');
+    const logoBase64 = await fetchAsBase64('/assets/sse-header-logo.png');
+
+    const wordHtml = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${req.title || 'Requisition Application'}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          @page Section1 {
+            size: 210mm 297mm;
+            margin: 15mm 15mm 15mm 15mm;
+            mso-header-margin: 10mm;
+            mso-footer-margin: 10mm;
+          }
+          div.Section1 { page: Section1; }
+          body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; color: #0f172a; line-height: 1.4; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10pt; }
+          th, td { border: 1pt solid #64748b; padding: 6pt 8pt; font-size: 10pt; vertical-align: top; }
+          tr { page-break-inside: avoid; }
+          .no-border, .no-border td { border: none !important; }
+          .banner { background-color: #f1f5f9; text-align: center; font-weight: bold; font-size: 12pt; padding: 8pt; border: 1pt solid #475569; margin-top: 12pt; margin-bottom: 12pt; text-transform: uppercase; text-decoration: underline; }
+        </style>
+      </head>
+      <body>
+        <div class="Section1">
+          <div style="text-align: center; margin-bottom: 10pt; border-bottom: 2pt solid #0f172a; padding-bottom: 8pt;">
+            <img src="${logoBase64}" width="480" alt="Sanskrithi School of Engineering Logo" style="max-width: 100%; width: 480px; height: auto; display: block; margin: 0 auto;" />
+            <div style="font-size: 9.5pt; font-weight: bold; color: #334155; margin-top: 6pt; text-align: center;">
+              Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134
+            </div>
+            <div style="font-size: 8.5pt; color: #64748b; font-style: italic; margin-top: 2pt; text-align: center;">
+              Affiliated to JNTUA & Approved by AICTE | www.sseptp.org
+            </div>
+          </div>
+
+          <div class="banner">${req.title || 'APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING GUEST PROGRAM'}</div>
+
+          <table>
+            <tr>
+              <td style="width: 40%; font-weight: bold; background-color: #f1f5f9;">1. Name & address of Organizing Secretary:</td>
+              <td style="width: 60%; font-weight: bold;">${req.submitted_by_name} (${req.department})</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">2. Department under auspices of lecture:</td>
+              <td>${req.department}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f1f5f9;">3. Theme(s) of the FDP/Program:</td>
+              <td>${req.category}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">4. Target Group:</td>
+              <td>HAS Faculties, all First Year Students</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f1f5f9;">5. Resource Person & Affiliation:</td>
+              <td>Dr. Padmasuvarna, Professor, Dept of Physics, JNTU Anantapur</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">6. Level of Expert Lecture:</td>
+              <td>State / Regional Level</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f1f5f9;">7. Duration of Programme:</td>
+              <td>Half Day</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">8. Estimated Expenditure Breakdown:</td>
+              <td style="font-family: monospace;">Honorarium: Rs. 5000 | Misc: Rs. 1000 | <strong>Total: Rs. ${req.amount || 6000}</strong></td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f1f5f9;">9. Description & Purpose:</td>
+              <td style="white-space: pre-wrap;">${req.description}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold; background-color: #f8fafc;">10. Principal Review Status:</td>
+              <td style="font-weight: bold;">${req.status} ${req.principal_comments ? `(${req.principal_comments})` : ''}</td>
+            </tr>
+          </table>
+
+          <table style="width: 100%; border: none; margin-top: 35pt; page-break-inside: avoid;" class="no-border">
+            <tr style="border: none; text-align: center; font-weight: bold;">
+              <td style="border: none; width: 33%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Signed digitally</div>
+                Organizing Secretary
+              </td>
+              <td style="border: none; width: 33%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">
+                  ${req.principal_action_at ? `Approved on ${new Date(req.principal_action_at).toLocaleDateString()}` : 'Pending Signature'}
+                </div>
+                Principal Signature
+              </td>
+              <td style="border: none; width: 33%;">
+                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">
+                  ${req.status === 'FULLY_APPROVED' ? 'Verified & Signed' : 'Pending Clearance'}
+                </div>
+                Chairman Signature
+              </td>
+            </tr>
+          </table>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${req.request_number || 'Requisition'}_Application_Form.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Requisition Application exported to Word (.doc) successfully!');
+  };
+
+  const handlePrintReport = (req: any) => {
+    const printElement = document.getElementById('printable-report-body');
+    if (!printElement) {
+      toast.error('Printable report content not found');
+      return;
+    }
+
+    const printWin = window.open('', '_blank', 'width=950,height=1100');
+    if (!printWin) {
+      toast.error('Pop-up blocker prevented opening print window. Please allow pop-ups.');
+      return;
+    }
+
+    printWin.document.open();
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${req?.title || 'Post-Event Outcome Report'}</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
+            }
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              margin: 0;
+              padding: 15px;
+              color: #0f172a;
+              background: #ffffff;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div style="width: 100%; max-width: 100%;">
+            ${printElement.outerHTML}
+          </div>
+          <script>
+            setTimeout(() => {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            }, 600);
+          </script>
+        </body>
+      </html>
+    `);
+    printWin.document.close();
+  };
+
+  const handlePrintApplication = (req: any) => {
+    const printElement = document.getElementById('printable-application-body');
+    if (!printElement) {
+      toast.error('Printable application content not found');
+      return;
+    }
+
+    const printWin = window.open('', '_blank', 'width=950,height=1100');
+    if (!printWin) {
+      toast.error('Pop-up blocker prevented opening print window. Please allow pop-ups.');
+      return;
+    }
+
+    printWin.document.open();
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${req?.title || 'Financial Assistance Application'}</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
+            }
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              margin: 0;
+              padding: 15px;
+              color: #0f172a;
+              background: #ffffff;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div style="width: 100%; max-width: 100%;">
+            ${printElement.outerHTML}
+          </div>
+          <script>
+            setTimeout(() => {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            }, 600);
+          </script>
+        </body>
+      </html>
+    `);
+    printWin.document.close();
+  };
 
   const specialRole = (user?.special_role || user?.specialRole || '').toUpperCase();
   const userRole = (user?.role || '').toUpperCase();
@@ -328,6 +917,52 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Global CSS for Browser Print to PDF */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          
+          #printable-application-body,
+          #printable-application-body *,
+          #printable-report-body,
+          #printable-report-body * {
+            visibility: visible !important;
+          }
+
+          #printable-application-body,
+          #printable-report-body {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 8mm !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+            color: black !important;
+            overflow: visible !important;
+          }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          .print\\:hidden {
+            display: none !important;
+          }
+
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+        }
+      `}</style>
+
       {/* Top Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 p-6 sm:p-8 text-white shadow-2xl border border-slate-800">
         <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -534,6 +1169,50 @@ export const ApprovalWorkflowPage: React.FC = () => {
                 <div>{getStatusBadge(selectedRequest.status)}</div>
               </div>
 
+              {/* Rejection / Feedback Remarks Alert Banner */}
+              {(selectedRequest.status === 'REJECTED' || selectedRequest.status === 'CHANGES_REQUESTED' || selectedRequest.principal_comments) && (
+                <div className={`p-4 rounded-2xl border flex flex-col gap-2.5 ${
+                  selectedRequest.status === 'REJECTED'
+                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-900'
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-900'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-sm">
+                      <AlertCircle className={`w-5 h-5 ${selectedRequest.status === 'REJECTED' ? 'text-rose-600' : 'text-amber-600'}`} />
+                      <span>{selectedRequest.status === 'REJECTED' ? 'Requisition Rejected - Remarks' : 'Revisions Requested - Remarks'}</span>
+                    </div>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/80 border border-current shadow-sm">
+                      {selectedRequest.status}
+                    </span>
+                  </div>
+                  <div className="bg-white/90 p-3 rounded-xl border border-slate-200/80 shadow-sm space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Reviewer Remarks / Instructions:</span>
+                    <p className="text-xs font-medium text-slate-800 leading-relaxed italic">
+                      "{selectedRequest.principal_comments || 'No detailed comments provided.'}"
+                    </p>
+                  </div>
+                  {selectedRequest.submitted_by_id === user?.id && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+                      <p className="text-xs font-semibold text-slate-700">
+                        💡 Please address the remarks above, adjust your requisition details, and click <strong>"Revise & Resubmit Application"</strong>.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setNewTitle(selectedRequest.title);
+                          setNewCategory(selectedRequest.category);
+                          setNewDesc(selectedRequest.description);
+                          setNewAmount(selectedRequest.amount);
+                          setShowResubmitModal(true);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-amber-400" /> Revise & Resubmit Application
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Amount & Description */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-500">
@@ -564,7 +1243,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
                 )}
 
                 {/* HOD Resubmit Button */}
-                {selectedRequest.submitted_by_id === user?.id && selectedRequest.status === 'CHANGES_REQUESTED' && (
+                {selectedRequest.submitted_by_id === user?.id && (selectedRequest.status === 'CHANGES_REQUESTED' || selectedRequest.status === 'REJECTED') && (
                   <button
                     onClick={() => {
                       setNewTitle(selectedRequest.title);
@@ -575,7 +1254,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition-all shadow-md"
                   >
-                    <Edit3 className="w-4 h-4" /> Revise & Resubmit to Principal
+                    <Edit3 className="w-4 h-4" /> Revise & Resubmit Application
                   </button>
                 )}
 
@@ -594,6 +1273,36 @@ export const ApprovalWorkflowPage: React.FC = () => {
                   </button>
                 )}
 
+                {/* Submit / Edit Post-Event Outcome Report Button */}
+                {(selectedRequest.submitted_by_id === user?.id || isSuperAdmin) && (
+                  <button
+                    onClick={() => openReportModal(selectedRequest)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-xs transition-all shadow-md"
+                  >
+                    <Camera className="w-4 h-4" /> {selectedRequest.report_summary ? 'Edit Post-Event Report & Photos' : 'Submit Event Outcome Report & Photos'}
+                  </button>
+                )}
+
+                {/* Print Post-Event Outcome Report (with Photos) */}
+                {(selectedRequest.report_summary || selectedRequest.report_submitted_at) && (
+                  <button
+                    onClick={() => setShowPrintReportModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs transition-all border border-teal-500 shadow-md"
+                  >
+                    <Printer className="w-4 h-4 text-teal-300" /> Print Outcome Report (with Photos)
+                  </button>
+                )}
+
+                {/* Export Outcome Report to Word (.doc) */}
+                {(selectedRequest.report_summary || selectedRequest.report_submitted_at) && (
+                  <button
+                    onClick={() => exportReportToWord(selectedRequest)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs transition-all border border-blue-500 shadow-md"
+                  >
+                    <FileDown className="w-4 h-4 text-blue-200" /> Export Outcome Report (Word .doc)
+                  </button>
+                )}
+
                 {/* Print Official Format */}
                 <button
                   onClick={() => setShowPrintModal(true)}
@@ -601,7 +1310,74 @@ export const ApprovalWorkflowPage: React.FC = () => {
                 >
                   <Printer className="w-4 h-4" /> Print Formal Application
                 </button>
+
+                {/* Export Application to Word (.doc) */}
+                <button
+                  onClick={() => exportApplicationToWord(selectedRequest)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition-all border border-slate-600 shadow-md"
+                >
+                  <FileDown className="w-4 h-4 text-amber-400" /> Export Application (Word .doc)
+                </button>
               </div>
+
+              {/* Post-Event Outcome Report Card (if submitted) */}
+              {selectedRequest.report_summary && (
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-extrabold text-emerald-900 uppercase tracking-wider flex items-center gap-2">
+                      <Award className="w-4 h-4 text-emerald-600" /> Post-Event Outcome & Completion Report
+                    </h5>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                      Submitted on {selectedRequest.report_submitted_at ? new Date(selectedRequest.report_submitted_at).toLocaleDateString() : 'Recorded'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-700 font-semibold bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                    <div>
+                      <span className="text-slate-500 font-normal">Event Date:</span> {selectedRequest.report_event_date || 'N/A'}
+                    </div>
+                    <div>
+                      <span className="text-slate-500 font-normal">Attendance:</span> {selectedRequest.report_participants_count || 'N/A'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-700 block mb-0.5">Executive Summary & Highlights:</span>
+                    <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">{selectedRequest.report_summary}</p>
+                  </div>
+
+                  {selectedRequest.report_outcomes && (
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-700 block mb-0.5">Key Learning Outcomes:</span>
+                      <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">{selectedRequest.report_outcomes}</p>
+                    </div>
+                  )}
+
+                  {/* Photos Grid Preview */}
+                  {(() => {
+                    let photos: any[] = [];
+                    try {
+                      photos = typeof selectedRequest.report_photos === 'string' ? JSON.parse(selectedRequest.report_photos) : selectedRequest.report_photos;
+                    } catch (e) {
+                      photos = [];
+                    }
+                    if (!photos || photos.length === 0) return null;
+                    return (
+                      <div className="pt-2 space-y-1.5 border-t border-emerald-200/60">
+                        <span className="text-[11px] font-bold text-slate-700 block">Event Photographs ({photos.length}):</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {photos.map((p, idx) => (
+                            <div key={idx} className="group relative rounded-xl border-2 border-slate-800 bg-white p-1 shadow-sm text-center">
+                              <img src={p.url} alt={p.caption} className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                              <p className="text-[10px] font-bold text-slate-800 truncate mt-1 px-1">{p.caption || `Photo ${idx+1}`}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Departmental Status Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1240,36 +2016,46 @@ export const ApprovalWorkflowPage: React.FC = () => {
       {/* FORMAL 14-POINT SANSKRITHI SCHOOL OF ENGINEERING PRINT MODAL */}
       {showPrintModal && selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 space-y-6 my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 print:hidden">
-              <span className="font-bold text-sm text-slate-700">Official Financial Assistance Application (14-Point SSE Format)</span>
+          <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-auto overflow-y-auto flex flex-col">
+            {/* Top Toolbar */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 shrink-0 print:hidden">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+                <span className="font-bold text-sm text-slate-800">Official Financial Assistance Application (14-Point SSE Format)</span>
+              </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-orange-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow"
+                  onClick={() => exportApplicationToWord(selectedRequest)}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                >
+                  <FileDown className="w-4 h-4" /> Export Word (.doc)
+                </button>
+                <button
+                  onClick={() => handlePrintApplication(selectedRequest)}
+                  className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
                 >
                   <Printer className="w-4 h-4" /> Print Form
                 </button>
                 <button
                   onClick={() => setShowPrintModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-semibold text-xs"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
                 >
-                  Close
+                  Close Preview
                 </button>
               </div>
             </div>
 
             {/* Printable Form Body - Word-for-Word SSE Layout */}
-            <div className="space-y-6 text-slate-900 text-xs font-serif p-8 border border-slate-300 rounded-xl bg-white leading-relaxed">
-              {/* Header */}
-              <div className="text-center space-y-1 pb-4 border-b border-slate-400">
-                <h2 className="text-xl font-bold tracking-wider uppercase font-sans">SANSKRITHI SCHOOL OF ENGINEERING</h2>
-                <p className="text-[11px] text-slate-700 font-sans">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
-                <p className="text-[10px] text-slate-600 italic font-sans">Affiliated to JNTUA & Approved by AICTE, www.sseptp.org</p>
+            <div id="printable-application-body" className="space-y-6 text-slate-900 text-xs font-sans p-6 sm:p-8 border border-slate-300 rounded-2xl bg-white leading-relaxed shadow-sm">
+              {/* Header with College Logo */}
+              <div className="flex flex-col items-center justify-center text-center pb-4 border-b-2 border-slate-900 space-y-2">
+                <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
+                <p className="text-[11px] sm:text-xs text-slate-700 font-semibold">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-600 italic">Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org</p>
               </div>
 
               {/* Title */}
-              <div className="text-center font-bold uppercase text-xs tracking-wider py-3 underline font-sans">
+              <div className="text-center font-bold uppercase text-xs sm:text-sm tracking-wider py-3 bg-slate-50 border-y border-slate-300 rounded-lg">
                 {selectedRequest.title || 'APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING GUEST PROGRAM'}
               </div>
 
@@ -1277,57 +2063,57 @@ export const ApprovalWorkflowPage: React.FC = () => {
               <table className="w-full border-collapse border border-slate-400 text-xs my-4">
                 <tbody>
                   <tr className="border-b border-slate-300">
-                    <td className="w-1/2 p-2 font-semibold border-r border-slate-300">1. Name and address of the Organizing Secretary of the FDP/Program:</td>
-                    <td className="w-1/2 p-2">{selectedRequest.submitted_by_name} ({selectedRequest.department})</td>
+                    <td className="w-1/2 p-2.5 font-semibold border-r border-slate-300 bg-slate-50">1. Name & address of Organizing Secretary of FDP/Program:</td>
+                    <td className="w-1/2 p-2.5 font-bold text-slate-900">{selectedRequest.submitted_by_name} ({selectedRequest.department})</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">2. Department under the auspices of which Expert lecture is proposed:</td>
-                    <td className="p-2">{selectedRequest.department}</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">2. Department under auspices of which lecture is proposed:</td>
+                    <td className="p-2.5 font-bold text-slate-900">{selectedRequest.department}</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">3. Theme(s) of the FDP/Program:</td>
-                    <td className="p-2">{selectedRequest.category}</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">3. Theme(s) of the FDP/Program:</td>
+                    <td className="p-2.5">{selectedRequest.category}</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">4. Target Group:</td>
-                    <td className="p-2">HAS Faculties, all First Year Students</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">4. Target Group:</td>
+                    <td className="p-2.5">HAS Faculties, all First Year Students</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">5. Name(s) & Affiliation of the Resource Person(s):</td>
-                    <td className="p-2">Dr. Padmasuvarna, Professor, Dept of Physics, JNTU Anantapur</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">5. Name(s) & Affiliation of Resource Person(s):</td>
+                    <td className="p-2.5 font-semibold">Dr. Padmasuvarna, Professor, Dept of Physics, JNTU Anantapur</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">6. Level of the Expert Lecture:</td>
-                    <td className="p-2">State / Regional Level</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">6. Level of Expert Lecture:</td>
+                    <td className="p-2.5">State / Regional Level</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">7. Duration of the Programme:</td>
-                    <td className="p-2">Half Day</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">7. Duration of Programme:</td>
+                    <td className="p-2.5">Half Day</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">8. Estimated Expenditure Breakdown:</td>
-                    <td className="p-2 font-mono">
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">8. Estimated Expenditure Breakdown:</td>
+                    <td className="p-2.5 font-mono">
                       Honorarium: Rs. 5000<br />
                       Miscellaneous: Rs. 1000<br />
-                      <strong className="text-slate-900">Total Expenditure: Rs. {selectedRequest.amount || 6000}</strong>
+                      <strong className="text-emerald-700">Total Expenditure: Rs. {selectedRequest.amount || 6000}</strong>
                     </td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">9. Requisition Description & Details:</td>
-                    <td className="p-2 whitespace-pre-wrap">{selectedRequest.description}</td>
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">9. Requisition Description & Details:</td>
+                    <td className="p-2.5 whitespace-pre-wrap leading-relaxed">{selectedRequest.description}</td>
                   </tr>
 
                   <tr className="border-b border-slate-300">
-                    <td className="p-2 font-semibold border-r border-slate-300">10. Principal Review Status:</td>
-                    <td className="p-2 font-bold text-slate-800">
+                    <td className="p-2.5 font-semibold border-r border-slate-300 bg-slate-50">10. Principal Review Status:</td>
+                    <td className="p-2.5 font-bold text-slate-900">
                       {selectedRequest.status} {selectedRequest.principal_comments ? `(${selectedRequest.principal_comments})` : ''}
                     </td>
                   </tr>
@@ -1335,7 +2121,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
               </table>
 
               {/* Signature Line Blocks */}
-              <div className="grid grid-cols-3 gap-4 text-center text-xs font-bold pt-16 mt-8 font-sans">
+              <div className="grid grid-cols-3 gap-4 text-center text-xs font-bold pt-12 mt-8 font-sans border-t border-slate-300">
                 <div>
                   <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Signed digitally</div>
                   <p className="pt-2">Signature of Organizing Secretary</p>
@@ -1353,6 +2139,367 @@ export const ApprovalWorkflowPage: React.FC = () => {
                     {selectedRequest.status === 'FULLY_APPROVED' ? 'Verified & Signed' : 'Pending Clearance'}
                   </div>
                   <p className="pt-2">Signature of Chairman</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POST-EVENT OUTCOME REPORT FORM MODAL */}
+      {showReportModal && selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-2xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 space-y-5 my-auto overflow-y-auto animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-emerald-600" /> Post-Event Outcome & Completion Report
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Submit program outcomes, participant count, and event photographs for <span className="font-bold text-slate-800">{selectedRequest.request_number}</span>
+                </p>
+              </div>
+              <button onClick={() => setShowReportModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+
+            {/* Quick Fill Sample Button */}
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5">
+                <span className="text-emerald-950 font-bold flex items-center gap-1.5 text-xs">
+                  <Sparkles className="w-4 h-4 text-emerald-600" /> Pre-fill Sample Report & Photos
+                </span>
+                <p className="text-[11px] text-slate-600">Populates event date, 145 attendees, summary, learning outcomes, & 4 sample event photos with captions</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAutoFillSampleReport}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold transition-all shadow-sm shrink-0"
+              >
+                Auto-Fill Sample Report
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveReportSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Event Execution Date</label>
+                  <input
+                    type="text"
+                    required
+                    value={reportEventDate}
+                    onChange={(e) => setReportEventDate(e.target.value)}
+                    placeholder="e.g. 22 March 2024"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Total Attendance / Count</label>
+                  <input
+                    type="text"
+                    required
+                    value={reportParticipantsCount}
+                    onChange={(e) => setReportParticipantsCount(e.target.value)}
+                    placeholder="e.g. 145 Students & 12 Faculty"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Actual Expenditure (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={reportActualExpenditure}
+                    onChange={(e) => setReportActualExpenditure(e.target.value)}
+                    placeholder="6000"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 font-bold text-emerald-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Executive Summary & Highlights</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={reportSummary}
+                  onChange={(e) => setReportSummary(e.target.value)}
+                  placeholder="Provide a detailed overview of the program execution, guest sessions, and student participation..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Key Outcomes & Feedback Received</label>
+                <textarea
+                  rows={3}
+                  value={reportOutcomes}
+                  onChange={(e) => setReportOutcomes(e.target.value)}
+                  placeholder="List key learning takeaways, feedback ratings, or follow-up actions..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed"
+                />
+              </div>
+
+              {/* Event Photos Section */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                    <Image className="w-4 h-4 text-emerald-600" /> Event Photos Gallery ({reportPhotos.length})
+                  </label>
+                  <span className="text-[10px] text-slate-500">Upload photos or paste URLs</span>
+                </div>
+
+                {/* Photo Inputs */}
+                <div className="space-y-2 bg-white p-3 rounded-xl border border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Upload Photo File</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoFileUpload}
+                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Or Paste Image URL</label>
+                      <input
+                        type="url"
+                        value={photoUrlInput}
+                        onChange={(e) => setPhotoUrlInput(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={photoCaptionInput}
+                      onChange={(e) => setPhotoCaptionInput(e.target.value)}
+                      placeholder="Photo caption (e.g. Chief guest addressing students)"
+                      className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddPhotoFromUrl}
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add URL Photo
+                    </button>
+                  </div>
+                </div>
+
+                {/* Attached Photos Thumbnail List with Neat Borders */}
+                {reportPhotos.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                    {reportPhotos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className="group relative border-2 border-slate-800 bg-white p-2 rounded-xl shadow-md flex flex-col items-center justify-between text-center"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(index)}
+                          className="absolute top-1.5 right-1.5 p-1 rounded-full bg-rose-600 text-white opacity-90 hover:opacity-100 shadow transition-all z-10"
+                          title="Remove Photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <img
+                          src={photo.url}
+                          alt={photo.caption}
+                          className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                        />
+                        <p className="mt-1.5 text-[10px] font-bold text-slate-800 line-clamp-1 w-full italic">
+                          {photo.caption || `Photo ${index + 1}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="px-4 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg shadow-emerald-600/20"
+                >
+                  Save Post-Event Report with Photos
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* OFFICIAL POST-EVENT OUTCOME REPORT PRINT MODAL */}
+      {showPrintReportModal && selectedRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-auto overflow-y-auto flex flex-col">
+            {/* Top Toolbar */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 shrink-0 print:hidden">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold text-sm text-slate-800">Official Post-Event Outcome Report (with Photos)</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => exportReportToWord(selectedRequest)}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                >
+                  <FileDown className="w-4 h-4" /> Export Word (.doc)
+                </button>
+                <button
+                  onClick={() => handlePrintReport(selectedRequest)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                >
+                  <Printer className="w-4 h-4" /> Print Event Report
+                </button>
+                <button
+                  onClick={() => setShowPrintReportModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
+                >
+                  Close Preview
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Report Body */}
+            <div id="printable-report-body" className="space-y-6 text-slate-900 text-xs font-sans p-6 sm:p-8 border border-slate-300 rounded-2xl bg-white leading-relaxed shadow-sm">
+              {/* Header with College Logo */}
+              <div className="flex flex-col items-center justify-center text-center pb-4 border-b-2 border-slate-900 space-y-2">
+                <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
+                <p className="text-[11px] sm:text-xs text-slate-700 font-semibold">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-600 italic">Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org</p>
+              </div>
+
+              {/* Document Title Banner */}
+              <div className="bg-slate-100 py-2.5 px-4 text-center font-extrabold uppercase text-xs sm:text-sm tracking-wider border-y border-slate-400 rounded-lg">
+                POST-EVENT OUTCOME & COMPLETION REPORT
+              </div>
+
+              {/* Event & Requisition Summary Table */}
+              <table className="w-full border-collapse border border-slate-400 text-xs my-4">
+                <tbody>
+                  <tr className="border-b border-slate-300 bg-slate-50">
+                    <td className="w-1/3 p-2.5 font-bold border-r border-slate-300 text-slate-700">Program / Event Title:</td>
+                    <td className="w-2/3 p-2.5 font-bold text-slate-900">{selectedRequest.title}</td>
+                  </tr>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2.5 font-bold border-r border-slate-300 text-slate-700">Organizing Department & Secretary:</td>
+                    <td className="p-2.5 font-semibold text-slate-800">{selectedRequest.submitted_by_name} ({selectedRequest.department} Dept)</td>
+                  </tr>
+                  <tr className="border-b border-slate-300 bg-slate-50">
+                    <td className="p-2.5 font-bold border-r border-slate-300 text-slate-700">Event Execution Date:</td>
+                    <td className="p-2.5 font-semibold text-slate-800">{selectedRequest.report_event_date || '22 March 2024'}</td>
+                  </tr>
+                  <tr className="border-b border-slate-300">
+                    <td className="p-2.5 font-bold border-r border-slate-300 text-slate-700">Total Participants / Beneficiaries:</td>
+                    <td className="p-2.5 font-semibold text-slate-800">{selectedRequest.report_participants_count || '145 Students & 12 Faculty'}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Executive Summary */}
+              <div className="space-y-1.5 pt-2">
+                <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-300 pb-1">
+                  Executive Summary & Highlights of the Program
+                </h4>
+                <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  {selectedRequest.report_summary || 'The program was executed successfully as per approved requisition schedule. All planned guest lectures and interactive sessions were conducted smoothly with active participant engagement.'}
+                </p>
+              </div>
+
+              {/* Key Outcomes - Point by Point Numbered List */}
+              {selectedRequest.report_outcomes && (
+                <div className="space-y-1.5 pt-2">
+                  <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-300 pb-1">
+                    Key Outcomes & Learning Impact
+                  </h4>
+                  <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                    <ol className="list-decimal list-inside space-y-2 text-xs text-slate-800 font-semibold leading-relaxed">
+                      {parseOutcomePoints(selectedRequest.report_outcomes).map((pt: string, idx: number) => (
+                        <li key={idx} className="pl-1">
+                          <span className="font-normal text-slate-900">{pt}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {/* Event Photos Gallery with Neat Borders */}
+              {(() => {
+                let photos: any[] = [];
+                try {
+                  photos = typeof selectedRequest.report_photos === 'string' ? JSON.parse(selectedRequest.report_photos) : selectedRequest.report_photos;
+                } catch (e) {
+                  photos = [];
+                }
+                if (!photos || photos.length === 0) return null;
+
+                return (
+                  <div className="space-y-3 pt-3" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                    <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-300 pb-1" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                      Event Photographs & Visual Evidence
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {photos.map((photo: any, index: number) => (
+                        <div
+                          key={index}
+                          className="border-2 border-slate-900 bg-white p-3 rounded-2xl shadow-md flex flex-col items-center justify-between transition-all"
+                          style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                        >
+                          <div className="w-full h-40 overflow-hidden rounded-xl border border-slate-300 shadow-inner bg-slate-100 flex items-center justify-center">
+                            <img
+                              src={photo.url}
+                              alt={photo.caption || `Event Photo ${index + 1}`}
+                              className="w-full h-full object-contain p-1 rounded-xl bg-slate-900/5"
+                            />
+                          </div>
+                          <div className="mt-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-300 font-sans text-xs font-bold text-slate-800 italic text-center w-full">
+                            {photo.caption || `Photo ${index + 1}`}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Signature Line Blocks */}
+              <div className="grid grid-cols-4 gap-4 text-center text-xs font-bold pt-12 mt-6 font-sans border-t border-slate-300" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                <div>
+                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Signed digitally</div>
+                  <p className="pt-2">Organizing Secretary</p>
+                </div>
+
+                <div>
+                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Verified & Signed</div>
+                  <p className="pt-2">Head of Department (HOD)</p>
+                </div>
+
+                <div>
+                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
+                    {selectedRequest.principal_action_at ? `Approved ${new Date(selectedRequest.principal_action_at).toLocaleDateString()}` : 'Principal Sign'}
+                  </div>
+                  <p className="pt-2">Principal</p>
+                </div>
+
+                <div>
+                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Approved</div>
+                  <p className="pt-2">Chairman</p>
                 </div>
               </div>
             </div>

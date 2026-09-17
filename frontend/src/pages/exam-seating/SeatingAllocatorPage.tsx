@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -12,7 +12,8 @@ import {
   Trash2,
   CheckCircle2,
   Sparkles,
-  Printer
+  Printer,
+  Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,6 +57,54 @@ function generateStudentRange(startReg: string, endReg: string): string[] {
     list.push(`${startObj.prefix}${numToJntuSuffix(v)}`);
   }
   return list;
+}
+
+function reconstructBatchesFromSeatings(seatings: any[]) {
+  if (!seatings || !seatings.length) return [];
+  const branchMap = new Map<string, { branch: string; year_batch: string; rolls: string[] }>();
+
+  seatings.forEach(s => {
+    const branchKey = (s.branch || 'GENERAL').trim().toUpperCase();
+    if (!branchMap.has(branchKey)) {
+      branchMap.set(branchKey, {
+        branch: branchKey,
+        year_batch: s.year_batch || 'III Year',
+        rolls: []
+      });
+    }
+    if (s.roll_number) {
+      branchMap.get(branchKey)!.rolls.push(s.roll_number.trim().toUpperCase());
+    }
+  });
+
+  const reconstructedBatches: any[] = [];
+  branchMap.forEach((data, branchKey) => {
+    if (data.rolls.length === 0) return;
+
+    data.rolls.sort((a, b) => {
+      const pA = parseRollNumber(a);
+      const pB = parseRollNumber(b);
+      if (pA.prefix !== pB.prefix) return pA.prefix.localeCompare(pB.prefix);
+      return pA.value - pB.value;
+    });
+
+    const startReg = data.rolls[0];
+    const endReg = data.rolls[data.rolls.length - 1];
+    const expectedRange = generateStudentRange(startReg, endReg);
+    const rollsSet = new Set(data.rolls);
+    const excludedList = expectedRange.filter(r => !rollsSet.has(r));
+
+    reconstructedBatches.push({
+      branch: branchKey,
+      subject: '',
+      year_batch: data.year_batch,
+      start_reg: startReg,
+      end_reg: endReg,
+      excluded_ids: excludedList.join(', ')
+    });
+  });
+
+  return reconstructedBatches;
 }
 
 // ============================================================================
@@ -121,6 +170,24 @@ const HallSeatingPreviewCard: React.FC<{
       );
     }
 
+    // Initialize Double-Branch Alternating seating slots
+    let activeBatch1: number | null = null;
+    let activeBatch2: number | null = null;
+
+    for (let i = 0; i < batchQueues.length; i++) {
+      if (batchQueues[i] && batchQueues[i].students.length > 0) {
+        activeBatch1 = i;
+        break;
+      }
+    }
+
+    for (let i = 0; i < batchQueues.length; i++) {
+      if (i !== activeBatch1 && batchQueues[i] && batchQueues[i].students.length > 0) {
+        activeBatch2 = i;
+        break;
+      }
+    }
+
     // 2. Simulate room-by-room seating allocation up to hallIndex
     for (let h = 0; h <= hallIndex; h++) {
       const isTargetHall = h === hallIndex;
@@ -131,59 +198,62 @@ const HallSeatingPreviewCard: React.FC<{
           const seatKey = `${r}-${c}`;
           if (disabledSet.has(seatKey)) continue;
 
-          // Parity slot: (r + c) % 2
-          const paritySlot = (r + c) % 2;
-
           const leftBranch = gridAllocatedBranches[`${r}-${c - 1}`];
           const topBranch = gridAllocatedBranches[`${r - 1}-${c}`];
 
-          // 1. Try non-empty queues matching paritySlot that pass 2D adjacency
-          let selectedIdx = -1;
-          for (let i = 0; i < batchQueues.length; i++) {
-            if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
-              const b = batchQueues[i].branch;
-              if (b !== leftBranch && b !== topBranch) {
-                selectedIdx = i;
+          const blockedBatches = new Set<number>();
+          batchQueues.forEach((q, idx) => {
+            if (leftBranch && q.branch === leftBranch) {
+              blockedBatches.add(idx);
+            }
+            if (topBranch && q.branch === topBranch) {
+              blockedBatches.add(idx);
+            }
+          });
+
+          // Ensure activeBatch1 has students, or find next in branch order
+          if (activeBatch1 !== null && batchQueues[activeBatch1].students.length === 0) {
+            let nextBatch: number | null = null;
+            for (let i = 0; i < batchQueues.length; i++) {
+              if (i !== activeBatch2 && batchQueues[i] && batchQueues[i].students.length > 0) {
+                nextBatch = i;
                 break;
               }
             }
+            activeBatch1 = nextBatch;
           }
 
-          // 2. If parity slot queues pass or are exhausted, try any matching parity queue with students
-          if (selectedIdx === -1) {
+          // Ensure activeBatch2 has students, or find next in branch order
+          if (activeBatch2 !== null && batchQueues[activeBatch2].students.length === 0) {
+            let nextBatch: number | null = null;
             for (let i = 0; i < batchQueues.length; i++) {
-              if (i % 2 === paritySlot && batchQueues[i].students.length > 0) {
-                selectedIdx = i;
+              if (i !== activeBatch1 && batchQueues[i] && batchQueues[i].students.length > 0) {
+                nextBatch = i;
                 break;
               }
             }
+            activeBatch2 = nextBatch;
           }
 
-          // 3. If parity slot is completely exhausted, dynamically advance to ANY next available queue with students
-          if (selectedIdx === -1) {
-            for (let i = 0; i < batchQueues.length; i++) {
-              if (batchQueues[i].students.length > 0) {
-                const b = batchQueues[i].branch;
-                if (b !== leftBranch && b !== topBranch) {
-                  selectedIdx = i;
-                  break;
-                }
-              }
+          let chosenBatch: number | null = null;
+          const preferredSlot = (r + c) % 2 === 0 ? 1 : 2;
+
+          if (preferredSlot === 1) {
+            if (activeBatch1 !== null && batchQueues[activeBatch1].students.length > 0 && !blockedBatches.has(activeBatch1)) {
+              chosenBatch = activeBatch1;
+            } else if (activeBatch2 !== null && batchQueues[activeBatch2].students.length > 0 && !blockedBatches.has(activeBatch2)) {
+              chosenBatch = activeBatch2;
+            }
+          } else {
+            if (activeBatch2 !== null && batchQueues[activeBatch2].students.length > 0 && !blockedBatches.has(activeBatch2)) {
+              chosenBatch = activeBatch2;
+            } else if (activeBatch1 !== null && batchQueues[activeBatch1].students.length > 0 && !blockedBatches.has(activeBatch1)) {
+              chosenBatch = activeBatch1;
             }
           }
 
-          // 4. Final fallback to any remaining non-empty queue
-          if (selectedIdx === -1) {
-            for (let i = 0; i < batchQueues.length; i++) {
-              if (batchQueues[i].students.length > 0) {
-                selectedIdx = i;
-                break;
-              }
-            }
-          }
-
-          if (selectedIdx !== -1) {
-            const q = batchQueues[selectedIdx];
+          if (chosenBatch !== null) {
+            const q = batchQueues[chosenBatch];
             const roll = q.students.shift()!;
             gridAllocatedBranches[seatKey] = q.branch;
 
@@ -391,6 +461,7 @@ const HallSeatingPreviewCard: React.FC<{
 
 export const SeatingAllocatorPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const specialRole = (user?.special_role || user?.specialRole || '').toUpperCase();
   const userRole = (user?.role || '').toUpperCase();
@@ -424,6 +495,86 @@ export const SeatingAllocatorPage: React.FC = () => {
     { hall_name: 'Hall A (Knowledge Park)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' },
     { hall_name: 'Hall B (Main Block)', rows: 6, cols: 4, fill_strategy: 'col', prevent_adjacency: true, aisle_interval: 2, strict_flow: true, disabled_seats: '' }
   ]);
+
+  // Load passed template or copied exam configuration if present
+  useEffect(() => {
+    if (location.state?.copyExam) {
+      const src = location.state.copyExam;
+      const newCode = `EXAM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const baseName = (src.name || 'JNTUA Exam').replace(/\s*\(\s*Copy.*?\)/gi, '');
+
+      setExamForm({
+        name: `${baseName} (Copy)`,
+        subject: src.subject || '',
+        exam_code: newCode,
+        date: src.date ? new Date(src.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        time: src.time || '10:00 AM - 01:00 PM',
+        session: src.session || 'FN',
+        academic_year: src.academic_year || '2026',
+        year_semester: src.year_semester || 'III B.Tech I Sem'
+      });
+
+      let activeBatches = src.batches;
+      if (!Array.isArray(activeBatches) || activeBatches.length === 0) {
+        if (src.seatings && Array.isArray(src.seatings) && src.seatings.length > 0) {
+          activeBatches = reconstructBatchesFromSeatings(src.seatings);
+        }
+      }
+
+      if (Array.isArray(activeBatches) && activeBatches.length > 0) {
+        setBatchesList(activeBatches.map((b: any) => ({
+          branch: b.branch || 'CSE',
+          subject: b.subject || '',
+          year_batch: b.year_batch || b.year || 'III Year',
+          start_reg: b.start_reg || '',
+          end_reg: b.end_reg || '',
+          excluded_ids: Array.isArray(b.excluded_ids)
+            ? b.excluded_ids.join(', ')
+            : (b.excluded_ids || '')
+        })));
+      }
+      if (src.rooms && Array.isArray(src.rooms) && src.rooms.length > 0) {
+        setRoomsList(src.rooms.map((r: any) => ({
+          hall_name: r.hall_name || r.name || 'Hall A',
+          rows: r.rows_count || r.rows || 6,
+          cols: r.cols_count || r.cols || 4,
+          fill_strategy: r.fill_strategy || 'col',
+          prevent_adjacency: r.prevent_adjacency !== false,
+          aisle_interval: r.aisle_interval !== undefined ? r.aisle_interval : 2,
+          strict_flow: r.strict_flow !== false,
+          disabled_seats: Array.isArray(r.disabled_seats_json)
+            ? r.disabled_seats_json.join(', ')
+            : Array.isArray(r.disabled_seats)
+            ? r.disabled_seats.join(', ')
+            : (r.disabled_seats || '')
+        })));
+      }
+
+      toast.info('Copied all exam settings & halls into a new draft! Adjust details and run seating engine.', {
+        icon: <Copy className="w-5 h-5 text-indigo-500" />
+      });
+    }
+  }, [location.state]);
+
+  // Duplicate current exam configuration into a new exam draft
+  const handleCopyExamConfig = () => {
+    const newCode = `EXAM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const baseName = examForm.name.replace(/\s*\(\s*Copy.*?\)/gi, '');
+    const newName = `${baseName} (Copy ${Math.floor(100 + Math.random() * 900)})`;
+
+    setExamForm(prev => ({
+      ...prev,
+      name: newName,
+      exam_code: newCode
+    }));
+
+    toast.success('Exam configuration copied into a new draft!', {
+      description: `New Exam Code: ${newCode}. You can now make changes and run allocation for a new exam.`,
+      icon: <Copy className="w-5 h-5 text-indigo-500" />
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (!isController) {
     return (
@@ -546,13 +697,24 @@ export const SeatingAllocatorPage: React.FC = () => {
             <p className="text-xs text-slate-500">Dedicated Seating Matrix Setup & Custom Anti-Cheating Rules</p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate('/exam-seating')}
-            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Exam Plans
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleCopyExamConfig}
+              className="px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer border border-indigo-200"
+              title="Duplicate this exam configuration into a new draft to quickly make changes"
+            >
+              <Copy className="w-4 h-4" /> Copy as New Exam
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/exam-seating')}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Exam Plans
+            </button>
+          </div>
         </div>
 
         {/* 7-Step Algorithm Breakdown Cards */}
@@ -848,84 +1010,88 @@ export const SeatingAllocatorPage: React.FC = () => {
             </button>
           </div>
 
-          {roomsList.map((room, idx) => (
-            <div key={idx} className="p-5 bg-slate-50/70 border border-slate-200 rounded-3xl space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
-                <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Hall Name</label>
-                  <input
-                    type="text"
-                    value={room.hall_name}
-                    onChange={(e) => {
-                      const updated = [...roomsList];
-                      updated[idx].hall_name = e.target.value;
-                      setRoomsList(updated);
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Rows x Columns</label>
-                  <div className="flex items-center gap-2">
+          {/* Hall Setup Cards (2 Columns Grid View) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {roomsList.map((room, idx) => (
+              <div key={idx} className="p-5 bg-slate-50/70 border border-slate-200 rounded-3xl space-y-4 shadow-2xs">
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Hall Name</label>
                     <input
-                      type="number"
-                      value={room.rows}
+                      type="text"
+                      value={room.hall_name}
                       onChange={(e) => {
                         const updated = [...roomsList];
-                        updated[idx].rows = e.target.value;
+                        updated[idx].hall_name = e.target.value;
                         setRoomsList(updated);
                       }}
-                      className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
-                    />
-                    <span className="font-bold text-slate-400">x</span>
-                    <input
-                      type="number"
-                      value={room.cols}
-                      onChange={(e) => {
-                        const updated = [...roomsList];
-                        updated[idx].cols = e.target.value;
-                        setRoomsList(updated);
-                      }}
-                      className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Fill Strategy</label>
-                  <select
-                    value={room.fill_strategy}
-                    onChange={(e) => {
-                      const updated = [...roomsList];
-                      updated[idx].fill_strategy = e.target.value;
-                      setRoomsList(updated);
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800"
-                  >
-                    <option value="col">Column-Wise (Vertical)</option>
-                    <option value="row">Row-Wise (Horizontal)</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Rows x Cols</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        value={room.rows}
+                        onChange={(e) => {
+                          const updated = [...roomsList];
+                          updated[idx].rows = e.target.value;
+                          setRoomsList(updated);
+                        }}
+                        className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                      />
+                      <span className="font-bold text-slate-400">x</span>
+                      <input
+                        type="number"
+                        value={room.cols}
+                        onChange={(e) => {
+                          const updated = [...roomsList];
+                          updated[idx].cols = e.target.value;
+                          setRoomsList(updated);
+                        }}
+                        className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white text-center font-bold"
+                      />
+                    </div>
+                  </div>
 
-                <div className="flex items-center justify-end pt-5">
-                  {roomsList.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newRooms = roomsList.filter((_, i) => i !== idx);
-                        setRoomsList(newRooms);
-                        setSelectedPreviewHallIdx(0);
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Fill Strategy</label>
+                    <select
+                      value={room.fill_strategy}
+                      onChange={(e) => {
+                        const updated = [...roomsList];
+                        updated[idx].fill_strategy = e.target.value;
+                        setRoomsList(updated);
                       }}
-                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl cursor-pointer"
+                      className="w-full px-2 py-2 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 text-[11px]"
                     >
-                      <Trash2 className="w-4 h-4" /> Remove
-                    </button>
-                  )}
+                      <option value="col">Column-Wise</option>
+                      <option value="row">Row-Wise</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-end pt-5">
+                    {roomsList.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newRooms = roomsList.filter((_, i) => i !== idx);
+                          setRoomsList(newRooms);
+                          setSelectedPreviewHallIdx(0);
+                        }}
+                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl cursor-pointer"
+                        title="Remove Hall"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
           {/* SINGLE ACTIVE LIVE HALL PREVIEW CARD WITH HALL SELECTOR TABS */}
           {roomsList.length > 0 && (
@@ -973,6 +1139,15 @@ export const SeatingAllocatorPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleCopyExamConfig}
+              className="px-5 py-3 rounded-xl font-bold text-xs text-indigo-300 hover:text-white hover:bg-white/10 border border-indigo-500/30 flex items-center gap-2 cursor-pointer transition-colors"
+              title="Duplicate this exam configuration into a new draft to quickly make changes"
+            >
+              <Copy className="w-4 h-4 text-indigo-400" /> Duplicate Config
+            </button>
+
             <button
               type="button"
               onClick={() => navigate('/exam-seating')}
