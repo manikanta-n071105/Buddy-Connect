@@ -2971,7 +2971,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
                         {/* SECTION 1: PROGRAM OVERVIEW */}
                         <div className="mb-[10px]">
-                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
                             PROGRAM OVERVIEW
                           </h3>
                           <table className="w-full border-collapse border border-slate-200 text-xs shadow-none">
@@ -3004,7 +3004,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
                         {/* SECTION 2: EXECUTIVE SUMMARY */}
                         <div className="mb-[10px]">
-                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
                             EXECUTIVE SUMMARY
                           </h3>
                           <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-normal pt-0.5 space-y-1">
@@ -3014,7 +3014,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
                         {/* SECTION 3: KEY OUTCOMES & LEARNING IMPACT */}
                         <div className="mb-[10px]" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
                             KEY OUTCOMES &amp; LEARNING IMPACT
                           </h3>
                           <div className="space-y-1 pt-0.5">
@@ -3060,7 +3060,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
                         {/* SECTION 1: SUSTAINABLE DEVELOPMENT GOAL ALIGNMENT */}
                         <div className="pt-1 mb-[10px]">
-                          <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
                             SUSTAINABLE DEVELOPMENT GOAL ALIGNMENT
                           </h3>
                           <div className="flex flex-wrap items-center gap-3.5 pt-1">
@@ -3084,7 +3084,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
                         {/* SECTION 2: EVENT PHOTOGRAPHS (Without box borders) */}
                         <div className="pt-1 mb-[10px]">
-                          <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
                             EVENT PHOTOGRAPHS &amp; VISUAL EVIDENCE
                           </h3>
                           {(() => {
