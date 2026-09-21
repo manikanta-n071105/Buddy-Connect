@@ -41,6 +41,7 @@ import { BloodBankPage } from '../pages/blood/BloodBankPage';
 import { ApprovalWorkflowPage } from '../pages/approvals/ApprovalWorkflowPage';
 import { ExamSeatingPage } from '../pages/exam-seating/ExamSeatingPage';
 import { SeatingAllocatorPage } from '../pages/exam-seating/SeatingAllocatorPage';
+import { PublicReportGeneratorPage } from '../pages/report/PublicReportGeneratorPage';
 
 const DashboardDispatcher: React.FC = () => {
   const { user } = useAuth();
@@ -74,6 +75,8 @@ export const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/report-generator" element={<PublicReportGeneratorPage />} />
+      <Route path="/generate-report" element={<PublicReportGeneratorPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/exam-seating/allocator" element={<SeatingAllocatorPage />} />

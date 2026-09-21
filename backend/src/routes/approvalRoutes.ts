@@ -8,15 +8,22 @@ import {
   resubmitApproval,
   departmentAction,
   addComment,
-  saveCompletionReport
+  saveCompletionReport,
+  generateReportAI
 } from '../controllers/approvalController';
 
 const router = Router();
+
+// Public AI generation for standalone public report tool
+router.post('/public-generate-report-ai', generateReportAI);
 
 router.use(authenticate);
 
 // Fetch all approval requests
 router.get('/', getApprovals);
+
+// Generate Gemini AI Report content (Executive Summary & Key Outcomes)
+router.post('/generate-report-ai', generateReportAI);
 
 // Fetch single request by ID with comment thread
 router.get('/:id', getApprovalById);

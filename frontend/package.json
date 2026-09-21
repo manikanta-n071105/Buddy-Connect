@@ -18,6 +18,7 @@
     "@types/three": "^0.185.4",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "html2pdf.js": "^0.14.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.475.0",
     "meshline": "^3.3.1",

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { LoadingState } from '../../components/common/LoadingState';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 import {
   FileCheck2,
   Plus,
@@ -28,9 +30,92 @@ import {
   Trash2,
   Upload,
   Award,
-  FileDown
+  FileDown,
+  Sliders,
+  Download,
+  ExternalLink,
+  Linkedin,
+  FileType,
+  Grid,
+  Globe
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+export interface UN_SDG_Item {
+  id: number;
+  code: string;
+  name: string;
+  color: string;
+  link: string;
+  iconUrl: string;
+  keywords: string[];
+}
+
+export const UN_SDGS: UN_SDG_Item[] = [
+  { id: 1, code: 'SDG 1', name: 'No Poverty', color: '#E5243B', link: 'https://sdgs.un.org/goals/goal1', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-01.jpg', keywords: ['poverty', 'welfare', 'hardship', 'assistance', 'financial aid'] },
+  { id: 2, code: 'SDG 2', name: 'Zero Hunger', color: '#DDA63A', link: 'https://sdgs.un.org/goals/goal2', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-02.jpg', keywords: ['food', 'hunger', 'nutrition', 'mess', 'canteen', 'agriculture', 'farming'] },
+  { id: 3, code: 'SDG 3', name: 'Good Health and Well-being', color: '#4C9F38', link: 'https://sdgs.un.org/goals/goal3', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-03.jpg', keywords: ['health', 'wellness', 'blood', 'counseling', 'mental', 'hospital', 'medical', 'fitness', 'hygiene'] },
+  { id: 4, code: 'SDG 4', name: 'Quality Education', color: '#C5192D', link: 'https://sdgs.un.org/goals/goal4', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-04.jpg', keywords: ['education', 'learning', 'lecture', 'student', 'faculty', 'fdp', 'workshop', 'seminar', 'academic', 'college', 'school', 'physics', 'course', 'training', 'teaching', 'knowledge', 'guest program', 'program'] },
+  { id: 5, code: 'SDG 5', name: 'Gender Equality', color: '#FF3A21', link: 'https://sdgs.un.org/goals/goal5', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-05.jpg', keywords: ['gender', 'women', 'female', 'equality', 'empowerment', 'girls'] },
+  { id: 6, code: 'SDG 6', name: 'Clean Water and Sanitation', color: '#26BDE2', link: 'https://sdgs.un.org/goals/goal6', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-06.jpg', keywords: ['water', 'sanitation', 'clean water', 'hygiene', 'drainage'] },
+  { id: 7, code: 'SDG 7', name: 'Affordable and Clean Energy', color: '#FCC30B', link: 'https://sdgs.un.org/goals/goal7', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-07.jpg', keywords: ['energy', 'solar', 'renewable', 'clean energy', 'electricity', 'power', 'battery'] },
+  { id: 8, code: 'SDG 8', name: 'Decent Work and Economic Growth', color: '#A21942', link: 'https://sdgs.un.org/goals/goal8', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-08.jpg', keywords: ['career', 'work', 'job', 'placement', 'employment', 'r&d', 'industry', 'economic', 'startup'] },
+  { id: 9, code: 'SDG 9', name: 'Industry, Innovation and Infrastructure', color: '#FD6925', link: 'https://sdgs.un.org/goals/goal9', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-09.jpg', keywords: ['technology', 'engineering', 'innovation', 'semiconductor', 'infrastructure', 'ai', 'computer', 'research', 'lab', 'software', 'hardware'] },
+  { id: 10, code: 'SDG 10', name: 'Reduced Inequalities', color: '#DD1367', link: 'https://sdgs.un.org/goals/goal10', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-10.jpg', keywords: ['inclusion', 'equality', 'diversity', 'equal opportunity', 'disability'] },
+  { id: 11, code: 'SDG 11', name: 'Sustainable Cities and Communities', color: '#FD9D24', link: 'https://sdgs.un.org/goals/goal11', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-11.jpg', keywords: ['city', 'community', 'smart city', 'urban', 'sustainable'] },
+  { id: 12, code: 'SDG 12', name: 'Responsible Consumption and Production', color: '#BF8B2E', link: 'https://sdgs.un.org/goals/goal12', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-12.jpg', keywords: ['waste', 'recycling', 'consumption', 'resource', 'e-waste'] },
+  { id: 13, code: 'SDG 13', name: 'Climate Action', color: '#3F7E44', link: 'https://sdgs.un.org/goals/goal13', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-13.jpg', keywords: ['climate', 'green', 'environment', 'carbon', 'sustainability'] },
+  { id: 14, code: 'SDG 14', name: 'Life Below Water', color: '#0A97D9', link: 'https://sdgs.un.org/goals/goal14', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-14.jpg', keywords: ['marine', 'ocean', 'water body', 'aquatic'] },
+  { id: 15, code: 'SDG 15', name: 'Life on Land', color: '#56C02B', link: 'https://sdgs.un.org/goals/goal15', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-15.jpg', keywords: ['forest', 'tree', 'plantation', 'biodiversity', 'land', 'nature'] },
+  { id: 16, code: 'SDG 16', name: 'Peace, Justice and Strong Institutions', color: '#00689D', link: 'https://sdgs.un.org/goals/goal16', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-16.jpg', keywords: ['ethics', 'governance', 'justice', 'peace', 'disciplinary', 'institution'] },
+  { id: 17, code: 'SDG 17', name: 'Partnerships for the Goals', color: '#19486A', link: 'https://sdgs.un.org/goals/goal17', iconUrl: 'https://sdgs.un.org/sites/default/files/goals/E_SDG_Icons-17.jpg', keywords: ['partnership', 'collaboration', 'mou', 'jntu', 'resource person', 'guest speaker'] }
+];
+
+export const getMappedSDGs = (req: any): UN_SDG_Item[] => {
+  if (!req) return [UN_SDGS[3], UN_SDGS[8], UN_SDGS[7]]; // SDG 4, SDG 9, SDG 8
+  const textToScan = `${req.title || ''} ${req.category || ''} ${req.description || ''} ${req.report_summary || ''} ${req.report_outcomes || ''}`.toLowerCase();
+  
+  const matched = UN_SDGS.filter((sdg) =>
+    sdg.keywords.some((kw) => textToScan.includes(kw))
+  );
+
+  if (matched.length > 0) {
+    return matched;
+  }
+  // Default mapping for engineering & guest academic lectures
+  return [UN_SDGS[3], UN_SDGS[8], UN_SDGS[7]]; // SDG 4: Quality Education, SDG 9: Innovation, SDG 8: Decent Work
+};
+
+export const SdgWheelSvg: React.FC<{ size?: number }> = ({ size = 40 }) => {
+  const colors = [
+    '#E5243B', '#DDA63A', '#4C9F38', '#C5192D', '#FF3A21', '#26BDE2',
+    '#FCC30B', '#A21942', '#FD6925', '#DD1367', '#FD9D24', '#BF8B2E',
+    '#3F7E44', '#0A97D9', '#56C02B', '#00689D', '#19486A'
+  ];
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" className="shrink-0 drop-shadow-sm">
+      {colors.map((color, i) => {
+        const startAngle = (i * 360) / 17 - 90;
+        const endAngle = ((i + 1) * 360) / 17 - 90;
+        const x1 = 50 + 46 * Math.cos((startAngle * Math.PI) / 180);
+        const y1 = 50 + 46 * Math.sin((startAngle * Math.PI) / 180);
+        const x2 = 50 + 46 * Math.cos((endAngle * Math.PI) / 180);
+        const y2 = 50 + 46 * Math.sin((endAngle * Math.PI) / 180);
+        return (
+          <path
+            key={i}
+            d={`M 50 50 L ${x1.toFixed(2)} ${y1.toFixed(2)} A 46 46 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`}
+            fill={color}
+          />
+        );
+      })}
+      <circle cx="50" cy="50" r="23" fill="#ffffff" />
+      <circle cx="50" cy="50" r="21" fill="#1a365d" />
+      <text x="50" y="47" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="900" fontFamily="sans-serif">SDG</text>
+      <text x="50" y="58" textAnchor="middle" fill="#38bdf8" fontSize="6.5" fontWeight="700" fontFamily="sans-serif">SSE</text>
+    </svg>
+  );
+};
 
 export const ApprovalWorkflowPage: React.FC = () => {
   const { user } = useAuth();
@@ -50,12 +135,26 @@ export const ApprovalWorkflowPage: React.FC = () => {
   // Post-Event Completion Report Modals & Form State
   const [showReportModal, setShowReportModal] = useState(false);
   const [showPrintReportModal, setShowPrintReportModal] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  // PDF & Printable Document Customization Controls State
+  const [pdfMargin, setPdfMargin] = useState<'normal' | 'narrow' | 'wide'>('normal');
+  const [pdfWatermarkText, setPdfWatermarkText] = useState('OFFICIAL COPY');
+  const [pdfShowWatermark, setPdfShowWatermark] = useState(true);
+  const [pdfShowHeader, setPdfShowHeader] = useState(true);
+  const [pdfShowFooter, setPdfShowFooter] = useState(true);
+  const [pdfPhotoColumns, setPdfPhotoColumns] = useState<'2' | '1'>('2');
+  const [showPdfSettings, setShowPdfSettings] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const [reportEventDate, setReportEventDate] = useState('');
   const [reportParticipantsCount, setReportParticipantsCount] = useState('');
   const [reportActualExpenditure, setReportActualExpenditure] = useState('');
   const [reportSummary, setReportSummary] = useState('');
   const [reportOutcomes, setReportOutcomes] = useState('');
+  const [reportCustomTitle, setReportCustomTitle] = useState('');
+  const [reportCustomHeading, setReportCustomHeading] = useState('POST-EVENT OUTCOME & COMPLETION REPORT');
+  const [reportResourcePerson, setReportResourcePerson] = useState('');
   const [reportPhotos, setReportPhotos] = useState<{ url: string; caption: string }[]>([]);
 
   // Temp photo input state
@@ -154,20 +253,53 @@ export const ApprovalWorkflowPage: React.FC = () => {
     setReportPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleGenerateAISummaryAndOutcomes = async () => {
+    if (!selectedRequest) return;
+    setIsGeneratingAI(true);
+    try {
+      const response = await api.post('/approvals/generate-report-ai', {
+        title: selectedRequest.title,
+        department: selectedRequest.department,
+        category: selectedRequest.category,
+        description: selectedRequest.description,
+        userNotes: reportSummary.trim(),
+        eventDate: reportEventDate || selectedRequest.report_event_date,
+        participantsCount: reportParticipantsCount || selectedRequest.report_participants_count
+      });
+
+      if (response.data.success && response.data.data) {
+        const { executiveSummary, keyOutcomes, usedGemini } = response.data.data;
+        setReportSummary(executiveSummary);
+        setReportOutcomes(keyOutcomes);
+        if (usedGemini) {
+          toast.success('Generated Executive Summary & Outcomes using Gemini AI!');
+        } else {
+          toast.success('Generated Executive Summary & Outcomes via AI engine!');
+        }
+      }
+    } catch (err: any) {
+      console.error('Error generating AI report:', err);
+      toast.error('Failed to generate report using AI. Please try again.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   const handleAutoFillSampleReport = () => {
     setReportEventDate('22 March 2024');
     setReportParticipantsCount('145 First-Year Students & 12 Faculty Members');
     setReportActualExpenditure('6000');
-    setReportSummary(
-      'The One-Day Guest Lecture on "Physics & Engineering Applications" was conducted successfully at SSE Main Auditorium. Chief Guest Dr. Padmasuvarna delivered an insightful keynote on quantum mechanics, semiconductor physics, and modern engineering applications.'
-    );
-    setReportOutcomes(
-      '1. Students gained deep clarity on physics concepts applied in semiconductor manufacturing.\n2. Interactive Q&A session addressed career prospects in R&D and higher studies.\n3. Outstanding student feedback rating of 4.8/5.0.'
-    );
+    
+    // Set brief 2-3 line notes specific to the title
+    const reqTitle = selectedRequest?.title || 'Guest Academic Program';
+    const sampleNotes = `Official event execution of "${reqTitle}". Keynote speaker delivered interactive technical lectures, live case study demonstrations, and engaged students in a detailed Q&A session.`;
+    setReportSummary(sampleNotes);
+    setReportOutcomes('1. Conceptual understanding of key topics.\n2. Practical analytical exposure.\n3. Industry alignment.\n4. Positive participant feedback.');
+    
     setReportPhotos([
       {
         url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop',
-        caption: 'Chief Guest Dr. Padmasuvarna inaugurating the Guest Program'
+        caption: 'Chief Guest inaugurating the Guest Program'
       },
       {
         url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=800&auto=format&fit=crop',
@@ -175,11 +307,11 @@ export const ApprovalWorkflowPage: React.FC = () => {
       },
       {
         url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop',
-        caption: 'Interactive Q&A Session with First Year Students'
+        caption: 'Interactive Q&A Session with Students'
       },
       {
         url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop',
-        caption: 'Group photo of Faculty Organizers with Dr. Padmasuvarna'
+        caption: 'Group photo of Faculty Organizers with Chief Guest'
       }
     ]);
   };
@@ -194,6 +326,9 @@ export const ApprovalWorkflowPage: React.FC = () => {
     );
     setReportSummary(reqItem.report_summary || '');
     setReportOutcomes(reqItem.report_outcomes || '');
+    setReportCustomTitle(reqItem.report_custom_title || reqItem.title || '');
+    setReportCustomHeading(reqItem.report_custom_heading || 'POST-EVENT OUTCOME & COMPLETION REPORT');
+    setReportResourcePerson(reqItem.report_resource_person || reqItem.resource_person || '');
 
     let photos = [];
     if (reqItem.report_photos) {
@@ -205,6 +340,13 @@ export const ApprovalWorkflowPage: React.FC = () => {
     }
     setReportPhotos(photos || []);
     setShowReportModal(true);
+  };
+
+  const openPrintReportModal = (reqItem: any) => {
+    setReportCustomTitle(reqItem.report_custom_title || reqItem.title || '');
+    setReportCustomHeading(reqItem.report_custom_heading || 'POST-EVENT OUTCOME & COMPLETION REPORT');
+    setReportResourcePerson(reqItem.report_resource_person || reqItem.resource_person || '');
+    setShowPrintReportModal(true);
   };
 
   const handleSaveReportSubmit = async (e: React.FormEvent) => {
@@ -220,8 +362,11 @@ export const ApprovalWorkflowPage: React.FC = () => {
         reportOutcomes,
         reportParticipantsCount,
         reportEventDate,
+        reportResourcePerson,
         reportActualExpenditure: parseFloat(reportActualExpenditure) || selectedRequest.amount,
-        reportPhotos
+        reportPhotos,
+        reportCustomTitle,
+        reportCustomHeading
       });
       toast.success('Post-Event Outcome & Completion Report saved with photos!');
       setShowReportModal(false);
@@ -233,6 +378,9 @@ export const ApprovalWorkflowPage: React.FC = () => {
       toast.error(err.response?.data?.message || 'Failed to save completion report');
     }
   };
+
+  const displayReportTitle = reportCustomTitle.trim() || selectedRequest?.report_custom_title || selectedRequest?.title || 'Event Completion Report';
+  const displayReportHeading = reportCustomHeading.trim() || selectedRequest?.report_custom_heading || 'POST-EVENT OUTCOME & COMPLETION REPORT';
 
   const fetchAsBase64 = async (url: string): Promise<string> => {
     if (!url) return '';
@@ -265,8 +413,9 @@ export const ApprovalWorkflowPage: React.FC = () => {
     if (!req) return;
     toast.info('Preparing Word document export...');
 
-    // Convert uploaded college header logo to Base64 so Word displays it offline & reliably
+    // Convert uploaded college header logo & S-logo to Base64 so Word displays them offline & reliably
     const logoBase64 = await fetchAsBase64('/assets/sse-header-logo.png');
+    const sLogoBase64 = await fetchAsBase64('/assets/sse-s-logo.jpg');
 
     let photos = [];
     try {
@@ -324,12 +473,15 @@ export const ApprovalWorkflowPage: React.FC = () => {
     }
 
     const outcomeList = parseOutcomePoints(req.report_outcomes);
+    const mappedSdgs = getMappedSDGs(req);
+    const wordTitle = reportCustomTitle.trim() || req.report_custom_title || req.title || 'Event Completion Report';
+    const wordHeading = reportCustomHeading.trim() || req.report_custom_heading || 'POST-EVENT OUTCOME & COMPLETION REPORT';
 
     const wordHtml = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset='utf-8'>
-        <title>${req.title || 'Event Completion Report'}</title>
+        <title>${wordTitle}</title>
         <!--[if gte mso 9]>
         <xml>
           <w:WordDocument>
@@ -359,77 +511,183 @@ export const ApprovalWorkflowPage: React.FC = () => {
       </head>
       <body>
         <div class="Section1">
-          <div style="text-align: center; margin-bottom: 10pt; border-bottom: 2pt solid #0f172a; padding-bottom: 8pt;">
-            <img src="${logoBase64}" width="480" alt="Sanskrithi School of Engineering Logo" style="max-width: 100%; width: 480px; height: auto; display: block; margin: 0 auto;" />
-            <div style="font-size: 9.5pt; font-weight: bold; color: #334155; margin-top: 6pt; text-align: center;">
-              Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134
+          <!-- PAGE 1: PROGRAM OVERVIEW & EXECUTIVE SUMMARY -->
+          <div style="padding: 20pt 16pt; min-height: 820pt; box-sizing: border-box; background-color: #ffffff;">
+            <!-- Header Bar -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 12pt; border-bottom: 2pt solid #1a365d; padding-bottom: 4pt;" class="no-border">
+              <tr style="border: none;">
+                <td style="border: none; font-size: 11pt; font-weight: bold; color: #1a365d; text-transform: uppercase;">
+                  SANSKRITHI SCHOOL OF ENGINEERING
+                </td>
+                <td style="border: none; font-size: 9.5pt; font-weight: bold; color: #64748b; text-align: right;" align="right">
+                  Department of ${req.department || 'Humanities & Sciences'}
+                </td>
+              </tr>
+            </table>
+
+            <!-- DOCUMENT TITLE -->
+            <div style="text-align: center; margin-top: 12pt; margin-bottom: 14pt;">
+              <h1 style="font-family: Arial, sans-serif; font-size: 20pt; font-weight: 900; color: #1a365d; margin: 0; text-transform: uppercase; letter-spacing: 0.5pt;">
+                POST-EVENT OUTCOME &amp; COMPLETION REPORT
+              </h1>
+              <div style="font-size: 12.5pt; font-weight: bold; color: #334155; margin-top: 4pt;">
+                ${wordTitle}
+              </div>
+              <div style="font-size: 9.5pt; color: #64748b; margin-top: 2pt;">
+                Event Date: ${req.report_event_date || '22 March 2024'} &middot; Year ${req.report_event_date ? req.report_event_date.split(' ').pop() : '2024'}
+              </div>
             </div>
-            <div style="font-size: 8.5pt; color: #64748b; font-style: italic; margin-top: 2pt; text-align: center;">
-              Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org
+
+            <!-- PROGRAM OVERVIEW -->
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1a365d; border-bottom: 1.5pt solid #1a365d; padding-bottom: 3pt; margin-top: 14pt; margin-bottom: 8pt;">
+              PROGRAM OVERVIEW
+            </div>
+            <table style="width: 100%; border-collapse: collapse; border: 1pt solid #cbd5e1; margin-top: 6pt; margin-bottom: 14pt;">
+              <tr>
+                <td style="width: 32%; font-weight: bold; background-color: #f8fafc; border: 1pt solid #cbd5e1; padding: 6pt 8pt; color: #1a365d;">Program / Event Title:</td>
+                <td style="width: 68%; font-weight: bold; color: #0f172a; border: 1pt solid #cbd5e1; padding: 6pt 8pt;">${wordTitle}</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold; background-color: #f8fafc; border: 1pt solid #cbd5e1; padding: 6pt 8pt; color: #1a365d;">Organizing Department &amp; Secretary:</td>
+                <td style="border: 1pt solid #cbd5e1; padding: 6pt 8pt;">Department of ${req.department || 'Humanities & Sciences'} &middot; ${req.submitted_by_name}</td>
+              </tr>
+              <tr>
+                <td style="font-weight: bold; background-color: #f8fafc; border: 1pt solid #cbd5e1; padding: 6pt 8pt; color: #1a365d;">Event Execution Date:</td>
+                <td style="border: 1pt solid #cbd5e1; padding: 6pt 8pt;">${req.report_event_date || '22 March 2024'}</td>
+              </tr>
+              ${
+                (req.report_resource_person || req.resource_person || reportResourcePerson)
+                  ? `<tr>
+                <td style="font-weight: bold; background-color: #f8fafc; border: 1pt solid #cbd5e1; padding: 6pt 8pt; color: #1a365d;">Resource Person / Speaker:</td>
+                <td style="border: 1pt solid #cbd5e1; padding: 6pt 8pt;">${req.report_resource_person || req.resource_person || reportResourcePerson}</td>
+              </tr>`
+                  : ''
+              }
+              <tr>
+                <td style="font-weight: bold; background-color: #f8fafc; border: 1pt solid #cbd5e1; padding: 6pt 8pt; color: #1a365d;">Participants / Beneficiaries:</td>
+                <td style="border: 1pt solid #cbd5e1; padding: 6pt 8pt;">${req.report_participants_count || '145 students and 12 faculty members'}</td>
+              </tr>
+            </table>
+
+            <!-- EXECUTIVE SUMMARY -->
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1a365d; border-bottom: 1.5pt solid #1a365d; padding-bottom: 3pt; margin-top: 14pt; margin-bottom: 8pt;">
+              EXECUTIVE SUMMARY
+            </div>
+            <div style="padding: 4pt 0; font-size: 10pt; line-height: 1.5; color: #334155; margin-bottom: 14pt; white-space: pre-wrap;">
+              ${req.report_summary || 'The Department conducted a program designed to introduce participants to physical principles and engineering applications. The session connected classroom concepts with practical considerations such as energy efficiency and system performance.'}
+            </div>
+
+            <div style="text-align: center; border-top: 1pt solid #e2e8f0; padding-top: 8pt; font-size: 10pt; font-weight: bold; color: #1a365d; margin-top: 24pt;">
+              1
             </div>
           </div>
+          <br clear="all" style="page-break-before:always;" />
 
-          <div class="banner">POST-EVENT OUTCOME & COMPLETION REPORT</div>
+          <!-- PAGE 2: KEY OUTCOMES & SDG ALIGNMENT -->
+          <div style="padding: 20pt 16pt; min-height: 820pt; box-sizing: border-box; background-color: #ffffff;">
+            <!-- Header Bar -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 12pt; border-bottom: 2pt solid #1a365d; padding-bottom: 4pt;" class="no-border">
+              <tr style="border: none;">
+                <td style="border: none; font-size: 11pt; font-weight: bold; color: #1a365d; text-transform: uppercase;">
+                  SANSKRITHI SCHOOL OF ENGINEERING
+                </td>
+                <td style="border: none; font-size: 9.5pt; font-weight: bold; color: #64748b; text-align: right;" align="right">
+                  Department of ${req.department || 'Humanities & Sciences'}
+                </td>
+              </tr>
+            </table>
 
-          <table>
-            <tr>
-              <td style="width: 32%; font-weight: bold; background-color: #f1f5f9;">Program / Event Title:</td>
-              <td style="width: 68%; font-weight: bold; color: #0f172a;">${req.title}</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold; background-color: #f8fafc;">Organizing Department & Secretary:</td>
-              <td>${req.submitted_by_name} (${req.department} Dept)</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold; background-color: #f1f5f9;">Event Execution Date:</td>
-              <td>${req.report_event_date || '22 March 2024'}</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold; background-color: #f8fafc;">Total Participants / Beneficiaries:</td>
-              <td>${req.report_participants_count || '145 Students & 12 Faculty'}</td>
-            </tr>
-          </table>
+            <!-- KEY OUTCOMES -->
+            ${
+              outcomeList.length > 0
+                ? `
+              <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1a365d; border-bottom: 1.5pt solid #1a365d; padding-bottom: 3pt; margin-top: 10pt; margin-bottom: 8pt;">
+                KEY OUTCOMES &amp; LEARNING IMPACT
+              </div>
+              <div style="margin-bottom: 16pt;">
+                <ol style="margin: 0; padding-left: 18pt; font-size: 10pt; line-height: 1.6; color: #0f172a;">
+                  ${outcomeList.map((pt) => `<li style="margin-bottom: 6pt; font-weight: 500;">${pt}</li>`).join('')}
+                </ol>
+              </div>
+            `
+                : ''
+            }
 
-          <div class="section-heading">Executive Summary & Highlights of the Program</div>
-          <div class="text-box">
-            ${req.report_summary || 'The program was executed successfully as per approved requisition schedule.'}
-          </div>
-
-          ${
-            outcomeList.length > 0
-              ? `
-            <div class="section-heading">Key Outcomes & Learning Impact</div>
-            <div class="text-box">
-              <ol style="margin: 0; padding-left: 18pt; font-size: 10pt; line-height: 1.6; color: #0f172a;">
-                ${outcomeList.map((pt) => `<li style="margin-bottom: 4pt; font-weight: 500;">${pt}</li>`).join('')}
-              </ol>
+            <!-- SDG ALIGNMENT -->
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1a365d; border-bottom: 1.5pt solid #1a365d; padding-bottom: 3pt; margin-top: 14pt; margin-bottom: 8pt;">
+              SUSTAINABLE DEVELOPMENT GOALS
             </div>
-          `
-              : ''
-          }
+            <table style="width: 100%; border-collapse: collapse; margin-top: 6pt; margin-bottom: 14pt;" class="no-border">
+              <tr>
+                ${mappedSdgs
+                  .map(
+                    (sdg) => `
+                  <td style="width: 85px; padding: 4pt; border: none; vertical-align: top;" align="center">
+                    <a href="${sdg.link}">
+                      <img src="${sdg.iconUrl}" width="75" height="75" alt="SDG ${sdg.id} ${sdg.name}" style="width: 75px; height: 75px; border: none; margin: 0; display: block;" />
+                    </a>
+                  </td>
+                `
+                  )
+                  .join('')}
+              </tr>
+            </table>
 
-          ${photosHTML}
+            <div style="text-align: center; border-top: 1pt solid #e2e8f0; padding-top: 8pt; font-size: 10pt; font-weight: bold; color: #1a365d; margin-top: 24pt;">
+              2
+            </div>
+          </div>
+          <br clear="all" style="page-break-before:always;" />
 
-          <table style="width: 100%; border: none; margin-top: 35pt; page-break-inside: avoid;" class="no-border">
-            <tr style="border: none; text-align: center; font-weight: bold;">
-              <td style="border: none; width: 25%;">
-                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Signed digitally</div>
-                Organizing Secretary
-              </td>
-              <td style="border: none; width: 25%;">
-                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Verified & Signed</div>
-                Head of Dept (HOD)
-              </td>
-              <td style="border: none; width: 25%;">
-                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Approved</div>
-                Principal
-              </td>
-              <td style="border: none; width: 25%;">
-                <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Approved</div>
-                Chairman
-              </td>
-            </tr>
-          </table>
+          <!-- PAGE 3: EVENT PHOTOGRAPHS & CERTIFICATION -->
+          <div style="padding: 20pt 16pt; min-height: 820pt; box-sizing: border-box; background-color: #ffffff;">
+            <!-- Header Bar -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 12pt; border-bottom: 2pt solid #1a365d; padding-bottom: 4pt;" class="no-border">
+              <tr style="border: none;">
+                <td style="border: none; font-size: 11pt; font-weight: bold; color: #1a365d; text-transform: uppercase;">
+                  SANSKRITHI SCHOOL OF ENGINEERING
+                </td>
+                <td style="border: none; font-size: 9.5pt; font-weight: bold; color: #64748b; text-align: right;" align="right">
+                  Department of ${req.department || 'Humanities & Sciences'}
+                </td>
+              </tr>
+            </table>
+
+            ${photosHTML}
+
+            <!-- CERTIFICATION & APPROVAL SIGNATURES -->
+            <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #1a365d; border-bottom: 1.5pt solid #1a365d; padding-bottom: 3pt; margin-top: 20pt; margin-bottom: 8pt; page-break-inside: avoid;">
+              CERTIFICATION &amp; APPROVAL
+            </div>
+            <div style="font-size: 9.5pt; color: #64748b; font-style: italic; margin-bottom: 16pt;">
+              The undersigned certify that the program was conducted as reported and that the information presented in this completion report is accurate to the best of their knowledge.
+            </div>
+
+            <table style="width: 100%; border: none; margin-top: 20pt; page-break-inside: avoid;" class="no-border">
+              <tr style="border: none; text-align: center; font-weight: bold;">
+                <td style="border: none; width: 25%;">
+                  <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Signed digitally</div>
+                  Organizing Secretary
+                </td>
+                <td style="border: none; width: 25%;">
+                  <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Verified & Signed</div>
+                  Head of Dept (HOD)
+                </td>
+                <td style="border: none; width: 25%;">
+                  <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Approved</div>
+                  Principal
+                </td>
+                <td style="border: none; width: 25%;">
+                  <div style="border-bottom: 1pt solid #94a3b8; padding-bottom: 25pt; margin-bottom: 4pt; color: #94a3b8; font-weight: normal; font-style: italic;">Approved</div>
+                  Chairman
+                </td>
+              </tr>
+            </table>
+
+            <div style="text-align: center; border-top: 1pt solid #e2e8f0; padding-top: 8pt; font-size: 10pt; font-weight: bold; color: #1a365d; margin-top: 24pt;">
+              3
+            </div>
+          </div>
         </div>
       </body>
       </html>
@@ -576,112 +834,50 @@ export const ApprovalWorkflowPage: React.FC = () => {
     toast.success('Requisition Application exported to Word (.doc) successfully!');
   };
 
+  const handleDownloadPDF = async (elementId: string, defaultFilename: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      toast.error('Document content not found for PDF export');
+      return;
+    }
+    setIsGeneratingPdf(true);
+    const loadingToast = toast.loading('Generating professional A4 PDF...');
+
+    try {
+      const marginMm = pdfMargin === 'narrow' ? 5 : pdfMargin === 'wide' ? 15 : 10;
+      const opt = {
+        margin: [marginMm, marginMm, marginMm, marginMm],
+        filename: defaultFilename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      // @ts-ignore
+      await html2pdf().set(opt).from(element).save();
+      toast.dismiss(loadingToast);
+      toast.success('Official PDF document downloaded successfully!');
+    } catch (err: any) {
+      console.error('PDF Export Error:', err);
+      toast.dismiss(loadingToast);
+      toast.error('Direct PDF export failed. Falling back to Print/Save as PDF...');
+      if (elementId === 'printable-application-body') {
+        handlePrintApplication(selectedRequest);
+      } else {
+        handlePrintReport(selectedRequest);
+      }
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   const handlePrintReport = (req: any) => {
-    const printElement = document.getElementById('printable-report-body');
-    if (!printElement) {
-      toast.error('Printable report content not found');
-      return;
-    }
-
-    const printWin = window.open('', '_blank', 'width=950,height=1100');
-    if (!printWin) {
-      toast.error('Pop-up blocker prevented opening print window. Please allow pop-ups.');
-      return;
-    }
-
-    printWin.document.open();
-    printWin.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${req?.title || 'Post-Event Outcome Report'}</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 10mm;
-            }
-            body {
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-              margin: 0;
-              padding: 15px;
-              color: #0f172a;
-              background: #ffffff;
-            }
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          </style>
-        </head>
-        <body>
-          <div style="width: 100%; max-width: 100%;">
-            ${printElement.outerHTML}
-          </div>
-          <script>
-            setTimeout(() => {
-              window.print();
-              setTimeout(() => { window.close(); }, 500);
-            }, 600);
-          </script>
-        </body>
-      </html>
-    `);
-    printWin.document.close();
+    window.print();
   };
 
   const handlePrintApplication = (req: any) => {
-    const printElement = document.getElementById('printable-application-body');
-    if (!printElement) {
-      toast.error('Printable application content not found');
-      return;
-    }
-
-    const printWin = window.open('', '_blank', 'width=950,height=1100');
-    if (!printWin) {
-      toast.error('Pop-up blocker prevented opening print window. Please allow pop-ups.');
-      return;
-    }
-
-    printWin.document.open();
-    printWin.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${req?.title || 'Financial Assistance Application'}</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 10mm;
-            }
-            body {
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-              margin: 0;
-              padding: 15px;
-              color: #0f172a;
-              background: #ffffff;
-            }
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          </style>
-        </head>
-        <body>
-          <div style="width: 100%; max-width: 100%;">
-            ${printElement.outerHTML}
-          </div>
-          <script>
-            setTimeout(() => {
-              window.print();
-              setTimeout(() => { window.close(); }, 500);
-            }, 600);
-          </script>
-        </body>
-      </html>
-    `);
-    printWin.document.close();
+    window.print();
   };
 
   const specialRole = (user?.special_role || user?.specialRole || '').toUpperCase();
@@ -919,6 +1115,13 @@ export const ApprovalWorkflowPage: React.FC = () => {
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Global CSS for Browser Print to PDF */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+        #printable-report-body,
+        #printable-report-body * {
+          font-family: 'Inter', system-ui, sans-serif;
+        }
+
         @media print {
           body * {
             visibility: hidden !important;
@@ -958,7 +1161,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 0 !important;
           }
         }
       `}</style>
@@ -1294,7 +1497,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
                 {/* 3. Post-Event Outcome Report (Print / Word Export) */}
                 {(selectedRequest.report_summary || selectedRequest.report_submitted_at) && (
                   <button
-                    onClick={() => setShowPrintReportModal(true)}
+                    onClick={() => openPrintReportModal(selectedRequest)}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-semibold text-xs transition-all border border-teal-600 shadow-md"
                   >
                     <Award className="w-4 h-4 text-emerald-300" /> Event Outcome Report (Print / Word)
@@ -1334,6 +1537,32 @@ export const ApprovalWorkflowPage: React.FC = () => {
                       <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">{selectedRequest.report_outcomes}</p>
                     </div>
                   )}
+
+                  {/* UN SDGs Mapping below Outcomes */}
+                  {(() => {
+                    const sdgs = getMappedSDGs(selectedRequest);
+                    return (
+                      <div className="pt-2 border-t border-emerald-200/80 space-y-1.5">
+                        <span className="text-[11px] font-extrabold text-emerald-950 uppercase tracking-wider block">
+                          Sustainable Development Goals:
+                        </span>
+                        <div className="flex flex-wrap gap-2.5 pt-0.5">
+                          {sdgs.map((sdg) => (
+                            <a
+                              key={sdg.id}
+                              href={sdg.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative rounded-xl overflow-hidden border border-slate-300 hover:border-emerald-500 shadow-xs hover:shadow-md transition-all"
+                              title={`SDG ${sdg.id}: ${sdg.name}`}
+                            >
+                              <img src={sdg.iconUrl} alt={`SDG ${sdg.id} ${sdg.name}`} className="w-16 h-16 sm:w-20 sm:h-20 object-contain bg-white" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Photos Grid Preview */}
                   {(() => {
@@ -1997,52 +2226,170 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
       {/* FORMAL 14-POINT SANSKRITHI SCHOOL OF ENGINEERING PRINT MODAL */}
       {showPrintModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-auto overflow-y-auto flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-hidden">
+          <div className="w-full max-w-4xl h-[92vh] max-h-[92vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 sm:p-7 flex flex-col space-y-4 overflow-hidden">
             {/* Top Toolbar */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 shrink-0 print:hidden">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
-                <span className="font-bold text-sm text-slate-800">Official Financial Assistance Application (14-Point SSE Format)</span>
+            <div className="flex flex-col gap-3 pb-3 border-b border-slate-200 shrink-0 print:hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="font-bold text-sm text-slate-800">Official Financial Assistance Application (14-Point SSE Format)</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleDownloadPDF('printable-application-body', `${selectedRequest.request_number || 'Requisition'}_Application.pdf`)}
+                    disabled={isGeneratingPdf}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" /> Download PDF
+                  </button>
+                  <button
+                    onClick={() => exportApplicationToWord(selectedRequest)}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                  >
+                    <FileDown className="w-4 h-4" /> Export Word (.doc)
+                  </button>
+                  <button
+                    onClick={() => handlePrintApplication(selectedRequest)}
+                    className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                  >
+                    <Printer className="w-4 h-4" /> Print / Save PDF
+                  </button>
+                  <button
+                    onClick={() => setShowPrintModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
+                  >
+                    Close Preview
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => exportApplicationToWord(selectedRequest)}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
-                >
-                  <FileDown className="w-4 h-4" /> Export Word (.doc)
-                </button>
-                <button
-                  onClick={() => handlePrintApplication(selectedRequest)}
-                  className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
-                >
-                  <Printer className="w-4 h-4" /> Print Form
-                </button>
-                <button
-                  onClick={() => setShowPrintModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
-                >
-                  Close Preview
-                </button>
+
+              {/* PDF Customization Settings Bar */}
+              <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-emerald-400" />
+                    <span className="font-extrabold text-xs tracking-wide uppercase text-slate-200">PDF Document Formatting Controls</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPdfSettings(!showPdfSettings)}
+                    className="text-xs text-slate-300 hover:text-white font-semibold flex items-center gap-1 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 transition-all"
+                  >
+                    {showPdfSettings ? 'Collapse Options ▲' : 'Customize PDF Options (Margins, Watermark, Header) ▼'}
+                  </button>
+                </div>
+
+                {showPdfSettings && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800 text-xs">
+                    {/* Margins */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-300">A4 Page Margins</label>
+                      <div className="flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
+                        {(['narrow', 'normal', 'wide'] as const).map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => setPdfMargin(m)}
+                            className={`flex-1 py-1 text-[11px] font-bold rounded-md capitalize transition-all ${
+                              pdfMargin === m ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {m} ({m === 'narrow' ? '5mm' : m === 'wide' ? '15mm' : '10mm'})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Watermark Toggle & Preset */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-300">Watermark Overlay</label>
+                        <button
+                          type="button"
+                          onClick={() => setPdfShowWatermark(!pdfShowWatermark)}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${pdfShowWatermark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`}
+                        >
+                          {pdfShowWatermark ? 'ENABLED' : 'DISABLED'}
+                        </button>
+                      </div>
+                      {pdfShowWatermark && (
+                        <select
+                          value={pdfWatermarkText}
+                          onChange={(e) => setPdfWatermarkText(e.target.value)}
+                          className="w-full px-2.5 py-1 bg-slate-800 border border-slate-700 text-white rounded-lg text-xs font-semibold"
+                        >
+                          <option value="OFFICIAL COPY">OFFICIAL COPY</option>
+                          <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+                          <option value="SANCTIONED & APPROVED">SANCTIONED & APPROVED</option>
+                          <option value="SSE PUTTAPARTHI">SSE PUTTAPARTHI</option>
+                          <option value="FOR COLLEGE RECORD ONLY">FOR COLLEGE RECORD ONLY</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Toggles (Header & Footer) */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-300">Visibility Controls</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPdfShowHeader(!pdfShowHeader)}
+                          className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                            pdfShowHeader ? 'bg-blue-600/30 text-blue-300 border-blue-500' : 'bg-slate-800 text-slate-500 border-slate-700'
+                          }`}
+                        >
+                          {pdfShowHeader ? '✓ Header Visible' : '✗ Header Hidden'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfShowFooter(!pdfShowFooter)}
+                          className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                            pdfShowFooter ? 'bg-blue-600/30 text-blue-300 border-blue-500' : 'bg-slate-800 text-slate-500 border-slate-700'
+                          }`}
+                        >
+                          {pdfShowFooter ? '✓ Signatures On' : '✗ Signatures Off'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Printable Form Body - Word-for-Word SSE Layout */}
-            <div id="printable-application-body" className="space-y-6 text-slate-900 text-xs font-sans p-6 sm:p-8 border border-slate-300 rounded-2xl bg-white leading-relaxed shadow-sm">
+            {/* Scrollable Document Body Wrapper */}
+            <div className="flex-1 overflow-y-auto pr-1">
+              <div
+                id="printable-application-body"
+              className={`relative overflow-hidden space-y-6 text-slate-900 text-xs font-sans border border-slate-300 rounded-2xl bg-white leading-relaxed shadow-sm ${
+                pdfMargin === 'narrow' ? 'p-4' : pdfMargin === 'wide' ? 'p-10 sm:p-12' : 'p-6 sm:p-8'
+              }`}
+            >
+              {/* Watermark Overlay */}
+              {pdfShowWatermark && pdfWatermarkText && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10 overflow-hidden z-0 select-none">
+                  <span className="text-6xl sm:text-7xl font-black tracking-widest text-slate-900 -rotate-45 uppercase text-center whitespace-nowrap">
+                    {pdfWatermarkText}
+                  </span>
+                </div>
+              )}
+
               {/* Header with College Logo */}
-              <div className="flex flex-col items-center justify-center text-center pb-4 border-b-2 border-slate-900 space-y-2">
-                <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
-                <p className="text-[11px] sm:text-xs text-slate-700 font-semibold">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
-                <p className="text-[10px] sm:text-[11px] text-slate-600 italic">Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org</p>
-              </div>
+              {pdfShowHeader && (
+                <div className="flex flex-col items-center justify-center text-center pb-4 border-b-2 border-slate-900 space-y-2 relative z-10">
+                  <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
+                  <p className="text-[11px] sm:text-xs text-slate-700 font-semibold">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
+                  <p className="text-[10px] sm:text-[11px] text-slate-600 italic">Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org</p>
+                </div>
+              )}
 
               {/* Title */}
-              <div className="text-center font-bold uppercase text-xs sm:text-sm tracking-wider py-3 bg-slate-50 border-y border-slate-300 rounded-lg">
+              <div className="text-center font-bold uppercase text-xs sm:text-sm tracking-wider py-3 bg-slate-50 border-y border-slate-300 rounded-lg relative z-10">
                 {selectedRequest.title || 'APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING GUEST PROGRAM'}
               </div>
 
               {/* 14-Point Table Format */}
-              <table className="w-full border-collapse border border-slate-400 text-xs my-4">
+              <table className="w-full border-collapse border border-slate-400 text-xs my-4 relative z-10">
                 <tbody>
                   <tr className="border-b border-slate-300">
                     <td className="w-1/2 p-2.5 font-semibold border-r border-slate-300 bg-slate-50">1. Name & address of Organizing Secretary of FDP/Program:</td>
@@ -2103,30 +2450,33 @@ export const ApprovalWorkflowPage: React.FC = () => {
               </table>
 
               {/* Signature Line Blocks */}
-              <div className="grid grid-cols-3 gap-4 text-center text-xs font-bold pt-12 mt-8 font-sans border-t border-slate-300">
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Signed digitally</div>
-                  <p className="pt-2">Signature of Organizing Secretary</p>
-                </div>
-
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
-                    {selectedRequest.principal_action_at ? `Approved on ${new Date(selectedRequest.principal_action_at).toLocaleDateString()}` : 'Pending Principal Signature'}
+              {pdfShowFooter && (
+                <div className="grid grid-cols-3 gap-4 text-center text-xs font-bold pt-12 mt-8 font-sans border-t border-slate-300 relative z-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                  <div>
+                    <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Signed digitally</div>
+                    <p className="pt-2">Signature of Organizing Secretary</p>
                   </div>
-                  <p className="pt-2">Signature of Principal</p>
-                </div>
 
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
-                    {selectedRequest.status === 'FULLY_APPROVED' ? 'Verified & Signed' : 'Pending Clearance'}
+                  <div>
+                    <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
+                      {selectedRequest.principal_action_at ? `Approved on ${new Date(selectedRequest.principal_action_at).toLocaleDateString()}` : 'Pending Principal Signature'}
+                    </div>
+                    <p className="pt-2">Signature of Principal</p>
                   </div>
-                  <p className="pt-2">Signature of Chairman</p>
+
+                  <div>
+                    <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
+                      {selectedRequest.status === 'FULLY_APPROVED' ? 'Verified & Signed' : 'Pending Clearance'}
+                    </div>
+                    <p className="pt-2">Signature of Chairman</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* POST-EVENT OUTCOME REPORT FORM MODAL */}
       {showReportModal && selectedRequest && (
@@ -2162,7 +2512,39 @@ export const ApprovalWorkflowPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveReportSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Custom Report Title & Main Heading Customization Card */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <span className="font-extrabold text-slate-800 text-xs tracking-wide uppercase flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-emerald-600" /> Custom Report Title & Main Heading
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Custom Event / Report Title</label>
+                    <input
+                      type="text"
+                      value={reportCustomTitle}
+                      onChange={(e) => setReportCustomTitle(e.target.value)}
+                      placeholder={selectedRequest?.title || 'e.g. Guest Lecture on Physics & Engineering Applications'}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Changes title on Cover Page, PDF & Word Export</p>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Custom Report Heading / Banner</label>
+                    <input
+                      type="text"
+                      value={reportCustomHeading}
+                      onChange={(e) => setReportCustomHeading(e.target.value)}
+                      placeholder="POST-EVENT OUTCOME & COMPLETION REPORT"
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">e.g. FACULTY DEVELOPMENT PROGRAM OUTCOME REPORT</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <label className="block font-bold text-slate-800 mb-1">Event Execution Date</label>
                   <input
@@ -2172,6 +2554,17 @@ export const ApprovalWorkflowPage: React.FC = () => {
                     onChange={(e) => setReportEventDate(e.target.value)}
                     placeholder="e.g. 22 March 2024"
                     className="w-full px-3.5 py-2 rounded-xl border border-slate-200"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Resource Person (Optional)</label>
+                  <input
+                    type="text"
+                    value={reportResourcePerson}
+                    onChange={(e) => setReportResourcePerson(e.target.value)}
+                    placeholder="e.g. Dr. A. Sharma (IIT Madras)"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-slate-900 focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
@@ -2201,25 +2594,55 @@ export const ApprovalWorkflowPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-800 mb-1">Executive Summary & Highlights</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-800">Executive Summary & Highlights (~300 Words)</label>
+                  <button
+                    type="button"
+                    disabled={isGeneratingAI}
+                    onClick={handleGenerateAISummaryAndOutcomes}
+                    className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {isGeneratingAI ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin" /> Gemini AI Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Auto-Generate with Gemini AI
+                      </>
+                    )}
+                  </button>
+                </div>
                 <textarea
-                  rows={4}
+                  rows={6}
                   required
                   value={reportSummary}
                   onChange={(e) => setReportSummary(e.target.value)}
-                  placeholder="Provide a detailed overview of the program execution, guest sessions, and student participation..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed"
+                  placeholder="Enter a brief 2-3 line summary or click Auto-Generate to create a full ~300-word executive summary..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed font-sans text-xs"
                 />
+                <p className="text-[10px] text-slate-500 mt-1 italic">
+                  Tip: Fill 2-3 lines above and click <span className="font-bold text-emerald-700 font-sans">Auto-Generate</span> to expand it into a detailed ~300-word executive summary and key outcomes automatically!
+                </p>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-800 mb-1">Key Outcomes & Feedback Received</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-800">Key Outcomes & Feedback Received</label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateAISummaryAndOutcomes}
+                    className="text-[10px] font-semibold text-slate-600 hover:text-emerald-700 flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3 text-emerald-600" /> Auto-generate outcomes
+                  </button>
+                </div>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={reportOutcomes}
                   onChange={(e) => setReportOutcomes(e.target.value)}
                   placeholder="List key learning takeaways, feedback ratings, or follow-up actions..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 leading-relaxed font-sans text-xs"
                 />
               </div>
 
@@ -2327,167 +2750,427 @@ export const ApprovalWorkflowPage: React.FC = () => {
 
       {/* OFFICIAL POST-EVENT OUTCOME REPORT PRINT MODAL */}
       {showPrintReportModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 space-y-6 my-auto overflow-y-auto flex flex-col">
-            {/* Top Toolbar */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 shrink-0 print:hidden">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-bold text-sm text-slate-800">Official Post-Event Outcome Report (with Photos)</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => exportReportToWord(selectedRequest)}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
-                >
-                  <FileDown className="w-4 h-4" /> Export Word (.doc)
-                </button>
-                <button
-                  onClick={() => handlePrintReport(selectedRequest)}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
-                >
-                  <Printer className="w-4 h-4" /> Print Event Report
-                </button>
-                <button
-                  onClick={() => setShowPrintReportModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
-                >
-                  Close Preview
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Report Body */}
-            <div id="printable-report-body" className="space-y-6 text-slate-900 text-xs font-sans p-6 sm:p-8 border border-slate-300 rounded-2xl bg-white leading-relaxed shadow-sm">
-              {/* Header with College Logo */}
-              <div className="flex flex-col items-center justify-center text-center pb-4 border-b-2 border-slate-900 space-y-2">
-                <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
-                <p className="text-[11px] sm:text-xs text-slate-700 font-semibold">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
-                <p className="text-[10px] sm:text-[11px] text-slate-600 italic">Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org</p>
-              </div>
-
-              {/* Document Title Banner */}
-              <div className="bg-slate-100 py-2.5 px-4 text-center font-extrabold uppercase text-xs sm:text-sm tracking-wider border-y border-slate-400 rounded-lg">
-                POST-EVENT OUTCOME & COMPLETION REPORT
-              </div>
-
-              {/* Event & Requisition Summary Table */}
-              <table className="w-full border-collapse border border-slate-400 text-xs my-4">
-                <tbody>
-                  <tr className="border-b border-slate-300 bg-slate-50">
-                    <td className="w-1/3 p-2.5 font-bold border-r border-slate-300 text-slate-700">Program / Event Title:</td>
-                    <td className="w-2/3 p-2.5 font-bold text-slate-900">{selectedRequest.title}</td>
-                  </tr>
-                  <tr className="border-b border-slate-300">
-                    <td className="p-2.5 font-bold border-r border-slate-300 text-slate-700">Organizing Department & Secretary:</td>
-                    <td className="p-2.5 font-semibold text-slate-800">{selectedRequest.submitted_by_name} ({selectedRequest.department} Dept)</td>
-                  </tr>
-                  <tr className="border-b border-slate-300 bg-slate-50">
-                    <td className="p-2.5 font-bold border-r border-slate-300 text-slate-700">Event Execution Date:</td>
-                    <td className="p-2.5 font-semibold text-slate-800">{selectedRequest.report_event_date || '22 March 2024'}</td>
-                  </tr>
-                  <tr className="border-b border-slate-300">
-                    <td className="p-2.5 font-bold border-r border-slate-300 text-slate-700">Total Participants / Beneficiaries:</td>
-                    <td className="p-2.5 font-semibold text-slate-800">{selectedRequest.report_participants_count || '145 Students & 12 Faculty'}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Executive Summary */}
-              <div className="space-y-1.5 pt-2">
-                <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-300 pb-1">
-                  Executive Summary & Highlights of the Program
-                </h4>
-                <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  {selectedRequest.report_summary || 'The program was executed successfully as per approved requisition schedule. All planned guest lectures and interactive sessions were conducted smoothly with active participant engagement.'}
-                </p>
-              </div>
-
-              {/* Key Outcomes - Point by Point Numbered List */}
-              {selectedRequest.report_outcomes && (
-                <div className="space-y-1.5 pt-2">
-                  <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-300 pb-1">
-                    Key Outcomes & Learning Impact
-                  </h4>
-                  <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
-                    <ol className="list-decimal list-inside space-y-2 text-xs text-slate-800 font-semibold leading-relaxed">
-                      {parseOutcomePoints(selectedRequest.report_outcomes).map((pt: string, idx: number) => (
-                        <li key={idx} className="pl-1">
-                          <span className="font-normal text-slate-900">{pt}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-md overflow-hidden">
+          <div className="w-full max-w-4xl h-[92vh] max-h-[92vh] bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 sm:p-7 flex flex-col space-y-4 overflow-hidden">
+            {/* Pinned Top Toolbar */}
+            <div className="flex flex-col gap-3 pb-3 border-b border-slate-200 shrink-0 print:hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-bold text-sm text-slate-800">Official Post-Event Outcome Report (with Photos)</span>
                 </div>
-              )}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleDownloadPDF('printable-report-body', `${selectedRequest.request_number || 'Report'}_Event_Outcome_Report.pdf`)}
+                    disabled={isGeneratingPdf}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" /> Download PDF
+                  </button>
+                  <button
+                    onClick={() => exportReportToWord(selectedRequest)}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                  >
+                    <FileDown className="w-4 h-4" /> Export Word (.doc)
+                  </button>
+                  <button
+                    onClick={() => handlePrintReport(selectedRequest)}
+                    className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs flex items-center gap-1.5 shadow transition-all"
+                  >
+                    <Printer className="w-4 h-4" /> Print / Save PDF
+                  </button>
+                  <button
+                    onClick={() => setShowPrintReportModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"
+                  >
+                    Close Preview
+                  </button>
+                </div>
+              </div>
 
-              {/* Event Photos Gallery with Neat Borders */}
-              {(() => {
-                let photos: any[] = [];
-                try {
-                  photos = typeof selectedRequest.report_photos === 'string' ? JSON.parse(selectedRequest.report_photos) : selectedRequest.report_photos;
-                } catch (e) {
-                  photos = [];
-                }
-                if (!photos || photos.length === 0) return null;
+              {/* PDF Customization Settings Bar */}
+              <div className="bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-emerald-400" />
+                    <span className="font-extrabold text-xs tracking-wide uppercase text-slate-200">PDF Report Formatting & Layout Controls</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPdfSettings(!showPdfSettings)}
+                    className="text-xs text-slate-300 hover:text-white font-semibold flex items-center gap-1 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 transition-all"
+                  >
+                    {showPdfSettings ? 'Collapse Options ▲' : 'Customize PDF Options (Margins, Watermark, Layout) ▼'}
+                  </button>
+                </div>
 
-                return (
-                  <div className="space-y-3 pt-3" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                    <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-300 pb-1" style={{ pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-                      Event Photographs & Visual Evidence
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {photos.map((photo: any, index: number) => (
-                        <div
-                          key={index}
-                          className="border-2 border-slate-900 bg-white p-3 rounded-2xl shadow-md flex flex-col items-center justify-between transition-all"
-                          style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
+                {showPdfSettings && (
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-800 text-xs">
+                    {/* Margins */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-300">A4 Page Margins</label>
+                      <div className="flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
+                        {(['narrow', 'normal', 'wide'] as const).map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => setPdfMargin(m)}
+                            className={`flex-1 py-1 text-[11px] font-bold rounded-md capitalize transition-all ${
+                              pdfMargin === m ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {m} ({m === 'narrow' ? '5mm' : m === 'wide' ? '15mm' : '10mm'})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Watermark Toggle & Preset */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[11px] font-bold text-slate-300">Watermark Overlay</label>
+                        <button
+                          type="button"
+                          onClick={() => setPdfShowWatermark(!pdfShowWatermark)}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${pdfShowWatermark ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'}`}
                         >
-                          <div className="w-full h-40 overflow-hidden rounded-xl border border-slate-300 shadow-inner bg-slate-100 flex items-center justify-center">
-                            <img
-                              src={photo.url}
-                              alt={photo.caption || `Event Photo ${index + 1}`}
-                              className="w-full h-full object-contain p-1 rounded-xl bg-slate-900/5"
-                            />
-                          </div>
-                          <div className="mt-2 px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-300 font-sans text-xs font-bold text-slate-800 italic text-center w-full">
-                            {photo.caption || `Photo ${index + 1}`}
-                          </div>
-                        </div>
-                      ))}
+                          {pdfShowWatermark ? 'ENABLED' : 'DISABLED'}
+                        </button>
+                      </div>
+                      {pdfShowWatermark && (
+                        <select
+                          value={pdfWatermarkText}
+                          onChange={(e) => setPdfWatermarkText(e.target.value)}
+                          className="w-full px-2.5 py-1 bg-slate-800 border border-slate-700 text-white rounded-lg text-xs font-semibold"
+                        >
+                          <option value="OFFICIAL COPY">OFFICIAL COPY</option>
+                          <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+                          <option value="SANCTIONED & APPROVED">SANCTIONED & APPROVED</option>
+                          <option value="SSE PUTTAPARTHI">SSE PUTTAPARTHI</option>
+                          <option value="FOR COLLEGE RECORD ONLY">FOR COLLEGE RECORD ONLY</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Photo Grid Layout */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-300">Photo Gallery Layout</label>
+                      <div className="flex rounded-lg bg-slate-800 p-0.5 border border-slate-700">
+                        <button
+                          type="button"
+                          onClick={() => setPdfPhotoColumns('2')}
+                          className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${
+                            pdfPhotoColumns === '2' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          2 Columns Grid
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfPhotoColumns('1')}
+                          className={`flex-1 py-1 text-[11px] font-bold rounded-md transition-all ${
+                            pdfPhotoColumns === '1' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          1 Column Full
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Visibility Controls */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-300">Visibility Controls</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPdfShowHeader(!pdfShowHeader)}
+                          className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                            pdfShowHeader ? 'bg-blue-600/30 text-blue-300 border-blue-500' : 'bg-slate-800 text-slate-500 border-slate-700'
+                          }`}
+                        >
+                          {pdfShowHeader ? '✓ Header On' : '✗ Header Off'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPdfShowFooter(!pdfShowFooter)}
+                          className={`flex-1 py-1 text-[10px] font-bold rounded-lg border transition-all ${
+                            pdfShowFooter ? 'bg-blue-600/30 text-blue-300 border-blue-500' : 'bg-slate-800 text-slate-500 border-slate-700'
+                          }`}
+                        >
+                          {pdfShowFooter ? '✓ Signs On' : '✗ Signs Off'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Editable Title & Heading Controls */}
+                    <div className="sm:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-slate-800">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-300 mb-1">Report Event Title (Cover Page & Header)</label>
+                        <input
+                          type="text"
+                          value={reportCustomTitle}
+                          onChange={(e) => setReportCustomTitle(e.target.value)}
+                          placeholder={selectedRequest?.title || "e.g. Guest Lecture on Physics & Engineering Applications"}
+                          className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 text-white rounded-lg text-xs font-semibold focus:ring-1 focus:ring-emerald-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-300 mb-1">Report Main Heading / Banner</label>
+                        <input
+                          type="text"
+                          value={reportCustomHeading}
+                          onChange={(e) => setReportCustomHeading(e.target.value)}
+                          placeholder="POST-EVENT OUTCOME & COMPLETION REPORT"
+                          className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 text-white rounded-lg text-xs font-semibold focus:ring-1 focus:ring-emerald-400"
+                        />
+                      </div>
                     </div>
                   </div>
-                );
-              })()}
+                )}
+              </div>
+            </div>
 
-              {/* Signature Line Blocks */}
-              <div className="grid grid-cols-4 gap-4 text-center text-xs font-bold pt-12 mt-6 font-sans border-t border-slate-300" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Signed digitally</div>
-                  <p className="pt-2">Organizing Secretary</p>
-                </div>
+            {/* Scrollable Document Body Wrapper */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-6">
+              <div
+                id="printable-report-body"
+                className={`relative overflow-hidden space-y-6 text-slate-900 text-xs font-sans border border-slate-300 rounded-2xl bg-white leading-relaxed shadow-sm ${
+                  pdfMargin === 'narrow' ? 'p-4' : pdfMargin === 'wide' ? 'p-10 sm:p-12' : 'p-6 sm:p-8'
+                }`}
+              >
+                    {/* Watermark Overlay */}
+                    {pdfShowWatermark && pdfWatermarkText && (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-10 overflow-hidden z-0 select-none">
+                        <span className="text-6xl sm:text-7xl font-black tracking-widest text-slate-900 -rotate-45 uppercase text-center whitespace-nowrap">
+                          {pdfWatermarkText}
+                        </span>
+                      </div>
+                    )}
 
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Verified & Signed</div>
-                  <p className="pt-2">Head of Department (HOD)</p>
-                </div>
+                    {/* PAGE 1: PROGRAM OVERVIEW, EXECUTIVE SUMMARY & KEY OUTCOMES */}
+                    <div className="relative min-h-[780px] print:min-h-0 flex flex-col justify-between p-4 sm:p-6 bg-white shadow-none space-y-4">
+                      <div className="space-y-3 relative z-10">
+                        {/* Page 1 Header Bar */}
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200 text-xs">
+                          <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                          <span className="text-slate-700 font-bold text-xs uppercase tracking-wide">Department of {selectedRequest.department || 'Humanities & Sciences'}</span>
+                        </div>
 
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">
-                    {selectedRequest.principal_action_at ? `Approved ${new Date(selectedRequest.principal_action_at).toLocaleDateString()}` : 'Principal Sign'}
+                        {/* DOCUMENT TITLE BLOCK */}
+                        <div className="text-center space-y-1 py-0.5">
+                          <h1 className="text-lg sm:text-xl font-black text-[#1a365d] uppercase tracking-wide" style={{ letterSpacing: '0.03em', fontFamily: "'Inter', sans-serif" }}>
+                            {displayReportHeading}
+                          </h1>
+                          <div className="text-xs sm:text-sm font-bold text-slate-800">
+                            {displayReportTitle}
+                          </div>
+                          <div className="text-[11px] font-semibold text-slate-500 pt-0.5">
+                            Event Date: {selectedRequest.report_event_date || '22 March 2024'} &bull; Year {selectedRequest.report_event_date ? selectedRequest.report_event_date.split(' ').pop() : '2024'}
+                          </div>
+                        </div>
+
+                        {/* SECTION 1: PROGRAM OVERVIEW */}
+                        <div className="mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                            PROGRAM OVERVIEW
+                          </h3>
+                          <table className="w-full border-collapse border border-slate-200 text-xs shadow-none">
+                            <tbody>
+                              <tr className="border-b border-slate-200">
+                                <td className="w-1/3 py-1.5 px-2.5 font-bold bg-slate-50 border-r border-slate-200 text-[#1a365d]">Program / Event Title</td>
+                                <td className="w-2/3 py-1.5 px-2.5 font-semibold text-slate-900">{displayReportTitle}</td>
+                              </tr>
+                              <tr className="border-b border-slate-200">
+                                <td className="py-1.5 px-2.5 font-bold bg-slate-50 border-r border-slate-200 text-[#1a365d]">Organizing Department &amp; Secretary</td>
+                                <td className="py-1.5 px-2.5 font-semibold text-slate-800">Department of {selectedRequest.department || 'Humanities & Sciences'} &middot; {selectedRequest.submitted_by_name}</td>
+                              </tr>
+                              <tr className="border-b border-slate-200">
+                                <td className="py-1.5 px-2.5 font-bold bg-slate-50 border-r border-slate-200 text-[#1a365d]">Event Execution Date</td>
+                                <td className="py-1.5 px-2.5 font-semibold text-slate-800">{selectedRequest.report_event_date || '22 March 2024'}</td>
+                              </tr>
+                              {(selectedRequest.report_resource_person || selectedRequest.resource_person || reportResourcePerson) && (
+                                <tr className="border-b border-slate-200">
+                                  <td className="py-1.5 px-2.5 font-bold bg-slate-50 border-r border-slate-200 text-[#1a365d]">Resource Person / Speaker</td>
+                                  <td className="py-1.5 px-2.5 font-semibold text-slate-800">{selectedRequest.report_resource_person || selectedRequest.resource_person || reportResourcePerson}</td>
+                                </tr>
+                              )}
+                              <tr>
+                                <td className="py-1.5 px-2.5 font-bold bg-slate-50 border-r border-slate-200 text-[#1a365d]">Participants / Beneficiaries</td>
+                                <td className="py-1.5 px-2.5 font-semibold text-slate-800">{selectedRequest.report_participants_count || '145 first-year students and 12 faculty members'}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* SECTION 2: EXECUTIVE SUMMARY */}
+                        <div className="mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                            EXECUTIVE SUMMARY
+                          </h3>
+                          <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-normal pt-0.5 space-y-1">
+                            {selectedRequest.report_summary || 'The Department conducted a program designed to introduce participants to physical principles and engineering applications. The session connected classroom concepts with practical considerations such as energy efficiency and system performance. With active student and faculty participation, the event provided a valuable platform for technical enrichment and academic engagement.'}
+                          </div>
+                        </div>
+
+                        {/* SECTION 3: KEY OUTCOMES & LEARNING IMPACT */}
+                        <div className="mb-[10px]" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                          <h3 className="font-extrabold text-[#1a365d] text-xs uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                            KEY OUTCOMES &amp; LEARNING IMPACT
+                          </h3>
+                          <div className="space-y-1 pt-0.5">
+                            {parseOutcomePoints(selectedRequest.report_outcomes).map((pt: string, idx: number) => {
+                              const parts = pt.split(':');
+                              const title = parts.length > 1 ? parts[0].trim() : `Outcome Point ${idx + 1}`;
+                              const desc = parts.length > 1 ? parts.slice(1).join(':').trim() : pt;
+                              return (
+                                <div key={idx} className="flex items-start gap-2 py-0.5 border-b border-slate-100 last:border-b-0">
+                                  <span className="text-[#1a365d] font-extrabold text-xs leading-none w-5 shrink-0 pt-0.5">
+                                    {String(idx + 1).padStart(2, '0')}
+                                  </span>
+                                  <div>
+                                    <span className="font-bold text-slate-900 text-xs mr-1">{title}:</span>
+                                    <span className="text-slate-600 text-xs leading-snug">{desc}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Page 1 Centered Footer */}
+                      <div className="pt-2 border-t border-slate-200 text-center font-extrabold text-[#1a365d] text-xs mt-auto">
+                        1
+                      </div>
+                    </div>
+
+                    {/* PAGE BREAK INDICATOR IN PREVIEW MODAL */}
+                    <div className="py-2 flex items-center justify-center gap-2 border-y border-dashed border-slate-300 bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-lg print:hidden">
+                      <span>Page 1 (Overview, Summary &amp; Outcomes) &bull; Page 2 (SDGs, Photographs &amp; Signatures) Below</span>
+                    </div>
+
+                    {/* PAGE 2: SDG ALIGNMENT, PHOTOGRAPHS & SIGNATURES */}
+                    <div className="relative min-h-[780px] print:min-h-[268mm] flex flex-col justify-between p-4 sm:p-6 bg-white shadow-none space-y-4 page-break-before-always" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
+                      <div className="space-y-4 relative z-10 flex-1 flex flex-col justify-start">
+                        {/* Page 2 Header Bar */}
+                        <div className="flex items-center justify-between pb-2 border-b-2 border-slate-800 text-xs">
+                          <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                          <span className="text-slate-800 font-extrabold text-xs uppercase tracking-wide">Department of {selectedRequest.department || 'Humanities & Sciences'}</span>
+                        </div>
+
+                        {/* SECTION 1: SUSTAINABLE DEVELOPMENT GOAL ALIGNMENT */}
+                        <div className="pt-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                            SUSTAINABLE DEVELOPMENT GOAL ALIGNMENT
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-3.5 pt-1">
+                            {getMappedSDGs(selectedRequest).map((sdg) => (
+                              <a
+                                key={sdg.id}
+                                href={sdg.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 transition-transform hover:scale-105"
+                              >
+                                <img
+                                  src={sdg.iconUrl}
+                                  alt={`${sdg.code}: ${sdg.name}`}
+                                  className="w-16 h-16 sm:w-20 sm:h-20 print:w-16 print:h-16 rounded-xl object-contain shadow-xs"
+                                />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* SECTION 2: EVENT PHOTOGRAPHS (Without box borders) */}
+                        <div className="pt-1 mb-[10px]">
+                          <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b-2 border-[#1a365d] pb-1 mb-[10px]">
+                            EVENT PHOTOGRAPHS &amp; VISUAL EVIDENCE
+                          </h3>
+                          {(() => {
+                            let photos: any[] = [];
+                            try {
+                              photos = typeof selectedRequest.report_photos === 'string' ? JSON.parse(selectedRequest.report_photos) : selectedRequest.report_photos;
+                            } catch (e) {
+                              photos = [];
+                            }
+                            const defaultPhotos = [
+                              { url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop', caption: 'Chief Guest inaugurating the Guest Academic Program' },
+                              { url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop', caption: 'Interactive Q&A and Problem-Solving Session with Students' }
+                            ];
+                            const displayPhotos = photos && photos.length > 0 ? photos : defaultPhotos;
+
+                            return (
+                              <div className="report-photo-grid flex flex-row gap-5 pt-1 w-full justify-center">
+                                {displayPhotos.slice(0, 2).map((photo: any, index: number) => (
+                                  <div key={index} className="report-photo-item flex-1 text-center flex flex-col items-center">
+                                    <div className="w-full h-40 sm:h-44 bg-slate-50 rounded-xl overflow-hidden shadow-xs flex items-center justify-center">
+                                      <img
+                                        src={photo.url}
+                                        alt={photo.caption || `Event Photo ${index + 1}`}
+                                        className="report-photo-img w-full h-full object-cover rounded-xl"
+                                      />
+                                    </div>
+                                    <p className="report-caption text-[10px] sm:text-[11px] font-semibold italic text-slate-700 pt-1" style={{ fontFamily: 'Arial, sans-serif' }}>
+                                      {photo.caption || `Event Photo ${index + 1}`}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* LinkedIn Media & Social Coverage Hyperlink */}
+                        <div className="pt-[30px] pb-1 mb-[10px] text-center">
+                          <span className="font-bold text-[#1a365d] text-xs mr-1.5" style={{ fontFamily: 'Cambria, Georgia, serif' }}>LinkedIn Post URL:</span>
+                          <a
+                            href={selectedRequest.report_linkedin_url || selectedRequest.linkedin_url || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-medium text-xs inline-flex items-center gap-1"
+                            style={{ fontFamily: 'Cambria, Georgia, serif' }}
+                          >
+                            <span>{selectedRequest.report_linkedin_url || selectedRequest.linkedin_url || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}</span>
+                            <ExternalLink className="w-3 h-3 shrink-0 print:hidden" />
+                          </a>
+                        </div>
+
+                        {/* SECTION 3: OFFICIAL SIGNATURES - Pinned at bottom of page 2 */}
+                        <div className="report-signatures-grid pt-10 pb-4 flex flex-row justify-between text-center mt-auto w-full">
+                          <div className="report-signature-col flex-1 space-y-1">
+                            <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
+                              {selectedRequest.submitted_by_name || 'Faculty Coordinator'}
+                            </div>
+                            <div className="text-[11px] text-slate-600 font-medium">Event Convener</div>
+                          </div>
+
+                          <div className="report-signature-col flex-1 space-y-1">
+                            <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
+                              Head of Department
+                            </div>
+                            <div className="text-[11px] text-slate-600 font-medium">Department of {selectedRequest.department}</div>
+                          </div>
+
+                          <div className="report-signature-col flex-1 space-y-1">
+                            <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
+                              Principal
+                            </div>
+                            <div className="text-[11px] text-slate-600 font-medium">Sanskrithi School of Engineering</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Page 2 Centered Footer */}
+                      <div className="pt-2 border-t border-slate-200 text-center font-extrabold text-[#1a365d] text-xs mt-auto">
+                        2
+                      </div>
+                    </div>
                   </div>
-                  <p className="pt-2">Principal</p>
-                </div>
-
-                <div>
-                  <div className="border-b border-slate-400 pb-8 text-slate-400 font-normal italic">Approved</div>
-                  <p className="pt-2">Chairman</p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
     </div>
   );
 };

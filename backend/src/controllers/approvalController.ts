@@ -455,7 +455,6 @@ export const addComment = async (req: AuthenticatedRequest, res: Response) => {
 export const saveCompletionReport = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { reportSummary, reportOutcomes, reportParticipantsCount, reportEventDate, reportActualExpenditure, reportPhotos } = req.body;
     const userId = req.user?.id;
     const userName = req.user?.name || 'HOD / Submitter';
 
@@ -469,6 +468,17 @@ export const saveCompletionReport = async (req: AuthenticatedRequest, res: Respo
       return res.status(403).json({ success: false, message: 'Only the original submitter or Super Admin can submit the completion report.' });
     }
 
+    const {
+      reportSummary,
+      reportOutcomes,
+      reportParticipantsCount,
+      reportEventDate,
+      reportActualExpenditure,
+      reportPhotos,
+      reportCustomTitle,
+      reportCustomHeading
+    } = req.body;
+
     const photosJson = JSON.stringify(reportPhotos || []);
 
     await query(
@@ -479,10 +489,22 @@ export const saveCompletionReport = async (req: AuthenticatedRequest, res: Respo
            report_event_date = $4,
            report_actual_expenditure = $5,
            report_photos = $6::jsonb,
+           report_custom_title = $7,
+           report_custom_heading = $8,
            report_submitted_at = CURRENT_TIMESTAMP,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7`,
-      [reportSummary, reportOutcomes, reportParticipantsCount, reportEventDate, reportActualExpenditure || 0, photosJson, id]
+       WHERE id = $9`,
+      [
+        reportSummary,
+        reportOutcomes,
+        reportParticipantsCount,
+        reportEventDate,
+        reportActualExpenditure || 0,
+        photosJson,
+        reportCustomTitle || null,
+        reportCustomHeading || null,
+        id
+      ]
     );
 
     // Record audit log comment
@@ -496,6 +518,243 @@ export const saveCompletionReport = async (req: AuthenticatedRequest, res: Respo
   } catch (error: any) {
     logger.error('Error saving event completion report:', error);
     return res.status(500).json({ success: false, message: 'Failed to save completion report', error: error.message });
+  }
+};
+
+/**
+ * POST /api/approvals/generate-report-ai
+ * Uses Gemini AI API (with smart fallback) to generate a ~300-word Executive Summary and Key Outcomes based on user notes & event details
+ */
+export const generateReportAI = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { title, department, category, description, userNotes, eventDate, participantsCount } = req.body;
+
+    const titleStr = title?.trim() || 'Academic & Technical Activity';
+    const deptStr = department?.trim() || 'Engineering';
+    const catStr = category?.trim() || 'Academic Program';
+    const descStr = description?.trim() || '';
+    const dateStr = eventDate || 'recently';
+    const countStr = participantsCount || '145 Participants';
+    
+    // Filter out previous generated boilerplate & strip expenditure/budget details
+    let cleanNotes = (userNotes || '').trim();
+    if (cleanNotes.startsWith('The Department of') || cleanNotes.length > 400) {
+      cleanNotes = '';
+    }
+
+    // Strip out any financial expenditure, budget, TA/DA, or honorarium lines from cleanNotes
+    cleanNotes = cleanNotes
+      .replace(/Estimated\s+Expenditure[\s\S]*?(Financial\s+Assistance|Note\s+on|$)/gi, '')
+      .replace(/Financial\s+Assistance\s+Sought[\s\S]*?(Expected|Note|$)/gi, '')
+      .replace(/TA\s*&\s*DA[\s\S]*?\n/gi, '')
+      .replace(/Honorarium[\s\S]*?\n/gi, '')
+      .replace(/Total\s+Expenditure[\s\S]*?\n/gi, '')
+      .replace(/Rs\.?\s*\d+/gi, '')
+      .replace(/₹\s*\d+/gi, '')
+      .trim();
+
+    // Extract clean topic and speaker info from description or title (stripping raw list labels like 1. Organizing Secretary)
+    const extractTopicAndSpeaker = (t: string, desc: string) => {
+      let topic = '';
+      let speaker = '';
+
+      // Check description for "Note on Importance:"
+      const importanceMatch = (desc || '').match(/Note\s+on\s+Importance\s*:\s*([^.\n]+)/i);
+      if (importanceMatch && importanceMatch[1]) {
+        topic = importanceMatch[1].replace(/essential|for|first|year|students|foundational|growth/gi, '').trim();
+      }
+
+      // Check description for "Resource Person:"
+      const speakerMatch = (desc || '').match(/Resource\s+Person\s*:\s*([^.\n\d]+)/i);
+      if (speakerMatch && speakerMatch[1]) {
+        speaker = speakerMatch[1].trim();
+      }
+
+      // Check title if topic not clean
+      if (!topic || topic.length < 3 || /^\d{2}\s+[A-Za-z]+\s+\d{4}$/.test(topic)) {
+        topic = (t || '')
+          .replace(/APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING ONE DAY GUEST PROGRAM ON/gi, '')
+          .replace(/APPLICATION FOR FINANCIAL ASSISTANCE FOR CONDUCTING/gi, '')
+          .replace(/APPLICATION FOR FINANCIAL ASSISTANCE FOR/gi, '')
+          .replace(/APPLICATION FOR/gi, '')
+          .replace(/ONE DAY GUEST PROGRAM ON/gi, '')
+          .replace(/GUEST PROGRAM ON/gi, '')
+          .replace(/WORKSHOP ON/gi, '')
+          .replace(/SEMINAR ON/gi, '')
+          .replace(/FDP ON/gi, '')
+          .replace(/\b\d{1,2}\s+(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{4}\b/gi, '')
+          .replace(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g, '')
+          .trim();
+      }
+
+      // Sanitize topic to remove prefix clutter (e.g. "Guest Lecture on ", "   -")
+      if (topic) {
+        topic = topic
+          .replace(/^Guest\s+Lecture\s+on\s+/gi, '')
+          .replace(/^FDP\s+on\s+/gi, '')
+          .replace(/^Workshop\s+on\s+/gi, '')
+          .replace(/^Seminar\s+on\s+/gi, '')
+          .replace(/^Program\s+on\s+/gi, '')
+          .replace(/\s*-\s*$/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      if (!topic || topic.length < 3 || /^\d{2}\s+[A-Za-z]+\s+\d{4}$/.test(topic)) {
+        topic = 'Physics & Engineering Applications';
+      }
+
+      return { topic, speaker };
+    };
+
+    const { topic: topicFocus, speaker: speakerName } = extractTopicAndSpeaker(titleStr, descStr);
+
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    let aiSuccess = false;
+    let executiveSummary = '';
+    let keyOutcomes = '';
+
+    if (geminiKey && geminiKey.trim().length > 5) {
+      const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      
+      for (const modelName of modelsToTry) {
+        if (aiSuccess) break;
+        try {
+          const prompt = `You are an experienced HOD / faculty member at Sanskrithi School of Engineering writing an official post-event outcome report.
+Write in a clear, natural, human tone — exactly like a real person describing a successful campus event in plain, professional English.
+
+=== EVENT DETAILS ===
+Program Title: ${titleStr}
+Topic Focus: ${topicFocus}
+Speaker / Resource Person: ${speakerName || 'Domain Expert'}
+Department: ${deptStr}
+Category: ${catStr}
+Execution Date: ${dateStr}
+Attendance: ${countStr}
+Faculty Notes: "${cleanNotes || 'Interactive session with guest speaker lectures, live demonstrations, and student Q&A.'}"
+
+=== HUMAN WRITING STYLE GUIDELINES ===
+- Write like a real person describing what happened at the event, why it was valuable for students, and how the session went.
+- Do NOT use robotic AI buzzwords or stiff template clichés (avoid phrases like "Conceptualized under the framework", "aligned with autonomous benchmarks", or echoing topic titles in quotes multiple times).
+- Paragraph 1: State what event was held, who organized it, and what subject was covered naturally.
+- Paragraph 2: Describe what took place during the session, speaker presentations, student interaction, and Q&A.
+- Paragraph 3: Mention attendee numbers (${countStr}), the event date (${dateStr}), and how students benefited overall.
+- Key Outcomes: Write 4 natural, clear, bullet-point sentences (1., 2., 3., 4.) explaining what students learned and gained.
+- Do NOT include any financial expenditure, budget amounts, honorarium, TA/DA, costs, or money references anywhere.
+
+=== FORMAT INSTRUCTIONS ===
+Write a unique report formatted as JSON (no markdown formatting or code block quotes):
+{
+  "executiveSummary": "Paragraph 1\\n\\nParagraph 2\\n\\nParagraph 3",
+  "keyOutcomes": "1. Natural human key outcome 1\\n2. Natural human key outcome 2\\n3. Natural human key outcome 3\\n4. Natural human key outcome 4"
+}`;
+
+          const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey.trim()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: 'application/json', temperature: 0.85 }
+            })
+          });
+
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const responseText = aiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (responseText) {
+              const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+              const parsed = JSON.parse(cleanJson);
+              if (parsed.executiveSummary && parsed.keyOutcomes) {
+                executiveSummary = parsed.executiveSummary;
+                keyOutcomes = parsed.keyOutcomes;
+                aiSuccess = true;
+              }
+            }
+          }
+        } catch (geminiErr) {
+          logger.warn(`Gemini model ${modelName} call warning:`, geminiErr);
+        }
+      }
+    }
+
+    // Dynamic Synthesis Engine (used if Gemini Key is absent or network fails)
+    if (!aiSuccess) {
+      const combinedText = `${titleStr} ${descStr} ${cleanNotes}`.toLowerCase();
+
+      let eventType = 'guest session';
+      if (combinedText.includes('workshop')) eventType = 'interactive workshop';
+      else if (combinedText.includes('fdp') || combinedText.includes('faculty')) eventType = 'Faculty Development Program (FDP)';
+      else if (combinedText.includes('visit') || combinedText.includes('industrial')) eventType = 'industrial field visit';
+      else if (combinedText.includes('hackathon') || combinedText.includes('contest')) eventType = 'technical hackathon';
+      else if (combinedText.includes('conference') || combinedText.includes('seminar')) eventType = 'seminar';
+
+      // Seed for multi-pattern structural variation
+      const seed = Math.floor(Math.random() * 4);
+
+      // Human-style Paragraph 1 Variations
+      const p1Pool = [
+        `The ${deptStr} Department at Sanskrithi School of Engineering recently organized a ${eventType} on ${topicFocus} for our students. The main objective was to give students real-world technical exposure alongside their regular coursework.`,
+        `We conducted an interactive ${eventType} on ${topicFocus} for the ${deptStr} Department at Sanskrithi School of Engineering. This event gave students and faculty a great opportunity to explore practical engineering applications firsthand.`,
+        `The ${deptStr} Department at Sanskrithi School of Engineering hosted a ${eventType} focused on ${topicFocus}. It was organized to help students connect theoretical principles with actual industry practices.`,
+        `Sanskrithi School of Engineering's ${deptStr} Department organized a specialized ${eventType} on ${topicFocus}. The program focused on building analytical skills and giving students practical insights into modern technical tools.`
+      ];
+      const p1 = p1Pool[seed % p1Pool.length];
+
+      // Human-style Paragraph 2 Variations
+      let p2 = '';
+      if (cleanNotes && cleanNotes.length > 5) {
+        const cleanNotesFormatted = cleanNotes.endsWith('.') ? cleanNotes : cleanNotes + '.';
+        const p2NotesPool = [
+          `During the event, ${cleanNotesFormatted} The speaker shared practical case studies and demonstrated real-world workflows. Students stayed involved throughout, asking questions during the Q&A session and discussing key takeaways.`,
+          `Session Highlights: ${cleanNotesFormatted} The speaker walked through core concepts and practical examples. Students gained clear insights through interactive problem-solving and open Q&A discussions on ${topicFocus}.`,
+          `Event Highlights: ${cleanNotesFormatted} The interactive setup allowed participating students and faculty to discuss live demonstrations, tool sets, and practical applications in ${topicFocus} directly with the speaker.`,
+          `Detailed Proceedings: ${cleanNotesFormatted} The presentation covered structured technical modules and live demonstrations. Attendees actively participated in Q&A segments, gaining a clearer picture of real-world implementation.`
+        ];
+        p2 = p2NotesPool[seed % p2NotesPool.length];
+      } else if (speakerName) {
+        p2 = `Our resource person, ${speakerName}, led the session and covered key aspects of ${topicFocus}. The presentation blended core concepts with live demonstrations. Students engaged actively, asked thoughtful questions, and gained practical clarity during the open Q&A.`;
+      } else {
+        p2 = `The session included detailed presentations and practical demonstrations on ${topicFocus}. Resource speakers walked through real-world case studies, and students participated actively during the Q&A session.`;
+      }
+
+      // Human-style Paragraph 3 Variations
+      const p3Pool = [
+        `The program took place on ${dateStr} with ${countStr} attending. Feedback from students was very positive, with many highlighting how helpful the practical examples were for their learning.`,
+        `In total, ${countStr} participated in the event on ${dateStr}. Overall feedback was excellent, and the session helped boost student confidence and interest in ${topicFocus}.`,
+        `Conducted on ${dateStr}, the session saw great turnout with ${countStr}. It proved to be a valuable learning experience that helped students connect classroom learning with practical application.`,
+        `With ${countStr} attending on ${dateStr}, the event delivered strong learning value. The active Q&A session gave students a clear path for applying ${topicFocus} concepts in their academic and project work.`
+      ];
+      const p3 = p3Pool[seed % p3Pool.length];
+
+      executiveSummary = `${p1}\n\n${p2}\n\n${p3}`;
+
+      // Human-style Key Outcomes
+      const o1 = cleanNotes.length > 10
+        ? `1. Gained a clear understanding of core concepts in ${topicFocus}: ${cleanNotes.slice(0, 110)}${cleanNotes.length > 110 ? '...' : ''}.`
+        : `1. Gained a clear understanding of core concepts and principles in ${topicFocus}.`;
+
+      const o2 = `2. Saw practical examples and real-world engineering applications firsthand.`;
+
+      const o3 = speakerName
+        ? `3. Interacted directly with ${speakerName} to discuss career guidance and academic opportunities in ${deptStr}.`
+        : `3. Interacted directly with domain experts to discuss career pathways and industry expectations in ${deptStr}.`;
+
+      const o4 = `4. Strong student participation and positive feedback from ${countStr} on ${dateStr}.`;
+
+      keyOutcomes = `${o1}\n${o2}\n${o3}\n${o4}`;
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        executiveSummary,
+        keyOutcomes,
+        usedGemini: aiSuccess
+      }
+    });
+  } catch (error: any) {
+    logger.error('Error generating AI report content:', error);
+    return res.status(500).json({ success: false, message: 'Failed to generate AI report content', error: error.message });
   }
 };
 

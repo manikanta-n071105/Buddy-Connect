@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Lock, User, ShieldCheck, Eye, EyeOff, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Lock, User, ShieldCheck, Eye, EyeOff, Sparkles, ArrowRight, RefreshCw, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { SanskrithiIntro } from '../../components/common/SanskrithiIntro';
 
@@ -159,8 +159,16 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Security Footer Notice */}
-          <div className="pt-3 sm:pt-4 border-t border-slate-800/80 text-center">
+          {/* Security Footer Notice & Public Report Tool Link */}
+          <div className="pt-3 sm:pt-4 border-t border-slate-800/80 space-y-3 text-center">
+            <Link
+              to="/report-generator"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 hover:text-emerald-300 text-xs font-bold transition-all shadow-sm group"
+            >
+              <FileText className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>⚡ Standalone Report Generator (No Login Required)</span>
+            </Link>
+
             <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
               <span>Protected by Encrypted Authentication</span>

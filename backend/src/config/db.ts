@@ -354,6 +354,9 @@ export const initApprovalTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_approval_requests_stat ON approval_requests(status);
       CREATE INDEX IF NOT EXISTS idx_approval_requests_dept ON approval_requests(department);
       CREATE INDEX IF NOT EXISTS idx_approval_comments_req ON approval_request_comments(request_id);
+
+      ALTER TABLE approval_requests ADD COLUMN IF NOT EXISTS report_custom_title TEXT;
+      ALTER TABLE approval_requests ADD COLUMN IF NOT EXISTS report_custom_heading TEXT;
     `);
   } catch (err: any) {
     console.warn('Approval tables initialization notice:', err.message);

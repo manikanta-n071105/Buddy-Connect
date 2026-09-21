@@ -251,9 +251,151 @@ button, input, select, textarea {
   background: #94a3b8;
 }
 
-/* Anti-Screenshot Print Utility Styles */
+/* Perfect Native Print Utility Styles */
 @media print {
-  body {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm 8mm 10mm;
+  }
+
+  html, body, #root {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset outer layout constraints on main wrappers during print */
+  main,
+  .lg\:col-span-7,
+  .lg\:col-span-5 {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Preserve side-by-side photo grid & signatures inside printable report */
+  .report-photo-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 16px !important;
+    width: 100% !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+  }
+
+  .report-photo-item {
+    flex: 1 1 0% !important;
+    width: 50% !important;
+    max-width: 50% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+
+  .report-photo-img {
+    width: 100% !important;
+    height: 165px !important;
+    max-height: 165px !important;
+    object-fit: cover !important;
+    border-radius: 10px !important;
+    display: block !important;
+  }
+
+  .report-signatures-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    width: 100% !important;
+    margin-top: auto !important;
+    padding-top: 30px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .report-signature-col {
+    flex: 1 1 0% !important;
+    width: 33.33% !important;
+    text-align: center !important;
+  }
+
+  /* Hide headers, navigation controls, sidebars, and print-hidden elements */
+  header, nav, aside, .print\:hidden, [class*="print:hidden"] {
     display: none !important;
   }
+
+  /* Printable container takes 100% full A4 page width */
+  #printable-report-area,
+  #printable-report-body,
+  #printable-application-body {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-page-1,
+  .print-page-2,
+  .print-page-3 {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 268mm !important;
+    height: 268mm !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    position: relative !important;
+  }
+
+  .print-page-2,
+  .print-page-3,
+  .page-break-before-always {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+}
+
+/* Document Typography Specifications (Headings: Cambria Bold, Body: Cambria, Captions: Arial) */
+#printable-report-area,
+#printable-report-body,
+.report-body-text {
+  font-family: 'Cambria', Georgia, serif !important;
+}
+
+#printable-report-area h1,
+#printable-report-area h2,
+#printable-report-area h3,
+#printable-report-body h1,
+#printable-report-body h2,
+#printable-report-body h3,
+.report-heading {
+  font-family: 'Cambria', Georgia, serif !important;
+  font-weight: 700 !important;
+}
+
+.report-caption {
+  font-family: 'Arial', sans-serif !important;
 }
