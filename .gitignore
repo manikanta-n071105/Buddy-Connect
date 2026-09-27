@@ -13,6 +13,9 @@ build
 backend/.env
 frontend/.env
 *.env.local
+.env.example
+*.env.example
+**/.env.example
 
 # Logs
 *.log
