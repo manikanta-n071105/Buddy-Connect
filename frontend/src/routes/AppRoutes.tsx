@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '../pages/auth/LoginPage';
@@ -42,33 +43,44 @@ import { ApprovalWorkflowPage } from '../pages/approvals/ApprovalWorkflowPage';
 import { ExamSeatingPage } from '../pages/exam-seating/ExamSeatingPage';
 import { SeatingAllocatorPage } from '../pages/exam-seating/SeatingAllocatorPage';
 import { PublicReportGeneratorPage } from '../pages/report/PublicReportGeneratorPage';
+import { HODReportConsolidatorPage } from '../pages/report/HODReportConsolidatorPage';
+import { DashboardBackgroundLanyard } from '../components/Lanyard/DashboardBackgroundLanyard';
 
 const DashboardDispatcher: React.FC = () => {
   const { user } = useAuth();
+
   if (!user) return <Navigate to="/login" replace />;
 
-  switch (user.role) {
-    case 'SUPER_ADMIN':
-    case 'ADMIN':
-      return <SuperAdminDashboard />;
-    case 'MENTOR':
-      return <MentorDashboard />;
-    case 'FACULTY':
-      return <FacultyDashboard />;
-    case 'SENIOR':
-      return <SeniorDashboard />;
-    case 'JUNIOR': {
-      const is2ndOr3rdYear = user.year && (user.year.includes('2nd') || user.year.includes('3rd'));
-      if (is2ndOr3rdYear) {
-        return <StudentDashboard />;
+  const renderDashboard = () => {
+    switch (user.role) {
+      case 'SUPER_ADMIN':
+      case 'ADMIN':
+        return <SuperAdminDashboard />;
+      case 'MENTOR':
+        return <MentorDashboard />;
+      case 'FACULTY':
+        return <FacultyDashboard />;
+      case 'SENIOR':
+        return <SeniorDashboard />;
+      case 'JUNIOR': {
+        const is2ndOr3rdYear = user.year && (user.year.includes('2nd') || user.year.includes('3rd'));
+        if (is2ndOr3rdYear) {
+          return <StudentDashboard />;
+        }
+        return <JuniorDashboard />;
       }
-      return <JuniorDashboard />;
+      case 'WARDEN':
+        return <WardenDashboard />;
+      default:
+        return <JuniorDashboard />;
     }
-    case 'WARDEN':
-      return <WardenDashboard />;
-    default:
-      return <JuniorDashboard />;
-  }
+  };
+
+  return (
+    <DashboardBackgroundLanyard>
+      {renderDashboard()}
+    </DashboardBackgroundLanyard>
+  );
 };
 
 export const AppRoutes: React.FC = () => {
@@ -77,6 +89,12 @@ export const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/report-generator" element={<PublicReportGeneratorPage />} />
       <Route path="/generate-report" element={<PublicReportGeneratorPage />} />
+      <Route path="/reports/consolidator" element={<HODReportConsolidatorPage />} />
+      <Route path="/reports/hod-consolidator" element={<HODReportConsolidatorPage />} />
+      <Route path="/consolidator" element={<HODReportConsolidatorPage />} />
+      <Route path="/consolidate-reports" element={<HODReportConsolidatorPage />} />
+      <Route path="/hod-report-consolidator" element={<HODReportConsolidatorPage />} />
+      <Route path="/monthly-report" element={<HODReportConsolidatorPage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/exam-seating/allocator" element={<SeatingAllocatorPage />} />
@@ -101,6 +119,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/diagnosis" element={<DiagnosisHub />} />
           <Route path="/reports" element={<SuperAdminDashboard />} />
+          <Route path="/reports/consolidator" element={<HODReportConsolidatorPage />} />
+          <Route path="/reports/hod-consolidator" element={<HODReportConsolidatorPage />} />
           <Route path="/support-indicators" element={<SeniorDashboard />} />
           <Route path="/hostel-mess" element={<HostelMessPage />} />
           <Route path="/cr-feedback" element={<CrFeedbackPage />} />

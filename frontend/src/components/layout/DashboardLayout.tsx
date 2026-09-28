@@ -12,7 +12,7 @@ export const DashboardLayout: React.FC = () => {
   const [show3DIntro, setShow3DIntro] = useState(false);
 
   return (
-    <div className="h-screen h-[100dvh] max-h-screen overflow-hidden flex bg-slate-50 text-slate-900 w-full max-w-full">
+    <div className="h-screen h-[100dvh] max-h-screen overflow-hidden flex bg-slate-100 text-slate-900 w-full max-w-full">
       {/* 3D College Logo Splash Screen Intro */}
       {show3DIntro && (
         <CollegeLogo3DIntro

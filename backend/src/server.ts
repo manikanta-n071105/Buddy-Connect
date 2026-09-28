@@ -18,7 +18,8 @@ import {
   initDisciplinaryCommitteeTables,
   initBloodDonationTables,
   initApprovalTables,
-  initExamSeatingTables
+  initExamSeatingTables,
+  initDepartmentalReportsTable
 } from './config/db';
 import { initRedis } from './config/redis';
 
@@ -86,8 +87,8 @@ app.use(cors({
 // Fast pre-flight handling
 app.options('*', cors());
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/api', apiLimiter);
 
 // Health and Portal Diagnosis
@@ -144,6 +145,7 @@ initDisciplinaryCommitteeTables();
 initBloodDonationTables();
 initApprovalTables();
 initExamSeatingTables();
+initDepartmentalReportsTable();
 initCounselingTables().then(() => {
   logger.info('Database performance, Quiz, CR Feedback, Blood Donation & Counseling tables initialized.');
 }).catch(err => {

@@ -50,6 +50,8 @@ export interface User {
   special_role?: string;
   specialRole?: string;
   mustChangePassword?: boolean;
+  register_number?: string;
+  profile_photo?: string;
 }
 
 export interface CrClassFeedback {

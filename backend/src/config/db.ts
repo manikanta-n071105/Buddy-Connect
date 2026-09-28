@@ -42,10 +42,22 @@ pool.on('error', (err) => {
 
 export const query = (text: string, params?: any[]) => pool.query(text, params);
 
-// Initialize High-Performance Indexes for High-Throughput & Low Latency
+// Initialize High-Performance Indexes & Ensure Required Schema Columns
 export const initDatabasePerformance = async () => {
   try {
     await query(`
+      ALTER TABLE seniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR';
+      ALTER TABLE juniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20) DEFAULT 'MALE';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_cr BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_faculty BOOLEAN DEFAULT false;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS special_role VARCHAR(100);
+      ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_counselor BOOLEAN DEFAULT false;
+      ALTER TABLE faculty ADD COLUMN IF NOT EXISTS is_disciplinary_committee BOOLEAN DEFAULT false;
+      ALTER TABLE faculty ADD COLUMN IF NOT EXISTS special_role VARCHAR(100);
+
       CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(LOWER(email));
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(LOWER(username));
@@ -69,7 +81,7 @@ export const initDatabasePerformance = async () => {
       CREATE INDEX IF NOT EXISTS idx_announcements_created ON announcements(created_at DESC);
     `);
   } catch (err: any) {
-    console.warn('Database performance index initialization notice:', err.message);
+    console.warn('Database performance index and column initialization notice:', err.message);
   }
 };
 
@@ -459,6 +471,30 @@ export const initExamSeatingTables = async () => {
     `);
   } catch (err: any) {
     console.warn('Exam Seating tables initialization notice:', err.message);
+  }
+};
+
+export const initDepartmentalReportsTable = async () => {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS departmental_monthly_reports (
+          id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+          department VARCHAR(100) NOT NULL,
+          period VARCHAR(50) NOT NULL DEFAULT 'April 2026',
+          hod_name VARCHAR(150),
+          file_name VARCHAR(255) NOT NULL,
+          file_path TEXT NOT NULL,
+          file_size_bytes INT NOT NULL DEFAULT 0,
+          items_count INT DEFAULT 0,
+          status VARCHAR(30) DEFAULT 'SUBMITTED',
+          uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(department, period)
+      );
+      CREATE INDEX IF NOT EXISTS idx_dept_monthly_period ON departmental_monthly_reports(period);
+    `);
+  } catch (err: any) {
+    console.warn('Departmental reports table initialization notice:', err.message);
   }
 };
 

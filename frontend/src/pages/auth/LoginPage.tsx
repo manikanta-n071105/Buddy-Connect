@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, User, ShieldCheck, Eye, EyeOff, Sparkles, ArrowRight, RefreshCw, FileText } from 'lucide-react';
+import { Lock, User, ShieldCheck, Eye, EyeOff, Sparkles, ArrowRight, RefreshCw, FileText, FileCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { SanskrithiIntro } from '../../components/common/SanskrithiIntro';
 
@@ -159,17 +159,25 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Security Footer Notice & Public Report Tool Link */}
-          <div className="pt-3 sm:pt-4 border-t border-slate-800/80 space-y-3 text-center">
+          {/* Security Footer Notice & Public Report Tools Links (NO LOGIN REQUIRED) */}
+          <div className="pt-3 sm:pt-4 border-t border-slate-800/80 space-y-2.5 text-center">
+            <Link
+              to="/reports/consolidator"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/40 text-orange-400 hover:text-orange-300 text-xs font-bold transition-all shadow-sm group"
+            >
+              <FileCheck className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+              <span>📊 Monthly HOD Report Consolidator (No Login Required)</span>
+            </Link>
+
             <Link
               to="/report-generator"
               className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 hover:text-emerald-300 text-xs font-bold transition-all shadow-sm group"
             >
               <FileText className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span>⚡ Standalone Report Generator (No Login Required)</span>
+              <span>⚡ Standalone Event Report Generator (No Login Required)</span>
             </Link>
 
-            <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold">
+            <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 font-semibold pt-1">
               <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
               <span>Protected by Encrypted Authentication</span>
             </div>

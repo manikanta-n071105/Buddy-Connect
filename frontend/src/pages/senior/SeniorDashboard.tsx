@@ -184,33 +184,33 @@ export const SeniorDashboard: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase block">Assigned Juniors</span>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all group">
+          <span className="text-[11px] font-extrabold text-slate-500 uppercase block tracking-wider">Assigned Juniors</span>
           <p className="text-3xl font-black text-slate-900 mt-2">{indicators.length}</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase block flex items-center gap-1">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all group">
+          <span className="text-[11px] font-extrabold text-slate-500 uppercase block tracking-wider flex items-center gap-1">
             Avg Onboarding
           </span>
           <p className="text-3xl font-black text-indigo-600 mt-2">{stats?.overallOnboardingRate || 0}%</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase block flex items-center gap-1">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all group">
+          <span className="text-[11px] font-extrabold text-slate-500 uppercase block tracking-wider flex items-center gap-1">
             Avg Questions
           </span>
           <p className="text-3xl font-black text-emerald-600 mt-2">{stats?.overallQuestionsRate || 0}%</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase block">Open Issues</span>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all group">
+          <span className="text-[11px] font-extrabold text-slate-500 uppercase block tracking-wider">Open Issues</span>
           <p className="text-3xl font-black text-amber-600 mt-2">{stats?.openIssues || 0}</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-lg hover:-translate-y-0.5 transition-all group">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase block">Satisfaction</span>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all group">
+          <span className="text-[11px] font-extrabold text-slate-500 uppercase block tracking-wider">Satisfaction</span>
           <p className="text-3xl font-black text-teal-600 mt-2">{stats?.satisfactionRate || 100}%</p>
         </div>
       </div>

@@ -35,7 +35,8 @@ import {
   HeartHandshake,
   Gavel,
   QrCode,
-  Smartphone
+  Smartphone,
+  FileCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -94,6 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
           { label: 'Onboarding Checklist', path: '/onboarding', icon: ClipboardCheck },
           { label: 'Common Questions', path: '/questions', icon: FileQuestion },
           { label: 'Student Suggestions', path: '/suggestions', icon: Lightbulb },
+          { label: 'Consolidated HOD Reports', path: '/reports/consolidator', icon: FileCheck },
           { label: 'Analytics & Reports', path: '/reports', icon: BarChart3 },
           { label: 'System Settings', path: '/settings', icon: Settings }
         ];
@@ -113,6 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
           { label: 'Onboarding Checklist', path: '/onboarding', icon: ClipboardCheck },
           { label: 'Common Questions', path: '/questions', icon: FileQuestion },
           { label: 'Student Suggestions', path: '/suggestions', icon: Lightbulb },
+          { label: 'Consolidated HOD Reports', path: '/reports/consolidator', icon: FileCheck },
           { label: 'College Guide', path: '/college-info', icon: BookOpen },
           { label: 'Emergency Contacts', path: '/emergency', icon: Phone },
           { label: 'Analytics', path: '/reports', icon: BarChart3 }
@@ -131,6 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
             { label: 'CR Class Feedbacks', path: '/cr-feedbacks', icon: Star },
             { label: 'Class Quizzes & Analytics', path: '/quizzes', icon: FileSpreadsheet }
           ] : []),
+          { label: 'Consolidated HOD Reports', path: '/reports/consolidator', icon: FileCheck },
           { label: 'Chat Center', path: '/chat', icon: MessageCircle },
           ...(isCounselor ? [{ label: 'Mental Health Counseling', path: '/counseling', icon: Heart }] : []),
           { label: 'College Events', path: '/events', icon: Calendar },
