@@ -4,13 +4,17 @@ import {
   getDetailedIssuesReport,
   getConsolidatedReportStatus,
   downloadConsolidatedReport,
+  downloadConsolidatedPDF,
+  saveConsolidatedPDF,
   regenerateConsolidatedReport,
   uploadAndConsolidateZip,
   getDepartmentSubmissions,
   clearDepartmentSubmissions,
   uploadDepartmentReport,
   generateConsolidatedReportFromSubmissions,
-  downloadDepartmentReport
+  downloadDepartmentReport,
+  generateManualDepartmentReport,
+  saveDepartmentJson
 } from '../controllers/reportController';
 import { authenticate } from '../middleware/auth';
 
@@ -19,6 +23,8 @@ const router = Router();
 // Public / Standalone routes for HODs and Super Admin (NO LOGIN REQUIRED)
 router.get('/consolidated-status', getConsolidatedReportStatus);
 router.get('/download-consolidated', downloadConsolidatedReport);
+router.get('/download-consolidated-pdf', downloadConsolidatedPDF);
+router.post('/save-consolidated-pdf', saveConsolidatedPDF);
 router.post('/regenerate-consolidated', regenerateConsolidatedReport);
 router.post('/upload-and-consolidate', uploadAndConsolidateZip);
 
@@ -27,6 +33,8 @@ router.get('/department-submissions', getDepartmentSubmissions);
 router.delete('/department-submissions', clearDepartmentSubmissions);
 router.post('/clear-department-submissions', clearDepartmentSubmissions);
 router.post('/upload-department-report', uploadDepartmentReport);
+router.post('/generate-manual-report', generateManualDepartmentReport);
+router.post('/save-department-json', saveDepartmentJson);
 router.post('/generate-from-submissions', generateConsolidatedReportFromSubmissions);
 router.get('/download-department/:id', downloadDepartmentReport);
 

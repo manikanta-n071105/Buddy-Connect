@@ -29,6 +29,11 @@ Thumbs.db
 .idea
 .vscode
 
+# Python cache
+__pycache__/
+*.pyc
+
 # Antigravity artifacts & brain data
 .gemini
 scratch
+

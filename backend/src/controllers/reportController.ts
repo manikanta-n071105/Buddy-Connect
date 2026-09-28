@@ -371,6 +371,46 @@ export const downloadConsolidatedReport = async (_req: any, res: Response) => {
   }
 };
 
+export const downloadConsolidatedPDF = async (_req: any, res: Response) => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const projectRoot = path.resolve(process.cwd(), '..');
+    const pdfPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.pdf');
+
+    if (!fs.existsSync(pdfPath)) {
+      return res.status(404).json({ success: false, message: 'Consolidated PDF report has not been generated yet.' });
+    }
+
+    res.setHeader('Content-Disposition', 'attachment; filename="Consolidated_Institutional_HOD_Report_April_2026.pdf"');
+    res.setHeader('Content-Type', 'application/pdf');
+    const fileStream = fs.createReadStream(pdfPath);
+    return fileStream.pipe(res);
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const saveConsolidatedPDF = async (req: any, res: Response) => {
+  try {
+    const { fileBase64, fileName } = req.body;
+    if (!fileBase64) {
+      return res.status(400).json({ success: false, message: 'fileBase64 is required' });
+    }
+    const fs = await import('fs');
+    const path = await import('path');
+    const projectRoot = path.resolve(process.cwd(), '..');
+    const cleanBase64 = fileBase64.replace(/^data:application\/pdf;base64,/, '');
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const outFileName = fileName || 'Consolidated_Institutional_HOD_Report_April_2026.pdf';
+    const pdfPath = path.join(projectRoot, outFileName);
+    fs.writeFileSync(pdfPath, buffer);
+    return res.json({ success: true, message: 'Consolidated PDF saved on server', path: pdfPath });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 export const regenerateConsolidatedReport = async (_req: any, res: Response) => {
   try {
     const path = await import('path');
@@ -644,13 +684,164 @@ export const downloadDepartmentReport = async (req: any, res: Response) => {
     }
 
     res.setHeader('Content-Disposition', `attachment; filename="${sub.file_name}"`);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    if (sub.file_name && sub.file_name.toLowerCase().endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+    } else {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
     const stream = fs.createReadStream(sub.file_path);
     return stream.pipe(res);
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+
+export const generateManualDepartmentReport = async (req: any, res: Response) => {
+  try {
+    const {
+      department,
+      period = 'April 2026',
+      hodName,
+      submissionDate,
+      sections = {},
+      autoSubmit = true
+    } = req.body;
+
+    if (!department) {
+      return res.status(400).json({ success: false, message: 'Department is required.' });
+    }
+
+    const fs = await import('fs');
+    const path = await import('path');
+    const { execFile } = await import('child_process');
+    const projectRoot = path.resolve(process.cwd(), '..');
+
+    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
+    fs.mkdirSync(targetFolder, { recursive: true });
+
+    const cleanDept = department.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${Date.now()}.docx`;
+    const targetFilePath = path.join(targetFolder, safeFileName);
+
+    // Write payload to scratch temporary file for Python script execution
+    const scratchFolder = path.join(projectRoot, 'scratch');
+    fs.mkdirSync(scratchFolder, { recursive: true });
+    const tempJsonPath = path.join(scratchFolder, `dept_report_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
+
+    const payload = {
+      department,
+      period,
+      hodName: hodName || 'HOD',
+      submissionDate: submissionDate || new Date().toLocaleDateString('en-GB'),
+      collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+      sections
+    };
+
+    fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2), 'utf-8');
+
+    const scriptPath = path.join(projectRoot, 'scripts', 'generate_department_report.py');
+
+    execFile(PYTHON_BIN, [scriptPath, tempJsonPath, targetFilePath], async (error, stdout, stderr) => {
+      // Clean up temp json
+      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) {}
+
+      if (error) {
+        console.error('Department report generation error:', error, stderr);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to generate department Word document',
+          error: stderr || error.message
+        });
+      }
+
+      if (!fs.existsSync(targetFilePath)) {
+        return res.status(500).json({
+          success: false,
+          message: 'Generated report file was not created on disk'
+        });
+      }
+
+      const fileStat = fs.statSync(targetFilePath);
+      const fileSizeBytes = fileStat.size;
+
+      // Parse output from python script if available
+      let totalActivities = 0;
+      try {
+        const parsed = JSON.parse(stdout.trim());
+        totalActivities = parsed.total_activities || 0;
+      } catch (_) {}
+
+      let recordId: string | null = null;
+      if (autoSubmit) {
+        const upsertRes = await query(`
+          INSERT INTO departmental_monthly_reports 
+          (department, period, hod_name, file_name, file_path, file_size_bytes, items_count, status)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'SUBMITTED')
+          ON CONFLICT (department, period) DO UPDATE 
+          SET hod_name = EXCLUDED.hod_name, file_name = EXCLUDED.file_name, file_path = EXCLUDED.file_path, 
+              file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, updated_at = CURRENT_TIMESTAMP
+          RETURNING *
+        `, [department, period, hodName || 'HOD', safeFileName, targetFilePath, fileSizeBytes, totalActivities]);
+
+        recordId = upsertRes.rows[0]?.id || null;
+      }
+
+      const fileBuffer = fs.readFileSync(targetFilePath);
+      const fileBase64 = fileBuffer.toString('base64');
+
+      return res.json({
+        success: true,
+        message: `Successfully generated ${department} report with ${totalActivities} activities!`,
+        data: {
+          id: recordId,
+          department,
+          period,
+          hodName,
+          fileName: safeFileName,
+          fileSizeBytes,
+          fileSizeFormatted: `${(fileSizeBytes / 1024).toFixed(1)} KB`,
+          totalActivities,
+          fileBase64,
+          downloadUrl: recordId ? `/reports/download-department/${recordId}` : null
+        }
+      });
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const saveDepartmentJson = async (req: any, res: Response) => {
+  try {
+    const { department, period = 'April 2026', hodName, submissionDate, sections } = req.body;
+    if (!department) return res.status(400).json({ success: false, message: 'Department required' });
+
+    const fs = await import('fs');
+    const path = await import('path');
+    const projectRoot = path.resolve(process.cwd(), '..');
+    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
+    fs.mkdirSync(targetFolder, { recursive: true });
+
+    const cleanDept = department.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const jsonPath = path.join(targetFolder, `${cleanDept}_data.json`);
+    const payload = {
+      department,
+      period,
+      hodName,
+      submissionDate,
+      sections,
+      updatedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(jsonPath, JSON.stringify(payload, null, 2), 'utf8');
+
+    return res.json({ success: true, message: 'Saved department JSON successfully' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 
 
 

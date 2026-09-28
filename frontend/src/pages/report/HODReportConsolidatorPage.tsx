@@ -24,10 +24,17 @@ import {
   Check,
   AlertCircle,
   FileCode2,
-  ChevronRight
+  ChevronRight,
+  FileDown,
+  Eye,
+  X
 } from 'lucide-react';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 import { toast } from 'sonner';
 import api from '../../services/api';
+import { HODManualReportBuilder } from './HODManualReportBuilder';
+import { ConsolidatedInstitutionalPDFView } from './ConsolidatedInstitutionalPDFView';
 
 interface DepartmentStatus {
   code: string;
@@ -93,13 +100,16 @@ const EXECUTIVE_METRICS = [
 
 export const HODReportConsolidatorPage: React.FC = () => {
   // Navigation & View Mode
-  const [activeTab, setActiveTab] = useState<'superadmin' | 'hod_upload' | 'matrix' | 'zip_batch'>('superadmin');
+  const [activeTab, setActiveTab] = useState<'superadmin' | 'manual_entry' | 'hod_upload' | 'matrix' | 'zip_batch'>('manual_entry');
   
   // Data State
   const [period, setPeriod] = useState('April 2026');
   const [submissions, setSubmissions] = useState<SubmissionsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [consolidating, setConsolidating] = useState(false);
+  const [showConsolidateModal, setShowConsolidateModal] = useState(false);
+  const [consolidatingPdf, setConsolidatingPdf] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
 
   // HOD Upload Form State
   const [selectedDept, setSelectedDept] = useState('Computer Science & Engineering');
@@ -129,8 +139,8 @@ export const HODReportConsolidatorPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || !targetDeptForUpload) return;
 
-    if (!file.name.toLowerCase().endsWith('.docx')) {
-      toast.error('Please select a valid Word document (.docx).');
+    if (!file.name.toLowerCase().endsWith('.docx') && !file.name.toLowerCase().endsWith('.pdf')) {
+      toast.error('Please select a valid Word document (.docx) or PDF (.pdf).');
       return;
     }
 
@@ -252,6 +262,96 @@ export const HODReportConsolidatorPage: React.FC = () => {
     toast.success('Downloading Master Consolidated Institutional Report (.docx)');
   };
 
+  // 2. Super Admin: Generate & Download Consolidated Institutional PDF
+  const handleGenerateConsolidatedPDF = async () => {
+    try {
+      setConsolidatingPdf(true);
+      toast.loading('Synthesizing official Consolidated Institutional PDF...', { id: 'consolidate-pdf' });
+      
+      const element = document.getElementById('consolidated-pdf-document');
+      if (!element) {
+        toast.error('Consolidated PDF template element not found in DOM', { id: 'consolidate-pdf' });
+        return;
+      }
+
+      const opt = {
+        margin: [6, 6, 6, 6] as [number, number, number, number],
+        filename: `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false, 
+          letterRendering: true,
+          width: 750,
+          windowWidth: 1024,
+          scrollX: 0,
+          scrollY: 0
+        },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr', 'table'] }
+      };
+
+      // @ts-ignore
+      const pdfBlob = await (html2pdf as any)().set(opt).from(element).outputPdf('blob');
+      
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Save to server asynchronously
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          if (typeof reader.result === 'string') {
+            await api.post('/reports/save-consolidated-pdf', {
+              fileBase64: reader.result,
+              fileName: `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`
+            });
+          }
+        } catch (e) {
+          // non-blocking
+        }
+      };
+      reader.readAsDataURL(pdfBlob);
+
+      toast.success('Master Consolidated Institutional PDF generated & downloaded!', { id: 'consolidate-pdf' });
+    } catch (err: any) {
+      toast.error('PDF consolidation failed: ' + (err.message || 'Unknown error'), { id: 'consolidate-pdf' });
+    } finally {
+      setConsolidatingPdf(false);
+    }
+  };
+
+  const handleDirectDownloadPDF = () => {
+    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated-pdf`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Downloading Master Consolidated Institutional Report (.pdf)');
+  };
+
+  // Choice Handler when user picks format from modal:
+  const handleConsolidateChoice = async (format: 'docx' | 'pdf' | 'both') => {
+    setShowConsolidateModal(false);
+    if (format === 'docx') {
+      await handleGenerateConsolidated();
+    } else if (format === 'pdf') {
+      await handleGenerateConsolidatedPDF();
+    } else if (format === 'both') {
+      toast.info('Synthesizing both Word (.docx) and PDF (.pdf) consolidated reports...');
+      await handleGenerateConsolidated();
+      await handleGenerateConsolidatedPDF();
+    }
+  };
+
   const handleDownloadDeptReport = (id: string, fileName: string) => {
     const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-department/${id}`;
     const link = document.createElement('a');
@@ -263,11 +363,16 @@ export const HODReportConsolidatorPage: React.FC = () => {
     toast.success(`Downloading ${fileName}`);
   };
 
-  // 2. HOD Individual Department DOCX Upload
+  // 2. HOD Individual Department DOCX / PDF Upload
   const handleHodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hodFile) {
-      toast.error('Please select your department Word (.docx) report.');
+      toast.error('Please select your department report (.docx or .pdf).');
+      return;
+    }
+    const nameLow = hodFile.name.toLowerCase();
+    if (!nameLow.endsWith('.docx') && !nameLow.endsWith('.pdf')) {
+      toast.error('Please select a valid Word document (.docx) or PDF document (.pdf).');
       return;
     }
 
@@ -446,10 +551,18 @@ export const HODReportConsolidatorPage: React.FC = () => {
             {/* Quick Actions */}
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button
+                onClick={() => setActiveTab('manual_entry')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/30 hover:bg-orange-500/40 border border-orange-400/50 text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+              >
+                <Sparkles className="w-4 h-4 text-orange-300" />
+                Manual HOD Entry Form
+              </button>
+
+              <button
                 onClick={() => setActiveTab('hod_upload')}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer"
               >
-                <FileUp className="w-4 h-4 text-orange-400" />
+                <FileUp className="w-4 h-4 text-slate-300" />
                 HOD Upload Portal
               </button>
 
@@ -530,6 +643,19 @@ export const HODReportConsolidatorPage: React.FC = () => {
         {/* Clean Segmented Pill Navigation */}
         <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap gap-1.5">
           <button
+            onClick={() => setActiveTab('manual_entry')}
+            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'manual_entry'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-orange-400" />
+            <span>Manual Report Builder</span>
+            <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-black">NEW</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('superadmin')}
             className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'superadmin'
@@ -538,7 +664,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Consolidation Center
+            <span>Consolidation Center</span>
           </button>
 
           <button
@@ -550,7 +676,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
             }`}
           >
             <FileUp className="w-4 h-4" />
-            HOD Upload Portal
+            <span>HOD Upload Portal</span>
           </button>
 
           <button
@@ -562,7 +688,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Performance Matrix
+            <span>Performance Matrix</span>
           </button>
 
           <button
@@ -574,9 +700,19 @@ export const HODReportConsolidatorPage: React.FC = () => {
             }`}
           >
             <FolderArchive className="w-4 h-4" />
-            Batch ZIP Upload
+            <span>Batch ZIP Upload</span>
           </button>
         </div>
+
+        {/* TAB 0: Interactive HOD Manual Report Builder */}
+        {activeTab === 'manual_entry' && (
+          <HODManualReportBuilder
+            currentPeriod={period}
+            onReportGenerated={() => {
+              fetchSubmissions(period);
+            }}
+          />
+        )}
 
         {/* TAB 1: Super Admin Command Center */}
         {activeTab === 'superadmin' && (
@@ -593,43 +729,102 @@ export const HODReportConsolidatorPage: React.FC = () => {
                     <Sparkles className="w-3.5 h-3.5" /> Institutional Master Document
                   </div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
-                    Consolidated_Institutional_HOD_Report_{period.replace(/\s+/g, '_')}.docx
+                    Consolidated_Institutional_HOD_Report_{period.replace(/\s+/g, '_')} (.docx &amp; .pdf)
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Synthesizes all submitted departmental reports into the official institutional master format.
+                    Synthesizes all submitted departmental reports into the official institutional master format in DOCX or PDF.
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full md:w-auto justify-end">
+              <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto justify-end">
                 <button
                   onClick={handleClearAll}
-                  className="px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  className="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-bold transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
                   title="Clear all submissions for this period"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Clear Submissions
+                  Clear
                 </button>
 
+                {/* Primary Action Button: Prompts for DOCX, PDF, or Both */}
+                <button
+                  onClick={() => setShowConsolidateModal(true)}
+                  disabled={consolidating || consolidatingPdf || submittedCount === 0}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-extrabold transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Sparkles className={`w-4 h-4 ${consolidating || consolidatingPdf ? 'animate-spin' : ''}`} />
+                  {consolidating || consolidatingPdf ? 'Consolidating...' : 'Consolidate Report...'}
+                </button>
+
+                {/* Direct DOCX */}
                 <button
                   onClick={handleGenerateConsolidated}
                   disabled={consolidating || submittedCount === 0}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-extrabold transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  title="Direct generate & download Word (.docx)"
                 >
-                  <RefreshCw className={`w-4 h-4 ${consolidating ? 'animate-spin' : ''}`} />
-                  {consolidating ? 'Synthesizing...' : 'Generate & Download DOCX'}
+                  <FileText className="w-3.5 h-3.5 text-orange-600" />
+                  DOCX
                 </button>
 
+                {/* Direct PDF */}
                 <button
-                  onClick={handleDirectDownload}
-                  disabled={submittedCount === 0}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs sm:text-sm font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  onClick={handleGenerateConsolidatedPDF}
+                  disabled={consolidatingPdf || submittedCount === 0}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  title="Direct generate & download Executive PDF (.pdf)"
                 >
-                  <Download className="w-4 h-4" />
-                  Download
+                  <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                  PDF
+                </button>
+
+                {/* Toggle Preview */}
+                <button
+                  onClick={() => setShowPdfPreview(!showPdfPreview)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                  title="Preview Master Consolidated PDF"
+                >
+                  <Eye className="w-3.5 h-3.5 text-slate-600" />
+                  {showPdfPreview ? 'Hide' : 'Preview'}
                 </button>
               </div>
             </div>
+
+            {/* Optional On-Screen Consolidated PDF Preview */}
+            {showPdfPreview && (
+              <div className="bg-slate-200/80 border border-slate-300 rounded-3xl p-6 space-y-4 shadow-inner">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                      Master Consolidated Institutional PDF Preview ({period})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleGenerateConsolidatedPDF}
+                      disabled={consolidatingPdf}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Download PDF</span>
+                    </button>
+                    <button
+                      onClick={() => setShowPdfPreview(false)}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100 cursor-pointer"
+                    >
+                      Close Preview
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-center overflow-x-auto p-2">
+                  <div className="w-full max-w-[800px]">
+                    <ConsolidatedInstitutionalPDFView period={period} id="consolidated-pdf-preview" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Department Cards Grid */}
             <div className="space-y-4">
@@ -734,7 +929,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                                   className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all cursor-pointer"
                                 >
                                   <Download className="w-3.5 h-3.5 text-blue-600" />
-                                  DOCX
+                                  {dept.fileName?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOCX'}
                                 </button>
                               )}
                             </div>
@@ -749,7 +944,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-orange-600 hover:text-white text-slate-700 border border-slate-300 hover:border-orange-600 text-xs font-bold transition-all duration-150 cursor-pointer group/btn"
                             >
                               <UploadCloud className="w-4 h-4 text-orange-600 group-hover/btn:text-white transition-colors" />
-                              <span>Upload {dept.code} Report (.docx)</span>
+                              <span>Upload {dept.code} Report (.docx / .pdf)</span>
                             </button>
                           </div>
                         )}
@@ -758,6 +953,15 @@ export const HODReportConsolidatorPage: React.FC = () => {
                   );
                 })}
               </div>
+
+              {/* Hidden file input for direct department card upload */}
+              <input
+                type="file"
+                ref={deptCardFileInputRef}
+                onChange={handleDeptCardFileSelected}
+                accept=".docx,.pdf"
+                className="hidden"
+              />
             </div>
 
           </div>
@@ -776,6 +980,24 @@ export const HODReportConsolidatorPage: React.FC = () => {
               <p className="text-xs sm:text-sm text-slate-500">
                 Upload your completed institutional Word report for {period}. No password or login required.
               </p>
+            </div>
+
+            {/* Prompt to use Manual Entry Builder */}
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
+                <div>
+                  <span className="font-bold text-amber-900 block">Prefer to enter details directly without creating a Word file?</span>
+                  <span className="text-amber-700">Fill publications, conferences, patents, syllabus & meetings into our interactive form.</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('manual_entry')}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0 transition-all cursor-pointer shadow-xs"
+              >
+                Open Manual Form &rarr;
+              </button>
             </div>
 
             <form onSubmit={handleHodSubmit} className="space-y-5">
@@ -815,7 +1037,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
               {/* Drag and Drop Zone */}
               <div className="space-y-1.5">
                 <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  Attach Department Word Document (.docx)
+                  Attach Department Document (.docx or .pdf)
                 </label>
                 
                 <div
@@ -826,10 +1048,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
                     e.preventDefault();
                     setIsDragOver(false);
                     const file = e.dataTransfer.files?.[0];
-                    if (file && file.name.toLowerCase().endsWith('.docx')) {
+                    if (file && (file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.pdf'))) {
                       setHodFile(file);
                     } else {
-                      toast.error('Please drop a valid .docx Word file');
+                      toast.error('Please drop a valid .docx Word file or .pdf document');
                     }
                   }}
                   className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 group ${
@@ -842,7 +1064,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                     type="file"
                     ref={hodFileInputRef}
                     onChange={(e) => setHodFile(e.target.files?.[0] || null)}
-                    accept=".docx"
+                    accept=".docx,.pdf"
                     className="hidden"
                   />
 
@@ -866,7 +1088,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                         Click to browse or drag & drop report here
                       </div>
                       <div className="text-xs text-slate-500">
-                        Official monthly template document (.docx)
+                        Official monthly template document (.docx or .pdf)
                       </div>
                     </div>
                   )}
@@ -980,6 +1202,126 @@ export const HODReportConsolidatorPage: React.FC = () => {
             </button>
           </div>
         )}
+
+      {/* Off-screen Consolidated PDF container positioned at (0,0) with opacity 0 for pixel-perfect html2pdf capture */}
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: -999,
+          opacity: 0,
+          pointerEvents: 'none',
+          backgroundColor: '#ffffff',
+          width: '750px'
+        }}
+      >
+        <ConsolidatedInstitutionalPDFView period={period} />
+      </div>
+
+      {/* Interactive Consolidation Format Choice Modal */}
+      {showConsolidateModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-bold uppercase tracking-wider">
+                  <Sparkles className="w-3 h-3" /> Master Institutional Report
+                </div>
+                <h3 className="text-lg font-black text-slate-900">
+                  Consolidate Institutional Report
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Select your desired output format to consolidate all 5 departmental submissions for <strong>{period}</strong>:
+                </p>
+              </div>
+              <button
+                onClick={() => setShowConsolidateModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {/* Option 1: DOCX */}
+              <button
+                onClick={() => handleConsolidateChoice('docx')}
+                disabled={consolidating}
+                className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50/40 transition-all flex items-start gap-4 group cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-orange-100 border border-orange-200 text-orange-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-orange-950">
+                      Word Document (.docx)
+                    </h4>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">DOCX</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Official institutional master format with editable tables for administration and record keeping.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 2: PDF */}
+              <button
+                onClick={() => handleConsolidateChoice('pdf')}
+                disabled={consolidatingPdf}
+                className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all flex items-start gap-4 group cursor-pointer"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <FileDown className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-950">
+                      Executive PDF Dossier (.pdf)
+                    </h4>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">PDF</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Publication-grade executive document matching official SSE theme with the Executive Performance Matrix.
+                  </p>
+                </div>
+              </button>
+
+              {/* Option 3: Both */}
+              <button
+                onClick={() => handleConsolidateChoice('both')}
+                disabled={consolidating || consolidatingPdf}
+                className="w-full text-left p-4 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50/50 to-blue-50/50 hover:border-orange-500 transition-all flex items-start gap-4 group cursor-pointer shadow-2xs"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-slate-900">
+                      Consolidate Both (.docx + .pdf)
+                    </h4>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-900 text-white">RECOMMENDED</span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Synthesizes both the editable Word document and the executive presentation PDF in a single click.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowConsolidateModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       </div>
     </div>
