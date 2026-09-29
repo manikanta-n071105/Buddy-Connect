@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { ReportSectionsData, normalizeSections } from './HODManualReportBuilder';
@@ -35,6 +35,10 @@ interface SectionConfig<T = any> {
 export const exportPagesToPdf = async (containerId: string, filename?: string): Promise<Blob> => {
   const container = document.getElementById(containerId);
   if (!container) throw new Error(`PDF container #${containerId} not found in DOM`);
+
+  const bad = Array.from(container.querySelectorAll<HTMLElement>('[data-body]'))
+    .findIndex(b => b.scrollHeight - b.clientHeight > 1);
+  if (bad !== -1) throw new Error(`Page ${bad + 2} content overflows; export aborted.`);
 
   const pages = container.querySelectorAll<HTMLElement>('.pdf-page');
   if (pages.length === 0) throw new Error('No .pdf-page elements found');
@@ -95,6 +99,19 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   customData
 }) => {
   const [logoBase64, setLogoBase64] = useState<string>('/assets/sse-header-logo.png');
+  const SAFETY_DEFAULT = 20;
+  const [safety, setSafety] = useState<number>(SAFETY_DEFAULT);
+
+  // Monitor DOM rendering: if any page body overflows, automatically widen safety margin to re-paginate
+  useLayoutEffect(() => {
+    const root = document.getElementById(id);
+    if (!root) return;
+    const overflowing = Array.from(root.querySelectorAll<HTMLElement>('[data-body]'))
+      .some(b => b.scrollHeight - b.clientHeight > 1);
+    if (overflowing && safety < 140) {
+      setSafety(s => s + 16);
+    }
+  }, [safety, id]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -152,7 +169,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     { key: 'journals', label: '1a. Journal Publications' },
     { key: 'conferences', label: '1b. Conference Presentations' },
     { key: 'patents', label: '2a. Patents' },
-    { key: 'entrepreneurship', label: '2b. Start-up Initiatives' },
+    { key: 'entrepreneurship', label: '2b. Activities and Iniativies' },
     { key: 'fdpAttended', label: '3a. FDPs Attended' },
     { key: 'fdpOrganized', label: '3b. FDPs Organized' },
     { key: 'sdp', label: '4. Student Development Programs (SDPs)' },
@@ -163,7 +180,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     { key: 'mous', label: '6b. Collaborations & MoUs' },
     { key: 'techAssociation', label: '7. Technical Association Activities' },
     { key: 'syllabus', label: '8. Syllabus coverage Report' },
-    { key: 'studentEngagement', label: '9. Club & Student Engagement Activity' },
+    { key: 'studentEngagement', label: '9. Clubs & Student Engagement Activity' },
     { key: 'nss', label: '10. NSS and Other Extension Activities' },
     { key: 'additionalInitiatives', label: '11. Additional/Other Relevant Initiatives' }
   ];
@@ -210,10 +227,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Paper Title', width: '38%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>{it.title}</div> },
-        { 
-          header: 'Authors & Publication Details', 
-          width: '30%', 
-          align: 'left', 
+        {
+          header: 'Authors & Publication Details',
+          width: '30%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div><strong>Authors:</strong> {it.authors}</div>
@@ -222,10 +239,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Indexing & Verification', 
-          width: '18%', 
-          align: 'left', 
+        {
+          header: 'Indexing & Verification',
+          width: '18%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>ISSN: <strong>{it.issnIsbn}</strong></div>
@@ -247,10 +264,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Presentation Title', width: '38%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>{it.title}</div> },
-        { 
-          header: 'Authors & Conference Name', 
-          width: '30%', 
-          align: 'left', 
+        {
+          header: 'Authors & Conference Name',
+          width: '30%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div><strong>Authors:</strong> {it.authors}</div>
@@ -258,10 +275,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Date, Venue & Indexing', 
-          width: '18%', 
-          align: 'left', 
+        {
+          header: 'Date, Venue & Indexing',
+          width: '18%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>Date: <strong>{it.date}</strong></div>
@@ -284,10 +301,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Patent / Innovation Title', width: '42%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>{it.title}</div> },
-        { 
-          header: 'Inventors & Registration', 
-          width: '28%', 
-          align: 'left', 
+        {
+          header: 'Inventors & Registration',
+          width: '28%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div><strong>Inv:</strong> {it.inventors}</div>
@@ -295,10 +312,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Status & Date', 
-          width: '16%', 
-          align: 'center', 
+        {
+          header: 'Status & Date',
+          width: '16%',
+          align: 'center',
           render: (it) => (
             <div style={{ lineHeight: 1.35 }}>
               <div style={{ fontWeight: 800, color: '#1a365d' }}>{it.status || 'Published'}</div>
@@ -308,20 +325,20 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
-    // 2B. Start-up Initiatives
+    // 2B. Activities and Iniativies
     {
       key: 'entrepreneurship',
-      title: '2B. START-UP INITIATIVES',
+      title: '2B. Activities and Iniativies',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Program / Activity Title', 
-          width: '36%', 
-          align: 'left', 
+        {
+          header: 'Program / Activity Title',
+          width: '36%',
+          align: 'left',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
               <div>{it.title}</div>
@@ -329,10 +346,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Date & Mode', 
-          width: '18%', 
-          align: 'center', 
+        {
+          header: 'Date & Mode',
+          width: '18%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>{it.date}</div>
@@ -340,10 +357,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Participants & Organizer', 
-          width: '18%', 
-          align: 'center', 
+        {
+          header: 'Participants & Organizer',
+          width: '18%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div><strong>{it.participantsCount}</strong> parts</div>
@@ -351,10 +368,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Key Outcomes', 
-          width: '14%', 
-          align: 'left', 
+        {
+          header: 'Key Outcomes',
+          width: '14%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#475569', lineHeight: 1.35 }}>
               <div style={{ fontWeight: 600, color: '#047857' }}>{it.status || 'Active'}</div>
@@ -374,10 +391,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Program Title & Type', 
-          width: '36%', 
-          align: 'left', 
+        {
+          header: 'Program Title & Type',
+          width: '36%',
+          align: 'left',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
               <div>{it.title}</div>
@@ -385,10 +402,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Organizing Body & Dates', 
-          width: '24%', 
-          align: 'left', 
+        {
+          header: 'Organizing Body & Dates',
+          width: '24%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>{it.organizingBody}</div>
@@ -396,10 +413,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Faculty Attended & Proof', 
-          width: '26%', 
-          align: 'left', 
+        {
+          header: 'Faculty Attended & Proof',
+          width: '26%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyAttended}</div>
@@ -419,10 +436,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Program Title & Type', 
-          width: '32%', 
-          align: 'left', 
+        {
+          header: 'Program Title & Type',
+          width: '32%',
+          align: 'left',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
               <div>{it.title}</div>
@@ -430,20 +447,20 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Resource Person Details', 
-          width: '30%', 
-          align: 'left', 
+        {
+          header: 'Resource Person Details',
+          width: '30%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', fontSize: '8.5px', lineHeight: 1.35 }}>
               {it.resourcePersonDetails}
             </div>
           )
         },
-        { 
-          header: 'Coordinators & Proof', 
-          width: '24%', 
-          align: 'left', 
+        {
+          header: 'Coordinators & Proof',
+          width: '24%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyCoordinators}</div>
@@ -463,10 +480,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Event Title & Type', 
-          width: '34%', 
-          align: 'left', 
+        {
+          header: 'Event Title & Type',
+          width: '34%',
+          align: 'left',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
               <div>{it.title}</div>
@@ -474,10 +491,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Date & Resource Person', 
-          width: '22%', 
-          align: 'left', 
+        {
+          header: 'Date & Resource Person',
+          width: '22%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>{it.date}</div>
@@ -485,10 +502,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Participants', 
-          width: '12%', 
-          align: 'center', 
+        {
+          header: 'Participants',
+          width: '12%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div style={{ fontWeight: 800, color: '#1a365d' }}>{it.participantsCount}</div>
@@ -496,10 +513,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Key Outcomes & Coord.', 
-          width: '18%', 
-          align: 'left', 
+        {
+          header: 'Key Outcomes & Coord.',
+          width: '18%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#475569', lineHeight: 1.35 }}>
               <div style={{ fontSize: '8px' }}>{it.keyOutcomes}</div>
@@ -550,10 +567,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Course / Certification Title', width: '36%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.title}</div> },
-        { 
-          header: 'Platform & Type', 
-          width: '20%', 
-          align: 'left', 
+        {
+          header: 'Platform & Type',
+          width: '20%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.3 }}>
               <div style={{ fontWeight: 600, color: '#1a365d' }}>{it.platform}</div>
@@ -561,10 +578,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Duration & Enrolled', 
-          width: '14%', 
-          align: 'center', 
+        {
+          header: 'Duration & Enrolled',
+          width: '14%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.3 }}>
               <div>{it.duration}</div>
@@ -572,10 +589,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Certified & Status', 
-          width: '16%', 
-          align: 'center', 
+        {
+          header: 'Certified & Status',
+          width: '16%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#047857', lineHeight: 1.3 }}>
               <div style={{ fontWeight: 800 }}>{it.certified} Certified</div>
@@ -595,10 +612,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Date & Forum', 
-          width: '18%', 
-          align: 'center', 
+        {
+          header: 'Date & Forum',
+          width: '18%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#0f172a', fontWeight: 700 }}>
               <div>{it.date}</div>
@@ -636,10 +653,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Association Event & Type', 
-          width: '32%', 
-          align: 'left', 
+        {
+          header: 'Association Event & Type',
+          width: '32%',
+          align: 'left',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a' }}>
               <div>{it.event}</div>
@@ -647,10 +664,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Date & Coordinator', 
-          width: '20%', 
-          align: 'center', 
+        {
+          header: 'Date & Coordinator',
+          width: '20%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155' }}>
               <div>{it.date}</div>
@@ -658,10 +675,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Participants & Outcomes', 
-          width: '34%', 
-          align: 'left', 
+        {
+          header: 'Participants & Outcomes',
+          width: '34%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#475569' }}>
               <div><strong>{it.participants}</strong> participants</div>
@@ -689,7 +706,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Remarks', width: '28%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8.5px', fontStyle: 'italic', lineHeight: 1.35 }}>{it.remarks || '-'}</div> }
       ]
     },
-    // 9. Club & Student Engagement Activity
+    // 9. Clubs & Student Engagement Activity
     {
       key: 'studentEngagement',
       title: '9. CLUB & STUDENT ENGAGEMENT ACTIVITIES',
@@ -700,10 +717,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Activity / Event Title', width: '26%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.title}</div> },
-        { 
-          header: 'Type & Duration', 
-          width: '18%', 
-          align: 'left', 
+        {
+          header: 'Type & Duration',
+          width: '18%',
+          align: 'left',
           render: (it) => {
             const displayType = (it.type === 'Other' && it.otherType) ? `Other (${it.otherType})` : (it.otherType || it.type || '-');
             const displayDates = it.dates || (it.startDate && it.endDate ? `${it.startDate} to ${it.endDate}` : it.startDate || '-');
@@ -728,12 +745,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.nss || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Event / Activity Name', 
-          width: '32%', 
-          align: 'left', 
+        { header: '#', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        {
+          header: 'Event / Activity Name',
+          width: '24%',
+          align: 'left',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
               <div>{it.event}</div>
@@ -741,10 +758,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Date & Venue', 
-          width: '20%', 
-          align: 'center', 
+        {
+          header: 'Date & Venue',
+          width: '18%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>{it.date}</div>
@@ -752,10 +769,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Participants & Target', 
-          width: '18%', 
-          align: 'center', 
+        {
+          header: 'Participants & Target',
+          width: '17%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div><strong>{it.participantsCount}</strong> participants</div>
@@ -763,10 +780,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Outcomes & Coord.', 
-          width: '16%', 
-          align: 'left', 
+        {
+          header: 'Outcomes & Coord.',
+          width: '30%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#475569', lineHeight: 1.35 }}>
               <div>{it.outcomes}</div>
@@ -787,10 +804,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Initiative / Activity', width: '32%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.initiative}</div> },
-        { 
-          header: 'Date & Coordinator', 
-          width: '18%', 
-          align: 'center', 
+        {
+          header: 'Date & Coordinator',
+          width: '18%',
+          align: 'center',
           render: (it) => (
             <div style={{ color: '#334155' }}>
               <div>{it.date}</div>
@@ -798,10 +815,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { 
-          header: 'Description & Key Outcomes', 
-          width: '36%', 
-          align: 'left', 
+        {
+          header: 'Description & Key Outcomes',
+          width: '36%',
+          align: 'left',
           render: (it) => (
             <div style={{ color: '#475569', lineHeight: 1.35 }}>
               <div>{it.description}</div>
@@ -833,6 +850,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   );
 
   // Helper to render reusable generic section data tables
+  const MAX_ROW_H = 140; // px; roughly 11 lines of 9px text
+
   const renderDataTable = <T,>(columns: ColumnConfig<T>[], items: T[], startIndex: number) => (
     <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
       <thead>
@@ -864,10 +883,14 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                   padding: col.align === 'center' ? '8px 4px' : '8px 10px',
                   textAlign: col.align || 'left',
                   verticalAlign: 'middle',
-                  borderRight: cIdx < columns.length - 1 ? '1px solid #cbd5e1' : 'none'
+                  borderRight: cIdx < columns.length - 1 ? '1px solid #cbd5e1' : 'none',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere'
                 }}
               >
-                {col.render(item, startIndex + rIdx)}
+                <div style={{ maxHeight: `${MAX_ROW_H}px`, overflow: 'hidden' }}>
+                  {col.render(item, startIndex + rIdx)}
+                </div>
               </td>
             ))}
           </tr>
@@ -876,50 +899,151 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </table>
   );
 
-  // Generate dynamic page units according to row limits
-  interface GeneratedPage {
-    type: 'cover' | 'section' | 'final';
-    section?: SectionConfig;
-    items?: any[];
-    startIndex?: number;
-    isContinued?: boolean;
-    totalCount?: number;
+  // Estimate row height for accurate page budget packing
+  const estimateItemHeight = (secKey: string): number => {
+    switch (secKey) {
+      case 'journal':
+      case 'conference':
+        return 78;
+      case 'patents':
+        return 52;
+      case 'startups':
+        return 68;
+      case 'fdpAttended':
+        return 62;
+      case 'fdpOrganized':
+        return 66;
+      case 'sdp':
+        return 70;
+      case 'facultyAchievements':
+      case 'studentAchievements':
+        return 54;
+      case 'certifications':
+        return 54;
+      case 'meetings':
+        return 58;
+      case 'collaborations':
+        return 66;
+      case 'techAssociation':
+        return 66;
+      case 'syllabus':
+        return 46;
+      case 'studentEngagement':
+        return 64;
+      case 'nss':
+        return 70;
+      case 'additionalInitiatives':
+        return 66;
+      default:
+        return 58;
+    }
+  };
+
+  // Generate dynamic multi-section continuous page units
+  interface PageSegment {
+    section: SectionConfig;
+    items: any[];
+    startIndex: number;
+    isContinued: boolean;
+    totalCount: number;
   }
+
+  interface GeneratedPage {
+    type: 'cover' | 'content' | 'final';
+    segments?: PageSegment[];
+  }
+
+  const USABLE_PAGE_HEIGHT = 800 - safety; // px
+  const HEADER_COST = 76;
+  const SPACING_COST = 20;
+  const NIL_COST = 48;
 
   const generatedPages: GeneratedPage[] = [];
 
   // Page 1: Cover & Executive Performance Matrix
   generatedPages.push({ type: 'cover' });
 
-  // Intermediate Pages: Sections 1A through 9
+  // Intermediate Pages: Continuous dynamic packing of Sections 1A through 11
+  let currentPageSegments: PageSegment[] = [];
+  let currentHeight = 0;
+
   sectionsConfig.forEach(sec => {
     const allItems = sec.getItems(deptDataMap, departmentList);
-    if (allItems.length === 0) {
-      generatedPages.push({
-        type: 'section',
+    const totalCount = allItems.length;
+
+    if (totalCount === 0) {
+      const spaceBefore = currentPageSegments.length > 0 ? SPACING_COST : 0;
+      const needed = HEADER_COST + NIL_COST + spaceBefore;
+      if (currentHeight + needed > USABLE_PAGE_HEIGHT && currentPageSegments.length > 0) {
+        generatedPages.push({ type: 'content', segments: currentPageSegments });
+        currentPageSegments = [];
+        currentHeight = 0;
+      }
+      currentPageSegments.push({
         section: sec,
         items: [],
         startIndex: 0,
         isContinued: false,
         totalCount: 0
       });
-    } else {
-      const chunks: any[][] = [];
-      for (let i = 0; i < allItems.length; i += sec.rowsPerPage) {
-        chunks.push(allItems.slice(i, i + sec.rowsPerPage));
+      currentHeight += HEADER_COST + NIL_COST + (currentPageSegments.length > 1 ? SPACING_COST : 0);
+      return;
+    }
+
+    let itemIdx = 0;
+    let isContinued = false;
+
+    while (itemIdx < totalCount) {
+      const spaceBefore = currentPageSegments.length > 0 ? SPACING_COST : 0;
+      const firstItemH = estimateItemHeight(sec.key);
+      const minNeeded = HEADER_COST + spaceBefore + firstItemH;
+
+      // If cannot fit header and at least 1 item on current page, flush to new page
+      if (currentHeight + minNeeded > USABLE_PAGE_HEIGHT && currentPageSegments.length > 0) {
+        generatedPages.push({ type: 'content', segments: currentPageSegments });
+        currentPageSegments = [];
+        currentHeight = 0;
       }
-      chunks.forEach((chunk, chunkIdx) => {
-        generatedPages.push({
-          type: 'section',
-          section: sec,
-          items: chunk,
-          startIndex: chunkIdx * sec.rowsPerPage,
-          isContinued: chunkIdx > 0,
-          totalCount: allItems.length
-        });
+
+      const chunkStartIndex = itemIdx;
+      const pageItems: any[] = [];
+      let segmentHeight = HEADER_COST + (currentPageSegments.length > 0 ? SPACING_COST : 0);
+
+      while (itemIdx < totalCount) {
+        const it = allItems[itemIdx];
+        const itH = estimateItemHeight(sec.key);
+        if (currentHeight + segmentHeight + itH > USABLE_PAGE_HEIGHT && pageItems.length > 0) {
+          break;
+        }
+        pageItems.push(it);
+        segmentHeight += itH;
+        itemIdx++;
+      }
+
+      currentPageSegments.push({
+        section: sec,
+        items: pageItems,
+        startIndex: chunkStartIndex,
+        isContinued: isContinued,
+        totalCount: totalCount
       });
+
+      currentHeight += segmentHeight;
+      isContinued = true;
+
+      // If more items remain for this section, flush page immediately so continuation starts fresh on next page
+      if (itemIdx < totalCount) {
+        generatedPages.push({ type: 'content', segments: currentPageSegments });
+        currentPageSegments = [];
+        currentHeight = 0;
+      }
     }
   });
+
+  // Flush remaining segments
+  if (currentPageSegments.length > 0) {
+    generatedPages.push({ type: 'content', segments: currentPageSegments });
+  }
 
   // Final Page: Section 10 (Syllabus), Section 11 (Attendance) & Governance Endorsement
   generatedPages.push({ type: 'final' });
@@ -1015,10 +1139,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   };
 
   return (
-    <div 
-      id={id} 
+    <div
+      id={id}
       className="bg-white text-slate-900 font-sans mx-auto"
-      style={{ 
+      style={{
         width: '750px',
         maxWidth: '750px',
         minWidth: '750px',
@@ -1043,9 +1167,9 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                   <tbody>
                     <tr style={{ border: 'none' }}>
                       <td style={{ width: '50%', border: 'none', verticalAlign: 'middle', textAlign: 'left', padding: '0 0 4px 0' }}>
-                        <img 
-                          src={logoBase64} 
-                          alt="Sanskrithi School of Engineering Logo" 
+                        <img
+                          src={logoBase64}
+                          alt="Sanskrithi School of Engineering Logo"
                           style={{ height: '38px', width: 'auto', display: 'block', objectFit: 'contain' }}
                         />
                       </td>
@@ -1064,12 +1188,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
 
                 {/* Document Title Block */}
                 <div style={{ textAlign: 'center', marginBottom: '22px' }}>
-                  <h1 
-                    style={{ 
-                      fontSize: '18px', 
-                      fontWeight: 900, 
-                      color: '#1a365d', 
-                      textTransform: 'uppercase', 
+                  <h1
+                    style={{
+                      fontSize: '18px',
+                      fontWeight: 900,
+                      color: '#1a365d',
+                      textTransform: 'uppercase',
                       letterSpacing: '0.03em',
                       margin: '0 0 5px 0'
                     }}
@@ -1155,14 +1279,17 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           );
         }
 
-        if (pageDef.type === 'section' && pageDef.section) {
-          const sec = pageDef.section;
+        if (pageDef.type === 'content' && pageDef.segments) {
           return (
             <div key={pIdx} className="pdf-page" style={fixedA4PageStyle}>
-              <div>
-                {renderRunningHeader()}
-                {renderSectionHeader(sec.title, pageDef.totalCount, pageDef.isContinued)}
-                {renderDataTable(sec.columns, pageDef.items || [], pageDef.startIndex || 0)}
+              {renderRunningHeader()}
+              <div data-body style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                {pageDef.segments.map((seg, sIdx) => (
+                  <div key={sIdx} style={{ marginBottom: sIdx < (pageDef.segments?.length || 1) - 1 ? '18px' : '0px' }}>
+                    {renderSectionHeader(seg.section.title, seg.totalCount, seg.isContinued)}
+                    {renderDataTable(seg.section.columns, seg.items, seg.startIndex)}
+                  </div>
+                ))}
               </div>
               {renderRunningFooter(pageNumber)}
             </div>
