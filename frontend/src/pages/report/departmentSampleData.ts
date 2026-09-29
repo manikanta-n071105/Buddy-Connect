@@ -1511,7 +1511,263 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
     };
   }
 
-  // 5. DEFAULT: CIVIL ENGINEERING
+  // 5. MECHANICAL ENGINEERING
+  if (dept.includes('mechanical') || dept.includes('mech')) {
+    return {
+      journals: [
+        {
+          title: 'Thermo-Hydraulic Performance and Entropy Generation Analysis of Microchannel Heat Sinks for EV Battery Thermal Management',
+          authors: 'C Anil Kumar Reddy, Dr. G. Balakrishna',
+          journalName: 'International Journal of Thermal Sciences',
+          issnIsbn: '1290-0729',
+          volIssueYear: '198/4',
+          pageNos: '108-124',
+          indexedIn: 'SCI / Scopus / Elsevier',
+          link: 'https://doi.org/10.1016/j.ijthermalsci.2026.108422'
+        },
+        {
+          title: 'Mechanical Characterization and Wear Behavior of Al7075 Hybrid Metal Matrix Composites Reinforced with SiC and Graphene Nanoplatelets',
+          authors: 'Er. P. Venkatesh, C Anil Kumar Reddy',
+          journalName: 'Materials Today: Proceedings',
+          issnIsbn: '2214-7853',
+          volIssueYear: '92/2',
+          pageNos: '315-329',
+          indexedIn: 'Scopus / Elsevier',
+          link: 'https://doi.org/10.1016/j.matpr.2026.04.112'
+        }
+      ],
+      conferences: [
+        {
+          title: 'Experimental Investigation of Friction Stir Lap Welding of Dissimilar AA6061 and Galvanized Steel Joints',
+          authors: 'C Anil Kumar Reddy, Er. T. Suresh Babu',
+          conferenceName: 'International Conference on Advanced Materials and Manufacturing Processes (ICAMMP 2026)',
+          date: '21st April 2026',
+          locationMode: 'IIT Madras, Chennai (In-Person)',
+          indexedIn: 'Springer Nature / Scopus',
+          link: 'https://springer.com/conf/icammp2026/mech-045'
+        },
+        {
+          title: 'Topology Optimization and Fatigue Life Assessment of Automotive Control Arms Fabricated via Laser Powder Bed Fusion',
+          authors: 'Er. N. Sivasankar, C Anil Kumar Reddy',
+          conferenceName: 'IEEE International Conference on Robotics and Mechanical Automation (IEEE ICRMA 2026)',
+          date: '14th April 2026',
+          locationMode: 'Bengaluru, India (Hybrid)',
+          indexedIn: 'IEEE Xplore',
+          link: 'https://ieee-xplore.org/document/icrma2026-mech31'
+        }
+      ],
+      patents: [
+        {
+          title: 'Multi-Axis Automated Tool-Changer Mechanism for Portable CNC Milling Machines with Smart Vibration Dampers',
+          inventors: 'C Anil Kumar Reddy, Er. P. Venkatesh',
+          applicants: 'Sanskrithi School of Engineering',
+          patentNumber: '202641031982 A',
+          status: 'Published',
+          awardedDate: '10/04/2026',
+          link: 'https://ipindiaservices.gov.in/publicsearch'
+        }
+      ],
+      entrepreneurship: [
+        {
+          title: 'Design and Prototype Fabrication of Low-Cost Agricultural Seed-Drill and Fertilizing Attachment for Two-Wheelers',
+          date: '18/04/2026',
+          type: 'Hardware Incubator Demo Day',
+          participants: '38 Mechanical Final Year Students',
+          organizedBy: 'SSE Hardware Innovation Lab & AP Innovation Society',
+          mode: 'Offline',
+          keyOutcomes: 'Field demonstration completed with local farmers; applied for prototype seed grant of Rs. 1.5 Lakhs.',
+          participantsCount: '38',
+          mentorCoordinator: 'C Anil Kumar Reddy',
+          status: 'Prototype Stage',
+          link: 'https://sseptp.org/incubator/mech-seed-drill'
+        }
+      ],
+      nss: [
+        {
+          event: 'Industrial Safety Awareness and Workplace Ergonomics Drive for Local Small-Scale Fabrication Units',
+          date: '17/04/2026',
+          venue: 'Industrial Estate, Beedupalli & SSE Campus',
+          type: 'Community Extension & Safety Drive',
+          participantsCount: '70',
+          typeOfParticipants: 'Mechanical Students & 25 Local Welders/Machinists',
+          outcomes: 'Distributed eye protection goggles, safety gloves, and delivered hands-on training on fire extinguisher usage.',
+          coordinator: 'Er. T. Suresh Babu',
+          link: 'https://sseptp.org/nss/industrial-safety-2026'
+        }
+      ],
+      fdpAttended: [
+        {
+          title: 'AICTE-ATAL One-Week FDP on Digital Twins, Industry 4.0, and Smart Connected Manufacturing Systems',
+          type: 'FDP',
+          dates: '13/04/2026 to 18/04/2026',
+          organizingBody: 'National Institute of Technology (NIT) Warangal',
+          mode: 'Hybrid',
+          facultyAttended: 'C Anil Kumar Reddy',
+          link: 'https://atalacademy.aicte-india.org/certificates/nitw-mech-411'
+        },
+        {
+          title: 'Advanced Computational Fluid Dynamics (CFD) with ANSYS Fluent for Renewable Energy Systems',
+          type: 'Workshop',
+          dates: '06/04/2026 to 10/04/2026',
+          organizingBody: 'IIT Hyderabad & ANSYS Academic Program',
+          mode: 'Online',
+          facultyAttended: 'Er. P. Venkatesh',
+          link: 'https://iith.ac.in/workshops/cfd-2026-cert'
+        }
+      ],
+      fdpOrganized: [
+        {
+          title: 'Five-Day National Workshop on 3D Printing & Additive Manufacturing Technologies for Rapid Prototyping',
+          type: 'Workshop',
+          dates: '20/04/2026 to 24/04/2026',
+          deptOrganized: 'Mechanical Engineering',
+          mode: 'Offline',
+          resourcePersonDetails: 'Dr. K. Srinivas (Head of Additive R&D, BEML Bengaluru) and Er. M. Anand (Chief Design Engineer, Stratasys India)',
+          facultyCoordinators: 'C Anil Kumar Reddy, Er. N. Sivasankar',
+          link: 'https://sseptp.org/fdp/mech-3dprinting-2026'
+        }
+      ],
+      sdp: [
+        {
+          title: 'Comprehensive Hands-On Student Training in SolidWorks 2026 & Generative Engineering Design',
+          date: '08/04/2026 to 12/04/2026',
+          type: 'Software Skill Development Course',
+          resourcePerson: 'Er. D. Raviteja (Certified Dassault Systemes SolidWorks Professional, CAD Vision Hyd)',
+          mode: 'Offline (CAD/CAM Lab)',
+          keyOutcomes: '65 Mechanical students certified in CSWA level 3D part modeling, sheet metal design, and geometric tolerancing.',
+          participantsCount: '65',
+          coordinator: 'Er. P. Venkatesh',
+          link: 'https://sseptp.org/sdp/solidworks-certified-batch'
+        }
+      ],
+      facultyAchievements: [
+        {
+          name: 'C Anil Kumar Reddy',
+          award: 'Outstanding HOD & Academic Leadership Award in Engineering Excellence 2026',
+          organization: 'Institution of Engineers (India) - Andhra Pradesh State Center',
+          date: '15/04/2026',
+          link: 'https://ieindia.org/awards/leadership-2026-reddy'
+        }
+      ],
+      studentAchievements: [
+        {
+          nameRoll: 'K. Mohan Krishna (23ME104) & Team Sanskrithi Racers',
+          award: 'First Prize & Best Acceleration Trophy in All-India Electric Go-Kart Championship',
+          event: 'National Student Karting Competition (NSKC 2026)',
+          organization: 'Motorsports Club of India, Coimbatore',
+          durationDate: '18/04/2026 to 20/04/2026',
+          link: 'https://nskc-india.org/winners-2026'
+        }
+      ],
+      certifications: [
+        {
+          title: 'Fundamental of Manufacturing Processes (NPTEL)',
+          type: 'NPTEL SWAYAM Online Certification',
+          duration: '12 Weeks',
+          platform: 'NPTEL / IIT Roorkee',
+          enrolled: '45',
+          certified: '40',
+          keyOutcomes: '40 students cleared national exam with 8 Elite Gold badges.',
+          link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26ME18S4'
+        },
+        {
+          title: 'Autodesk Certified Professional: Inventor for Mechanical Design',
+          type: 'Autodesk Global Certification',
+          duration: '6 Weeks',
+          platform: 'Autodesk / Coursera',
+          enrolled: '35',
+          certified: '32',
+          keyOutcomes: '32 candidates successfully certified as Autodesk Design Associates.',
+          link: 'https://coursera.org/verify/professional-cert/mech-inventor-sse'
+        }
+      ],
+      deptMeetings: [
+        {
+          date: '06/04/2026',
+          decisions: 'Conducted Department Advisory Committee (DAC) meeting. Approved revisions in Machine Drawing and Automobile Lab manuals. Scheduled remedial classes for engineering mechanics.',
+          policyChanges: 'Mandatory internship placement protocol finalized for all 3rd year mechanical students.',
+          link: 'https://sseptp.org/governance/mech-dac-minutes-april26'
+        }
+      ],
+      mous: [
+        {
+          name: 'Bharat Earth Movers Limited (BEML) Training & R&D Hub, Palakkad',
+          purpose: 'Long-term partnership for joint student internships, heavy machinery dynamic analysis, and faculty sabbatical training.',
+          datePeriod: '11/04/2026 (Valid 3 Years)',
+          facultySpoc: 'C Anil Kumar Reddy',
+          link: 'https://sseptp.org/mous/beml-mechanical-mou'
+        }
+      ],
+      additionalInitiatives: [
+        {
+          initiative: 'Establishment of Advanced CNC Machining & Rapid Tooling Innovation Cell',
+          date: '10/04/2026',
+          description: 'Refurbished CNC lathe and 4-axis VMC center opened for commercial job works and student robotic arm fabrication.',
+          outcomes: 'Generated initial job-order revenue of Rs. 32,000 and supported 4 inter-disciplinary capstone projects.',
+          coordinator: 'Er. T. Suresh Babu',
+          link: 'https://sseptp.org/mech/cnc-center'
+        }
+      ],
+      techAssociation: [
+        {
+          event: 'MECHELON 2026 - National Mechanical Engineering Festival & CAD Combat',
+          date: '23/04/2026',
+          type: 'National Technical Symposium',
+          resourcePersonCoordinator: 'Er. P. Ramalingam (General Manager, Kia Motors India Pvt. Ltd.)',
+          participants: '160 Students across 8 Engineering Colleges',
+          outcomes: 'Conducted CAD 3D modeling race, contraption design challenge, and technical paper sessions on zero-emission transport.',
+          link: 'https://sseptp.org/associations/mechelon-2026'
+        }
+      ],
+      iicCell: [
+        {
+          activity: 'Design Pitch on Solar Thermal Desalination and Drinking Water Condenser for Rural Anantapur',
+          date: '15/04/2026',
+          description: 'Under IIC 6.0, mechanical students showcased a parabolic-trough solar evaporator yielding 15 liters of potable water daily.',
+          partner: 'National Institute of Solar Energy (NISE) & MSME Development Institute',
+          beneficiaries: '80 Engineering Students & 15 Village Heads',
+          outcomes: 'Shortlisted for Rs. 2 Lakhs state innovation grant.',
+          link: 'https://mic.gov.in/iic/sse-mech-solar-pitch'
+        }
+      ],
+      syllabus: [
+        {
+          subject: 'Kinematics & Dynamics of Machinery',
+          yearSem: 'II B.Tech II Sem',
+          faculty: 'C Anil Kumar Reddy',
+          completed: '100%',
+          pending: 'Nil',
+          remarks: 'Syllabus 100% completed. Conducted 3 revision hours for gyroscopic couples and balancing.'
+        },
+        {
+          subject: 'Heat Transfer & Thermal Power Systems',
+          yearSem: 'III B.Tech II Sem',
+          faculty: 'Er. P. Venkatesh',
+          completed: '94%',
+          pending: '6%',
+          remarks: 'Radiation network analysis underway; two extra hours scheduled this week.'
+        },
+        {
+          subject: 'Design of Machine Elements - II',
+          yearSem: 'III B.Tech II Sem',
+          faculty: 'Er. T. Suresh Babu',
+          completed: '96%',
+          pending: '4%',
+          remarks: 'Bearings and gear design modules completed; model question papers solved.'
+        },
+        {
+          subject: 'Automobile Engineering & Hybrid Drives',
+          yearSem: 'IV B.Tech II Sem',
+          faculty: 'Er. N. Sivasankar',
+          completed: '100%',
+          pending: 'Nil',
+          remarks: 'Full curriculum covered including modern EV powertrains and regenerative braking.'
+        }
+      ]
+    };
+  }
+
+  // 6. DEFAULT: CIVIL ENGINEERING
   return {
     journals: [
       {

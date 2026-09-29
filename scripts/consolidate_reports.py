@@ -375,6 +375,7 @@ def create_summary_matrix_xml(departments, category_data):
         elif 'Computer' in d: dept_short[d] = 'CSE'
         elif 'Communication' in d: dept_short[d] = 'ECE'
         elif 'Electrical' in d: dept_short[d] = 'EEE'
+        elif 'Mechanical' in d or 'Mech' in d: dept_short[d] = 'MECH'
         elif 'Humanities' in d or 'H&S' in d: dept_short[d] = 'H&S'
         else: dept_short[d] = d[:6].upper()
 
@@ -628,6 +629,7 @@ def parse_pdf_department_report(pdf_path):
                            (('computer' in dept_norm or 'cse' in dept_norm) and 'computer' in k_low) or \
                            (('electronics' in dept_norm or 'ece' in dept_norm) and 'electronics' in k_low) or \
                            (('electrical' in dept_norm or 'eee' in dept_norm) and 'electrical' in k_low) or \
+                           (('mechanical' in dept_norm or 'mech' in dept_norm) and 'mechanical' in k_low) or \
                            (('humanities' in dept_norm or 'has' in dept_norm or 'h&s' in dept_norm) and 'humanities' in k_low):
                             matched_key = k
                             break

@@ -262,16 +262,17 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   // Only the 4 metadata fields present in the template header:
   const [department, setDepartment] = useState('Civil Engineering');
   const [hodName, setHodName] = useState('K Siva Prasad');
-  const [period, setPeriod] = useState(currentPeriod || '01/04/2026 to 25/04/2026');
+  const [period, setPeriod] = useState(currentPeriod || 'April 2026');
   const [submissionDate, setSubmissionDate] = useState('25/04/2026');
 
   const [sections, setSections] = useState<ReportSectionsData>(() => normalizeSections(INITIAL_SECTIONS));
 
   useEffect(() => {
-    if (currentPeriod) {
+    if (currentPeriod && currentPeriod !== period) {
       setPeriod(currentPeriod);
     }
   }, [currentPeriod]);
+
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -279,37 +280,82 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   const [viewMode, setViewMode] = useState<'form' | 'preview'>('form');
   const [savingDraft, setSavingDraft] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastAutoSavedAt, setLastAutoSavedAt] = useState<string | null>(null);
+
   const [dbStatus, setDbStatus] = useState<{
     saved: boolean;
     lastSavedAt?: string;
     status?: string;
   }>({ saved: false });
 
+  // Refs for tracking state inside the 30-second auto-save interval and race-free fetches
+  const sectionsRef = React.useRef(sections);
+  sectionsRef.current = sections;
+  const deptRef = React.useRef(department);
+  deptRef.current = department;
+  const periodRef = React.useRef(period);
+  periodRef.current = period;
+  const hodNameRef = React.useRef(hodName);
+  hodNameRef.current = hodName;
+  const submissionDateRef = React.useRef(submissionDate);
+  submissionDateRef.current = submissionDate;
+  const loadingDraftRef = React.useRef(loadingDraft);
+  loadingDraftRef.current = loadingDraft;
+  const activeFetchIdRef = React.useRef(0);
+
+  const getDefaultHod = (dept: string) => {
+    if (dept.includes('Civil')) return 'K Siva Prasad';
+    if (dept.includes('Computer')) return 'Dr. Kethineni Vinod Kumar';
+    if (dept.includes('Communication')) return 'Dr. V. Annapurna';
+    if (dept.includes('Electrical')) return 'Mr. K. Gangadhar';
+    if (dept.includes('Mechanical')) return 'C Anil Kumar Reddy';
+    if (dept.includes('Humanities')) return 'Dr. Samba Sivaiah B';
+    return 'HOD';
+  };
+
   // Fetch saved report from dedicated reports database
+  // Automatically loads blank fields if no data has been entered before for this period!
   const loadSavedReportFromDb = async (dept = department, per = period) => {
+    const fetchId = ++activeFetchIdRef.current;
     try {
       setLoadingDraft(true);
       const res = await api.get(`/reports/department-report-data?department=${encodeURIComponent(dept)}&period=${encodeURIComponent(per)}`);
+      
+      // If another fetch happened while this was in-flight, disregard
+      if (fetchId !== activeFetchIdRef.current) return;
+
       if (res.data?.success && res.data.exists && res.data.data) {
         const d = res.data.data;
         if (d.sections && typeof d.sections === 'object') {
           setSections(normalizeSections(d.sections));
+        } else {
+          setSections(normalizeSections(INITIAL_SECTIONS));
         }
         if (d.hodName) setHodName(d.hodName);
+        else setHodName(getDefaultHod(dept));
         if (d.submissionDate) setSubmissionDate(d.submissionDate);
         setDbStatus({
           saved: true,
           lastSavedAt: d.updatedAt,
           status: d.status
         });
-        toast.success(`Loaded saved report from dedicated database for ${dept} (${per})`, { id: 'db-load' });
+        toast.success(`Loaded saved report for ${dept} (${per})`, { id: 'db-load' });
       } else {
+        // If no data entered before for this period: load blank fields!
+        setSections(normalizeSections(INITIAL_SECTIONS));
+        setHodName(getDefaultHod(dept));
         setDbStatus({ saved: false });
       }
     } catch (e) {
+      if (fetchId !== activeFetchIdRef.current) return;
       console.warn('Could not fetch saved draft from report db:', e);
+      setSections(normalizeSections(INITIAL_SECTIONS));
+      setDbStatus({ saved: false });
     } finally {
-      setLoadingDraft(false);
+      if (fetchId === activeFetchIdRef.current) {
+        setLoadingDraft(false);
+      }
     }
   };
 
@@ -318,6 +364,53 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       loadSavedReportFromDb(department, period);
     }
   }, [department, period]);
+
+  // 30-Second Automatic Silent Background Save
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      // Do not auto-save while fetching or loading draft
+      if (loadingDraftRef.current) return;
+
+      const currentSections = sectionsRef.current;
+      const currentDept = deptRef.current;
+      const currentPeriod = periodRef.current;
+      const currentHod = hodNameRef.current;
+      const currentSubDate = submissionDateRef.current;
+
+      // Only save if user has entered data in at least one section
+      const hasAnyData = Object.values(currentSections).some(
+        arr => Array.isArray(arr) && arr.length > 0
+      );
+      if (!hasAnyData) return;
+
+      try {
+        setAutoSaving(true);
+        const payload = {
+          department: currentDept,
+          period: currentPeriod,
+          hodName: currentHod,
+          submissionDate: currentSubDate,
+          sections: currentSections,
+          status: 'DRAFT'
+        };
+        const res = await api.post('/reports/save-department-draft', payload);
+        if (res.data?.success) {
+          setDbStatus({
+            saved: true,
+            lastSavedAt: res.data.data?.updatedAt || new Date().toISOString(),
+            status: res.data.data?.status || 'DRAFT'
+          });
+          setLastAutoSavedAt(new Date().toLocaleTimeString());
+        }
+      } catch (err) {
+        console.warn('30s auto-save silent attempt failed:', err);
+      } finally {
+        setAutoSaving(false);
+      }
+    }, 30000); // exactly every 30 seconds
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSaveDraft = async () => {
     try {
@@ -340,6 +433,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           lastSavedAt: res.data.data?.updatedAt || new Date().toISOString(),
           status: res.data.data?.status || 'DRAFT'
         });
+        setLastAutoSavedAt(new Date().toLocaleTimeString());
         if (onReportGenerated) onReportGenerated();
       } else {
         toast.dismiss(toastId);
@@ -354,19 +448,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
   const handleDepartmentChange = (dept: string) => {
     setDepartment(dept);
-    if (dept.includes('Civil')) setHodName('K Siva Prasad');
-    else if (dept.includes('Computer')) setHodName('Dr. Kethineni Vinod Kumar');
-    else if (dept.includes('Communication')) setHodName('Dr. V. Annapurna');
-    else if (dept.includes('Electrical')) setHodName('Mr. K. Gangadhar');
-    else if (dept.includes('Humanities')) setHodName('Dr. Samba Sivaiah B');
-
-    // If sample data or entries already exist, automatically switch to the new department's sample data
-    const hasData = Object.values(sections).some(arr => Array.isArray(arr) && arr.length > 0);
-    if (hasData) {
-      const newDeptData = getDepartmentSampleData(dept);
-      setSections(normalizeSections(newDeptData));
-      toast.info(`Switched to sample data for ${dept}`);
-    }
+    setHodName(getDefaultHod(dept));
+    // loadSavedReportFromDb runs automatically via useEffect, loading existing draft or fresh blank fields
   };
 
   // Exact 16 tables matching the template format:
@@ -663,7 +746,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               title={`Load complete 16-section sample data tailored for ${department}`}
             >
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>Fill {department.includes('Civil') ? 'Civil' : department.includes('Computer') ? 'CSE' : department.includes('Communication') ? 'ECE' : department.includes('Electrical') ? 'EEE' : 'H&S'} Sample</span>
+              <span>Fill {department.includes('Civil') ? 'Civil' : department.includes('Computer') ? 'CSE' : department.includes('Communication') ? 'ECE' : department.includes('Electrical') ? 'EEE' : department.includes('Mechanical') ? 'Mech' : 'H&S'} Sample</span>
             </button>
 
             <button
@@ -722,15 +805,25 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
         {/* Dedicated Database Status Indicator */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="font-bold text-slate-700">Dedicated Reports DB:</span>
+            <span className="font-bold text-slate-700">Reports DB:</span>
             <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px] flex items-center gap-1">
               <Database className="w-3 h-3 text-emerald-600" />
               Neon PostgreSQL Connected
+            </span>
+            <span className="text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 text-[11px] flex items-center gap-1">
+              <Clock className="w-3 h-3 text-blue-600" />
+              {autoSaving ? (
+                <span className="animate-pulse font-bold text-blue-600">Auto-saving...</span>
+              ) : lastAutoSavedAt ? (
+                <span>Auto-saved {lastAutoSavedAt} (every 30s)</span>
+              ) : (
+                <span>Auto-save active (every 30s)</span>
+              )}
             </span>
           </div>
 
@@ -745,7 +838,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 </span>
               </span>
             ) : (
-              <span className="text-slate-400 italic">No saved database record for this month yet. Click &quot;Save to Database&quot; anytime.</span>
+              <span className="text-slate-400 italic">No saved data for {period} (Blank fields ready). Auto-saves every 30s.</span>
             )}
           </div>
         </div>
@@ -765,6 +858,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               <option value="Computer Science & Engineering">Computer Science & Engineering</option>
               <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
               <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering</option>
+              <option value="Mechanical Engineering">Mechanical Engineering</option>
               <option value="Humanities & Sciences">Humanities & Sciences</option>
             </select>
           </div>
@@ -773,13 +867,43 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-slate-500" /> Reporting Period:
             </label>
-            <input
-              type="text"
+            <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              placeholder="e.g. 01/04/2026 to 25/04/2026"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-600"
-            />
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
+            >
+              <optgroup label="Academic Year 2025–26">
+                <option value="June 2025">June 2025</option>
+                <option value="July 2025">July 2025</option>
+                <option value="August 2025">August 2025</option>
+                <option value="September 2025">September 2025</option>
+                <option value="October 2025">October 2025</option>
+                <option value="November 2025">November 2025</option>
+                <option value="December 2025">December 2025</option>
+                <option value="January 2026">January 2026</option>
+                <option value="February 2026">February 2026</option>
+                <option value="March 2026">March 2026</option>
+                <option value="April 2026">April 2026</option>
+                <option value="May 2026">May 2026</option>
+              </optgroup>
+              <optgroup label="Academic Year 2026–27">
+                <option value="June 2026">June 2026</option>
+                <option value="July 2026">July 2026</option>
+                <option value="August 2026">August 2026</option>
+                <option value="September 2026">September 2026</option>
+                <option value="October 2026">October 2026</option>
+                <option value="November 2026">November 2026</option>
+                <option value="December 2026">December 2026</option>
+                <option value="January 2027">January 2027</option>
+                <option value="February 2027">February 2027</option>
+                <option value="March 2027">March 2027</option>
+                <option value="April 2027">April 2027</option>
+                <option value="May 2027">May 2027</option>
+              </optgroup>
+              {!['June 2025', 'July 2025', 'August 2025', 'September 2025', 'October 2025', 'November 2025', 'December 2025', 'January 2026', 'February 2026', 'March 2026', 'April 2026', 'May 2026', 'June 2026', 'July 2026', 'August 2026', 'September 2026', 'October 2026', 'November 2026', 'December 2026', 'January 2027', 'February 2027', 'March 2027', 'April 2027', 'May 2027'].includes(period) && (
+                <option value={period}>{period}</option>
+              )}
+            </select>
           </div>
 
           <div className="space-y-1.5">
@@ -790,7 +914,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               type="text"
               value={hodName}
               onChange={(e) => setHodName(e.target.value)}
-              placeholder="e.g. K Siva Prasad"
+              placeholder="e.g. C Anil Kumar Reddy"
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-600"
             />
           </div>

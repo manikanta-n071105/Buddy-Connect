@@ -94,12 +94,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     fetchLogo();
   }, []);
 
-  // Standard 5 academic departments
+  // Standard 6 academic departments
   const departmentList = [
     { code: 'CIVIL', name: 'Civil Engineering', hod: 'K Siva Prasad' },
     { code: 'CSE', name: 'Computer Science & Engineering', hod: 'Dr. Kethineni Vinod Kumar' },
     { code: 'ECE', name: 'Electronics & Communication Engineering', hod: 'Dr. V. Annapurna' },
     { code: 'EEE', name: 'Electrical & Electronics Engineering', hod: 'Mr. K. Gangadhar' },
+    { code: 'MECH', name: 'Mechanical Engineering', hod: 'C Anil Kumar Reddy' },
     { code: 'H&S', name: 'Humanities & Sciences', hod: 'Dr. Samba Sivaiah B' }
   ];
 
@@ -1011,15 +1012,15 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                   <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
-                        <th style={{ width: '40%', padding: '8px 10px', textAlign: 'left', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
+                        <th style={{ width: '37%', padding: '8px 10px', textAlign: 'left', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
                           Activity Category / Section
                         </th>
                         {departmentList.map(d => (
-                          <th key={d.code} style={{ width: '9.5%', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
+                          <th key={d.code} style={{ width: '8.5%', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
                             {d.code}
                           </th>
                         ))}
-                        <th style={{ width: '12.5%', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, backgroundColor: '#c2410c' }}>
+                        <th style={{ width: '12%', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, backgroundColor: '#c2410c' }}>
                           Total
                         </th>
                       </tr>
@@ -1124,7 +1125,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                         </td>
                         <td style={{ padding: '7px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#047857' }}>100%</td>
                         <td style={{ padding: '7px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#64748b' }}>Nil</td>
-                        <td style={{ padding: '7px 8px', verticalAlign: 'middle', fontWeight: 700, color: '#047857', fontSize: '8.5px' }}>Curriculum targets met across all 5 branches</td>
+                        <td style={{ padding: '7px 8px', verticalAlign: 'middle', fontWeight: 700, color: '#047857', fontSize: '8.5px' }}>Curriculum targets met across all academic branches</td>
                       </tr>
                     </tbody>
                   </table>

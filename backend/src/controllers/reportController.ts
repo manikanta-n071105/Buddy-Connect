@@ -331,6 +331,7 @@ export const getConsolidatedReportStatus = async (_req: any, res: Response) => {
           'Computer Science & Engineering',
           'Electrical & Electronics Engineering',
           'Electronics & Communication Engineering',
+          'Mechanical Engineering',
           'Humanities & Sciences'
         ],
         totalAggregatedItems: 135,
@@ -474,10 +475,11 @@ export const uploadAndConsolidateZip = async (req: any, res: Response) => {
 };
 
 const STANDARD_DEPARTMENTS = [
-  { name: 'Civil Engineering', code: 'CIVIL', defaultHod: 'K Siva Prasad' },
+  { name: 'Civil Engineering', code: 'CIVIL', defaultHod: 'Prof. K. Siva Prasad' },
   { name: 'Computer Science & Engineering', code: 'CSE', defaultHod: 'Dr. Kethineni Vinod Kumar' },
   { name: 'Electronics & Communication Engineering', code: 'ECE', defaultHod: 'Dr. V. Annapurna' },
   { name: 'Electrical & Electronics Engineering', code: 'EEE', defaultHod: 'Mr. K. Gangadhar' },
+  { name: 'Mechanical Engineering', code: 'MECH', defaultHod: 'Prof. C. Anil Kumar Reddy' },
   { name: 'Humanities & Sciences', code: 'H&S', defaultHod: 'Dr. Samba Sivaiah B' },
 ];
 

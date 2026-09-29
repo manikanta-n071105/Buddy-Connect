@@ -73,6 +73,10 @@ const DEPARTMENT_CONFIG: Record<string, { badge: string; accent: string }> = {
     badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', 
     accent: 'bg-emerald-600' 
   },
+  MECH: { 
+    badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', 
+    accent: 'bg-cyan-600' 
+  },
   'H&S': { 
     badge: 'bg-rose-50 text-rose-700 border-rose-200', 
     accent: 'bg-rose-600' 
@@ -80,21 +84,21 @@ const DEPARTMENT_CONFIG: Record<string, { badge: string; accent: string }> = {
 };
 
 const EXECUTIVE_METRICS = [
-  { category: 'Journal Publications', civil: 1, cse: 2, ece: 2, eee: 2, hs: 1, total: 8 },
-  { category: 'Conference Papers', civil: 2, cse: 3, ece: 3, eee: 2, hs: 2, total: 12 },
-  { category: 'Patents Filed / Published', civil: 0, cse: 1, ece: 1, eee: 0, hs: 0, total: 2 },
-  { category: 'Faculty Development (FDP) — Attended', civil: 1, cse: 1, ece: 1, eee: 1, hs: 1, total: 5 },
-  { category: 'Faculty Development (FDP) — Organized', civil: 1, cse: 1, ece: 1, eee: 1, hs: 1, total: 5 },
-  { category: 'Student Development (SDP)', civil: 0, cse: 1, ece: 0, eee: 0, hs: 1, total: 2 },
-  { category: 'Faculty Achievements & Awards', civil: 1, cse: 1, ece: 0, eee: 1, hs: 0, total: 3 },
-  { category: 'Student Achievements & Awards', civil: 0, cse: 1, ece: 1, eee: 0, hs: 1, total: 3 },
-  { category: 'Certifications (NPTEL / Coursera)', civil: 4, cse: 7, ece: 5, eee: 5, hs: 4, total: 25 },
-  { category: 'Department Meetings & Mentoring', civil: 1, cse: 0, ece: 1, eee: 1, hs: 0, total: 3 },
-  { category: 'MoUs & Collaborations', civil: 1, cse: 0, ece: 1, eee: 1, hs: 0, total: 3 },
-  { category: 'Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, hs: 0, total: 2 },
-  { category: 'IIC & Innovation Council Activities', civil: 8, cse: 16, ece: 14, eee: 12, hs: 16, total: 66 },
-  { category: 'NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, hs: 2, total: 2 },
-  { category: 'Syllabus Coverage Tracking', civil: 1, cse: 0, ece: 0, eee: 0, hs: 1, total: 2 },
+  { category: 'Journal Publications', civil: 1, cse: 2, ece: 2, eee: 2, mech: 2, hs: 1, total: 10 },
+  { category: 'Conference Papers', civil: 2, cse: 3, ece: 3, eee: 2, mech: 2, hs: 2, total: 14 },
+  { category: 'Patents Filed / Published', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
+  { category: 'Faculty Development (FDP) — Attended', civil: 1, cse: 1, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
+  { category: 'Faculty Development (FDP) — Organized', civil: 1, cse: 1, ece: 1, eee: 1, mech: 1, hs: 1, total: 6 },
+  { category: 'Student Development (SDP)', civil: 0, cse: 1, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
+  { category: 'Faculty Achievements & Awards', civil: 1, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: 'Student Achievements & Awards', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 1, total: 4 },
+  { category: 'Certifications (NPTEL / Coursera)', civil: 4, cse: 7, ece: 5, eee: 5, mech: 4, hs: 4, total: 29 },
+  { category: 'Department Meetings & Mentoring', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: 'MoUs & Collaborations', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: 'Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
+  { category: 'IIC & Innovation Council Activities', civil: 8, cse: 16, ece: 14, eee: 12, mech: 10, hs: 16, total: 76 },
+  { category: 'NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
+  { category: 'Syllabus Coverage Tracking', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
 ];
 
 export const HODReportConsolidatorPage: React.FC = () => {
@@ -226,6 +230,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
       else if (deptName.includes('Computer')) setHodName('Dr. Kethineni Vinod Kumar');
       else if (deptName.includes('Communication')) setHodName('Dr. V. Annapurna');
       else if (deptName.includes('Electrical')) setHodName('Mr. K. Gangadhar');
+      else if (deptName.includes('Mechanical')) setHodName('C Anil Kumar Reddy');
       else if (deptName.includes('Humanities')) setHodName('Dr. Samba Sivaiah B');
     }
   };
@@ -1021,6 +1026,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                   <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
                   <option value="Electronics & Communication Engineering">Electronics & Communication Engineering (ECE)</option>
                   <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering (EEE)</option>
+                  <option value="Mechanical Engineering">Mechanical Engineering (MECH)</option>
                   <option value="Humanities & Sciences">Humanities & Sciences (H&S)</option>
                 </select>
               </div>
@@ -1146,6 +1152,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                     <th className="p-3.5 text-center text-blue-700">CSE</th>
                     <th className="p-3.5 text-center text-purple-700">ECE</th>
                     <th className="p-3.5 text-center text-emerald-700">EEE</th>
+                    <th className="p-3.5 text-center text-cyan-700">MECH</th>
                     <th className="p-3.5 text-center text-rose-700">H&S</th>
                     <th className="p-3.5 text-center text-slate-900 font-black bg-slate-200/60">Institutional Total</th>
                   </tr>
@@ -1158,6 +1165,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                       <td className="p-3.5 text-center">{row.cse > 0 ? row.cse : <span className="text-slate-400">-</span>}</td>
                       <td className="p-3.5 text-center">{row.ece > 0 ? row.ece : <span className="text-slate-400">-</span>}</td>
                       <td className="p-3.5 text-center">{row.eee > 0 ? row.eee : <span className="text-slate-400">-</span>}</td>
+                      <td className="p-3.5 text-center">{row.mech > 0 ? row.mech : <span className="text-slate-400">-</span>}</td>
                       <td className="p-3.5 text-center">{row.hs > 0 ? row.hs : <span className="text-slate-400">-</span>}</td>
                       <td className="p-3.5 text-center font-black text-slate-900 bg-slate-100/60">{row.total}</td>
                     </tr>
@@ -1168,8 +1176,9 @@ export const HODReportConsolidatorPage: React.FC = () => {
                     <td className="p-4 text-center text-blue-700 font-bold">34</td>
                     <td className="p-4 text-center text-purple-700 font-bold">28</td>
                     <td className="p-4 text-center text-emerald-700 font-bold">26</td>
+                    <td className="p-4 text-center text-cyan-700 font-bold">25</td>
                     <td className="p-4 text-center text-rose-700 font-bold">29</td>
-                    <td className="p-4 text-center text-base text-orange-600 font-black bg-orange-50">135</td>
+                    <td className="p-4 text-center text-base text-orange-600 font-black bg-orange-50">160</td>
                   </tr>
                 </tbody>
               </table>
