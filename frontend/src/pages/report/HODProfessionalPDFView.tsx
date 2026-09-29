@@ -168,7 +168,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.journals.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            1A. JOURNAL PUBLICATIONS ({sections.journals.length})
+            1A. RESEARCH &mdash; JOURNAL PUBLICATIONS ({sections.journals.length})
           </div>
           <div>
             {sections.journals.map((item, idx) => (
@@ -205,7 +205,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.conferences.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            1B. CONFERENCE PRESENTATIONS ({sections.conferences.length})
+            1B. RESEARCH &mdash; CONFERENCE PRESENTATIONS ({sections.conferences.length})
           </div>
           <div>
             {sections.conferences.map((item, idx) => (
@@ -237,11 +237,11 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 1c. Patents */}
+      {/* 2a. Patents */}
       {sections.patents.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            1C. PATENTS ({sections.patents.length})
+            2A. PATENTS ({sections.patents.length})
           </div>
           <div>
             {sections.patents.map((item, idx) => (
@@ -260,11 +260,11 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 1d. Entrepreneurship */}
+      {/* 2b. Start-up Initiatives */}
       {sections.entrepreneurship.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            1D. ENTREPRENEURSHIP &amp; START-UP INITIATIVES ({sections.entrepreneurship.length})
+            2B. START-UP INITIATIVES ({sections.entrepreneurship.length})
           </div>
           <div>
             {sections.entrepreneurship.map((item, idx) => (
@@ -489,7 +489,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             ))}
             {sections.techAssociation.map((item, idx) => (
               <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
-                <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Technical Association:</span> {item.event} ({item.date}) &mdash; {item.outcomes}
+                <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Technical Association:</span> {item.event} ({item.date}) &bull; Type: {item.type || 'Activity'}
               </div>
             ))}
             {sections.iicCell.map((item, idx) => (

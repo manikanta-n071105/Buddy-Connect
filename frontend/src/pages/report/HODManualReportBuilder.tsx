@@ -205,6 +205,26 @@ export interface ReportSectionsData {
   }>;
 }
 
+export const STUDENT_ENGAGEMENT_ACTIVITY_TYPES = [
+  'FDP',
+  'Seminar',
+  'Guest lecture',
+  'Expert lecture',
+  'Industrial visit',
+  'Internship',
+  'Mentoring session',
+  'Conference',
+  'Workshop',
+  'Value Added Course',
+  'NSS / Extension Activity',
+  'Technical Association Activity',
+  'Hackathon / Project Expo',
+  'Certification Course',
+  'Field Trip',
+  'Club Event / Cultural Activity',
+  'Other'
+];
+
 export const INITIAL_SECTIONS: ReportSectionsData = {
   journals: [],
   conferences: [],
@@ -498,8 +518,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   const ALL_SECTION_TABS = [
     { key: '1a_journals', label: '1a. Journal Publications', count: (safeSections.journals || []).length },
     { key: '1b_conferences', label: '1b. Conference Presentations', count: (safeSections.conferences || []).length },
-    { key: '1c_patents', label: '1c. Patents', count: (safeSections.patents || []).length },
-    { key: '1d_entrepreneurship', label: '1d. Entrepreneurship/Start-up Initiatives', count: (safeSections.entrepreneurship || []).length },
+    { key: '1c_patents', label: '2a. Patents', count: (safeSections.patents || []).length },
+    { key: '1d_entrepreneurship', label: '2b. Start-up Initiatives', count: (safeSections.entrepreneurship || []).length },
     { key: '2_nss', label: '2. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
     { key: '3a_fdp_attended', label: '3a. FDPs Attended', count: (safeSections.fdpAttended || []).length },
     { key: '3b_fdp_organized', label: '3b. FDPs Organized', count: (safeSections.fdpOrganized || []).length },
@@ -1124,7 +1144,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 0: 1a. Journal Publications */}
         {activeSectionKey === '1a_journals' && (
           <SectionContainer
-            title="1. Research, Innovation & Entrepreneurship — a) Journal Publications"
+            title="1. Research — a) Journal Publications"
             description="List all research articles, review papers, or technical notes published by faculty/students in peer-reviewed journals during the reporting period."
             count={safeSections.journals.length}
             onAdd={() => handleAddRow('journals')}
@@ -1165,7 +1185,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 1: 1b. Conference Presentations */}
         {activeSectionKey === '1b_conferences' && (
           <SectionContainer
-            title="b) Conference Presentations"
+            title="1. Research — b) Conference Presentations"
             description="Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates and attach link to presentation or conference proceedings."
             count={safeSections.conferences.length}
             onAdd={() => handleAddRow('conferences')}
@@ -1200,10 +1220,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </SectionContainer>
         )}
 
-        {/* Table 2: 1c. Patents */}
+        {/* Table 2: 2a. Patents */}
         {activeSectionKey === '1c_patents' && (
           <SectionContainer
-            title="c) Patents"
+            title="2. Innovation & Entrepreneurship — a) Patents"
             description="Record granted or published patents, patent applications, and status updates for departmental innovations and intellectual property filings."
             count={safeSections.patents.length}
             onAdd={() => handleAddRow('patents')}
@@ -1238,10 +1258,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </SectionContainer>
         )}
 
-        {/* Table 3: 1d. Entrepreneurship/Start-up Initiatives */}
+        {/* Table 3: 2b. Start-up Initiatives */}
         {activeSectionKey === '1d_entrepreneurship' && (
           <SectionContainer
-            title="d) Entrepreneurship/Start-up Initiatives"
+            title="2. Innovation & Entrepreneurship — b) Start-up Initiatives"
             description="List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
             count={safeSections.entrepreneurship.length}
             onAdd={() => handleAddRow('entrepreneurship')}
@@ -1309,8 +1329,31 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                     <FieldInput label="Venue" value={item.venue} onChange={(v) => handleUpdateField('nss', idx, 'venue', v)} />
                   </div>
                   <div>
-                    <FieldInput label="Type (NSS/Community)" value={item.type} onChange={(v) => handleUpdateField('nss', idx, 'type', v)} />
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      Type of Activity *
+                    </label>
+                    <select
+                      value={STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'NSS / Extension Activity')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleUpdateField('nss', idx, 'type', val);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                    >
+                      {STUDENT_ENGAGEMENT_ACTIVITY_TYPES.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
                   </div>
+                  {(!STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
+                    <div className="md:col-span-2">
+                      <FieldInput
+                        label="Specify Custom Type (if Other)"
+                        value={item.type === 'Other' ? '' : item.type}
+                        onChange={(v) => handleUpdateField('nss', idx, 'type', v)}
+                      />
+                    </div>
+                  )}
                   <div>
                     <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('nss', idx, 'participantsCount', v)} />
                   </div>
@@ -1682,16 +1725,36 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                     <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} />
                   </div>
                   <div>
-                    <FieldInput label="Type (Workshop/Seminar/Contest)" value={item.type} onChange={(v) => handleUpdateField('techAssociation', idx, 'type', v)} />
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      Type of Activity *
+                    </label>
+                    <select
+                      value={STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'Technical Association Activity')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleUpdateField('techAssociation', idx, 'type', val);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                    >
+                      {STUDENT_ENGAGEMENT_ACTIVITY_TYPES.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
                   </div>
+                  {(!STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
+                    <div className="md:col-span-2">
+                      <FieldInput
+                        label="Specify Custom Type (if Other)"
+                        value={item.type === 'Other' ? '' : item.type}
+                        onChange={(v) => handleUpdateField('techAssociation', idx, 'type', v)}
+                      />
+                    </div>
+                  )}
                   <div>
                     <FieldInput label="Resource Person / Coordinator" value={item.resourcePersonCoordinator} onChange={(v) => handleUpdateField('techAssociation', idx, 'resourcePersonCoordinator', v)} />
                   </div>
                   <div>
                     <FieldInput label="Participants" value={item.participants} onChange={(v) => handleUpdateField('techAssociation', idx, 'participants', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Outcomes / Achievements" value={item.outcomes} onChange={(v) => handleUpdateField('techAssociation', idx, 'outcomes', v)} />
                   </div>
                   <div className="md:col-span-2">
                     <FieldInput label="Evidence / Proof Link" value={item.link} onChange={(v) => handleUpdateField('techAssociation', idx, 'link', v)} />

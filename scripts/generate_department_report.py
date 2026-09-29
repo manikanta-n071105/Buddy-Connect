@@ -256,11 +256,11 @@ def generate_department_report(data, output_path):
             rd.font.color.rgb = RGBColor(71, 85, 105)
 
     # -------------------------------------------------------------
-    # 1. Research, Innovation & Entrepreneurship
+    # 1. Research
     # -------------------------------------------------------------
     add_major_heading(
-        "1. Research, Innovation & Entrepreneurship",
-        "Include all faculty and departmental research output, innovative projects, and entrepreneurship initiatives relevant to your department. Attach links to reports/proofs wherever possible."
+        "1. Research",
+        "Include all faculty and departmental research output, journal publications, and conference presentations."
     )
 
     # a) Journal Publications (Table 0)
@@ -281,18 +281,26 @@ def generate_department_report(data, output_path):
     keys_1 = ['title', 'authors', 'conferenceName', 'date', 'locationMode', 'indexedIn', 'link']
     total_activities += add_table_data(doc, headers_1, sections_data.get('conferences', []), keys_1)
 
-    # c) Patents (Table 2)
+    # -------------------------------------------------------------
+    # 2. Innovation & Entrepreneurship (2a & 2b)
+    # -------------------------------------------------------------
+    add_major_heading(
+        "2. Innovation & Entrepreneurship",
+        "Record granted/published patents, start-ups, incubation activities, and entrepreneurship initiatives."
+    )
+
+    # 2a) Patents (Table 2)
     add_sub_heading(
-        "c) Patents",
+        "2a) Patents",
         "Record granted or published patents, patent applications, and status updates for departmental innovations and intellectual property filings."
     )
     headers_2 = ['S. No.', 'Patent Title', 'Inventors(as per publication order)', 'Applicants', 'Patent Number', 'Patent Status (Filed/Published/Granted/Commercialized)', 'Awarded Date', 'Link to Document/Proof']
     keys_2 = ['title', 'inventors', 'applicants', 'patentNumber', 'status', 'awardedDate', 'link']
     total_activities += add_table_data(doc, headers_2, sections_data.get('patents', []), keys_2)
 
-    # d) Entrepreneurship/Start-up Initiatives (Table 3)
+    # 2b) Start-up Initiatives (Table 3)
     add_sub_heading(
-        "d) Entrepreneurship/Start-up Initiatives",
+        "2b) Start-up Initiatives",
         "List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
     )
     headers_3 = ['S. No.', 'Entrepreneurship Activity/Program Title', 'Date', 'Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)', 'Participants (Student/Faculty/Alumni)', 'Organized By (Department/ED Cell/Incubator)', 'Mode (Online/Offline/Hybrid)', 'Key Outcomes (Startups Launched, Funding Received, Patents Filed, etc.)', 'No. of Participants', 'Mentor/Coordinator', 'Status (Ongoing/Completed)', 'Proof/Report Link']
@@ -408,8 +416,8 @@ def generate_department_report(data, output_path):
         "8. Technical Association Activities",
         "Organizes technical workshops, competitions, industrial visits, and seminars to enhance technical skills."
     )
-    headers_13 = ['S. No.', 'Event / Activity', 'Date', 'Type (Workshop/Seminar/Contest)', 'Resource Person / Coordinator', 'Participants', 'Outcomes / Achievements', 'Evidence / Proof Link']
-    keys_13 = ['event', 'date', 'type', 'resourcePersonCoordinator', 'participants', 'outcomes', 'link']
+    headers_13 = ['S. No.', 'Event / Activity', 'Date', 'Type of Activity', 'Resource Person / Coordinator', 'Participants', 'Evidence / Proof Link']
+    keys_13 = ['event', 'date', 'type', 'resourcePersonCoordinator', 'participants', 'link']
     total_activities += add_table_data(doc, headers_13, sections_data.get('techAssociation', []), keys_13)
 
     # -------------------------------------------------------------

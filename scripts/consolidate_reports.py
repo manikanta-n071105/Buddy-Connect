@@ -544,7 +544,7 @@ def parse_pdf_department_report(pdf_path):
                             elif sec_prop == 'additionalInitiatives':
                                 cells = [str(s_no), it.get('initiative',''), it.get('date',''), it.get('description',''), it.get('outcomes',''), it.get('coordinator',''), it.get('link','')]
                             elif sec_prop == 'techAssociation':
-                                cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('type',''), it.get('resourcePersonCoordinator',''), it.get('participants',''), it.get('outcomes',''), it.get('link','')]
+                                cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('type',''), it.get('resourcePersonCoordinator',''), it.get('participants',''), it.get('link','')]
                             elif sec_prop == 'iicCell':
                                 cells = [str(s_no), it.get('activity',''), it.get('date',''), it.get('description',''), it.get('partner',''), it.get('beneficiaries',''), it.get('outcomes',''), it.get('link','')]
                             elif sec_prop == 'syllabus':
@@ -705,7 +705,7 @@ def parse_pdf_department_report(pdf_path):
                             elif sec_prop == 'additionalInitiatives':
                                 cells = [str(s_no), it.get('initiative',''), it.get('date',''), it.get('description',''), it.get('outcomes',''), it.get('coordinator',''), it.get('link','')]
                             elif sec_prop == 'techAssociation':
-                                cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('type',''), it.get('resourcePersonCoordinator',''), it.get('participants',''), it.get('outcomes',''), it.get('link','')]
+                                cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('type',''), it.get('resourcePersonCoordinator',''), it.get('participants',''), it.get('link','')]
                             elif sec_prop == 'iicCell':
                                 cells = [str(s_no), it.get('activity',''), it.get('date',''), it.get('description',''), it.get('partner',''), it.get('beneficiaries',''), it.get('outcomes',''), it.get('link','')]
                             elif sec_prop == 'syllabus':

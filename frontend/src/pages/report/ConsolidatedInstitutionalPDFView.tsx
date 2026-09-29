@@ -153,7 +153,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   const sectionsConfig: SectionConfig[] = [
     {
       key: 'journals',
-      title: '1A. CONSOLIDATED JOURNAL PUBLICATIONS',
+      title: '1A. RESEARCH — CONSOLIDATED JOURNAL PUBLICATIONS',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.journals || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -189,7 +189,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'conferences',
-      title: '1B. CONSOLIDATED CONFERENCE PRESENTATIONS',
+      title: '1B. RESEARCH — CONSOLIDATED CONFERENCE PRESENTATIONS',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.conferences || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -225,7 +225,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'patents',
-      title: '1C. CONSOLIDATED PATENTS & IPR FILINGS',
+      title: '2A. CONSOLIDATED PATENTS & IPR FILINGS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.patents || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -259,7 +259,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'entrepreneurship',
-      title: '1D. CONSOLIDATED ENTREPRENEURSHIP & START-UP INITIATIVES',
+      title: '2B. CONSOLIDATED START-UP INITIATIVES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).map(it => ({ ...it, deptCode: d.code }))),
