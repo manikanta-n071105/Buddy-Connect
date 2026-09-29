@@ -899,153 +899,54 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </table>
   );
 
-  // Estimate row height for accurate page budget packing
-  const estimateItemHeight = (secKey: string): number => {
-    switch (secKey) {
-      case 'journal':
-      case 'conference':
-        return 78;
-      case 'patents':
-        return 52;
-      case 'startups':
-        return 68;
-      case 'fdpAttended':
-        return 62;
-      case 'fdpOrganized':
-        return 66;
-      case 'sdp':
-        return 70;
-      case 'facultyAchievements':
-      case 'studentAchievements':
-        return 54;
-      case 'certifications':
-        return 54;
-      case 'meetings':
-        return 58;
-      case 'collaborations':
-        return 66;
-      case 'techAssociation':
-        return 66;
-      case 'syllabus':
-        return 46;
-      case 'studentEngagement':
-        return 64;
-      case 'nss':
-        return 70;
-      case 'additionalInitiatives':
-        return 66;
-      default:
-        return 58;
-    }
-  };
-
-  // Generate dynamic multi-section continuous page units
-  interface PageSegment {
-    section: SectionConfig;
-    items: any[];
-    startIndex: number;
-    isContinued: boolean;
-    totalCount: number;
-  }
-
+  // Generate dedicated page per category; overloads continue to new pages
   interface GeneratedPage {
-    type: 'cover' | 'content' | 'final';
-    segments?: PageSegment[];
+    type: 'cover' | 'section' | 'final';
+    section?: SectionConfig;
+    items?: any[];
+    startIndex?: number;
+    isContinued?: boolean;
+    totalCount?: number;
   }
-
-  const USABLE_PAGE_HEIGHT = 800 - safety; // px
-  const HEADER_COST = 76;
-  const SPACING_COST = 20;
-  const NIL_COST = 48;
 
   const generatedPages: GeneratedPage[] = [];
 
   // Page 1: Cover & Executive Performance Matrix
   generatedPages.push({ type: 'cover' });
 
-  // Intermediate Pages: Continuous dynamic packing of Sections 1A through 11
-  let currentPageSegments: PageSegment[] = [];
-  let currentHeight = 0;
-
+  // Dedicated Pages: Each section starts on a new page; overloads continue on new pages
   sectionsConfig.forEach(sec => {
     const allItems = sec.getItems(deptDataMap, departmentList);
     const totalCount = allItems.length;
 
     if (totalCount === 0) {
-      const spaceBefore = currentPageSegments.length > 0 ? SPACING_COST : 0;
-      const needed = HEADER_COST + NIL_COST + spaceBefore;
-      if (currentHeight + needed > USABLE_PAGE_HEIGHT && currentPageSegments.length > 0) {
-        generatedPages.push({ type: 'content', segments: currentPageSegments });
-        currentPageSegments = [];
-        currentHeight = 0;
-      }
-      currentPageSegments.push({
+      generatedPages.push({
+        type: 'section',
         section: sec,
         items: [],
         startIndex: 0,
         isContinued: false,
         totalCount: 0
       });
-      currentHeight += HEADER_COST + NIL_COST + (currentPageSegments.length > 1 ? SPACING_COST : 0);
-      return;
-    }
-
-    let itemIdx = 0;
-    let isContinued = false;
-
-    while (itemIdx < totalCount) {
-      const spaceBefore = currentPageSegments.length > 0 ? SPACING_COST : 0;
-      const firstItemH = estimateItemHeight(sec.key);
-      const minNeeded = HEADER_COST + spaceBefore + firstItemH;
-
-      // If cannot fit header and at least 1 item on current page, flush to new page
-      if (currentHeight + minNeeded > USABLE_PAGE_HEIGHT && currentPageSegments.length > 0) {
-        generatedPages.push({ type: 'content', segments: currentPageSegments });
-        currentPageSegments = [];
-        currentHeight = 0;
+    } else {
+      const chunks: any[][] = [];
+      for (let i = 0; i < totalCount; i += sec.rowsPerPage) {
+        chunks.push(allItems.slice(i, i + sec.rowsPerPage));
       }
-
-      const chunkStartIndex = itemIdx;
-      const pageItems: any[] = [];
-      let segmentHeight = HEADER_COST + (currentPageSegments.length > 0 ? SPACING_COST : 0);
-
-      while (itemIdx < totalCount) {
-        const it = allItems[itemIdx];
-        const itH = estimateItemHeight(sec.key);
-        if (currentHeight + segmentHeight + itH > USABLE_PAGE_HEIGHT && pageItems.length > 0) {
-          break;
-        }
-        pageItems.push(it);
-        segmentHeight += itH;
-        itemIdx++;
-      }
-
-      currentPageSegments.push({
-        section: sec,
-        items: pageItems,
-        startIndex: chunkStartIndex,
-        isContinued: isContinued,
-        totalCount: totalCount
+      chunks.forEach((chunk, chunkIdx) => {
+        generatedPages.push({
+          type: 'section',
+          section: sec,
+          items: chunk,
+          startIndex: chunkIdx * sec.rowsPerPage,
+          isContinued: chunkIdx > 0,
+          totalCount: totalCount
+        });
       });
-
-      currentHeight += segmentHeight;
-      isContinued = true;
-
-      // If more items remain for this section, flush page immediately so continuation starts fresh on next page
-      if (itemIdx < totalCount) {
-        generatedPages.push({ type: 'content', segments: currentPageSegments });
-        currentPageSegments = [];
-        currentHeight = 0;
-      }
     }
   });
 
-  // Flush remaining segments
-  if (currentPageSegments.length > 0) {
-    generatedPages.push({ type: 'content', segments: currentPageSegments });
-  }
-
-  // Final Page: Section 10 (Syllabus), Section 11 (Attendance) & Governance Endorsement
+  // Final Page: Academic Audit & Institutional Governance Sign-Off
   generatedPages.push({ type: 'final' });
 
   const totalCalculatedPages = generatedPages.length;
@@ -1279,17 +1180,14 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           );
         }
 
-        if (pageDef.type === 'content' && pageDef.segments) {
+        if (pageDef.type === 'section' && pageDef.section) {
+          const sec = pageDef.section;
           return (
             <div key={pIdx} className="pdf-page" style={fixedA4PageStyle}>
               {renderRunningHeader()}
               <div data-body style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                {pageDef.segments.map((seg, sIdx) => (
-                  <div key={sIdx} style={{ marginBottom: sIdx < (pageDef.segments?.length || 1) - 1 ? '18px' : '0px' }}>
-                    {renderSectionHeader(seg.section.title, seg.totalCount, seg.isContinued)}
-                    {renderDataTable(seg.section.columns, seg.items, seg.startIndex)}
-                  </div>
-                ))}
+                {renderSectionHeader(sec.title, pageDef.totalCount, pageDef.isContinued)}
+                {renderDataTable(sec.columns, pageDef.items || [], pageDef.startIndex || 0)}
               </div>
               {renderRunningFooter(pageNumber)}
             </div>
