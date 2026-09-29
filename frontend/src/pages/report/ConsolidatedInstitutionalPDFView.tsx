@@ -125,25 +125,25 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     deptDataMap[ent.code] = normalizeSections(raw);
   });
 
-  // Aggregate matrix metrics
+  // Aggregate matrix metrics matching Monthly Department Report Entry order (1a - 11)
   const matrixCategories = [
-    { key: 'journals', label: '1A. Journal Publications' },
-    { key: 'conferences', label: '1B. Conference Presentations' },
-    { key: 'patents', label: '1C. Patents Filed / Awarded' },
-    { key: 'entrepreneurship', label: '1D. Entrepreneurship & Start-up' },
-    { key: 'fdpAttended', label: '3A. Faculty Development (FDP) — Attended' },
-    { key: 'fdpOrganized', label: '3B. Faculty Development (FDP) — Organized' },
-    { key: 'sdp', label: '4. Student Development (SDP)' },
-    { key: 'facultyAchievements', label: '5A. Faculty Achievements & Honors' },
-    { key: 'studentAchievements', label: '5B. Student Achievements & Awards' },
-    { key: 'certifications', label: '5C. Certifications (NPTEL / Coursera)' },
-    { key: 'deptMeetings', label: '6A. Meetings' },
-    { key: 'mous', label: '6B. Collaborations & MoUs' },
-    { key: 'techAssociation', label: '7. Technical Association Events' },
-    { key: 'syllabus', label: '8. Syllabus Course Tracking' },
+    { key: 'journals', label: '1a. Journal Publications' },
+    { key: 'conferences', label: '1b. Conference Presentations' },
+    { key: 'patents', label: '2a. Patents' },
+    { key: 'entrepreneurship', label: '2b. Start-up Initiatives' },
+    { key: 'fdpAttended', label: '3a. FDPs Attended' },
+    { key: 'fdpOrganized', label: '3b. FDPs Organized' },
+    { key: 'sdp', label: '4. Student Development Programs (SDPs)' },
+    { key: 'facultyAchievements', label: '5a. Faculty Achievements' },
+    { key: 'studentAchievements', label: '5b. Student Achievements' },
+    { key: 'certifications', label: '5c. Certifications' },
+    { key: 'deptMeetings', label: '6a. Meetings' },
+    { key: 'mous', label: '6b. Collaborations & MoUs' },
+    { key: 'techAssociation', label: '7. Technical Association Activities' },
+    { key: 'syllabus', label: '8. Syllabus coverage Report' },
     { key: 'studentEngagement', label: '9. Club & Student Engagement Activity' },
-    { key: 'nss', label: '10. NSS & Extension Activities' },
-    { key: 'additionalInitiatives', label: '11. Additional Department Initiatives' }
+    { key: 'nss', label: '10. NSS and Other Extension Activities' },
+    { key: 'additionalInitiatives', label: '11. Additional/Other Relevant Initiatives' }
   ];
 
   const deptTotals: Record<string, number> = { CIVIL: 0, CSE: 0, ECE: 0, EEE: 0, MECH: 0, 'H&S': 0 };
@@ -175,11 +175,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     return { label: cat.label, counts, committeeTotal: commTotal, total: catTotal };
   });
 
-  // Standard Section Configurations: 8 rows for tall tables, 10 otherwise
+  // Standard Section Configurations matching Monthly Department Report Entry (1a - 11)
   const sectionsConfig: SectionConfig[] = [
+    // 1A. Journal Publications
     {
       key: 'journals',
-      title: '1A. RESEARCH — CONSOLIDATED JOURNAL PUBLICATIONS',
+      title: '1A. JOURNAL PUBLICATIONS',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.journals || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -213,9 +214,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 1B. Conference Presentations
     {
       key: 'conferences',
-      title: '1B. RESEARCH — CONSOLIDATED CONFERENCE PRESENTATIONS',
+      title: '1B. CONFERENCE PRESENTATIONS',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.conferences || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -249,9 +251,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 2A. Patents
     {
       key: 'patents',
-      title: '2A. CONSOLIDATED PATENTS & IPR FILINGS',
+      title: '2A. PATENTS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.patents || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -283,9 +286,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 2B. Start-up Initiatives
     {
       key: 'entrepreneurship',
-      title: '2B. CONSOLIDATED START-UP INITIATIVES',
+      title: '2B. START-UP INITIATIVES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -338,64 +342,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
-    {
-      key: 'nss',
-      title: '10. CONSOLIDATED NSS & COMMUNITY EXTENSION ACTIVITIES',
-      tall: false,
-      rowsPerPage: 10,
-      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.nss || []).map(it => ({ ...it, deptCode: d.code }))),
-      columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { 
-          header: 'Event / Activity Name', 
-          width: '32%', 
-          align: 'left', 
-          render: (it) => (
-            <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
-              <div>{it.event}</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>Type: {it.type}</div>
-            </div>
-          )
-        },
-        { 
-          header: 'Date & Venue', 
-          width: '20%', 
-          align: 'center', 
-          render: (it) => (
-            <div style={{ color: '#334155', lineHeight: 1.35 }}>
-              <div>{it.date}</div>
-              <div style={{ color: '#475569' }}>Venue: {it.venue}</div>
-            </div>
-          )
-        },
-        { 
-          header: 'Participants & Target', 
-          width: '18%', 
-          align: 'center', 
-          render: (it) => (
-            <div style={{ color: '#334155', lineHeight: 1.35 }}>
-              <div><strong>{it.participantsCount}</strong> participants</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>{it.typeOfParticipants}</div>
-            </div>
-          )
-        },
-        { 
-          header: 'Outcomes & Coord.', 
-          width: '16%', 
-          align: 'left', 
-          render: (it) => (
-            <div style={{ color: '#475569', lineHeight: 1.35 }}>
-              <div>{it.outcomes}</div>
-              <div style={{ color: '#1a365d', fontWeight: 600, fontSize: '8px' }}>Coord: {it.coordinator}</div>
-            </div>
-          )
-        }
-      ]
-    },
+    // 3A. Faculty Development Programs (Attended)
     {
       key: 'fdpAttended',
-      title: '3A. CONSOLIDATED FACULTY DEVELOPMENT PROGRAMS (ATTENDED)',
+      title: '3A. FACULTY DEVELOPMENT PROGRAMS (FDP) — ATTENDED',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpAttended || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -437,9 +387,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 3B. Faculty Development Programs (Organized)
     {
       key: 'fdpOrganized',
-      title: '3B. CONSOLIDATED FACULTY DEVELOPMENT PROGRAMS (ORGANIZED)',
+      title: '3B. FACULTY DEVELOPMENT PROGRAMS (FDP) — ORGANIZED',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpOrganized || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -480,9 +431,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 4. Student Development Programs (SDPs)
     {
       key: 'sdp',
-      title: '4. CONSOLIDATED STUDENT DEVELOPMENT PROGRAMS (SDPS)',
+      title: '4. STUDENT DEVELOPMENT PROGRAMS (SDPS)',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.sdp || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -535,9 +487,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 5A. Faculty Achievements
     {
       key: 'facultyAchievements',
-      title: '5A. CONSOLIDATED FACULTY ACHIEVEMENTS & NATIONAL RECOGNITIONS',
+      title: '5A. FACULTY ACHIEVEMENTS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.facultyAchievements || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -549,9 +502,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Conferring Body & Date', width: '24%', align: 'left', render: (it) => <span style={{ color: '#475569' }}>{it.organization}{it.date ? ` (${it.date})` : ''}</span> }
       ]
     },
+    // 5B. Student Achievements
     {
       key: 'studentAchievements',
-      title: '5B. CONSOLIDATED STUDENT ACHIEVEMENTS & COMPETITIVE AWARDS',
+      title: '5B. STUDENT ACHIEVEMENTS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentAchievements || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -563,11 +517,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Event & Host Institution', width: '24%', align: 'left', render: (it) => <span style={{ color: '#475569' }}>{it.event} {it.organization ? `(${it.organization})` : ''}</span> }
       ]
     },
+    // 5C. Certifications
     {
       key: 'certifications',
-      title: '5C. CONSOLIDATED PROFESSIONAL CERTIFICATIONS (NPTEL / COURSERA)',
+      title: '5C. CERTIFICATIONS',
       tall: false,
-      rowsPerPage: 10, // 15 total items: automatically divides into Page 1 (10 rows) and Page 2 (5 rows with CONTINUED)
+      rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.certifications || []).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
@@ -608,9 +563,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
+    // 6A. Meetings
     {
       key: 'deptMeetings',
-      title: '6A. CONSOLIDATED MEETINGS',
+      title: '6A. MEETINGS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.deptMeetings || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -632,9 +588,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Policy Changes & Action Plan', width: '26%', align: 'left', render: (it) => <div style={{ color: '#475569', lineHeight: 1.35 }}>{it.policyChanges || 'Standard operations confirmed.'}</div> }
       ]
     },
+    // 6B. Collaborations & MoUs
     {
       key: 'mous',
-      title: '6B. CONSOLIDATED MOUS & INDUSTRY COLLABORATIONS',
+      title: '6B. COLLABORATIONS & MOUS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.mous || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -647,43 +604,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Scope & Focus Area', width: '22%', align: 'left', render: (it) => <span style={{ color: '#475569' }}>{it.purpose}</span> }
       ]
     },
-    {
-      key: 'additionalInitiatives',
-      title: '11. CONSOLIDATED ADDITIONAL DEPARTMENT INITIATIVES',
-      tall: false,
-      rowsPerPage: 10,
-      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.additionalInitiatives || []).map(it => ({ ...it, deptCode: d.code }))),
-      columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Initiative / Activity', width: '32%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.initiative}</div> },
-        { 
-          header: 'Date & Coordinator', 
-          width: '18%', 
-          align: 'center', 
-          render: (it) => (
-            <div style={{ color: '#334155' }}>
-              <div>{it.date}</div>
-              <div style={{ color: '#1a365d', fontSize: '8px' }}>Coord: {it.coordinator}</div>
-            </div>
-          )
-        },
-        { 
-          header: 'Description & Key Outcomes', 
-          width: '36%', 
-          align: 'left', 
-          render: (it) => (
-            <div style={{ color: '#475569', lineHeight: 1.35 }}>
-              <div>{it.description}</div>
-              <div style={{ color: '#047857', fontWeight: 600, fontSize: '8px' }}>Outcome: {it.outcomes}</div>
-            </div>
-          )
-        }
-      ]
-    },
+    // 7. Technical Association Activities
     {
       key: 'techAssociation',
-      title: '7. CONSOLIDATED TECHNICAL ASSOCIATION ACTIVITIES',
+      title: '7. TECHNICAL ASSOCIATION ACTIVITIES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.techAssociation || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -720,6 +644,146 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             <div style={{ color: '#475569' }}>
               <div><strong>{it.participants}</strong> participants</div>
               <div style={{ fontSize: '8px' }}>{it.outcomes}</div>
+            </div>
+          )
+        }
+      ]
+    },
+    // 8. Syllabus coverage Report
+    {
+      key: 'syllabus',
+      title: '8. SYLLABUS COVERAGE REPORT',
+      tall: false,
+      rowsPerPage: 10,
+      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.syllabus || []).map(it => ({ ...it, deptCode: d.code }))),
+      columns: [
+        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Course / Subject Title', width: '28%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.subject}</div> },
+        { header: 'Year / Sem', width: '12%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.yearSem || '-'}</span> },
+        { header: 'Faculty In-Charge', width: '20%', align: 'left', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.faculty}</span> },
+        { header: '% Done', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857' }}>{it.completed}</span> },
+        { header: '% Pend', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 700, color: '#b45309' }}>{it.pending}</span> },
+        { header: 'Remarks', width: '11%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8px', fontStyle: 'italic' }}>{it.remarks}</div> }
+      ]
+    },
+    // 9. Club & Student Engagement Activity
+    {
+      key: 'studentEngagement',
+      title: '9. CLUB & STUDENT ENGAGEMENT ACTIVITIES',
+      tall: false,
+      rowsPerPage: 10,
+      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentEngagement || []).map(it => ({ ...it, deptCode: d.code }))),
+      columns: [
+        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Activity / Event Title', width: '26%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.title}</div> },
+        { 
+          header: 'Type & Duration', 
+          width: '18%', 
+          align: 'left', 
+          render: (it) => {
+            const displayType = (it.type === 'Other' && it.otherType) ? `Other (${it.otherType})` : (it.otherType || it.type || '-');
+            const displayDates = it.dates || (it.startDate && it.endDate ? `${it.startDate} to ${it.endDate}` : it.startDate || '-');
+            return (
+              <div style={{ color: '#334155', lineHeight: 1.3 }}>
+                <div style={{ fontWeight: 600, color: '#1a365d' }}>{displayType}</div>
+                <div style={{ color: '#64748b', fontSize: '8px' }}>{displayDates} ({it.noOfDays || '1 day'})</div>
+              </div>
+            );
+          }
+        },
+        { header: 'Participants', width: '11%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857' }}>{it.participantsCount || '-'}</span> },
+        { header: 'Coordinator', width: '15%', align: 'left', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.coordinator || '-'}</span> },
+        { header: 'Remarks / Outcomes', width: '17%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8px', fontStyle: 'italic' }}>{it.remarks || '-'}</div> }
+      ]
+    },
+    // 10. NSS and Other Extension Activities
+    {
+      key: 'nss',
+      title: '10. NSS & OTHER EXTENSION ACTIVITIES',
+      tall: false,
+      rowsPerPage: 10,
+      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.nss || []).map(it => ({ ...it, deptCode: d.code }))),
+      columns: [
+        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { 
+          header: 'Event / Activity Name', 
+          width: '32%', 
+          align: 'left', 
+          render: (it) => (
+            <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
+              <div>{it.event}</div>
+              <div style={{ color: '#64748b', fontSize: '8px' }}>Type: {it.type}</div>
+            </div>
+          )
+        },
+        { 
+          header: 'Date & Venue', 
+          width: '20%', 
+          align: 'center', 
+          render: (it) => (
+            <div style={{ color: '#334155', lineHeight: 1.35 }}>
+              <div>{it.date}</div>
+              <div style={{ color: '#475569' }}>Venue: {it.venue}</div>
+            </div>
+          )
+        },
+        { 
+          header: 'Participants & Target', 
+          width: '18%', 
+          align: 'center', 
+          render: (it) => (
+            <div style={{ color: '#334155', lineHeight: 1.35 }}>
+              <div><strong>{it.participantsCount}</strong> participants</div>
+              <div style={{ color: '#64748b', fontSize: '8px' }}>{it.typeOfParticipants}</div>
+            </div>
+          )
+        },
+        { 
+          header: 'Outcomes & Coord.', 
+          width: '16%', 
+          align: 'left', 
+          render: (it) => (
+            <div style={{ color: '#475569', lineHeight: 1.35 }}>
+              <div>{it.outcomes}</div>
+              <div style={{ color: '#1a365d', fontWeight: 600, fontSize: '8px' }}>Coord: {it.coordinator}</div>
+            </div>
+          )
+        }
+      ]
+    },
+    // 11. Additional/Other Relevant Initiatives
+    {
+      key: 'additionalInitiatives',
+      title: '11. ADDITIONAL/OTHER RELEVANT INITIATIVES',
+      tall: false,
+      rowsPerPage: 10,
+      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.additionalInitiatives || []).map(it => ({ ...it, deptCode: d.code }))),
+      columns: [
+        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Initiative / Activity', width: '32%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.initiative}</div> },
+        { 
+          header: 'Date & Coordinator', 
+          width: '18%', 
+          align: 'center', 
+          render: (it) => (
+            <div style={{ color: '#334155' }}>
+              <div>{it.date}</div>
+              <div style={{ color: '#1a365d', fontSize: '8px' }}>Coord: {it.coordinator}</div>
+            </div>
+          )
+        },
+        { 
+          header: 'Description & Key Outcomes', 
+          width: '36%', 
+          align: 'left', 
+          render: (it) => (
+            <div style={{ color: '#475569', lineHeight: 1.35 }}>
+              <div>{it.description}</div>
+              <div style={{ color: '#047857', fontWeight: 600, fontSize: '8px' }}>Outcome: {it.outcomes}</div>
             </div>
           )
         }
@@ -1089,76 +1153,41 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div>
                 {renderRunningHeader()}
 
-                {/* Section 10: Syllabus Coverage Report */}
-                <div style={{ marginBottom: '16px' }}>
-                  {renderSectionHeader('10. CONSOLIDATED SYLLABUS COVERAGE & ACADEMIC AUDIT')}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
-                        <th style={{ width: '9%', padding: '8px 4px', borderRight: '1px solid #3b82f6', textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>Branch</th>
-                        <th style={{ width: '31%', padding: '8px 10px', borderRight: '1px solid #3b82f6', textAlign: 'left', verticalAlign: 'middle', fontWeight: 'bold' }}>Course / Subject Title</th>
-                        <th style={{ width: '20%', padding: '8px 8px', borderRight: '1px solid #3b82f6', textAlign: 'left', verticalAlign: 'middle', fontWeight: 'bold' }}>Faculty In-Charge</th>
-                        <th style={{ width: '10%', padding: '8px 4px', borderRight: '1px solid #3b82f6', textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>% Done</th>
-                        <th style={{ width: '10%', padding: '8px 4px', borderRight: '1px solid #3b82f6', textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold' }}>% Pend</th>
-                        <th style={{ width: '20%', padding: '8px 8px', textAlign: 'left', verticalAlign: 'middle', fontWeight: 'bold' }}>DAC Academic Remarks</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {departmentList.flatMap(dept => 
-                        (deptDataMap[dept.code]?.syllabus || []).slice(0, 1).map(item => ({ ...item, deptCode: dept.code }))
-                      ).map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
-                          <td style={{ padding: '7px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#1a365d' }}>
-                            {item.deptCode}
-                          </td>
-                          <td style={{ padding: '7px 10px', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', fontWeight: 600, color: '#0f172a' }}>{item.subject}</td>
-                          <td style={{ padding: '7px 8px', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', color: '#334155' }}>{item.faculty}</td>
-                          <td style={{ padding: '7px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold', color: '#047857' }}>{item.completed}</td>
-                          <td style={{ padding: '7px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', verticalAlign: 'middle', fontWeight: 'bold', color: '#475569' }}>{item.pending}</td>
-                          <td style={{ padding: '7px 8px', verticalAlign: 'middle', color: '#475569', fontStyle: 'italic', fontSize: '8.5px', lineHeight: 1.3 }}>{item.remarks}</td>
-                        </tr>
-                      ))}
-                      {/* Summary Compliance Row */}
-                      <tr style={{ backgroundColor: '#f1f5f9', borderTop: '1.5px solid #94a3b8' }}>
-                        <td style={{ padding: '7px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#1a365d' }}>ALL</td>
-                        <td colSpan={2} style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 800, color: '#1a365d' }}>
-                          Institutional Curriculum Delivery Compliance Benchmark
-                        </td>
-                        <td style={{ padding: '7px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#047857' }}>100%</td>
-                        <td style={{ padding: '7px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#64748b' }}>Nil</td>
-                        <td style={{ padding: '7px 8px', verticalAlign: 'middle', fontWeight: 700, color: '#047857', fontSize: '8.5px' }}>Curriculum targets met across all academic branches</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Section 11: Attendance Shortage */}
-                <div style={{ marginBottom: '18px' }}>
-                  {renderSectionHeader('11. ATTENDANCE SHORTAGE ANALYSIS (SUMMER VACATION HOLIDAYS)')}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
+                {/* Institutional Academic & Attendance Compliance Audit */}
+                <div style={{ marginBottom: '20px' }}>
+                  {renderSectionHeader('INSTITUTIONAL ACADEMIC & ATTENDANCE AUDIT SUMMARY')}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9.5px', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
                     <tbody>
                       <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ width: '25%', padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                          Audit Focus Area
+                        <td style={{ width: '28%', padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                          Curriculum Delivery Compliance
                         </td>
-                        <td style={{ width: '75%', padding: '7px 10px', verticalAlign: 'middle', color: '#334155' }}>
-                          Biometric &amp; ERP Student Attendance Audit for Summer Session / Vacation Schedule
+                        <td style={{ width: '72%', padding: '9px 12px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
+                          100% Target Met &bull; All Academic Branches Maintained Prescribed Syllabus Progression
                         </td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                          Compliance Status
+                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                          Biometric &amp; ERP Attendance Audit
                         </td>
-                        <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
+                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
                           100% Verified Compliant &bull; No Statutory Condonation Shortages Identified
                         </td>
                       </tr>
-                      <tr>
-                        <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
                           Dean / Academic Director Remarks
                         </td>
-                        <td style={{ padding: '7px 10px', verticalAlign: 'middle', color: '#475569', fontStyle: 'italic', fontSize: '8.5px' }}>
-                          All departments maintained prescribed biometric engagement. Remedial classes and academic bridge initiatives organized as mandated.
+                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', color: '#475569', fontStyle: 'italic', fontSize: '9px', lineHeight: 1.4 }}>
+                          All departments maintained prescribed academic engagement. Remedial classes, technical association activities, and academic bridge initiatives organized as mandated.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                          IQAC Review &amp; Quality Audit
+                        </td>
+                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', color: '#1e3a8a', fontWeight: 600, fontSize: '9px', lineHeight: 1.4 }}>
+                          All departmental reports verified and consolidated according to autonomous institutional governance framework.
                         </td>
                       </tr>
                     </tbody>

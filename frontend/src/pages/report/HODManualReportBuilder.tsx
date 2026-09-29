@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
-import { 
-  Building2, 
-  Calendar, 
-  Clock, 
-  GraduationCap, 
-  Plus, 
-  Trash2, 
-  Download, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  Building2,
+  Calendar,
+  Clock,
+  GraduationCap,
+  Plus,
+  Trash2,
+  Download,
+  Sparkles,
+  CheckCircle2,
   FileText,
   FileDown,
   Printer,
@@ -260,16 +260,16 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     fdpAttended: Array.isArray(raw.fdpAttended)
       ? raw.fdpAttended
       : (Array.isArray(raw.fdp)
-          ? raw.fdp.map((f: any) => ({
-              title: f.title || '',
-              type: f.type || '',
-              dates: f.dates || '',
-              organizingBody: f.organizingBody || '',
-              mode: f.mode || '',
-              facultyAttended: f.facultyAttended || f.role || '',
-              link: f.link || ''
-            }))
-          : []),
+        ? raw.fdp.map((f: any) => ({
+          title: f.title || '',
+          type: f.type || '',
+          dates: f.dates || '',
+          organizingBody: f.organizingBody || '',
+          mode: f.mode || '',
+          facultyAttended: f.facultyAttended || f.role || '',
+          link: f.link || ''
+        }))
+        : []),
     fdpOrganized: Array.isArray(raw.fdpOrganized) ? raw.fdpOrganized : [],
     fdp: Array.isArray(raw.fdp) ? raw.fdp : [],
     sdp: Array.isArray(raw.sdp) ? raw.sdp : [],
@@ -380,7 +380,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     try {
       setLoadingDraft(true);
       const res = await api.get(`/reports/department-report-data?department=${encodeURIComponent(dept)}&period=${encodeURIComponent(per)}`);
-      
+
       // If another fetch happened while this was in-flight, disregard
       if (fetchId !== activeFetchIdRef.current) return;
 
@@ -747,10 +747,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         margin: [6, 6, 6, 6] as [number, number, number, number],
         filename: `${department.replace(/\s+/g, '_')}_Monthly_Report_${period.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          logging: false, 
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
           letterRendering: true,
           width: 750,
           windowWidth: 1024,
@@ -808,7 +808,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
   return (
     <div className="space-y-6">
-      
+
       {/* Exact Header Metadata Block */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 space-y-6 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
@@ -827,9 +827,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('form')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'form' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'form' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Form Editor</span>
@@ -837,9 +836,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('preview')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewMode === 'preview' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'preview' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 <Eye className="w-3.5 h-3.5 text-blue-600" />
                 <span>Crafted PDF View</span>
@@ -884,7 +882,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               title="Official Word format matching template for monthly consolidation"
             >
               <Download className={`w-3.5 h-3.5 ${submitting ? 'animate-spin' : ''}`} />
-              <span>{submitting ? 'Word DOCX...' : 'Word DOCX'}</span>
+              <span>{submitting ? 'Download Word (.docx)...' : 'Download Word (.docx)'}</span>
             </button>
 
             <button
@@ -895,7 +893,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               title="Crafted professional executive PDF document"
             >
               <FileDown className={`w-3.5 h-3.5 ${generatingPdf ? 'animate-spin' : ''}`} />
-              <span>{generatingPdf ? 'Crafting PDF...' : 'Download Crafted PDF'}</span>
+              <span>{generatingPdf ? 'Crafting PDF...' : 'Download PDF (.pdf)'}</span>
             </button>
 
             <button
@@ -939,7 +937,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               <span className="text-blue-600 font-bold">Checking saved database entries...</span>
             ) : dbStatus.saved ? (
               <span className="text-slate-600">
-                Last saved in DB: <strong className="text-slate-900">{dbStatus.lastSavedAt ? new Date(dbStatus.lastSavedAt).toLocaleTimeString() : 'Recently'}</strong> 
+                Last saved in DB: <strong className="text-slate-900">{dbStatus.lastSavedAt ? new Date(dbStatus.lastSavedAt).toLocaleTimeString() : 'Recently'}</strong>
                 <span className={`ml-2 px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${dbStatus.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-800'}`}>
                   {dbStatus.status || 'DRAFT'}
                 </span>
@@ -1086,7 +1084,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 <FileDown className={`w-3.5 h-3.5 ${generatingPdf ? 'animate-spin' : ''}`} />
-                <span>{generatingPdf ? 'Crafting PDF...' : 'Download Crafted PDF'}</span>
+                <span>{generatingPdf ? 'Crafting PDF...' : 'Download PDF (.pdf)'}</span>
               </button>
             </div>
           </div>
@@ -1106,996 +1104,994 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       ) : (
         <>
           {/* Tabs for the 16 Standard Tables */}
-      <div className="overflow-x-auto pb-2 scrollbar-thin">
-        <div className="flex gap-2 min-w-max p-1 bg-white border border-slate-200 rounded-2xl shadow-2xs">
-          {SECTION_TABS.map((tab) => {
-            const isActive = activeSectionKey === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveSectionKey(tab.key)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
+          <div className="overflow-x-auto pb-2 scrollbar-thin">
+            <div className="flex gap-2 min-w-max p-1 bg-white border border-slate-200 rounded-2xl shadow-2xs">
+              {SECTION_TABS.map((tab) => {
+                const isActive = activeSectionKey === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveSectionKey(tab.key)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${isActive
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${isActive
+                      ? 'bg-orange-500 text-white'
+                      : tab.count > 0
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-slate-200 text-slate-500'
+                      }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Main Workspace containing ONLY the exact fields of each table */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xs">
+
+            {/* Table 0: 1a. Journal Publications */}
+            {activeSectionKey === '1a_journals' && (
+              <SectionContainer
+                title="1. Research — a) Journal Publications"
+                description="List all research articles, review papers, or technical notes published by faculty/students in peer-reviewed journals during the reporting period."
+                count={safeSections.journals.length}
+                onAdd={() => handleAddRow('journals')}
               >
-                <span>{tab.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  isActive 
-                    ? 'bg-orange-500 text-white' 
-                    : tab.count > 0 
-                      ? 'bg-blue-100 text-blue-700' 
-                      : 'bg-slate-200 text-slate-500'
-                }`}>
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Workspace containing ONLY the exact fields of each table */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xs">
-
-        {/* Table 0: 1a. Journal Publications */}
-        {activeSectionKey === '1a_journals' && (
-          <SectionContainer
-            title="1. Research — a) Journal Publications"
-            description="List all research articles, review papers, or technical notes published by faculty/students in peer-reviewed journals during the reporting period."
-            count={safeSections.journals.length}
-            onAdd={() => handleAddRow('journals')}
-          >
-            {safeSections.journals.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('journals', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Title of Publication" value={item.title} onChange={(v) => handleUpdateField('journals', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Authors(as mentioned in order)" value={item.authors} onChange={(v) => handleUpdateField('journals', idx, 'authors', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Journal Name" value={item.journalName} onChange={(v) => handleUpdateField('journals', idx, 'journalName', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="ISSN/ISBN" value={item.issnIsbn} onChange={(v) => handleUpdateField('journals', idx, 'issnIsbn', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Vol./Issue/Year" value={item.volIssueYear} onChange={(v) => handleUpdateField('journals', idx, 'volIssueYear', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Page Nos." value={item.pageNos} onChange={(v) => handleUpdateField('journals', idx, 'pageNos', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Indexed In (e.g., Scopus)" value={item.indexedIn} onChange={(v) => handleUpdateField('journals', idx, 'indexedIn', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Link to Publication/Document" value={item.link} onChange={(v) => handleUpdateField('journals', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 1: 1b. Conference Presentations */}
-        {activeSectionKey === '1b_conferences' && (
-          <SectionContainer
-            title="1. Research — b) Conference Presentations"
-            description="Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates and attach link to presentation or conference proceedings."
-            count={safeSections.conferences.length}
-            onAdd={() => handleAddRow('conferences')}
-          >
-            {safeSections.conferences.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('conferences', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Title of Paper" value={item.title} onChange={(v) => handleUpdateField('conferences', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Authors" value={item.authors} onChange={(v) => handleUpdateField('conferences', idx, 'authors', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Conference Name" value={item.conferenceName} onChange={(v) => handleUpdateField('conferences', idx, 'conferenceName', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('conferences', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Location/Mode" value={item.locationMode} onChange={(v) => handleUpdateField('conferences', idx, 'locationMode', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Indexed In" value={item.indexedIn} onChange={(v) => handleUpdateField('conferences', idx, 'indexedIn', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Link to Presentation/Report" value={item.link} onChange={(v) => handleUpdateField('conferences', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 2: 2a. Patents */}
-        {activeSectionKey === '1c_patents' && (
-          <SectionContainer
-            title="2. Innovation & Entrepreneurship — a) Patents"
-            description="Record granted or published patents, patent applications, and status updates for departmental innovations and intellectual property filings."
-            count={safeSections.patents.length}
-            onAdd={() => handleAddRow('patents')}
-          >
-            {safeSections.patents.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('patents', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Patent Title" value={item.title} onChange={(v) => handleUpdateField('patents', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Inventors(as per publication order)" value={item.inventors} onChange={(v) => handleUpdateField('patents', idx, 'inventors', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Applicants" value={item.applicants} onChange={(v) => handleUpdateField('patents', idx, 'applicants', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Patent Number" value={item.patentNumber} onChange={(v) => handleUpdateField('patents', idx, 'patentNumber', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Patent Status (Filed/Published/Granted/Commercialized)" value={item.status} onChange={(v) => handleUpdateField('patents', idx, 'status', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Awarded Date" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Link to Document/Proof" value={item.link} onChange={(v) => handleUpdateField('patents', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 3: 2b. Start-up Initiatives */}
-        {activeSectionKey === '1d_entrepreneurship' && (
-          <SectionContainer
-            title="2. Innovation & Entrepreneurship — b) Start-up Initiatives"
-            description="List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
-            count={safeSections.entrepreneurship.length}
-            onAdd={() => handleAddRow('entrepreneurship')}
-          >
-            {safeSections.entrepreneurship.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('entrepreneurship', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Entrepreneurship Activity/Program Title" value={item.title} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)" value={item.type} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'type', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Participants (Student/Faculty/Alumni)" value={item.participants} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participants', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Organized By (Department/ED Cell/Incubator)" value={item.organizedBy} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'organizedBy', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mode', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participantsCount', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Mentor/Coordinator" value={item.mentorCoordinator} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Status (Ongoing/Completed)" value={item.status} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'status', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Proof/Report Link" value={item.link} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 4: 2. NSS and Other Extension Activities */}
-        {activeSectionKey === '2_nss' && (
-          <SectionContainer
-            title="10. NSS and Other Extension Activities"
-            description="Capture all social outreach and community service work undertaken by the department, including NSS camps, awareness drives, and extension events."
-            count={safeSections.nss.length}
-            onAdd={() => handleAddRow('nss')}
-          >
-            {safeSections.nss.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('nss', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Event/Activity" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Venue" value={item.venue} onChange={(v) => handleUpdateField('nss', idx, 'venue', v)} />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                      Type of Activity *
-                    </label>
-                    <select
-                      value={STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'NSS / Extension Activity')}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleUpdateField('nss', idx, 'type', val);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
-                    >
-                      {STUDENT_ENGAGEMENT_ACTIVITY_TYPES.map(t => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {(!STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
-                    <div className="md:col-span-2">
-                      <FieldInput
-                        label="Specify Custom Type (if Other)"
-                        value={item.type === 'Other' ? '' : item.type}
-                        onChange={(v) => handleUpdateField('nss', idx, 'type', v)}
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('nss', idx, 'participantsCount', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Type of Participants(Students/NSS Volunteers/Villagers/General Public/Faculty)" value={item.typeOfParticipants} onChange={(v) => handleUpdateField('nss', idx, 'typeOfParticipants', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Outcomes" value={item.outcomes} onChange={(v) => handleUpdateField('nss', idx, 'outcomes', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Coordinator" value={item.coordinator} onChange={(v) => handleUpdateField('nss', idx, 'coordinator', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('nss', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 5A: 3a. Faculty Development Programs (FDPs) - Attended */}
-        {activeSectionKey === '3a_fdp_attended' && (
-          <SectionContainer
-            title="3. Faculty Development Programs (FDPs) — a) Attended"
-            description="List every short-term training, development course, workshop, or seminar attended by faculty for professional development. Attach certificates where possible."
-            count={safeSections.fdpAttended.length}
-            onAdd={() => handleAddRow('fdpAttended')}
-          >
-            {safeSections.fdpAttended.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpAttended', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpAttended', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpAttended', idx, 'type', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Organizing Body" value={item.organizingBody} onChange={(v) => handleUpdateField('fdpAttended', idx, 'organizingBody', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpAttended', idx, 'mode', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Name of the faculty attended" value={item.facultyAttended} onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpAttended', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 5B: 3b. Faculty Development Programs (FDPs) - Organized */}
-        {activeSectionKey === '3b_fdp_organized' && (
-          <SectionContainer
-            title="3. Faculty Development Programs (FDPs) — b) Organized"
-            description="List every short-term training, faculty development program, workshop, or seminar organized by the department."
-            count={safeSections.fdpOrganized.length}
-            onAdd={() => handleAddRow('fdpOrganized')}
-          >
-            {safeSections.fdpOrganized.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpOrganized', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'type', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Dept. Organized" value={item.deptOrganized} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'deptOrganized', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'mode', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Resource person name, designation, co-organization and address" value={item.resourcePersonDetails} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'resourcePersonDetails', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Name of the faculty coordinator/s" value={item.facultyCoordinators} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 6: 4. Student Development Programs (SDPs) */}
-        {activeSectionKey === '4_sdp' && (
-          <SectionContainer
-            title="4. Student Development Programs (SDPs)"
-            description="Include workshops, seminars, guest lectures, industrial visits, internships, symposiums, and community projects for students. Indicate type and outcomes for each."
-            count={safeSections.sdp.length}
-            onAdd={() => handleAddRow('sdp')}
-          >
-            {safeSections.sdp.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('sdp', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Event Title" value={item.title} onChange={(v) => handleUpdateField('sdp', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Type (Guest Lecture/Workshop/Seminar/Industrial Visit/Internship/Symposium/Community Project)" value={item.type} onChange={(v) => handleUpdateField('sdp', idx, 'type', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Resource Person with designation /Organization" value={item.resourcePerson} onChange={(v) => handleUpdateField('sdp', idx, 'resourcePerson', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('sdp', idx, 'mode', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('sdp', idx, 'participantsCount', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('sdp', idx, 'keyOutcomes', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Coordinator" value={item.coordinator} onChange={(v) => handleUpdateField('sdp', idx, 'coordinator', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('sdp', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 7: 5a. Faculty Achievements */}
-        {activeSectionKey === '5a_faculty_achievements' && (
-          <SectionContainer
-            title="5. Achievements & Awards — a) Faculty Achievements"
-            description="Recognitions for teaching, research, professional work, or leadership."
-            count={safeSections.facultyAchievements.length}
-            onAdd={() => handleAddRow('facultyAchievements')}
-          >
-            {safeSections.facultyAchievements.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('facultyAchievements', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div>
-                    <FieldInput label="Name" value={item.name} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'name', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Award/Recognition" value={item.award} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'award', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Organization/Body" value={item.organization} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'organization', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'date', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 8: 5b. Student Achievements */}
-        {activeSectionKey === '5b_student_achievements' && (
-          <SectionContainer
-            title="b) Student Achievements"
-            description="Achievements in academic, co-curricular, extra-curricular, or professional events."
-            count={safeSections.studentAchievements.length}
-            onAdd={() => handleAddRow('studentAchievements')}
-          >
-            {safeSections.studentAchievements.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentAchievements', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div>
-                    <FieldInput label="Name-Roll No" value={item.nameRoll} onChange={(v) => handleUpdateField('studentAchievements', idx, 'nameRoll', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Award/Recognition" value={item.award} onChange={(v) => handleUpdateField('studentAchievements', idx, 'award', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Event/Competition" value={item.event} onChange={(v) => handleUpdateField('studentAchievements', idx, 'event', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Organization" value={item.organization} onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Duration and date" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('studentAchievements', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 9: 5c. Certifications */}
-        {activeSectionKey === '5c_certifications' && (
-          <SectionContainer
-            title="c) Certifications"
-            description="Certifications acquired by students and faculty."
-            count={safeSections.certifications.length}
-            onAdd={() => handleAddRow('certifications')}
-          >
-            {safeSections.certifications.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('certifications', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('certifications', idx, 'title', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Type" value={item.type} onChange={(v) => handleUpdateField('certifications', idx, 'type', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Duration" value={item.duration} onChange={(v) => handleUpdateField('certifications', idx, 'duration', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Resource Person/Platform" value={item.platform} onChange={(v) => handleUpdateField('certifications', idx, 'platform', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Students/faculty Enrolled" value={item.enrolled} onChange={(v) => handleUpdateField('certifications', idx, 'enrolled', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Students/faculty  Certified" value={item.certified} onChange={(v) => handleUpdateField('certifications', idx, 'certified', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('certifications', idx, 'keyOutcomes', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Evidence Link" value={item.link} onChange={(v) => handleUpdateField('certifications', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 10: 2b. Meetings */}
-        {activeSectionKey === '6a_dept_meetings' && (
-          <SectionContainer
-            title="6a. Meetings"
-            description="Details of official meetings: key decisions, date, and supporting documents."
-            count={safeSections.deptMeetings.length}
-            onAdd={() => handleAddRow('deptMeetings')}
-          >
-            {safeSections.deptMeetings.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('deptMeetings', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('deptMeetings', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Policy Changes (if any)" value={item.policyChanges} onChange={(v) => handleUpdateField('deptMeetings', idx, 'policyChanges', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <BulletTextarea
-                      label="Main Decisions/Topics Discussed"
-                      value={item.decisions}
-                      onChange={(v) => handleUpdateField('deptMeetings', idx, 'decisions', v)}
-                      placeholder="• Discussed curriculum progress&#10;• Finalized schedule for project reviews"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Minutes/Proof Link" value={item.link} onChange={(v) => handleUpdateField('deptMeetings', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 11: 6b. Collaborations & MoUs */}
-        {activeSectionKey === '6b_mous' && (
-          <SectionContainer
-            title="b) Collaborations & MoUs"
-            description="Formal agreements/ongoing collaborations with industry, academia, or organizations."
-            count={safeSections.mous.length}
-            onAdd={() => handleAddRow('mous')}
-          >
-            {safeSections.mous.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('mous', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Name of Industry/Academic Body" value={item.name} onChange={(v) => handleUpdateField('mous', idx, 'name', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Nature & Purpose" value={item.purpose} onChange={(v) => handleUpdateField('mous', idx, 'purpose', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date of Signing/Active Period" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Faculty Involved(SPOC)" value={item.facultySpoc} onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Supporting Documents/Link" value={item.link} onChange={(v) => handleUpdateField('mous', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 12: 7. Additional/Other Relevant Initiatives */}
-        {activeSectionKey === '7_additional' && (
-          <SectionContainer
-            title="11. Additional/Other Relevant Initiatives"
-            description="Alumni engagement, quality initiatives, special projects, or areas not elsewhere covered."
-            count={safeSections.additionalInitiatives.length}
-            onAdd={() => handleAddRow('additionalInitiatives')}
-          >
-            {safeSections.additionalInitiatives.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('additionalInitiatives', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Initiative/Activity" value={item.initiative} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'initiative', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Coordinator(s)" value={item.coordinator} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Description" value={item.description} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'description', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Outcomes" value={item.outcomes} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'outcomes', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Report/Link/Proof" value={item.link} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 13: 8. Technical Association Activities */}
-        {activeSectionKey === '8_tech_association' && (
-          <SectionContainer
-            title="7. Technical Association Activities"
-            description="Organizes technical workshops, competitions, industrial visits, and seminars to enhance technical skills."
-            count={safeSections.techAssociation.length}
-            onAdd={() => handleAddRow('techAssociation')}
-          >
-            {safeSections.techAssociation.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('techAssociation', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Event / Activity" value={item.event} onChange={(v) => handleUpdateField('techAssociation', idx, 'event', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                      Type of Activity *
-                    </label>
-                    <select
-                      value={STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'Technical Association Activity')}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleUpdateField('techAssociation', idx, 'type', val);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
-                    >
-                      {STUDENT_ENGAGEMENT_ACTIVITY_TYPES.map(t => (
-                        <option key={t} value={t}>{t}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {(!STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
-                    <div className="md:col-span-2">
-                      <FieldInput
-                        label="Specify Custom Type (if Other)"
-                        value={item.type === 'Other' ? '' : item.type}
-                        onChange={(v) => handleUpdateField('techAssociation', idx, 'type', v)}
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <FieldInput label="Resource Person / Coordinator" value={item.resourcePersonCoordinator} onChange={(v) => handleUpdateField('techAssociation', idx, 'resourcePersonCoordinator', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Participants" value={item.participants} onChange={(v) => handleUpdateField('techAssociation', idx, 'participants', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Evidence / Proof Link" value={item.link} onChange={(v) => handleUpdateField('techAssociation', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Table 15: 10. Syllabus coverage Report */}
-        {activeSectionKey === '10_syllabus' && (
-          <SectionContainer
-            title="8. Syllabus coverage Report (Summer Vacation holidays)"
-            description="Tracking syllabus completion status across all classes and faculty."
-            count={safeSections.syllabus.length}
-            onAdd={() => handleAddRow('syllabus')}
-          >
-            {safeSections.syllabus.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('syllabus', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Subject" value={item.subject} onChange={(v) => handleUpdateField('syllabus', idx, 'subject', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Year/sem" value={item.yearSem} onChange={(v) => handleUpdateField('syllabus', idx, 'yearSem', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Faculty" value={item.faculty} onChange={(v) => handleUpdateField('syllabus', idx, 'faculty', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Syllabus Status - Completed" value={item.completed} onChange={(v) => handleUpdateField('syllabus', idx, 'completed', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Syllabus Status - Pending" value={item.pending} onChange={(v) => handleUpdateField('syllabus', idx, 'pending', v)} />
-                  </div>
-                  <div className="md:col-span-3">
-                    <FieldInput label="Remarks" value={item.remarks} onChange={(v) => handleUpdateField('syllabus', idx, 'remarks', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
-        {/* Student Engagement Activity Table */}
-        {activeSectionKey === 'student_engagement' && (
-          <SectionContainer
-            title="9. Club & Student Engagement Activity"
-            description="Record student workshops, guest lectures, expert talks, industrial visits, internships, mentoring sessions, and clubs."
-            count={(safeSections.studentEngagement || []).length}
-            onAdd={() => handleAddRow('studentEngagement')}
-          >
-            {(safeSections.studentEngagement || []).map((item, idx) => {
-              const expectedDays = parseDaysFromOption(item.noOfDays);
-              const isMultiDay = item.noOfDays !== '1 day';
-              const actualDays = (item.startDate && item.endDate) ? calculateDiffDays(item.startDate, item.endDate) : null;
-              const isInvalidDuration = Boolean(isMultiDay && actualDays !== null && actualDays !== expectedDays);
-
-              const standardTypes = [
-                'FDP',
-                'Seminar',
-                'Guest lecture',
-                'Expert lecture',
-                'Industrial visit',
-                'Internship',
-                'Mentoring session',
-                'Conference',
-                'Workshop',
-                'Value Added Course',
-                'NSS / Extension Activity',
-                'Technical Association Activity',
-                'Hackathon / Project Expo',
-                'Certification Course',
-                'Field Trip',
-                'Club Event / Cultural Activity',
-                'Other'
-              ];
-
-              const isOtherType = item.type === 'Other' || (!standardTypes.includes(item.type) && Boolean(item.type));
-
-              return (
-                <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentEngagement', idx)}>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                    {/* Title */}
-                    <div className="md:col-span-2">
-                      <FieldInput
-                        label="Title of the activity *"
-                        value={item.title}
-                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'title', v)}
-                      />
-                    </div>
-
-                    {/* Type of Activity Dropdown */}
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                        Type of activity *
-                      </label>
-                      <select
-                        value={standardTypes.includes(item.type) ? item.type : 'Other'}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleUpdateField('studentEngagement', idx, 'type', val);
-                          if (val !== 'Other') {
-                            handleUpdateField('studentEngagement', idx, 'otherType', '');
-                          }
-                        }}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
-                      >
-                        {standardTypes.map(t => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* If Other Type is selected, show custom input */}
-                    {isOtherType && (
-                      <div className="md:col-span-3">
-                        <FieldInput
-                          label="Specify Other Activity Type (Apart from list) *"
-                          value={item.otherType || (item.type !== 'Other' ? item.type : '')}
-                          onChange={(v) => {
-                            handleUpdateField('studentEngagement', idx, 'otherType', v);
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* No of Days */}
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                        No of Days *
-                      </label>
-                      <select
-                        value={item.noOfDays || '1 day'}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleUpdateField('studentEngagement', idx, 'noOfDays', val);
-                        }}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
-                      >
-                        <option value="1 day">1 day</option>
-                        <option value="2 days">2 days</option>
-                        <option value="3 days">3 days</option>
-                        <option value="4 days">4 days</option>
-                        <option value="5 days">5 days</option>
-                        <option value="1 week">1 week (7 days)</option>
-                        <option value="2 weeks">2 weeks (14 days)</option>
-                      </select>
-                    </div>
-
-                    {/* Date Inputs based on No of Days */}
-                    {!isMultiDay ? (
+                {safeSections.journals.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('journals', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
+                        <FieldInput label="Title of Publication" value={item.title} onChange={(v) => handleUpdateField('journals', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Authors(as mentioned in order)" value={item.authors} onChange={(v) => handleUpdateField('journals', idx, 'authors', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Journal Name" value={item.journalName} onChange={(v) => handleUpdateField('journals', idx, 'journalName', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="ISSN/ISBN" value={item.issnIsbn} onChange={(v) => handleUpdateField('journals', idx, 'issnIsbn', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Vol./Issue/Year" value={item.volIssueYear} onChange={(v) => handleUpdateField('journals', idx, 'volIssueYear', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Page Nos." value={item.pageNos} onChange={(v) => handleUpdateField('journals', idx, 'pageNos', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Indexed In (e.g., Scopus)" value={item.indexedIn} onChange={(v) => handleUpdateField('journals', idx, 'indexedIn', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Link to Publication/Document" value={item.link} onChange={(v) => handleUpdateField('journals', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 1: 1b. Conference Presentations */}
+            {activeSectionKey === '1b_conferences' && (
+              <SectionContainer
+                title="1. Research — b) Conference Presentations"
+                description="Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates and attach link to presentation or conference proceedings."
+                count={safeSections.conferences.length}
+                onAdd={() => handleAddRow('conferences')}
+              >
+                {safeSections.conferences.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('conferences', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Title of Paper" value={item.title} onChange={(v) => handleUpdateField('conferences', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Authors" value={item.authors} onChange={(v) => handleUpdateField('conferences', idx, 'authors', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Conference Name" value={item.conferenceName} onChange={(v) => handleUpdateField('conferences', idx, 'conferenceName', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('conferences', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Location/Mode" value={item.locationMode} onChange={(v) => handleUpdateField('conferences', idx, 'locationMode', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Indexed In" value={item.indexedIn} onChange={(v) => handleUpdateField('conferences', idx, 'indexedIn', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Link to Presentation/Report" value={item.link} onChange={(v) => handleUpdateField('conferences', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 2: 2a. Patents */}
+            {activeSectionKey === '1c_patents' && (
+              <SectionContainer
+                title="2. Innovation & Entrepreneurship — a) Patents"
+                description="Record granted or published patents, patent applications, and status updates for departmental innovations and intellectual property filings."
+                count={safeSections.patents.length}
+                onAdd={() => handleAddRow('patents')}
+              >
+                {safeSections.patents.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('patents', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Patent Title" value={item.title} onChange={(v) => handleUpdateField('patents', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Inventors(as per publication order)" value={item.inventors} onChange={(v) => handleUpdateField('patents', idx, 'inventors', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Applicants" value={item.applicants} onChange={(v) => handleUpdateField('patents', idx, 'applicants', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Patent Number" value={item.patentNumber} onChange={(v) => handleUpdateField('patents', idx, 'patentNumber', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Patent Status (Filed/Published/Granted/Commercialized)" value={item.status} onChange={(v) => handleUpdateField('patents', idx, 'status', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Awarded Date" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Link to Document/Proof" value={item.link} onChange={(v) => handleUpdateField('patents', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 3: 2b. Start-up Initiatives */}
+            {activeSectionKey === '1d_entrepreneurship' && (
+              <SectionContainer
+                title="2. Innovation & Entrepreneurship — b) Start-up Initiatives"
+                description="List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
+                count={safeSections.entrepreneurship.length}
+                onAdd={() => handleAddRow('entrepreneurship')}
+              >
+                {safeSections.entrepreneurship.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('entrepreneurship', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Entrepreneurship Activity/Program Title" value={item.title} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)" value={item.type} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'type', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Participants (Student/Faculty/Alumni)" value={item.participants} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participants', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Organized By (Department/ED Cell/Incubator)" value={item.organizedBy} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'organizedBy', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mode', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participantsCount', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Mentor/Coordinator" value={item.mentorCoordinator} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Status (Ongoing/Completed)" value={item.status} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'status', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Proof/Report Link" value={item.link} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 4: 2. NSS and Other Extension Activities */}
+            {activeSectionKey === '2_nss' && (
+              <SectionContainer
+                title="10. NSS and Other Extension Activities"
+                description="Capture all social outreach and community service work undertaken by the department, including NSS camps, awareness drives, and extension events."
+                count={safeSections.nss.length}
+                onAdd={() => handleAddRow('nss')}
+              >
+                {safeSections.nss.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('nss', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Event/Activity" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Venue" value={item.venue} onChange={(v) => handleUpdateField('nss', idx, 'venue', v)} />
+                      </div>
+                      <div>
                         <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                          Date of Activity *
+                          Type of Activity *
                         </label>
-                        <input
-                          type="date"
-                          value={item.startDate || item.dates || ''}
+                        <select
+                          value={STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'NSS / Extension Activity')}
                           onChange={(e) => {
                             const val = e.target.value;
-                            handleUpdateField('studentEngagement', idx, 'startDate', val);
-                            handleUpdateField('studentEngagement', idx, 'endDate', '');
-                            handleUpdateField('studentEngagement', idx, 'dates', val);
+                            handleUpdateField('nss', idx, 'type', val);
                           }}
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all"
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                        >
+                          {STUDENT_ENGAGEMENT_ACTIVITY_TYPES.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {(!STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
+                        <div className="md:col-span-2">
+                          <FieldInput
+                            label="Specify Custom Type (if Other)"
+                            value={item.type === 'Other' ? '' : item.type}
+                            onChange={(v) => handleUpdateField('nss', idx, 'type', v)}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('nss', idx, 'participantsCount', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Type of Participants(Students/NSS Volunteers/Villagers/General Public/Faculty)" value={item.typeOfParticipants} onChange={(v) => handleUpdateField('nss', idx, 'typeOfParticipants', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Outcomes" value={item.outcomes} onChange={(v) => handleUpdateField('nss', idx, 'outcomes', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Coordinator" value={item.coordinator} onChange={(v) => handleUpdateField('nss', idx, 'coordinator', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('nss', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 5A: 3a. Faculty Development Programs (FDPs) - Attended */}
+            {activeSectionKey === '3a_fdp_attended' && (
+              <SectionContainer
+                title="3. Faculty Development Programs (FDPs) — a) Attended"
+                description="List every short-term training, development course, workshop, or seminar attended by faculty for professional development. Attach certificates where possible."
+                count={safeSections.fdpAttended.length}
+                onAdd={() => handleAddRow('fdpAttended')}
+              >
+                {safeSections.fdpAttended.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpAttended', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpAttended', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpAttended', idx, 'type', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Organizing Body" value={item.organizingBody} onChange={(v) => handleUpdateField('fdpAttended', idx, 'organizingBody', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpAttended', idx, 'mode', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Name of the faculty attended" value={item.facultyAttended} onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpAttended', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 5B: 3b. Faculty Development Programs (FDPs) - Organized */}
+            {activeSectionKey === '3b_fdp_organized' && (
+              <SectionContainer
+                title="3. Faculty Development Programs (FDPs) — b) Organized"
+                description="List every short-term training, faculty development program, workshop, or seminar organized by the department."
+                count={safeSections.fdpOrganized.length}
+                onAdd={() => handleAddRow('fdpOrganized')}
+              >
+                {safeSections.fdpOrganized.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpOrganized', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'type', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Dept. Organized" value={item.deptOrganized} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'deptOrganized', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'mode', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Resource person name, designation, co-organization and address" value={item.resourcePersonDetails} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'resourcePersonDetails', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Name of the faculty coordinator/s" value={item.facultyCoordinators} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 6: 4. Student Development Programs (SDPs) */}
+            {activeSectionKey === '4_sdp' && (
+              <SectionContainer
+                title="4. Student Development Programs (SDPs)"
+                description="Include workshops, seminars, guest lectures, industrial visits, internships, symposiums, and community projects for students. Indicate type and outcomes for each."
+                count={safeSections.sdp.length}
+                onAdd={() => handleAddRow('sdp')}
+              >
+                {safeSections.sdp.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('sdp', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Event Title" value={item.title} onChange={(v) => handleUpdateField('sdp', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Type (Guest Lecture/Workshop/Seminar/Industrial Visit/Internship/Symposium/Community Project)" value={item.type} onChange={(v) => handleUpdateField('sdp', idx, 'type', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Resource Person with designation /Organization" value={item.resourcePerson} onChange={(v) => handleUpdateField('sdp', idx, 'resourcePerson', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('sdp', idx, 'mode', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('sdp', idx, 'participantsCount', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('sdp', idx, 'keyOutcomes', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Coordinator" value={item.coordinator} onChange={(v) => handleUpdateField('sdp', idx, 'coordinator', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('sdp', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 7: 5a. Faculty Achievements */}
+            {activeSectionKey === '5a_faculty_achievements' && (
+              <SectionContainer
+                title="5. Achievements & Awards — a) Faculty Achievements"
+                description="Recognitions for teaching, research, professional work, or leadership."
+                count={safeSections.facultyAchievements.length}
+                onAdd={() => handleAddRow('facultyAchievements')}
+              >
+                {safeSections.facultyAchievements.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('facultyAchievements', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div>
+                        <FieldInput label="Name" value={item.name} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'name', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Award/Recognition" value={item.award} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'award', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Organization/Body" value={item.organization} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'organization', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'date', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 8: 5b. Student Achievements */}
+            {activeSectionKey === '5b_student_achievements' && (
+              <SectionContainer
+                title="b) Student Achievements"
+                description="Achievements in academic, co-curricular, extra-curricular, or professional events."
+                count={safeSections.studentAchievements.length}
+                onAdd={() => handleAddRow('studentAchievements')}
+              >
+                {safeSections.studentAchievements.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentAchievements', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div>
+                        <FieldInput label="Name-Roll No" value={item.nameRoll} onChange={(v) => handleUpdateField('studentAchievements', idx, 'nameRoll', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Award/Recognition" value={item.award} onChange={(v) => handleUpdateField('studentAchievements', idx, 'award', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Event/Competition" value={item.event} onChange={(v) => handleUpdateField('studentAchievements', idx, 'event', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Organization" value={item.organization} onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Duration and date" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('studentAchievements', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 9: 5c. Certifications */}
+            {activeSectionKey === '5c_certifications' && (
+              <SectionContainer
+                title="c) Certifications"
+                description="Certifications acquired by students and faculty."
+                count={safeSections.certifications.length}
+                onAdd={() => handleAddRow('certifications')}
+              >
+                {safeSections.certifications.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('certifications', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('certifications', idx, 'title', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Type" value={item.type} onChange={(v) => handleUpdateField('certifications', idx, 'type', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Duration" value={item.duration} onChange={(v) => handleUpdateField('certifications', idx, 'duration', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Resource Person/Platform" value={item.platform} onChange={(v) => handleUpdateField('certifications', idx, 'platform', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Students/faculty Enrolled" value={item.enrolled} onChange={(v) => handleUpdateField('certifications', idx, 'enrolled', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Students/faculty  Certified" value={item.certified} onChange={(v) => handleUpdateField('certifications', idx, 'certified', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('certifications', idx, 'keyOutcomes', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Evidence Link" value={item.link} onChange={(v) => handleUpdateField('certifications', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 10: 2b. Meetings */}
+            {activeSectionKey === '6a_dept_meetings' && (
+              <SectionContainer
+                title="6a. Meetings"
+                description="Details of official meetings: key decisions, date, and supporting documents."
+                count={safeSections.deptMeetings.length}
+                onAdd={() => handleAddRow('deptMeetings')}
+              >
+                {safeSections.deptMeetings.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('deptMeetings', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('deptMeetings', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Policy Changes (if any)" value={item.policyChanges} onChange={(v) => handleUpdateField('deptMeetings', idx, 'policyChanges', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <BulletTextarea
+                          label="Main Decisions/Topics Discussed"
+                          value={item.decisions}
+                          onChange={(v) => handleUpdateField('deptMeetings', idx, 'decisions', v)}
+                          placeholder="• Discussed curriculum progress&#10;• Finalized schedule for project reviews"
                         />
                       </div>
-                    ) : (
-                      <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                            Start Date *
-                          </label>
-                          <input
-                            type="date"
-                            value={item.startDate || ''}
-                            onChange={(e) => {
-                              const s = e.target.value;
-                              handleUpdateField('studentEngagement', idx, 'startDate', s);
-                              const fullSpan = s && item.endDate ? `${s} to ${item.endDate}` : s;
-                              handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
-                            }}
-                            className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                            End Date *
-                          </label>
-                          <input
-                            type="date"
-                            value={item.endDate || ''}
-                            onChange={(e) => {
-                              const endD = e.target.value;
-                              handleUpdateField('studentEngagement', idx, 'endDate', endD);
-                              const fullSpan = item.startDate && endD ? `${item.startDate} to ${endD}` : endD;
-                              handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
-                            }}
-                            className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
-                          />
-                        </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Minutes/Proof Link" value={item.link} onChange={(v) => handleUpdateField('deptMeetings', idx, 'link', v)} />
                       </div>
-                    )}
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
 
-                    {/* Date Duration Invalidation Warning */}
-                    {isInvalidDuration && (
-                      <div className="md:col-span-3 p-3 rounded-xl bg-red-50 border border-red-300 text-red-700 text-xs flex items-start gap-2.5">
-                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            {/* Table 11: 6b. Collaborations & MoUs */}
+            {activeSectionKey === '6b_mous' && (
+              <SectionContainer
+                title="b) Collaborations & MoUs"
+                description="Formal agreements/ongoing collaborations with industry, academia, or organizations."
+                count={safeSections.mous.length}
+                onAdd={() => handleAddRow('mous')}
+              >
+                {safeSections.mous.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('mous', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Name of Industry/Academic Body" value={item.name} onChange={(v) => handleUpdateField('mous', idx, 'name', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Nature & Purpose" value={item.purpose} onChange={(v) => handleUpdateField('mous', idx, 'purpose', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date of Signing/Active Period" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Faculty Involved(SPOC)" value={item.facultySpoc} onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Supporting Documents/Link" value={item.link} onChange={(v) => handleUpdateField('mous', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 12: 7. Additional/Other Relevant Initiatives */}
+            {activeSectionKey === '7_additional' && (
+              <SectionContainer
+                title="11. Additional/Other Relevant Initiatives"
+                description="Alumni engagement, quality initiatives, special projects, or areas not elsewhere covered."
+                count={safeSections.additionalInitiatives.length}
+                onAdd={() => handleAddRow('additionalInitiatives')}
+              >
+                {safeSections.additionalInitiatives.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('additionalInitiatives', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Initiative/Activity" value={item.initiative} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'initiative', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Coordinator(s)" value={item.coordinator} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Description" value={item.description} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'description', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Outcomes" value={item.outcomes} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'outcomes', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Report/Link/Proof" value={item.link} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 13: 8. Technical Association Activities */}
+            {activeSectionKey === '8_tech_association' && (
+              <SectionContainer
+                title="7. Technical Association Activities"
+                description="Organizes technical workshops, competitions, industrial visits, and seminars to enhance technical skills."
+                count={safeSections.techAssociation.length}
+                onAdd={() => handleAddRow('techAssociation')}
+              >
+                {safeSections.techAssociation.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('techAssociation', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Event / Activity" value={item.event} onChange={(v) => handleUpdateField('techAssociation', idx, 'event', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Type of Activity *
+                        </label>
+                        <select
+                          value={STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'Technical Association Activity')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleUpdateField('techAssociation', idx, 'type', val);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                        >
+                          {STUDENT_ENGAGEMENT_ACTIVITY_TYPES.map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {(!STUDENT_ENGAGEMENT_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
+                        <div className="md:col-span-2">
+                          <FieldInput
+                            label="Specify Custom Type (if Other)"
+                            value={item.type === 'Other' ? '' : item.type}
+                            onChange={(v) => handleUpdateField('techAssociation', idx, 'type', v)}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <FieldInput label="Resource Person / Coordinator" value={item.resourcePersonCoordinator} onChange={(v) => handleUpdateField('techAssociation', idx, 'resourcePersonCoordinator', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Participants" value={item.participants} onChange={(v) => handleUpdateField('techAssociation', idx, 'participants', v)} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Evidence / Proof Link" value={item.link} onChange={(v) => handleUpdateField('techAssociation', idx, 'link', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Table 15: 10. Syllabus coverage Report */}
+            {activeSectionKey === '10_syllabus' && (
+              <SectionContainer
+                title="8. Syllabus coverage Report (Summer Vacation holidays)"
+                description="Tracking syllabus completion status across all classes and faculty."
+                count={safeSections.syllabus.length}
+                onAdd={() => handleAddRow('syllabus')}
+              >
+                {safeSections.syllabus.map((item, idx) => (
+                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('syllabus', idx)}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                      <div className="md:col-span-2">
+                        <FieldInput label="Subject" value={item.subject} onChange={(v) => handleUpdateField('syllabus', idx, 'subject', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Year/sem" value={item.yearSem} onChange={(v) => handleUpdateField('syllabus', idx, 'yearSem', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Faculty" value={item.faculty} onChange={(v) => handleUpdateField('syllabus', idx, 'faculty', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Syllabus Status - Completed" value={item.completed} onChange={(v) => handleUpdateField('syllabus', idx, 'completed', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Syllabus Status - Pending" value={item.pending} onChange={(v) => handleUpdateField('syllabus', idx, 'pending', v)} />
+                      </div>
+                      <div className="md:col-span-3">
+                        <FieldInput label="Remarks" value={item.remarks} onChange={(v) => handleUpdateField('syllabus', idx, 'remarks', v)} />
+                      </div>
+                    </div>
+                  </EntryCard>
+                ))}
+              </SectionContainer>
+            )}
+
+            {/* Student Engagement Activity Table */}
+            {activeSectionKey === 'student_engagement' && (
+              <SectionContainer
+                title="9. Club & Student Engagement Activity"
+                description="Record student workshops, guest lectures, expert talks, industrial visits, internships, mentoring sessions, and clubs."
+                count={(safeSections.studentEngagement || []).length}
+                onAdd={() => handleAddRow('studentEngagement')}
+              >
+                {(safeSections.studentEngagement || []).map((item, idx) => {
+                  const expectedDays = parseDaysFromOption(item.noOfDays);
+                  const isMultiDay = item.noOfDays !== '1 day';
+                  const actualDays = (item.startDate && item.endDate) ? calculateDiffDays(item.startDate, item.endDate) : null;
+                  const isInvalidDuration = Boolean(isMultiDay && actualDays !== null && actualDays !== expectedDays);
+
+                  const standardTypes = [
+                    'FDP',
+                    'Seminar',
+                    'Guest lecture',
+                    'Expert lecture',
+                    'Industrial visit',
+                    'Internship',
+                    'Mentoring session',
+                    'Conference',
+                    'Workshop',
+                    'Value Added Course',
+                    'NSS / Extension Activity',
+                    'Technical Association Activity',
+                    'Hackathon / Project Expo',
+                    'Certification Course',
+                    'Field Trip',
+                    'Club Event / Cultural Activity',
+                    'Other'
+                  ];
+
+                  const isOtherType = item.type === 'Other' || (!standardTypes.includes(item.type) && Boolean(item.type));
+
+                  return (
+                    <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentEngagement', idx)}>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                        {/* Title */}
+                        <div className="md:col-span-2">
+                          <FieldInput
+                            label="Title of the activity *"
+                            value={item.title}
+                            onChange={(v) => handleUpdateField('studentEngagement', idx, 'title', v)}
+                          />
+                        </div>
+
+                        {/* Type of Activity Dropdown */}
                         <div>
-                          <div className="font-bold">Invalid Duration Detected</div>
-                          <div>
-                            Selected duration span covers <strong>{actualDays} day{actualDays === 1 ? '' : 's'}</strong> ({item.startDate} to {item.endDate}), but "No of Days" is specified as <strong>{item.noOfDays} ({expectedDays} days)</strong>. Please correct the dates or change the number of days to match.
+                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                            Type of activity *
+                          </label>
+                          <select
+                            value={standardTypes.includes(item.type) ? item.type : 'Other'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              handleUpdateField('studentEngagement', idx, 'type', val);
+                              if (val !== 'Other') {
+                                handleUpdateField('studentEngagement', idx, 'otherType', '');
+                              }
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                          >
+                            {standardTypes.map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* If Other Type is selected, show custom input */}
+                        {isOtherType && (
+                          <div className="md:col-span-3">
+                            <FieldInput
+                              label="Specify Other Activity Type (Apart from list) *"
+                              value={item.otherType || (item.type !== 'Other' ? item.type : '')}
+                              onChange={(v) => {
+                                handleUpdateField('studentEngagement', idx, 'otherType', v);
+                              }}
+                            />
                           </div>
+                        )}
+
+                        {/* No of Days */}
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                            No of Days *
+                          </label>
+                          <select
+                            value={item.noOfDays || '1 day'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              handleUpdateField('studentEngagement', idx, 'noOfDays', val);
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                          >
+                            <option value="1 day">1 day</option>
+                            <option value="2 days">2 days</option>
+                            <option value="3 days">3 days</option>
+                            <option value="4 days">4 days</option>
+                            <option value="5 days">5 days</option>
+                            <option value="1 week">1 week (7 days)</option>
+                            <option value="2 weeks">2 weeks (14 days)</option>
+                          </select>
+                        </div>
+
+                        {/* Date Inputs based on No of Days */}
+                        {!isMultiDay ? (
+                          <div className="md:col-span-2">
+                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                              Date of Activity *
+                            </label>
+                            <input
+                              type="date"
+                              value={item.startDate || item.dates || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                handleUpdateField('studentEngagement', idx, 'startDate', val);
+                                handleUpdateField('studentEngagement', idx, 'endDate', '');
+                                handleUpdateField('studentEngagement', idx, 'dates', val);
+                              }}
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all"
+                            />
+                          </div>
+                        ) : (
+                          <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                                Start Date *
+                              </label>
+                              <input
+                                type="date"
+                                value={item.startDate || ''}
+                                onChange={(e) => {
+                                  const s = e.target.value;
+                                  handleUpdateField('studentEngagement', idx, 'startDate', s);
+                                  const fullSpan = s && item.endDate ? `${s} to ${item.endDate}` : s;
+                                  handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
+                                }}
+                                className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                                End Date *
+                              </label>
+                              <input
+                                type="date"
+                                value={item.endDate || ''}
+                                onChange={(e) => {
+                                  const endD = e.target.value;
+                                  handleUpdateField('studentEngagement', idx, 'endDate', endD);
+                                  const fullSpan = item.startDate && endD ? `${item.startDate} to ${endD}` : endD;
+                                  handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
+                                }}
+                                className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Date Duration Invalidation Warning */}
+                        {isInvalidDuration && (
+                          <div className="md:col-span-3 p-3 rounded-xl bg-red-50 border border-red-300 text-red-700 text-xs flex items-start gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-bold">Invalid Duration Detected</div>
+                              <div>
+                                Selected duration span covers <strong>{actualDays} day{actualDays === 1 ? '' : 's'}</strong> ({item.startDate} to {item.endDate}), but "No of Days" is specified as <strong>{item.noOfDays} ({expectedDays} days)</strong>. Please correct the dates or change the number of days to match.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* No of Participants */}
+                        <div>
+                          <FieldInput
+                            label="No of Participants"
+                            value={item.participantsCount}
+                            onChange={(v) => handleUpdateField('studentEngagement', idx, 'participantsCount', v)}
+                          />
+                        </div>
+
+                        {/* Coordinator */}
+                        <div>
+                          <FieldInput
+                            label="Co-Ordinator"
+                            value={item.coordinator}
+                            onChange={(v) => handleUpdateField('studentEngagement', idx, 'coordinator', v)}
+                          />
+                        </div>
+
+                        {/* Remarks */}
+                        <div>
+                          <FieldInput
+                            label="Co-Ordinator Remarks"
+                            value={item.remarks}
+                            onChange={(v) => handleUpdateField('studentEngagement', idx, 'remarks', v)}
+                          />
+                        </div>
+
+                        {/* Proof / Link */}
+                        <div className="md:col-span-3">
+                          <FieldInput
+                            label="Proof / Certificate Link (Optional)"
+                            value={item.link || ''}
+                            onChange={(v) => handleUpdateField('studentEngagement', idx, 'link', v)}
+                          />
                         </div>
                       </div>
-                    )}
+                    </EntryCard>
+                  );
+                })}
+              </SectionContainer>
+            )}
 
-                    {/* No of Participants */}
-                    <div>
-                      <FieldInput
-                        label="No of Participants"
-                        value={item.participantsCount}
-                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'participantsCount', v)}
-                      />
-                    </div>
+          </div>
 
-                    {/* Coordinator */}
-                    <div>
-                      <FieldInput
-                        label="Co-Ordinator"
-                        value={item.coordinator}
-                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'coordinator', v)}
-                      />
-                    </div>
+          {/* Off-screen PDF container positioned at (0,0) with opacity 0 so html2canvas computes pixel-perfect coordinates */}
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              zIndex: -999,
+              opacity: 0,
+              pointerEvents: 'none',
+              backgroundColor: '#ffffff',
+              width: '750px'
+            }}
+          >
+            <HODProfessionalPDFView
+              department={department}
+              hodName={hodName}
+              period={period}
+              submissionDate={submissionDate}
+              sections={sections}
+            />
+          </div>
+        </>
+      )}
 
-                    {/* Remarks */}
-                    <div>
-                      <FieldInput
-                        label="Co-Ordinator Remarks"
-                        value={item.remarks}
-                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'remarks', v)}
-                      />
-                    </div>
-
-                    {/* Proof / Link */}
-                    <div className="md:col-span-3">
-                      <FieldInput
-                        label="Proof / Certificate Link (Optional)"
-                        value={item.link || ''}
-                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'link', v)}
-                      />
-                    </div>
-                  </div>
-                </EntryCard>
-              );
-            })}
-          </SectionContainer>
-        )}
-
-      </div>
-
-      {/* Off-screen PDF container positioned at (0,0) with opacity 0 so html2canvas computes pixel-perfect coordinates */}
-      <div 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: -999,
-          opacity: 0,
-          pointerEvents: 'none',
-          backgroundColor: '#ffffff',
-          width: '750px'
-        }}
-      >
-        <HODProfessionalPDFView
-          department={department}
-          hodName={hodName}
-          period={period}
-          submissionDate={submissionDate}
-          sections={sections}
-        />
-      </div>
-    </>
-  )}
-
-  {/* Bottom Sticky Action Bar */}
-  <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg sticky bottom-4 z-20">
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shrink-0">
-        <FileText className="w-5 h-5" />
-      </div>
-      <div>
-        <div className="text-xs font-bold text-slate-900">
-          {department} • Monthly Report
+      {/* Bottom Sticky Action Bar */}
+      <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg sticky bottom-4 z-20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shrink-0">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-900">
+              {department} • Monthly Report
+            </div>
+            <div className="text-[11px] text-slate-500">
+              {totalActivities} recorded activities • Official 16 tables format
+            </div>
+          </div>
         </div>
-        <div className="text-[11px] text-slate-500">
-          {totalActivities} recorded activities • Official 16 tables format
+
+        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={() => setViewMode(viewMode === 'form' ? 'preview' : 'form')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+          >
+            {viewMode === 'form' ? (
+              <>
+                <Eye className="w-3.5 h-3.5 text-blue-600" />
+                <span>Crafted PDF Preview</span>
+              </>
+            ) : (
+              <>
+                <Edit3 className="w-3.5 h-3.5 text-slate-600" />
+                <span>Form Editor</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGenerateAndDownload}
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+            title="Official Word format matching template for monthly consolidation"
+          >
+            <Download className={`w-4 h-4 ${submitting ? 'animate-spin' : ''}`} />
+            <span>{submitting ? 'Generating...' : 'Download Word (.docx)'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadPDF}
+            disabled={generatingPdf}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+            title="Download beautifully crafted executive PDF"
+          >
+            <FileDown className={`w-4 h-4 ${generatingPdf ? 'animate-spin' : ''}`} />
+            <span>{generatingPdf ? 'Crafting PDF...' : 'Download PDF (.pdf)'}</span>
+          </button>
         </div>
       </div>
-    </div>
-
-    <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-      <button
-        type="button"
-        onClick={() => setViewMode(viewMode === 'form' ? 'preview' : 'form')}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
-      >
-        {viewMode === 'form' ? (
-          <>
-            <Eye className="w-3.5 h-3.5 text-blue-600" />
-            <span>Crafted PDF Preview</span>
-          </>
-        ) : (
-          <>
-            <Edit3 className="w-3.5 h-3.5 text-slate-600" />
-            <span>Form Editor</span>
-          </>
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={handleGenerateAndDownload}
-        disabled={submitting}
-        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
-        title="Official Word format matching template for monthly consolidation"
-      >
-        <Download className={`w-4 h-4 ${submitting ? 'animate-spin' : ''}`} />
-        <span>{submitting ? 'Generating...' : 'Word DOCX'}</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={handleDownloadPDF}
-        disabled={generatingPdf}
-        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
-        title="Download beautifully crafted executive PDF"
-      >
-        <FileDown className={`w-4 h-4 ${generatingPdf ? 'animate-spin' : ''}`} />
-        <span>{generatingPdf ? 'Crafting PDF...' : 'Download Crafted PDF'}</span>
-      </button>
-    </div>
-  </div>
 
     </div>
   );

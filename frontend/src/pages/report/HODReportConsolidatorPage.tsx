@@ -110,22 +110,23 @@ const DEPARTMENT_CONFIG: Record<string, { badge: string; accent: string }> = {
 };
 
 const EXECUTIVE_METRICS = [
-  { category: 'Journal Publications', civil: 1, cse: 2, ece: 2, eee: 2, mech: 2, hs: 1, total: 10 },
-  { category: 'Conference Papers', civil: 2, cse: 3, ece: 3, eee: 2, mech: 2, hs: 2, total: 14 },
-  { category: 'Patents Filed / Published', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
-  { category: 'Faculty Development (FDP) — Attended', civil: 1, cse: 1, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
-  { category: 'Faculty Development (FDP) — Organized', civil: 1, cse: 1, ece: 1, eee: 1, mech: 1, hs: 1, total: 6 },
-  { category: 'Student Development (SDP)', civil: 0, cse: 1, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
-  { category: 'Faculty Achievements & Awards', civil: 1, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 4 },
-  { category: 'Student Achievements & Awards', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 1, total: 4 },
-  { category: 'Certifications (NPTEL / Coursera)', civil: 4, cse: 7, ece: 5, eee: 5, mech: 4, hs: 4, total: 29 },
+  { category: '1a. Journal Publications', civil: 1, cse: 2, ece: 2, eee: 2, mech: 2, hs: 1, total: 10 },
+  { category: '1b. Conference Presentations', civil: 2, cse: 3, ece: 3, eee: 2, mech: 2, hs: 2, total: 14 },
+  { category: '2a. Patents', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
+  { category: '2b. Start-up Initiatives', civil: 0, cse: 1, ece: 1, eee: 0, mech: 0, hs: 0, total: 2 },
+  { category: '3a. FDPs Attended', civil: 1, cse: 1, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
+  { category: '3b. FDPs Organized', civil: 1, cse: 1, ece: 1, eee: 1, mech: 1, hs: 1, total: 6 },
+  { category: '4. Student Development Programs (SDPs)', civil: 0, cse: 1, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
+  { category: '5a. Faculty Achievements', civil: 1, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: '5b. Student Achievements', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 1, total: 4 },
+  { category: '5c. Certifications', civil: 4, cse: 7, ece: 5, eee: 5, mech: 4, hs: 4, total: 29 },
   { category: '6a. Meetings', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
-  { category: 'MoUs & Collaborations', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: '6b. Collaborations & MoUs', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
   { category: '7. Technical Association Activities', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
-  { category: '8. Syllabus Coverage Tracking', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
+  { category: '8. Syllabus coverage Report', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
   { category: '9. Club & Student Engagement Activity', civil: 0, cse: 2, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
-  { category: '10. NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
-  { category: '11. Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
+  { category: '10. NSS and Other Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
+  { category: '11. Additional/Other Relevant Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
 ];
 
 export const HODReportConsolidatorPage: React.FC = () => {

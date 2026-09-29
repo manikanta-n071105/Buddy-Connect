@@ -418,22 +418,23 @@ def append_row_xml(target_tbl_elem, source_tr_elem, s_no, dept_name):
 def create_summary_matrix_xml(departments, category_data):
     """Generates an XML table element for the Executive Summary Department Matrix."""
     CATEGORY_LABELS = [
-        ('1a_journals', 'Journal Publications'),
-        ('1b_conferences', 'Conference Papers'),
-        ('1c_patents', 'Patents Filed / Published'),
-        ('1d_entrepreneurship', 'Entrepreneurship & Start-ups'),
-        ('3a_fdp_attended', 'Faculty Development (FDP) — Attended'),
-        ('3b_fdp_organized', 'Faculty Development (FDP) — Organized'),
-        ('4_sdp', 'Student Development (SDP)'),
-        ('5a_faculty_achievements', 'Faculty Achievements & Awards'),
-        ('5b_student_achievements', 'Student Achievements & Awards'),
-        ('5c_certifications', 'Certifications (NPTEL / Coursera)'),
+        ('1a_journals', '1a. Journal Publications'),
+        ('1b_conferences', '1b. Conference Presentations'),
+        ('1c_patents', '2a. Patents'),
+        ('1d_entrepreneurship', '2b. Start-up Initiatives'),
+        ('3a_fdp_attended', '3a. FDPs Attended'),
+        ('3b_fdp_organized', '3b. FDPs Organized'),
+        ('4_sdp', '4. Student Development Programs (SDPs)'),
+        ('5a_faculty_achievements', '5a. Faculty Achievements'),
+        ('5b_student_achievements', '5b. Student Achievements'),
+        ('5c_certifications', '5c. Certifications'),
         ('6a_dept_meetings', '6a. Meetings'),
-        ('6b_mous', 'MoUs & Collaborations'),
+        ('6b_mous', '6b. Collaborations & MoUs'),
         ('8_tech_association', '7. Technical Association Activities'),
+        ('10_syllabus_general', '8. Syllabus coverage Report'),
         ('student_engagement', '9. Club & Student Engagement Activity'),
-        ('2_nss', '10. NSS & Extension Activities'),
-        ('7_additional_initiatives', '11. Additional Initiatives'),
+        ('2_nss', '10. NSS and Other Extension Activities'),
+        ('7_additional_initiatives', '11. Additional/Other Relevant Initiatives'),
     ]
     
     # Calculate counts per category per department / committee
