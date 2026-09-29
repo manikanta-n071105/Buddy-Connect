@@ -526,13 +526,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '5a_faculty_achievements', label: '5a. Faculty Achievements', count: (safeSections.facultyAchievements || []).length },
     { key: '5b_student_achievements', label: '5b. Student Achievements', count: (safeSections.studentAchievements || []).length },
     { key: '5c_certifications', label: '5c. Certifications', count: (safeSections.certifications || []).length },
-    { key: '6a_dept_meetings', label: '2b. Meetings', count: (safeSections.deptMeetings || []).length },
+    { key: '6a_dept_meetings', label: '6a. Meetings', count: (safeSections.deptMeetings || []).length },
     { key: '6b_mous', label: '6b. Collaborations & MoUs', count: (safeSections.mous || []).length },
-    { key: '8_tech_association', label: '8. Technical Association Activities', count: (safeSections.techAssociation || []).length },
-    { key: '10_syllabus', label: '10. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
-    { key: 'student_engagement', label: '11. Club & Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
-    { key: '2_nss', label: '2. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
-    { key: '7_additional', label: '12. Additional/Other Relevant Initiatives', count: (safeSections.additionalInitiatives || []).length },
+    { key: '8_tech_association', label: '7. Technical Association Activities', count: (safeSections.techAssociation || []).length },
+    { key: '10_syllabus', label: '8. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
+    { key: 'student_engagement', label: '9. Club & Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
+    { key: '2_nss', label: '10. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
+    { key: '7_additional', label: '11. Additional/Other Relevant Initiatives', count: (safeSections.additionalInitiatives || []).length },
   ];
 
   // Specific department filtering as requested:
@@ -1307,7 +1307,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 4: 2. NSS and Other Extension Activities */}
         {activeSectionKey === '2_nss' && (
           <SectionContainer
-            title="2. NSS and Other Extension Activities"
+            title="10. NSS and Other Extension Activities"
             description="Capture all social outreach and community service work undertaken by the department, including NSS camps, awareness drives, and extension events."
             count={safeSections.nss.length}
             onAdd={() => handleAddRow('nss')}
@@ -1605,7 +1605,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 10: 2b. Meetings */}
         {activeSectionKey === '6a_dept_meetings' && (
           <SectionContainer
-            title="2b. Meetings"
+            title="6a. Meetings"
             description="Details of official meetings: key decisions, date, and supporting documents."
             count={safeSections.deptMeetings.length}
             onAdd={() => handleAddRow('deptMeetings')}
@@ -1671,7 +1671,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 12: 7. Additional/Other Relevant Initiatives */}
         {activeSectionKey === '7_additional' && (
           <SectionContainer
-            title="7. Additional/Other Relevant Initiatives"
+            title="11. Additional/Other Relevant Initiatives"
             description="Alumni engagement, quality initiatives, special projects, or areas not elsewhere covered."
             count={safeSections.additionalInitiatives.length}
             onAdd={() => handleAddRow('additionalInitiatives')}
@@ -1706,7 +1706,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 13: 8. Technical Association Activities */}
         {activeSectionKey === '8_tech_association' && (
           <SectionContainer
-            title="8. Technical Association Activities"
+            title="7. Technical Association Activities"
             description="Organizes technical workshops, competitions, industrial visits, and seminars to enhance technical skills."
             count={safeSections.techAssociation.length}
             onAdd={() => handleAddRow('techAssociation')}
@@ -1764,7 +1764,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Table 15: 10. Syllabus coverage Report */}
         {activeSectionKey === '10_syllabus' && (
           <SectionContainer
-            title="10. Syllabus coverage Report (Summer Vacation holidays)"
+            title="8. Syllabus coverage Report (Summer Vacation holidays)"
             description="Tracking syllabus completion status across all classes and faculty."
             count={safeSections.syllabus.length}
             onAdd={() => handleAddRow('syllabus')}
@@ -1799,7 +1799,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Student Engagement Activity Table */}
         {activeSectionKey === 'student_engagement' && (
           <SectionContainer
-            title="11. Club & Student Engagement Activity"
+            title="9. Club & Student Engagement Activity"
             description="Record student workshops, guest lectures, expert talks, industrial visits, internships, mentoring sessions, and clubs."
             count={(safeSections.studentEngagement || []).length}
             onAdd={() => handleAddRow('studentEngagement')}

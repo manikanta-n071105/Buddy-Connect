@@ -119,13 +119,13 @@ const EXECUTIVE_METRICS = [
   { category: 'Faculty Achievements & Awards', civil: 1, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 4 },
   { category: 'Student Achievements & Awards', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 1, total: 4 },
   { category: 'Certifications (NPTEL / Coursera)', civil: 4, cse: 7, ece: 5, eee: 5, mech: 4, hs: 4, total: 29 },
-  { category: 'Meetings', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: '6a. Meetings', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
   { category: 'MoUs & Collaborations', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
-  { category: 'Technical Association Activities', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
-  { category: 'Syllabus Coverage Tracking', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
-  { category: '11. Club & Student Engagement Activity', civil: 0, cse: 2, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
-  { category: 'NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
-  { category: '12. Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
+  { category: '7. Technical Association Activities', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
+  { category: '8. Syllabus Coverage Tracking', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
+  { category: '9. Club & Student Engagement Activity', civil: 0, cse: 2, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
+  { category: '10. NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
+  { category: '11. Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
 ];
 
 export const HODReportConsolidatorPage: React.FC = () => {

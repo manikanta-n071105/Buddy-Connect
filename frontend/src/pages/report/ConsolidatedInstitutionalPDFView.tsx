@@ -137,13 +137,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     { key: 'facultyAchievements', label: '5A. Faculty Achievements & Honors' },
     { key: 'studentAchievements', label: '5B. Student Achievements & Awards' },
     { key: 'certifications', label: '5C. Certifications (NPTEL / Coursera)' },
-    { key: 'deptMeetings', label: '2B. Meetings' },
+    { key: 'deptMeetings', label: '6A. Meetings' },
     { key: 'mous', label: '6B. Collaborations & MoUs' },
-    { key: 'techAssociation', label: '8. Technical Association Events' },
-    { key: 'syllabus', label: '10. Syllabus Course Tracking' },
-    { key: 'studentEngagement', label: '11. Club & Student Engagement Activity' },
-    { key: 'nss', label: '2. NSS & Extension Activities' },
-    { key: 'additionalInitiatives', label: '12. Additional Department Initiatives' }
+    { key: 'techAssociation', label: '7. Technical Association Events' },
+    { key: 'syllabus', label: '8. Syllabus Course Tracking' },
+    { key: 'studentEngagement', label: '9. Club & Student Engagement Activity' },
+    { key: 'nss', label: '10. NSS & Extension Activities' },
+    { key: 'additionalInitiatives', label: '11. Additional Department Initiatives' }
   ];
 
   const deptTotals: Record<string, number> = { CIVIL: 0, CSE: 0, ECE: 0, EEE: 0, MECH: 0, 'H&S': 0 };
@@ -340,7 +340,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'nss',
-      title: '2. CONSOLIDATED NSS & COMMUNITY EXTENSION ACTIVITIES',
+      title: '10. CONSOLIDATED NSS & COMMUNITY EXTENSION ACTIVITIES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.nss || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -610,7 +610,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'deptMeetings',
-      title: '2B. CONSOLIDATED MEETINGS',
+      title: '6A. CONSOLIDATED MEETINGS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.deptMeetings || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -649,7 +649,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'additionalInitiatives',
-      title: '7. CONSOLIDATED ADDITIONAL DEPARTMENT INITIATIVES',
+      title: '11. CONSOLIDATED ADDITIONAL DEPARTMENT INITIATIVES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.additionalInitiatives || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -683,7 +683,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'techAssociation',
-      title: '8. CONSOLIDATED TECHNICAL ASSOCIATION ACTIVITIES',
+      title: '7. CONSOLIDATED TECHNICAL ASSOCIATION ACTIVITIES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.techAssociation || []).map(it => ({ ...it, deptCode: d.code }))),

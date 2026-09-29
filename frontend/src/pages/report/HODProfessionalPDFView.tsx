@@ -403,7 +403,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.deptMeetings.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            2B. MEETINGS ({sections.deptMeetings.length})
+            6A. MEETINGS ({sections.deptMeetings.length})
           </div>
           <div>
             {sections.deptMeetings.map((item, idx) => (
@@ -456,7 +456,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {(sections.additionalInitiatives.length > 0 || sections.techAssociation.length > 0) && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            7–8. TECHNICAL ASSOCIATIONS &amp; INNOVATION INITIATIVES
+            7. TECHNICAL ASSOCIATIONS &amp; INNOVATION INITIATIVES
           </div>
           <div>
             {sections.additionalInitiatives.map((item, idx) => (
@@ -477,7 +477,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.syllabus.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            10. SYLLABUS COVERAGE &amp; CURRICULUM PROGRESS ({sections.syllabus.length})
+            8. SYLLABUS COVERAGE &amp; CURRICULUM PROGRESS ({sections.syllabus.length})
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10.5px', border: '1px solid #cbd5e1' }}>
             <thead>
@@ -512,7 +512,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.studentEngagement && sections.studentEngagement.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            STUDENT ENGAGEMENT ACTIVITIES ({sections.studentEngagement.length})
+            9. CLUB &amp; STUDENT ENGAGEMENT ACTIVITIES ({sections.studentEngagement.length})
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10.5px', border: '1px solid #cbd5e1' }}>
             <thead>
@@ -556,7 +556,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.nss.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            NSS &amp; OTHER EXTENSION ACTIVITIES ({sections.nss.length})
+            10. NSS &amp; OTHER EXTENSION ACTIVITIES ({sections.nss.length})
           </div>
           <div>
             {sections.nss.map((item, idx) => (

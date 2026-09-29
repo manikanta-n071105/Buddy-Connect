@@ -428,12 +428,12 @@ def create_summary_matrix_xml(departments, category_data):
         ('5a_faculty_achievements', 'Faculty Achievements & Awards'),
         ('5b_student_achievements', 'Student Achievements & Awards'),
         ('5c_certifications', 'Certifications (NPTEL / Coursera)'),
-        ('6a_dept_meetings', 'Meetings'),
+        ('6a_dept_meetings', '6a. Meetings'),
         ('6b_mous', 'MoUs & Collaborations'),
-        ('8_tech_association', 'Technical Association Activities'),
-        ('student_engagement', '11. Club & Student Engagement Activity'),
-        ('2_nss', 'NSS & Extension Activities'),
-        ('7_additional_initiatives', '12. Additional Initiatives'),
+        ('8_tech_association', '7. Technical Association Activities'),
+        ('student_engagement', '9. Club & Student Engagement Activity'),
+        ('2_nss', '10. NSS & Extension Activities'),
+        ('7_additional_initiatives', '11. Additional Initiatives'),
     ]
     
     # Calculate counts per category per department / committee
