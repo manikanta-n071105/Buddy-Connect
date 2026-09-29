@@ -1,7 +1,216 @@
-import { ReportSectionsData } from './HODManualReportBuilder';
+import { ReportSectionsData, INITIAL_SECTIONS } from './HODManualReportBuilder';
 
 export const getDepartmentSampleData = (deptName: string): ReportSectionsData => {
   const dept = deptName.toLowerCase();
+
+  // SPECIALIZED PORTALS & COMMITTEES DEMO DATA
+  
+  // A. INNOVATION AND ENTREPRENEURSHIP (Fills only 2a Patents & 2b Start-up Initiatives)
+  if (dept.includes('innovation') || dept.includes('entrepreneurship')) {
+    return {
+      ...INITIAL_SECTIONS,
+      patents: [
+        {
+          title: 'Autonomous IoT-Based Agricultural Soil Health Analyzer with Cloud AI Decision Support',
+          inventors: 'Dr. C. Anil Kumar Reddy, Er. M. Sateesh, K. Likhitha (Final Year Student)',
+          applicants: 'Sanskrithi School of Engineering & Incubation Centre',
+          patentNumber: '202641038291 A',
+          status: 'Published',
+          awardedDate: '12/04/2026',
+          link: 'https://ipindiaservices.gov.in/publicsearch/patent202641038291'
+        },
+        {
+          title: 'High-Strength Eco-Friendly Geopolymer Composite Bricks Utilizing Refined Fly Ash & Slag',
+          inventors: 'K Siva Prasad, Dr. M. Sreenivasulu, Er. B. Ramesh',
+          applicants: 'Sanskrithi School of Engineering',
+          patentNumber: '202641041920 A',
+          status: 'Filed',
+          awardedDate: '24/04/2026',
+          link: 'https://ipindiaservices.gov.in/publicsearch/patent202641041920'
+        },
+        {
+          title: 'Low-Power Solar-Assisted Hybrid Brushless DC Motor Drive for Lightweight Electric Vehicles',
+          inventors: 'Mr. K. Gangadhar, Er. S. Kavitha, T. Rahul (Student)',
+          applicants: 'Sanskrithi School of Engineering',
+          patentNumber: '202641029104 B',
+          status: 'Published',
+          awardedDate: '05/04/2026',
+          link: 'https://ipindiaservices.gov.in/publicsearch/patent202641029104'
+        }
+      ],
+      entrepreneurship: [
+        {
+          title: 'SSE Institutional Startup Pitch Fest & Venture Funding Challenge 2026',
+          date: '08/04/2026',
+          type: 'Startup Competition & Angel Pitch',
+          participants: 'Student Innovators, Faculty Mentors & Alumni Entrepreneurs',
+          organizedBy: 'Institution’s Innovation Council (IIC) & EDC Cell',
+          mode: 'Offline (SSE Campus Auditorium)',
+          keyOutcomes: '2 campus startups received seed funding commitment of ₹2.5 Lakhs each; 6 ideas selected for incubation.',
+          participantsCount: '165',
+          mentorCoordinator: 'Dean / Convener - IIC & EDC',
+          status: 'Completed',
+          link: 'https://mic.gov.in/iic/sse-startup-pitch-2026'
+        },
+        {
+          title: 'Bootcamp on IPR Strategy, Commercialization & Venture Capital Fundraising',
+          date: '17/04/2026',
+          type: 'Hands-on Incubation Workshop',
+          participants: 'Students, Research Scholars & Aspiring Founders',
+          organizedBy: 'EDC Cell in collaboration with Andhra Angels Network',
+          mode: 'Hybrid',
+          keyOutcomes: '4 provisional patents drafted; 3 student enterprises registered on MSME Udyam portal.',
+          participantsCount: '120',
+          mentorCoordinator: 'Dr. Samba Sivaiah B',
+          status: 'Completed',
+          link: 'https://sseptp.org/edc/ipr-bootcamp-2026'
+        },
+        {
+          title: 'Student Enterprise Launch: AgroTech Sensor Solutions Pvt. Ltd.',
+          date: '25/04/2026',
+          type: 'Campus Company Incubation Launch',
+          participants: 'Student Founders & Faculty Mentors',
+          organizedBy: 'SSE Technology Business Incubator',
+          mode: 'Offline',
+          keyOutcomes: 'Incorporated under Ministry of Corporate Affairs; prototype deployed at 3 local organic farms.',
+          participantsCount: '45',
+          mentorCoordinator: 'Er. C. Harika',
+          status: 'Ongoing',
+          link: 'https://mca.gov.in/agrotech-sse-incorporation'
+        }
+      ]
+    };
+  }
+
+  // B. STUDENT ENGAGEMENT AND CLUBS (Fills only Student Engagement Activity)
+  if (dept.includes('student engagement') || dept.includes('clubs')) {
+    return {
+      ...INITIAL_SECTIONS,
+      studentEngagement: [
+        {
+          title: 'Hands-on Full-Stack AI & Cloud Web Development Bootcamp',
+          type: 'Workshop',
+          otherType: '',
+          noOfDays: '3 days',
+          dates: '2026-04-10 to 2026-04-12',
+          startDate: '2026-04-10',
+          endDate: '2026-04-12',
+          participantsCount: '145',
+          coordinator: 'Er. M. Sateesh (Coding Club Advisor)',
+          remarks: 'Over 35 working web applications developed and hosted on GitHub Pages.',
+          link: 'https://sseptp.org/clubs/ai-bootcamp-apr2026'
+        },
+        {
+          title: 'Industry 4.0 & Cyber-Physical Systems in Automobile Manufacturing',
+          type: 'Guest lecture',
+          otherType: '',
+          noOfDays: '1 day',
+          dates: '2026-04-16',
+          startDate: '2026-04-16',
+          endDate: '',
+          participantsCount: '190',
+          coordinator: 'Dr. P. Suresh (Mechanical Club Mentor)',
+          remarks: 'Delivered by Senior Systems Architect, Tata Motors; highly praised interactive Q&A session.',
+          link: 'https://sseptp.org/clubs/industry4-guest-lecture'
+        },
+        {
+          title: 'Technical Industrial Visit to ISRO Propulsion & Space Center (SDSC SHAR)',
+          type: 'Industrial visit',
+          otherType: '',
+          noOfDays: '2 days',
+          dates: '2026-04-20 to 2026-04-21',
+          startDate: '2026-04-20',
+          endDate: '2026-04-21',
+          participantsCount: '85',
+          coordinator: 'Er. K. Ramesh (Science & Tech Club)',
+          remarks: 'Students visited vehicle assembly building and satellite telemetry center; excellent practical exposure.',
+          link: 'https://sseptp.org/clubs/isro-visit-2026'
+        },
+        {
+          title: 'National 36-Hour Hackathon: Innovate India 2026',
+          type: 'Hackathon / Project Expo',
+          otherType: '',
+          noOfDays: '2 days',
+          dates: '2026-04-25 to 2026-04-26',
+          startDate: '2026-04-25',
+          endDate: '2026-04-26',
+          participantsCount: '220',
+          coordinator: 'Er. C. Harika & Student Council Lead',
+          remarks: '42 teams participated across AP & Karnataka; ₹50,000 cash prizes distributed to winners.',
+          link: 'https://sseptp.org/hackathon/innovate-india-2026'
+        }
+      ]
+    };
+  }
+
+  // C. NSS & COMMUNITY ENGAGEMENT (Fills only 2. NSS & Extension Activities)
+  if (dept.includes('nss') || dept.includes('community')) {
+    return {
+      ...INITIAL_SECTIONS,
+      nss: [
+        {
+          event: 'Mega Blood Donation & Comprehensive Free Health Screening Camp',
+          date: '07/04/2026',
+          venue: 'SSE Main Campus Auditorium & Red Cross Mobile Bus',
+          type: 'Blood Donation Camp',
+          participantsCount: '195',
+          typeOfParticipants: 'Students, Faculty & Village Youth Volunteers',
+          outcomes: '148 units of blood collected for Govt General Hospital Blood Bank; free hemoglobin tests conducted for 200+ villagers.',
+          coordinator: 'Dr. Samba Sivaiah B (NSS Programme Officer)',
+          link: 'https://sseptp.org/nss/blood-donation-apr2026'
+        },
+        {
+          event: 'Swachh Bharat Cleanliness & Single-Use Plastic Eradication Drive',
+          date: '15/04/2026',
+          venue: 'Adopted Rural Village - Chinna Kotla Panchayat',
+          type: 'Cleanliness Drive / Swachh Bharat',
+          participantsCount: '130',
+          typeOfParticipants: 'NSS Volunteers, Panchayat Representatives & Villagers',
+          outcomes: 'Cleared 2.5 km of village drainage, established solid waste collection pits, and distributed 500 cotton bags to households.',
+          coordinator: 'Er. B. Ramesh (Assistant NSS Officer)',
+          link: 'https://sseptp.org/nss/swachh-bharat-2026'
+        },
+        {
+          event: 'Green Campus Mega Tree Plantation & Environmental Awareness Drive (Vanam-Manam)',
+          date: '22/04/2026',
+          venue: 'SSE Botanical Reserve & Rural Highway Perimeter',
+          type: 'Tree Plantation / Environmental Drive',
+          participantsCount: '160',
+          typeOfParticipants: 'NSS Volunteers, Students & Local Community Leaders',
+          outcomes: 'Planted and geo-tagged 300 medicinal and shade saplings with drip irrigation support lines.',
+          coordinator: 'Dr. Samba Sivaiah B (NSS Programme Officer)',
+          link: 'https://sseptp.org/nss/tree-plantation-2026'
+        }
+      ]
+    };
+  }
+
+  // D. MINUTES OF THE MEETING (Fills only 6a. Department Meetings with Auto-Bullets)
+  if (dept.includes('minutes') || dept.includes('meeting')) {
+    return {
+      ...INITIAL_SECTIONS,
+      deptMeetings: [
+        {
+          date: '04/04/2026',
+          policyChanges: 'Introduced rigorous continuous evaluation rubric and mandatory peer reviews for final year projects.',
+          decisions: `• Reviewed end-semester question paper standard and verified Bloom's taxonomy mapping across all courses
+• Approved procurement of high-performance GPU compute cluster for Department AI & Robotics Lab
+• Finalized dates and external evaluation panel for major project demonstrations and viva voce
+• Resolved to organize structured 10-day bridge courses in Data Structures & Algorithms before campus recruitment season`,
+          link: 'https://sseptp.org/governance/academic-minutes-04-04-2026'
+        },
+        {
+          date: '21/04/2026',
+          policyChanges: 'Revised student industry internship monitoring policy with mandatory weekly digital log submissions.',
+          decisions: `• Scrutinized and approved summer internship offers received from top MNCs and Tier-1 research labs
+• Reviewed feedback from recent campus placement drives and approved industry-specific technical mock interview sessions
+• Finalized dates for upcoming Department Advisory Board (DAB) and Board of Studies (BoS) curriculum consultations
+• Established departmental student mentoring circles pairing high-performing seniors with junior students`,
+          link: 'https://sseptp.org/governance/academic-minutes-21-04-2026'
+        }
+      ]
+    };
+  }
 
   // 1. COMPUTER SCIENCE & ENGINEERING
   if (dept.includes('computer')) {

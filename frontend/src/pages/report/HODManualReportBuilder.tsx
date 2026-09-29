@@ -854,7 +854,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               title={`Load complete 16-section sample data tailored for ${department}`}
             >
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>Fill {department.includes('Civil') ? 'Civil' : department.includes('Computer') ? 'CSE' : department.includes('Communication') ? 'ECE' : department.includes('Electrical') ? 'EEE' : department.includes('Mechanical') ? 'Mech' : 'H&S'} Sample</span>
+              <span>Fill {department.includes('Civil') ? 'Civil' : department.includes('Computer') ? 'CSE' : department.includes('Communication') ? 'ECE' : department.includes('Electrical') ? 'EEE' : department.includes('Mechanical') ? 'Mech' : department.includes('Humanities') ? 'H&S' : department.includes('Innovation') ? 'I&E' : department.includes('Student Engagement') ? 'Clubs' : department.includes('NSS') ? 'NSS' : department.includes('Minutes') ? 'MoM' : 'Sample'} Sample</span>
             </button>
 
             <button
