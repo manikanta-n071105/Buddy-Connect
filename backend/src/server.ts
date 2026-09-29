@@ -21,6 +21,7 @@ import {
   initExamSeatingTables,
   initDepartmentalReportsTable
 } from './config/db';
+import { initReportDatabase } from './config/reportDb';
 import { initRedis } from './config/redis';
 
 import authRoutes from './routes/authRoutes';
@@ -146,6 +147,7 @@ initBloodDonationTables();
 initApprovalTables();
 initExamSeatingTables();
 initDepartmentalReportsTable();
+initReportDatabase();
 initCounselingTables().then(() => {
   logger.info('Database performance, Quiz, CR Feedback, Blood Donation & Counseling tables initialized.');
 }).catch(err => {

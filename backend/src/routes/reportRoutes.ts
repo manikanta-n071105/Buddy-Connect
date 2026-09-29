@@ -14,7 +14,10 @@ import {
   generateConsolidatedReportFromSubmissions,
   downloadDepartmentReport,
   generateManualDepartmentReport,
-  saveDepartmentJson
+  saveDepartmentJson,
+  saveDepartmentDraft,
+  getDepartmentReportData,
+  getAllDepartmentReportData
 } from '../controllers/reportController';
 import { authenticate } from '../middleware/auth';
 
@@ -28,13 +31,16 @@ router.post('/save-consolidated-pdf', saveConsolidatedPDF);
 router.post('/regenerate-consolidated', regenerateConsolidatedReport);
 router.post('/upload-and-consolidate', uploadAndConsolidateZip);
 
-// HOD Submission & Live Super Admin Consolidation Routes
+// HOD Submission & Live Super Admin Consolidation Routes (Dedicated Report Database)
 router.get('/department-submissions', getDepartmentSubmissions);
 router.delete('/department-submissions', clearDepartmentSubmissions);
 router.post('/clear-department-submissions', clearDepartmentSubmissions);
 router.post('/upload-department-report', uploadDepartmentReport);
 router.post('/generate-manual-report', generateManualDepartmentReport);
 router.post('/save-department-json', saveDepartmentJson);
+router.post('/save-department-draft', saveDepartmentDraft);
+router.get('/department-report-data', getDepartmentReportData);
+router.get('/all-department-report-data', getAllDepartmentReportData);
 router.post('/generate-from-submissions', generateConsolidatedReportFromSubmissions);
 router.get('/download-department/:id', downloadDepartmentReport);
 

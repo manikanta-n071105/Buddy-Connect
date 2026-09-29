@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { query } from '../config/db';
+import { reportQuery } from '../config/reportDb';
 import { AuthenticatedRequest } from '../types';
 import { cache } from '../utils/cache';
 
@@ -487,22 +488,17 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
     const path = await import('path');
     const projectRoot = path.resolve(process.cwd(), '..');
 
-    await query('DELETE FROM departmental_monthly_reports');
+    await reportQuery('DELETE FROM departmental_monthly_reports WHERE period = $1', [period]);
 
-    const hodReportsFolder = path.join(projectRoot, 'uploads', 'hod_reports');
+    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const hodReportsFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
     if (fs.existsSync(hodReportsFolder)) {
-      const subdirs = fs.readdirSync(hodReportsFolder);
-      for (const sub of subdirs) {
-        const subPath = path.join(hodReportsFolder, sub);
-        try {
-          if (fs.statSync(subPath).isDirectory()) {
-            const files = fs.readdirSync(subPath);
-            for (const f of files) {
-              try { fs.unlinkSync(path.join(subPath, f)); } catch (_) {}
-            }
-          }
-        } catch (_) {}
-      }
+      try {
+        const files = fs.readdirSync(hodReportsFolder);
+        for (const f of files) {
+          try { fs.unlinkSync(path.join(hodReportsFolder, f)); } catch (_) {}
+        }
+      } catch (_) {}
     }
 
     return res.json({
@@ -518,7 +514,7 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
   try {
     const period = (req.query.period as string) || 'April 2026';
 
-    const rowsRes = await query('SELECT * FROM departmental_monthly_reports WHERE period = $1 ORDER BY department ASC', [period]);
+    const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE period = $1 ORDER BY department ASC', [period]);
     const submittedMap = new Map();
     rowsRes.rows.forEach((r: any) => submittedMap.set(r.department, r));
 
@@ -527,14 +523,17 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
       return {
         code: d.code,
         name: d.name,
-        isSubmitted: !!sub,
+        isSubmitted: !!sub && sub.status === 'SUBMITTED',
+        hasDraft: !!sub && sub.status === 'DRAFT',
         id: sub?.id || null,
         hodName: sub?.hod_name || d.defaultHod,
+        submissionDate: sub?.submission_date || null,
         fileName: sub?.file_name || null,
-        fileSizeBytes: sub?.file_size_bytes || 0,
-        fileSizeFormatted: sub ? `${(sub.file_size_bytes / 1024).toFixed(1)} KB` : null,
+        fileSizeBytes: sub?.file_size_bytes ? parseInt(sub.file_size_bytes) : 0,
+        fileSizeFormatted: sub?.file_size_bytes ? `${(parseInt(sub.file_size_bytes) / 1024).toFixed(1)} KB` : null,
         itemsCount: sub?.items_count || 0,
         uploadedAt: sub?.uploaded_at || null,
+        updatedAt: sub?.updated_at || null,
         status: sub?.status || 'PENDING'
       };
     });
@@ -581,15 +580,15 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
     fs.writeFileSync(targetFilePath, buffer);
 
     const fileSizeBytes = buffer.length;
-    const itemsCount = 20; // Default estimate, updated on consolidation
+    const itemsCount = 20;
 
-    const upsertRes = await query(`
+    const upsertRes = await reportQuery(`
       INSERT INTO departmental_monthly_reports 
       (department, period, hod_name, file_name, file_path, file_size_bytes, items_count, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'SUBMITTED')
       ON CONFLICT (department, period) DO UPDATE 
       SET hod_name = EXCLUDED.hod_name, file_name = EXCLUDED.file_name, file_path = EXCLUDED.file_path, 
-          file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, updated_at = CURRENT_TIMESTAMP
+          file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, status = 'SUBMITTED', updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `, [department, period, hodName || 'HOD', fileName, targetFilePath, fileSizeBytes, itemsCount]);
 
@@ -611,7 +610,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     const { execFile } = await import('child_process');
     const projectRoot = path.resolve(process.cwd(), '..');
 
-    const submissionsRes = await query(
+    const submissionsRes = await reportQuery(
       'SELECT * FROM departmental_monthly_reports WHERE period = $1 AND status = \'SUBMITTED\'',
       [period]
     );
@@ -625,7 +624,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
 
     const filePaths = submissionsRes.rows
       .map((r: any) => r.file_path)
-      .filter((p: string) => fs.existsSync(p));
+      .filter((p: string) => p && fs.existsSync(p));
 
     if (filePaths.length === 0) {
       return res.status(400).json({
@@ -638,7 +637,6 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
 
-    // Pass the list of files to the script
     const args = [scriptPath, ...filePaths, reportPath];
 
     execFile(PYTHON_BIN, args, async (error, stdout, stderr) => {
@@ -647,7 +645,6 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
         return res.status(500).json({ success: false, message: 'Consolidation failed', error: stderr || error.message });
       }
 
-      // Also copy to root standard output file if April 2026
       const standardOut = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
       if (fs.existsSync(reportPath) && reportPath !== standardOut) {
         fs.copyFileSync(reportPath, standardOut);
@@ -673,13 +670,13 @@ export const downloadDepartmentReport = async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const fs = await import('fs');
-    const resDb = await query('SELECT * FROM departmental_monthly_reports WHERE id = $1', [id]);
+    const resDb = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE id = $1', [id]);
     if (resDb.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Report submission not found.' });
     }
 
     const sub = resDb.rows[0];
-    if (!fs.existsSync(sub.file_path)) {
+    if (!sub.file_path || !fs.existsSync(sub.file_path)) {
       return res.status(404).json({ success: false, message: 'Report file missing on server.' });
     }
 
@@ -724,7 +721,6 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
     const safeFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${Date.now()}.docx`;
     const targetFilePath = path.join(targetFolder, safeFileName);
 
-    // Write payload to scratch temporary file for Python script execution
     const scratchFolder = path.join(projectRoot, 'scratch');
     fs.mkdirSync(scratchFolder, { recursive: true });
     const tempJsonPath = path.join(scratchFolder, `dept_report_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
@@ -743,7 +739,6 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
     const scriptPath = path.join(projectRoot, 'scripts', 'generate_department_report.py');
 
     execFile(PYTHON_BIN, [scriptPath, tempJsonPath, targetFilePath], async (error, stdout, stderr) => {
-      // Clean up temp json
       try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) {}
 
       if (error) {
@@ -765,24 +760,42 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
       const fileStat = fs.statSync(targetFilePath);
       const fileSizeBytes = fileStat.size;
 
-      // Parse output from python script if available
       let totalActivities = 0;
       try {
         const parsed = JSON.parse(stdout.trim());
         totalActivities = parsed.total_activities || 0;
-      } catch (_) {}
+      } catch (_) {
+        totalActivities = Object.values(sections || {}).reduce((sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+      }
 
       let recordId: string | null = null;
       if (autoSubmit) {
-        const upsertRes = await query(`
+        const upsertRes = await reportQuery(`
           INSERT INTO departmental_monthly_reports 
-          (department, period, hod_name, file_name, file_path, file_size_bytes, items_count, status)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, 'SUBMITTED')
+          (department, period, hod_name, submission_date, sections_data, file_name, file_path, file_size_bytes, items_count, status, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'SUBMITTED', CURRENT_TIMESTAMP)
           ON CONFLICT (department, period) DO UPDATE 
-          SET hod_name = EXCLUDED.hod_name, file_name = EXCLUDED.file_name, file_path = EXCLUDED.file_path, 
-              file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, updated_at = CURRENT_TIMESTAMP
+          SET hod_name = EXCLUDED.hod_name,
+              submission_date = EXCLUDED.submission_date,
+              sections_data = EXCLUDED.sections_data,
+              file_name = EXCLUDED.file_name, 
+              file_path = EXCLUDED.file_path, 
+              file_size_bytes = EXCLUDED.file_size_bytes, 
+              items_count = EXCLUDED.items_count, 
+              status = 'SUBMITTED',
+              updated_at = CURRENT_TIMESTAMP
           RETURNING *
-        `, [department, period, hodName || 'HOD', safeFileName, targetFilePath, fileSizeBytes, totalActivities]);
+        `, [
+          department,
+          period,
+          hodName || 'HOD',
+          submissionDate || '',
+          JSON.stringify(sections || {}),
+          safeFileName,
+          targetFilePath,
+          fileSizeBytes,
+          totalActivities
+        ]);
 
         recordId = upsertRes.rows[0]?.id || null;
       }
@@ -792,7 +805,7 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
 
       return res.json({
         success: true,
-        message: `Successfully generated ${department} report with ${totalActivities} activities!`,
+        message: `Successfully generated ${department} report with ${totalActivities} activities! Saved to dedicated database.`,
         data: {
           id: recordId,
           department,
@@ -812,35 +825,144 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
   }
 };
 
-export const saveDepartmentJson = async (req: any, res: Response) => {
+/**
+ * Save draft / progress to dedicated reports database so HODs can edit whenever they want
+ */
+export const saveDepartmentDraft = async (req: any, res: Response) => {
   try {
-    const { department, period = 'April 2026', hodName, submissionDate, sections } = req.body;
-    if (!department) return res.status(400).json({ success: false, message: 'Department required' });
-
-    const fs = await import('fs');
-    const path = await import('path');
-    const projectRoot = path.resolve(process.cwd(), '..');
-    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
-    fs.mkdirSync(targetFolder, { recursive: true });
-
-    const cleanDept = department.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const jsonPath = path.join(targetFolder, `${cleanDept}_data.json`);
-    const payload = {
+    const {
       department,
-      period,
+      period = 'April 2026',
       hodName,
       submissionDate,
-      sections,
-      updatedAt: new Date().toISOString()
-    };
-    fs.writeFileSync(jsonPath, JSON.stringify(payload, null, 2), 'utf8');
+      sections = {},
+      status = 'DRAFT'
+    } = req.body;
 
-    return res.json({ success: true, message: 'Saved department JSON successfully' });
+    if (!department) {
+      return res.status(400).json({ success: false, message: 'Department is required.' });
+    }
+
+    const totalItems = Object.values(sections || {}).reduce(
+      (sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0),
+      0
+    );
+
+    const upsertRes = await reportQuery(`
+      INSERT INTO departmental_monthly_reports 
+      (department, period, hod_name, submission_date, sections_data, items_count, status, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      ON CONFLICT (department, period) DO UPDATE 
+      SET hod_name = COALESCE(EXCLUDED.hod_name, departmental_monthly_reports.hod_name),
+          submission_date = COALESCE(EXCLUDED.submission_date, departmental_monthly_reports.submission_date),
+          sections_data = EXCLUDED.sections_data,
+          items_count = EXCLUDED.items_count,
+          status = CASE WHEN departmental_monthly_reports.status = 'SUBMITTED' THEN 'SUBMITTED' ELSE EXCLUDED.status END,
+          updated_at = CURRENT_TIMESTAMP
+      RETURNING *
+    `, [
+      department,
+      period,
+      hodName || 'HOD',
+      submissionDate || '',
+      JSON.stringify(sections || {}),
+      totalItems,
+      status
+    ]);
+
+    return res.json({
+      success: true,
+      message: `Progress saved to dedicated database for ${department} (${period})!`,
+      data: {
+        id: upsertRes.rows[0].id,
+        department,
+        period,
+        status: upsertRes.rows[0].status,
+        updatedAt: upsertRes.rows[0].updated_at,
+        totalActivities: totalItems
+      }
+    });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+
+/**
+ * Fetch a department's saved report data from dedicated reports database for editing
+ */
+export const getDepartmentReportData = async (req: any, res: Response) => {
+  try {
+    const { department, period = 'April 2026' } = req.query;
+    if (!department) {
+      return res.status(400).json({ success: false, message: 'Department is required.' });
+    }
+
+    const rowRes = await reportQuery(
+      'SELECT * FROM departmental_monthly_reports WHERE department = $1 AND period = $2',
+      [department as string, period as string]
+    );
+
+    if (rowRes.rows.length === 0) {
+      return res.json({
+        success: true,
+        exists: false,
+        message: `No saved report found for ${department} in ${period}.`,
+        data: null
+      });
+    }
+
+    const row = rowRes.rows[0];
+    const sections = typeof row.sections_data === 'string' ? JSON.parse(row.sections_data) : (row.sections_data || {});
+
+    return res.json({
+      success: true,
+      exists: true,
+      data: {
+        id: row.id,
+        department: row.department,
+        period: row.period,
+        hodName: row.hod_name,
+        submissionDate: row.submission_date,
+        sections,
+        status: row.status,
+        itemsCount: row.items_count,
+        updatedAt: row.updated_at
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/**
+ * Fetch all department saved reports for a period for consolidation
+ */
+export const getAllDepartmentReportData = async (req: any, res: Response) => {
+  try {
+    const period = (req.query.period as string) || 'April 2026';
+    const rowsRes = await reportQuery(
+      'SELECT department, sections_data, hod_name, status, updated_at FROM departmental_monthly_reports WHERE period = $1',
+      [period]
+    );
+
+    const result: Record<string, any> = {};
+    rowsRes.rows.forEach((r: any) => {
+      const sec = typeof r.sections_data === 'string' ? JSON.parse(r.sections_data) : (r.sections_data || {});
+      result[r.department] = sec;
+    });
+
+    return res.json({
+      success: true,
+      period,
+      count: rowsRes.rows.length,
+      data: result
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const saveDepartmentJson = saveDepartmentDraft;
 
 
 

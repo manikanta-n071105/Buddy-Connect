@@ -29,12 +29,10 @@ import {
   Eye,
   X
 } from 'lucide-react';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { HODManualReportBuilder } from './HODManualReportBuilder';
-import { ConsolidatedInstitutionalPDFView } from './ConsolidatedInstitutionalPDFView';
+import { ConsolidatedInstitutionalPDFView, exportPagesToPdf } from './ConsolidatedInstitutionalPDFView';
 
 interface DepartmentStatus {
   code: string;
@@ -110,6 +108,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
   const [showConsolidateModal, setShowConsolidateModal] = useState(false);
   const [consolidatingPdf, setConsolidatingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [allDeptCustomData, setAllDeptCustomData] = useState<Record<string, any>>({});
 
   // HOD Upload Form State
   const [selectedDept, setSelectedDept] = useState('Computer Science & Engineering');
@@ -195,9 +194,15 @@ export const HODReportConsolidatorPage: React.FC = () => {
   const fetchSubmissions = async (reportingPeriod = period) => {
     try {
       setLoading(true);
-      const res = await api.get(`/reports/department-submissions?period=${encodeURIComponent(reportingPeriod)}`);
+      const [res, customDataRes] = await Promise.all([
+        api.get(`/reports/department-submissions?period=${encodeURIComponent(reportingPeriod)}`),
+        api.get(`/reports/all-department-report-data?period=${encodeURIComponent(reportingPeriod)}`).catch(() => ({ data: { data: {} } }))
+      ]);
       if (res.data.success) {
         setSubmissions(res.data.data);
+      }
+      if (customDataRes.data?.data) {
+        setAllDeptCustomData(customDataRes.data.data);
       }
     } catch (err: any) {
       console.error('Failed to fetch departmental submissions:', err);
@@ -268,37 +273,13 @@ export const HODReportConsolidatorPage: React.FC = () => {
       setConsolidatingPdf(true);
       toast.loading('Synthesizing official Consolidated Institutional PDF...', { id: 'consolidate-pdf' });
       
-      const element = document.getElementById('consolidated-pdf-document');
-      if (!element) {
-        toast.error('Consolidated PDF template element not found in DOM', { id: 'consolidate-pdf' });
-        return;
-      }
-
-      const opt = {
-        margin: [6, 6, 6, 6] as [number, number, number, number],
-        filename: `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          logging: false, 
-          letterRendering: true,
-          width: 750,
-          windowWidth: 1024,
-          scrollX: 0,
-          scrollY: 0
-        },
-        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr', 'table'] }
-      };
-
-      // @ts-ignore
-      const pdfBlob = await (html2pdf as any)().set(opt).from(element).outputPdf('blob');
+      const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+      const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
       
       const blobUrl = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -523,10 +504,34 @@ export const HODReportConsolidatorPage: React.FC = () => {
                 onChange={(e) => setPeriod(e.target.value)}
                 className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer text-xs"
               >
-                <option value="April 2026">April 2026</option>
-                <option value="May 2026">May 2026</option>
-                <option value="June 2026">June 2026</option>
-                <option value="August 2026">August 2026</option>
+                <optgroup label="Academic Year 2025–26">
+                  <option value="June 2025">June 2025</option>
+                  <option value="July 2025">July 2025</option>
+                  <option value="August 2025">August 2025</option>
+                  <option value="September 2025">September 2025</option>
+                  <option value="October 2025">October 2025</option>
+                  <option value="November 2025">November 2025</option>
+                  <option value="December 2025">December 2025</option>
+                  <option value="January 2026">January 2026</option>
+                  <option value="February 2026">February 2026</option>
+                  <option value="March 2026">March 2026</option>
+                  <option value="April 2026">April 2026</option>
+                  <option value="May 2026">May 2026</option>
+                </optgroup>
+                <optgroup label="Academic Year 2026–27">
+                  <option value="June 2026">June 2026</option>
+                  <option value="July 2026">July 2026</option>
+                  <option value="August 2026">August 2026</option>
+                  <option value="September 2026">September 2026</option>
+                  <option value="October 2026">October 2026</option>
+                  <option value="November 2026">November 2026</option>
+                  <option value="December 2026">December 2026</option>
+                  <option value="January 2027">January 2027</option>
+                  <option value="February 2027">February 2027</option>
+                  <option value="March 2027">March 2027</option>
+                  <option value="April 2027">April 2027</option>
+                  <option value="May 2027">May 2027</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -820,7 +825,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                 </div>
                 <div className="flex justify-center overflow-x-auto p-2">
                   <div className="w-full max-w-[800px]">
-                    <ConsolidatedInstitutionalPDFView period={period} id="consolidated-pdf-preview" />
+                    <ConsolidatedInstitutionalPDFView period={period} customData={allDeptCustomData} id="consolidated-pdf-preview" />
                   </div>
                 </div>
               </div>
@@ -1216,7 +1221,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
           width: '750px'
         }}
       >
-        <ConsolidatedInstitutionalPDFView period={period} />
+        <ConsolidatedInstitutionalPDFView period={period} customData={allDeptCustomData} />
       </div>
 
       {/* Interactive Consolidation Format Choice Modal */}

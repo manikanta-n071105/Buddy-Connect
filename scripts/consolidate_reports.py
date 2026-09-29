@@ -789,7 +789,7 @@ def consolidate_reports(report_paths, output_path, college_name="SANSKRITHI SCHO
     # 1. Update Master Document Header Paragraphs
     for p in master_doc.paragraphs[:10]:
         if 'Department:' in p.text:
-            p.text = f"Institution: {college_name} | CONSOLIDATED INSTITUTIONAL REPORT"
+            p.text = f"Institution: {college_name} | INSTITUTIONAL HOD PROGRESS REPORT"
             if p.runs:
                 p.runs[0].bold = True
                 p.runs[0].font.size = Pt(13)
@@ -801,7 +801,7 @@ def consolidate_reports(report_paths, output_path, college_name="SANSKRITHI SCHO
         elif 'HOD Name:' in p.text:
             p.text = "Authority: Principal / Academic Director & All Department HODs"
         elif 'Date of Submission:' in p.text:
-            p.text = "Compilation: Institutional Internal Quality Assurance Cell (IQAC)"
+            p.text = ""
 
     # Find where Section 1 begins to insert the Executive Summary Matrix
     first_major_section_elem = None

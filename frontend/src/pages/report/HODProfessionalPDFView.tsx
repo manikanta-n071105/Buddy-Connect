@@ -39,27 +39,6 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
 
   const totalActivities = Object.values(sections).reduce((acc, curr) => acc + curr.length, 0);
 
-  // All 16 standard format sections
-  const sectionRegistry = [
-    { key: 'journals', label: '1a. Journal Publications', data: sections.journals },
-    { key: 'conferences', label: '1b. Conference Presentations', data: sections.conferences },
-    { key: 'patents', label: '1c. Patents (Awarded / Published)', data: sections.patents },
-    { key: 'entrepreneurship', label: '1d. Entrepreneurship / Start-up Initiatives', data: sections.entrepreneurship },
-    { key: 'nss', label: '2. NSS & Extension Activities', data: sections.nss },
-    { key: 'fdp', label: '3. Faculty Development Programs (FDPs)', data: sections.fdp },
-    { key: 'sdp', label: '4. Student Development Programs (SDPs)', data: sections.sdp },
-    { key: 'facultyAchievements', label: '5a. Faculty Honors & Achievements', data: sections.facultyAchievements },
-    { key: 'studentAchievements', label: '5b. Student Honors & Achievements', data: sections.studentAchievements },
-    { key: 'certifications', label: '5c. Certifications (Faculty & Students)', data: sections.certifications },
-    { key: 'deptMeetings', label: '6a. Department Meetings', data: sections.deptMeetings },
-    { key: 'mous', label: '6b. Institutional Collaborations & MoUs', data: sections.mous },
-    { key: 'additionalInitiatives', label: '7. Additional / Relevant Department Initiatives', data: sections.additionalInitiatives },
-    { key: 'techAssociation', label: '8. Technical Association Activities', data: sections.techAssociation },
-    { key: 'iicCell', label: '9. Institution’s Innovation Council (IIC) Activities', data: sections.iicCell },
-    { key: 'syllabus', label: '10. Syllabus Coverage Report', data: sections.syllabus }
-  ];
-
-  const nilSections = sectionRegistry.filter(s => !s.data || s.data.length === 0);
 
   return (
     <div 
@@ -512,55 +491,6 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 5. Statutory Compliance Table Matching Theme */}
-      {nilSections.length > 0 && (
-        <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            STATUTORY COMPLIANCE SUMMARY (NIL SUBMISSIONS VERIFIED)
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10.5px', border: '1px solid #cbd5e1' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
-                <th style={{ width: '50%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d', borderRight: '1px solid #cbd5e1' }}>
-                  Statutory Area / Subsection
-                </th>
-                <th style={{ width: '20%', padding: '6px 8px', textAlign: 'center', fontWeight: 'bold', color: '#1a365d', borderRight: '1px solid #cbd5e1' }}>
-                  Verified Status
-                </th>
-                <th style={{ width: '30%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>
-                  Remarks / Compliance
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {nilSections.map((sec, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '5px 8px', fontWeight: 500, color: '#334155', borderRight: '1px solid #cbd5e1' }}>
-                    {sec.label}
-                  </td>
-                  <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'bold', color: '#64748b', borderRight: '1px solid #cbd5e1' }}>
-                    NIL
-                  </td>
-                  <td style={{ padding: '5px 8px', color: '#64748b', fontStyle: 'italic', fontSize: '10px' }}>
-                    No activities reported this cycle
-                  </td>
-                </tr>
-              ))}
-              <tr>
-                <td style={{ padding: '5px 8px', fontWeight: 500, color: '#334155', borderRight: '1px solid #cbd5e1' }}>
-                  11. Attendance Shortage
-                </td>
-                <td style={{ padding: '5px 8px', textAlign: 'center', fontWeight: 'bold', color: '#047857', borderRight: '1px solid #cbd5e1' }}>
-                  NORMAL
-                </td>
-                <td style={{ padding: '5px 8px', color: '#64748b', fontStyle: 'italic', fontSize: '10px' }}>
-                  Summer Vacation holidays observed
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {/* 6. Official Institutional Sign-Off Block — Bulletproof Table Alignment */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid #cbd5e1', marginTop: '16px' }} className="break-inside-avoid">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import { 
@@ -15,7 +15,9 @@ import {
   FileDown,
   Printer,
   Eye,
-  Edit3
+  Edit3,
+  Database,
+  Save
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -205,11 +207,91 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   const [submissionDate, setSubmissionDate] = useState('25/04/2026');
 
   const [sections, setSections] = useState<ReportSectionsData>(INITIAL_SECTIONS);
-  const [activeSectionKey, setActiveSectionKey] = useState<string>('1a_journals');
+
+  useEffect(() => {
+    if (currentPeriod) {
+      setPeriod(currentPeriod);
+    }
+  }, [currentPeriod]);
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [activeSectionKey, setActiveSectionKey] = useState<string>('1a_journals');
   const [viewMode, setViewMode] = useState<'form' | 'preview'>('form');
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{
+    saved: boolean;
+    lastSavedAt?: string;
+    status?: string;
+  }>({ saved: false });
+
+  // Fetch saved report from dedicated reports database
+  const loadSavedReportFromDb = async (dept = department, per = period) => {
+    try {
+      setLoadingDraft(true);
+      const res = await api.get(`/reports/department-report-data?department=${encodeURIComponent(dept)}&period=${encodeURIComponent(per)}`);
+      if (res.data?.success && res.data.exists && res.data.data) {
+        const d = res.data.data;
+        if (d.sections && typeof d.sections === 'object' && Object.keys(d.sections).length > 0) {
+          setSections(d.sections);
+        }
+        if (d.hodName) setHodName(d.hodName);
+        if (d.submissionDate) setSubmissionDate(d.submissionDate);
+        setDbStatus({
+          saved: true,
+          lastSavedAt: d.updatedAt,
+          status: d.status
+        });
+        toast.success(`Loaded saved report from dedicated database for ${dept} (${per})`, { id: 'db-load' });
+      } else {
+        setDbStatus({ saved: false });
+      }
+    } catch (e) {
+      console.warn('Could not fetch saved draft from report db:', e);
+    } finally {
+      setLoadingDraft(false);
+    }
+  };
+
+  useEffect(() => {
+    if (department && period) {
+      loadSavedReportFromDb(department, period);
+    }
+  }, [department, period]);
+
+  const handleSaveDraft = async () => {
+    try {
+      setSavingDraft(true);
+      const toastId = toast.loading(`Saving ${department} report to dedicated Neon database...`);
+      const payload = {
+        department,
+        period,
+        hodName,
+        submissionDate,
+        sections,
+        status: 'DRAFT'
+      };
+      const res = await api.post('/reports/save-department-draft', payload);
+      if (res.data.success) {
+        toast.dismiss(toastId);
+        toast.success(`Progress saved to dedicated reports database!`, { id: 'save-draft' });
+        setDbStatus({
+          saved: true,
+          lastSavedAt: res.data.data?.updatedAt || new Date().toISOString(),
+          status: res.data.data?.status || 'DRAFT'
+        });
+        if (onReportGenerated) onReportGenerated();
+      } else {
+        toast.dismiss(toastId);
+        toast.error(res.data.message || 'Save failed');
+      }
+    } catch (err: any) {
+      toast.error('Save error: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSavingDraft(false);
+    }
+  };
 
   const handleDepartmentChange = (dept: string) => {
     setDepartment(dept);
@@ -527,6 +609,17 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
             <button
               type="button"
+              onClick={handleSaveDraft}
+              disabled={savingDraft}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+              title="Save changes directly to dedicated reports database so you can resume or edit anytime"
+            >
+              <Database className={`w-3.5 h-3.5 ${savingDraft ? 'animate-spin' : ''}`} />
+              <span>{savingDraft ? 'Saving to DB...' : 'Save to Database'}</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleGenerateAndDownload}
               disabled={submitting}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
@@ -556,6 +649,36 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               <Printer className="w-3.5 h-3.5" />
               <span>Print</span>
             </button>
+          </div>
+        </div>
+
+        {/* Dedicated Database Status Indicator */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="font-bold text-slate-700">Dedicated Reports DB:</span>
+            <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px] flex items-center gap-1">
+              <Database className="w-3 h-3 text-emerald-600" />
+              Neon PostgreSQL Connected
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-slate-500 text-[11px]">
+            {loadingDraft ? (
+              <span className="text-blue-600 font-bold">Checking saved database entries...</span>
+            ) : dbStatus.saved ? (
+              <span className="text-slate-600">
+                Last saved in DB: <strong className="text-slate-900">{dbStatus.lastSavedAt ? new Date(dbStatus.lastSavedAt).toLocaleTimeString() : 'Recently'}</strong> 
+                <span className={`ml-2 px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${dbStatus.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-800'}`}>
+                  {dbStatus.status || 'DRAFT'}
+                </span>
+              </span>
+            ) : (
+              <span className="text-slate-400 italic">No saved database record for this month yet. Click &quot;Save to Database&quot; anytime.</span>
+            )}
           </div>
         </div>
 
