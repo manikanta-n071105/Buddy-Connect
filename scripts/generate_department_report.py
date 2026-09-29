@@ -432,6 +432,30 @@ def generate_department_report(data, output_path):
     total_activities += add_table_data(doc, headers_15, sections_data.get('syllabus', []), keys_15)
 
     # -------------------------------------------------------------
+    # Student Engagement Activity (Table)
+    # -------------------------------------------------------------
+    student_eng = sections_data.get('studentEngagement', [])
+    if student_eng or 'student engagement' in dept_name.lower():
+        add_major_heading("Student Engagement Activity")
+        doc.add_paragraph("Comprehensive record of student workshops, guest lectures, expert talks, industrial visits, internships, and engagement programs.")
+        headers_se = ['S.No', 'Title of the activity', 'Type of Activity', 'No of Days', 'Dates', 'No of Participants', 'Co-Ordinator', 'Remarks']
+        keys_se = ['title', 'type', 'noOfDays', 'dates', 'participantsCount', 'coordinator', 'remarks']
+        formatted_eng = []
+        for it in student_eng:
+            it_copy = dict(it)
+            if it_copy.get('type') == 'Other' and it_copy.get('otherType'):
+                it_copy['type'] = f"Other ({it_copy['otherType']})"
+            elif it_copy.get('otherType') and not it_copy.get('type'):
+                it_copy['type'] = it_copy['otherType']
+            if not it_copy.get('dates') and it_copy.get('startDate'):
+                if it_copy.get('endDate'):
+                    it_copy['dates'] = f"{it_copy['startDate']} to {it_copy['endDate']}"
+                else:
+                    it_copy['dates'] = it_copy['startDate']
+            formatted_eng.append(it_copy)
+        total_activities += add_table_data(doc, headers_se, formatted_eng, keys_se)
+
+    # -------------------------------------------------------------
     # 11. Attendance shortage (Summer Vacation holidays)
     # Exact paragraph in template without table
     # -------------------------------------------------------------

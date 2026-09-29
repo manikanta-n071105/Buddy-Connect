@@ -504,7 +504,8 @@ def parse_pdf_department_report(pdf_path):
                         'additionalInitiatives': '7_additional_initiatives',
                         'techAssociation': '8_tech_association',
                         'iicCell': '9_iic_cell',
-                        'syllabus': '10_syllabus_general'
+                        'syllabus': '10_syllabus_general',
+                        'studentEngagement': 'student_engagement'
                     }
 
                     for sec_prop, cat_key in mapping.items():
@@ -548,6 +549,16 @@ def parse_pdf_department_report(pdf_path):
                                 cells = [str(s_no), it.get('activity',''), it.get('date',''), it.get('description',''), it.get('partner',''), it.get('beneficiaries',''), it.get('outcomes',''), it.get('link','')]
                             elif sec_prop == 'syllabus':
                                 cells = [str(s_no), it.get('subject',''), it.get('yearSem',''), it.get('faculty',''), it.get('completed',''), it.get('pending',''), it.get('remarks','')]
+                            elif sec_prop == 'studentEngagement':
+                                type_val = it.get('type', '')
+                                if type_val == 'Other' and it.get('otherType'):
+                                    type_val = f"Other ({it.get('otherType')})"
+                                elif it.get('otherType') and not type_val:
+                                    type_val = it.get('otherType')
+                                date_val = it.get('dates', '')
+                                if not date_val and it.get('startDate'):
+                                    date_val = f"{it.get('startDate')} to {it.get('endDate')}" if it.get('endDate') else it.get('startDate')
+                                cells = [str(s_no), it.get('title',''), type_val, it.get('noOfDays',''), date_val, it.get('participantsCount',''), it.get('coordinator',''), it.get('remarks','')]
                             else:
                                 cells = [str(s_no)] + list(it.values())
                             
@@ -654,7 +665,8 @@ def parse_pdf_department_report(pdf_path):
                         'additionalInitiatives': '7_additional_initiatives',
                         'techAssociation': '8_tech_association',
                         'iicCell': '9_iic_cell',
-                        'syllabus': '10_syllabus_general'
+                        'syllabus': '10_syllabus_general',
+                        'studentEngagement': 'student_engagement'
                     }
 
                     for sec_prop, cat_key in mapping.items():
@@ -698,6 +710,16 @@ def parse_pdf_department_report(pdf_path):
                                 cells = [str(s_no), it.get('activity',''), it.get('date',''), it.get('description',''), it.get('partner',''), it.get('beneficiaries',''), it.get('outcomes',''), it.get('link','')]
                             elif sec_prop == 'syllabus':
                                 cells = [str(s_no), it.get('subject',''), it.get('yearSem',''), it.get('faculty',''), it.get('completed',''), it.get('pending',''), it.get('remarks','')]
+                            elif sec_prop == 'studentEngagement':
+                                type_val = it.get('type', '')
+                                if type_val == 'Other' and it.get('otherType'):
+                                    type_val = f"Other ({it.get('otherType')})"
+                                elif it.get('otherType') and not type_val:
+                                    type_val = it.get('otherType')
+                                date_val = it.get('dates', '')
+                                if not date_val and it.get('startDate'):
+                                    date_val = f"{it.get('startDate')} to {it.get('endDate')}" if it.get('endDate') else it.get('startDate')
+                                cells = [str(s_no), it.get('title',''), type_val, it.get('noOfDays',''), date_val, it.get('participantsCount',''), it.get('coordinator',''), it.get('remarks','')]
                             else:
                                 cells = [str(s_no)] + list(it.values())
                             

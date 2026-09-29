@@ -17,7 +17,8 @@ import {
   Eye,
   Edit3,
   Database,
-  Save
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -189,6 +190,19 @@ export interface ReportSectionsData {
     pending: string;
     remarks: string;
   }>;
+  studentEngagement?: Array<{
+    title: string;
+    type: string;
+    otherType?: string;
+    noOfDays: string;
+    dates: string;
+    startDate?: string;
+    endDate?: string;
+    participantsCount: string;
+    coordinator: string;
+    remarks: string;
+    link?: string;
+  }>;
 }
 
 export const INITIAL_SECTIONS: ReportSectionsData = {
@@ -209,7 +223,8 @@ export const INITIAL_SECTIONS: ReportSectionsData = {
   additionalInitiatives: [],
   techAssociation: [],
   iicCell: [],
-  syllabus: []
+  syllabus: [],
+  studentEngagement: []
 };
 
 export const normalizeSections = (raw: any): ReportSectionsData => {
@@ -247,6 +262,7 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     techAssociation: Array.isArray(raw.techAssociation) ? raw.techAssociation : [],
     iicCell: Array.isArray(raw.iicCell) ? raw.iicCell : [],
     syllabus: Array.isArray(raw.syllabus) ? raw.syllabus : [],
+    studentEngagement: Array.isArray(raw.studentEngagement) ? raw.studentEngagement : [],
   };
 };
 
@@ -304,6 +320,25 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   loadingDraftRef.current = loadingDraft;
   const activeFetchIdRef = React.useRef(0);
 
+  const parseDaysFromOption = (opt: string): number => {
+    if (!opt) return 1;
+    const o = opt.toLowerCase();
+    if (o.includes('2 week')) return 14;
+    if (o.includes('1 week')) return 7;
+    const match = o.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 1;
+  };
+
+  const calculateDiffDays = (startStr: string, endStr: string): number | null => {
+    if (!startStr || !endStr) return null;
+    const d1 = new Date(startStr);
+    const d2 = new Date(endStr);
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+    const diffTime = d2.getTime() - d1.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive count
+    return diffDays;
+  };
+
   const getDefaultHod = (dept: string) => {
     if (dept.includes('Civil')) return 'K Siva Prasad';
     if (dept.includes('Computer')) return 'Dr. Kethineni Vinod Kumar';
@@ -311,6 +346,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     if (dept.includes('Electrical')) return 'Mr. K. Gangadhar';
     if (dept.includes('Mechanical')) return 'C Anil Kumar Reddy';
     if (dept.includes('Humanities')) return 'Dr. Samba Sivaiah B';
+    if (dept.includes('Innovation')) return 'Dean / Convener - IIC & EDC';
+    if (dept.includes('Student Engagement')) return 'Convener - Student Engagement & Clubs';
+    if (dept.includes('NSS')) return 'NSS Programme Officer';
+    if (dept.includes('Minutes')) return 'Member Secretary - Academic Committee';
     return 'HOD';
   };
 
@@ -452,10 +491,11 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     // loadSavedReportFromDb runs automatically via useEffect, loading existing draft or fresh blank fields
   };
 
-  // Exact 16 tables matching the template format:
+  // Exact tables matching the template format:
   const safeSections = normalizeSections(sections);
 
-  const SECTION_TABS = [
+  // Full statutory master list of sections:
+  const ALL_SECTION_TABS = [
     { key: '1a_journals', label: '1a. Journal Publications', count: (safeSections.journals || []).length },
     { key: '1b_conferences', label: '1b. Conference Presentations', count: (safeSections.conferences || []).length },
     { key: '1c_patents', label: '1c. Patents', count: (safeSections.patents || []).length },
@@ -473,7 +513,37 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '8_tech_association', label: '8. Technical Association Activities', count: (safeSections.techAssociation || []).length },
     { key: '9_iic_cell', label: '9. IIC Cell (Institution’s Innovation Council)', count: (safeSections.iicCell || []).length },
     { key: '10_syllabus', label: '10. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
+    { key: 'student_engagement', label: 'Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
   ];
+
+  // Specific department filtering as requested:
+  // - Innovation And Entrepreneurship: only 1c and 1d
+  // - Student Engagement and Clubs: only Student Engagement Activity
+  // - NSS & Community Engagement: only NSS & Extension Activities
+  // - Minutes of the Meeting: only 6a Department Meetings
+  const SECTION_TABS = React.useMemo(() => {
+    if (department === 'Innovation And Entrepreneurship') {
+      return ALL_SECTION_TABS.filter(t => t.key === '1c_patents' || t.key === '1d_entrepreneurship');
+    }
+    if (department === 'Student Engagement and Clubs') {
+      return ALL_SECTION_TABS.filter(t => t.key === 'student_engagement');
+    }
+    if (department === 'NSS & Community Engagement') {
+      return ALL_SECTION_TABS.filter(t => t.key === '2_nss');
+    }
+    if (department === 'Minutes of the Meeting') {
+      return ALL_SECTION_TABS.filter(t => t.key === '6a_dept_meetings');
+    }
+    return ALL_SECTION_TABS;
+  }, [department, safeSections]);
+
+  // Keep activeSectionKey focused on an allowed tab when department changes
+  useEffect(() => {
+    const isCurrentValid = SECTION_TABS.some(t => t.key === activeSectionKey);
+    if (!isCurrentValid && SECTION_TABS.length > 0) {
+      setActiveSectionKey(SECTION_TABS[0].key);
+    }
+  }, [SECTION_TABS, activeSectionKey]);
 
   const totalActivities = Object.values(safeSections).reduce((acc, curr) => acc + (Array.isArray(curr) ? curr.length : 0), 0);
 
@@ -548,6 +618,24 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           break;
         case 'syllabus':
           copy.syllabus = [...(copy.syllabus || []), { subject: '', yearSem: '', faculty: '', completed: '', pending: '', remarks: '' }];
+          break;
+        case 'studentEngagement':
+          copy.studentEngagement = [
+            ...(copy.studentEngagement || []),
+            {
+              title: '',
+              type: 'Workshop',
+              otherType: '',
+              noOfDays: '1 day',
+              dates: '',
+              startDate: '',
+              endDate: '',
+              participantsCount: '',
+              coordinator: '',
+              remarks: '',
+              link: ''
+            }
+          ];
           break;
       }
       return copy;
@@ -854,12 +942,20 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               onChange={(e) => handleDepartmentChange(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
             >
-              <option value="Civil Engineering">Civil Engineering</option>
-              <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-              <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
-              <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering</option>
-              <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Humanities & Sciences">Humanities & Sciences</option>
+              <optgroup label="Academic Departments">
+                <option value="Civil Engineering">Civil Engineering</option>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
+                <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Humanities & Sciences">Humanities & Sciences</option>
+              </optgroup>
+              <optgroup label="Specialized Portals & Committees">
+                <option value="Innovation And Entrepreneurship">Innovation And Entrepreneurship</option>
+                <option value="Student Engagement and Clubs">Student Engagement and Clubs</option>
+                <option value="NSS & Community Engagement">NSS & Community Engagement</option>
+                <option value="Minutes of the Meeting">Minutes of the Meeting</option>
+              </optgroup>
             </select>
           </div>
 
@@ -1485,7 +1581,12 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                     <FieldInput label="Policy Changes (if any)" value={item.policyChanges} onChange={(v) => handleUpdateField('deptMeetings', idx, 'policyChanges', v)} />
                   </div>
                   <div className="md:col-span-2">
-                    <FieldInput label="Main Decisions/Topics Discussed" value={item.decisions} onChange={(v) => handleUpdateField('deptMeetings', idx, 'decisions', v)} />
+                    <BulletTextarea
+                      label="Main Decisions/Topics Discussed"
+                      value={item.decisions}
+                      onChange={(v) => handleUpdateField('deptMeetings', idx, 'decisions', v)}
+                      placeholder="• Discussed curriculum progress&#10;• Finalized schedule for project reviews"
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <FieldInput label="Minutes/Proof Link" value={item.link} onChange={(v) => handleUpdateField('deptMeetings', idx, 'link', v)} />
@@ -1671,6 +1772,222 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 </div>
               </EntryCard>
             ))}
+          </SectionContainer>
+        )}
+
+        {/* Student Engagement Activity Table */}
+        {activeSectionKey === 'student_engagement' && (
+          <SectionContainer
+            title="Student Engagement Activity"
+            description="Record student workshops, guest lectures, expert talks, industrial visits, internships, mentoring sessions, and clubs."
+            count={(safeSections.studentEngagement || []).length}
+            onAdd={() => handleAddRow('studentEngagement')}
+          >
+            {(safeSections.studentEngagement || []).map((item, idx) => {
+              const expectedDays = parseDaysFromOption(item.noOfDays);
+              const isMultiDay = item.noOfDays !== '1 day';
+              const actualDays = (item.startDate && item.endDate) ? calculateDiffDays(item.startDate, item.endDate) : null;
+              const isInvalidDuration = Boolean(isMultiDay && actualDays !== null && actualDays !== expectedDays);
+
+              const standardTypes = [
+                'FDP',
+                'Seminar',
+                'Guest lecture',
+                'Expert lecture',
+                'Industrial visit',
+                'Internship',
+                'Mentoring session',
+                'Conference',
+                'Workshop',
+                'Value Added Course',
+                'NSS / Extension Activity',
+                'Technical Association Activity',
+                'Hackathon / Project Expo',
+                'Certification Course',
+                'Field Trip',
+                'Club Event / Cultural Activity',
+                'Other'
+              ];
+
+              const isOtherType = item.type === 'Other' || (!standardTypes.includes(item.type) && Boolean(item.type));
+
+              return (
+                <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentEngagement', idx)}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    {/* Title */}
+                    <div className="md:col-span-2">
+                      <FieldInput
+                        label="Title of the activity *"
+                        value={item.title}
+                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'title', v)}
+                      />
+                    </div>
+
+                    {/* Type of Activity Dropdown */}
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                        Type of activity *
+                      </label>
+                      <select
+                        value={standardTypes.includes(item.type) ? item.type : 'Other'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleUpdateField('studentEngagement', idx, 'type', val);
+                          if (val !== 'Other') {
+                            handleUpdateField('studentEngagement', idx, 'otherType', '');
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                      >
+                        {standardTypes.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* If Other Type is selected, show custom input */}
+                    {isOtherType && (
+                      <div className="md:col-span-3">
+                        <FieldInput
+                          label="Specify Other Activity Type (Apart from list) *"
+                          value={item.otherType || (item.type !== 'Other' ? item.type : '')}
+                          onChange={(v) => {
+                            handleUpdateField('studentEngagement', idx, 'otherType', v);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* No of Days */}
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                        No of Days *
+                      </label>
+                      <select
+                        value={item.noOfDays || '1 day'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleUpdateField('studentEngagement', idx, 'noOfDays', val);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                      >
+                        <option value="1 day">1 day</option>
+                        <option value="2 days">2 days</option>
+                        <option value="3 days">3 days</option>
+                        <option value="4 days">4 days</option>
+                        <option value="5 days">5 days</option>
+                        <option value="1 week">1 week (7 days)</option>
+                        <option value="2 weeks">2 weeks (14 days)</option>
+                      </select>
+                    </div>
+
+                    {/* Date Inputs based on No of Days */}
+                    {!isMultiDay ? (
+                      <div className="md:col-span-2">
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Date of Activity *
+                        </label>
+                        <input
+                          type="date"
+                          value={item.startDate || item.dates || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleUpdateField('studentEngagement', idx, 'startDate', val);
+                            handleUpdateField('studentEngagement', idx, 'endDate', '');
+                            handleUpdateField('studentEngagement', idx, 'dates', val);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all"
+                        />
+                      </div>
+                    ) : (
+                      <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                            Start Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={item.startDate || ''}
+                            onChange={(e) => {
+                              const s = e.target.value;
+                              handleUpdateField('studentEngagement', idx, 'startDate', s);
+                              const fullSpan = s && item.endDate ? `${s} to ${item.endDate}` : s;
+                              handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
+                            }}
+                            className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                            End Date *
+                          </label>
+                          <input
+                            type="date"
+                            value={item.endDate || ''}
+                            onChange={(e) => {
+                              const endD = e.target.value;
+                              handleUpdateField('studentEngagement', idx, 'endDate', endD);
+                              const fullSpan = item.startDate && endD ? `${item.startDate} to ${endD}` : endD;
+                              handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
+                            }}
+                            className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Date Duration Invalidation Warning */}
+                    {isInvalidDuration && (
+                      <div className="md:col-span-3 p-3 rounded-xl bg-red-50 border border-red-300 text-red-700 text-xs flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-bold">Invalid Duration Detected</div>
+                          <div>
+                            Selected duration span covers <strong>{actualDays} day{actualDays === 1 ? '' : 's'}</strong> ({item.startDate} to {item.endDate}), but "No of Days" is specified as <strong>{item.noOfDays} ({expectedDays} days)</strong>. Please correct the dates or change the number of days to match.
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No of Participants */}
+                    <div>
+                      <FieldInput
+                        label="No of Participants"
+                        value={item.participantsCount}
+                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'participantsCount', v)}
+                      />
+                    </div>
+
+                    {/* Coordinator */}
+                    <div>
+                      <FieldInput
+                        label="Co-Ordinator"
+                        value={item.coordinator}
+                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'coordinator', v)}
+                      />
+                    </div>
+
+                    {/* Remarks */}
+                    <div>
+                      <FieldInput
+                        label="Co-Ordinator Remarks"
+                        value={item.remarks}
+                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'remarks', v)}
+                      />
+                    </div>
+
+                    {/* Proof / Link */}
+                    <div className="md:col-span-3">
+                      <FieldInput
+                        label="Proof / Certificate Link (Optional)"
+                        value={item.link || ''}
+                        onChange={(v) => handleUpdateField('studentEngagement', idx, 'link', v)}
+                      />
+                    </div>
+                  </div>
+                </EntryCard>
+              );
+            })}
           </SectionContainer>
         )}
 
@@ -1873,5 +2190,80 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange }) => (
     />
   </div>
 );
+
+interface BulletTextareaProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+}
+
+const BulletTextarea: React.FC<BulletTextareaProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder = '• Enter key decisions...',
+  rows = 4
+}) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const currentVal = value || '';
+      const before = currentVal.substring(0, start);
+      const after = currentVal.substring(end);
+
+      // Check if current line is already an empty bullet "• " or "•"
+      const lines = before.split('\n');
+      const currentLine = lines[lines.length - 1];
+      if (currentLine.trim() === '•') {
+        // Exit bullet mode on double enter
+        const newBefore = lines.slice(0, -1).join('\n') + (lines.length > 1 ? '\n' : '');
+        const updated = newBefore + after;
+        onChange(updated);
+        setTimeout(() => {
+          target.selectionStart = target.selectionEnd = newBefore.length;
+        }, 0);
+        return;
+      }
+
+      const insertion = '\n• ';
+      const updated = before + insertion + after;
+      onChange(updated);
+      setTimeout(() => {
+        target.selectionStart = target.selectionEnd = start + insertion.length;
+      }, 0);
+    }
+  };
+
+  const handleFocus = () => {
+    if (!value || value.trim() === '') {
+      onChange('• ');
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-bold text-slate-600 block">{label}</label>
+        <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+          Press Enter for auto-bullet (•)
+        </span>
+      </div>
+      <textarea
+        rows={rows}
+        value={value}
+        onFocus={handleFocus}
+        onKeyDown={handleKeyDown}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all placeholder:text-slate-400 font-sans"
+      />
+    </div>
+  );
+};
 
 export default HODManualReportBuilder;

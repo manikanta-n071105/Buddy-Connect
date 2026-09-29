@@ -536,6 +536,49 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
+      {/* Student Engagement Activity Table Matching Theme */}
+      {sections.studentEngagement && sections.studentEngagement.length > 0 && (
+        <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
+          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+            STUDENT ENGAGEMENT ACTIVITIES ({sections.studentEngagement.length})
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10.5px', border: '1px solid #cbd5e1' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                <th style={{ width: '36px', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>S.No</th>
+                <th style={{ width: '22%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Title of Activity</th>
+                <th style={{ width: '14%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Type of Activity</th>
+                <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Days</th>
+                <th style={{ width: '16%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Dates</th>
+                <th style={{ width: '8%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Part.</th>
+                <th style={{ width: '14%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Co-Ordinator</th>
+                <th style={{ width: '16%', padding: '6px 6px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sections.studentEngagement.map((item, idx) => {
+                const displayType = (item.type === 'Other' && item.otherType) 
+                  ? `Other (${item.otherType})` 
+                  : (item.otherType || item.type || '-');
+                const displayDates = item.dates || (item.startDate && item.endDate ? `${item.startDate} to ${item.endDate}` : item.startDate || '-');
+                return (
+                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                    <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#334155' }}>{idx + 1}</td>
+                    <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#0f172a' }}>{item.title || '-'}</td>
+                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{displayType}</td>
+                    <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#334155' }}>{item.noOfDays || '1 day'}</td>
+                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{displayDates}</td>
+                    <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#047857' }}>{item.participantsCount || '-'}</td>
+                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{item.coordinator || '-'}</td>
+                    <td style={{ padding: '6px 6px', color: '#475569', fontStyle: 'italic', fontSize: '10px' }}>{item.remarks || '-'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
 
       {/* 6. Official Institutional Sign-Off Block — Bulletproof Table Alignment */}
       <div style={{ paddingTop: '16px', borderTop: '1px solid #cbd5e1', marginTop: '16px' }} className="break-inside-avoid">
