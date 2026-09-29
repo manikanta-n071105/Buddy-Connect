@@ -117,7 +117,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     { key: 'patents', label: '1C. Patents Filed / Awarded' },
     { key: 'entrepreneurship', label: '1D. Entrepreneurship & Start-up' },
     { key: 'nss', label: '2. NSS & Extension Activities' },
-    { key: 'fdp', label: '3. Faculty Development (FDP)' },
+    { key: 'fdpAttended', label: '3A. Faculty Development (FDP) — Attended' },
+    { key: 'fdpOrganized', label: '3B. Faculty Development (FDP) — Organized' },
     { key: 'sdp', label: '4. Student Development (SDP)' },
     { key: 'facultyAchievements', label: '5A. Faculty Achievements & Honors' },
     { key: 'studentAchievements', label: '5B. Student Achievements & Awards' },
@@ -366,11 +367,11 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       ]
     },
     {
-      key: 'fdp',
-      title: '3. CONSOLIDATED FACULTY DEVELOPMENT PROGRAMS (FDPS)',
+      key: 'fdpAttended',
+      title: '3A. CONSOLIDATED FACULTY DEVELOPMENT PROGRAMS (ATTENDED)',
       tall: false,
       rowsPerPage: 10,
-      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdp || []).map(it => ({ ...it, deptCode: d.code }))),
+      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpAttended || []).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
@@ -392,26 +393,63 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>{it.organizingBody}</div>
-              <div style={{ color: '#475569', fontSize: '8px' }}>Dates: {it.dates}</div>
+              <div style={{ color: '#475569', fontSize: '8px' }}>Dates: {it.dates} ({it.mode})</div>
             </div>
           )
         },
         { 
-          header: 'Mode & Role', 
-          width: '12%', 
-          align: 'center', 
+          header: 'Faculty Attended & Proof', 
+          width: '26%', 
+          align: 'left', 
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
-              <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.role}</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>{it.mode}</div>
+              <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyAttended}</div>
+              {it.link && <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>}
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      key: 'fdpOrganized',
+      title: '3B. CONSOLIDATED FACULTY DEVELOPMENT PROGRAMS (ORGANIZED)',
+      tall: false,
+      rowsPerPage: 10,
+      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpOrganized || []).map(it => ({ ...it, deptCode: d.code }))),
+      columns: [
+        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { 
+          header: 'Program Title & Type', 
+          width: '32%', 
+          align: 'left', 
+          render: (it) => (
+            <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>
+              <div>{it.title}</div>
+              <div style={{ color: '#64748b', fontSize: '8px' }}>Type: {it.type} &bull; {it.dates} ({it.mode})</div>
             </div>
           )
         },
         { 
-          header: 'Key Outcomes', 
-          width: '14%', 
+          header: 'Resource Person Details', 
+          width: '30%', 
           align: 'left', 
-          render: (it) => <div style={{ color: '#475569', fontSize: '8.5px', lineHeight: 1.35 }}>{it.keyOutcomes}</div>
+          render: (it) => (
+            <div style={{ color: '#334155', fontSize: '8.5px', lineHeight: 1.35 }}>
+              {it.resourcePersonDetails}
+            </div>
+          )
+        },
+        { 
+          header: 'Coordinators & Proof', 
+          width: '24%', 
+          align: 'left', 
+          render: (it) => (
+            <div style={{ color: '#334155', lineHeight: 1.35 }}>
+              <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyCoordinators}</div>
+              {it.link && <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>}
+            </div>
+          )
         }
       ]
     },

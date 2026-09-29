@@ -20,7 +20,10 @@ def normalize_key(text):
     if 'patent' in t: return '1c_patents'
     if 'entrepreneurship' in t or 'start-up' in t: return '1d_entrepreneurship'
     if 'nss' in t or 'extension' in t: return '2_nss'
-    if 'fdp' in t or 'faculty development' in t: return '3_fdp'
+    if 'fdp' in t or 'faculty development' in t:
+        if 'organized' in t or 'organise' in t:
+            return '3b_fdp_organized'
+        return '3a_fdp_attended'
     if 'sdp' in t or 'student development' in t: return '4_sdp'
     if 'student achievements' in t or ('student' in t and 'achievement' in t): return '5b_student_achievements'
     if 'faculty achievements' in t or ('faculty' in t and 'achievement' in t): return '5a_faculty_achievements'
@@ -352,7 +355,8 @@ def create_summary_matrix_xml(departments, category_data):
         ('1c_patents', 'Patents Filed / Published'),
         ('1d_entrepreneurship', 'Entrepreneurship & Start-ups'),
         ('2_nss', 'NSS & Extension Activities'),
-        ('3_fdp', 'Faculty Development (FDP)'),
+        ('3a_fdp_attended', 'Faculty Development (FDP) — Attended'),
+        ('3b_fdp_organized', 'Faculty Development (FDP) — Organized'),
         ('4_sdp', 'Student Development (SDP)'),
         ('5a_faculty_achievements', 'Faculty Achievements & Awards'),
         ('5b_student_achievements', 'Student Achievements & Awards'),
@@ -487,7 +491,9 @@ def parse_pdf_department_report(pdf_path):
                         'patents': '1c_patents',
                         'entrepreneurship': '1d_entrepreneurship',
                         'nss': '2_nss',
-                        'fdp': '3_fdp',
+                        'fdpAttended': '3a_fdp_attended',
+                        'fdpOrganized': '3b_fdp_organized',
+                        'fdp': '3a_fdp_attended',
                         'sdp': '4_sdp',
                         'facultyAchievements': '5a_faculty_achievements',
                         'studentAchievements': '5b_student_achievements',
@@ -517,8 +523,10 @@ def parse_pdf_department_report(pdf_path):
                                 cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('participants',''), it.get('organizedBy',''), it.get('mode',''), it.get('keyOutcomes',''), it.get('link','')]
                             elif sec_prop == 'nss':
                                 cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('venue',''), it.get('type',''), it.get('participantsCount',''), it.get('typeOfParticipants',''), it.get('outcomes',''), it.get('coordinator',''), it.get('link','')]
-                            elif sec_prop == 'fdp':
-                                cells = [str(s_no), it.get('title',''), it.get('type',''), it.get('dates',''), it.get('organizingBody',''), it.get('mode',''), it.get('role',''), it.get('keyOutcomes',''), it.get('link','')]
+                            elif sec_prop in ('fdpAttended', 'fdp'):
+                                cells = [str(s_no), it.get('title',''), it.get('type',''), it.get('dates',''), it.get('organizingBody',''), it.get('mode',''), it.get('facultyAttended','') or it.get('role',''), it.get('link','')]
+                            elif sec_prop == 'fdpOrganized':
+                                cells = [str(s_no), it.get('title',''), it.get('type',''), it.get('dates',''), it.get('deptOrganized',''), it.get('mode',''), it.get('resourcePersonDetails',''), it.get('facultyCoordinators',''), it.get('link','')]
                             elif sec_prop == 'sdp':
                                 cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('resourcePerson',''), it.get('mode',''), it.get('keyOutcomes',''), it.get('participantsCount',''), it.get('coordinator',''), it.get('link','')]
                             elif sec_prop == 'facultyAchievements':
@@ -632,7 +640,9 @@ def parse_pdf_department_report(pdf_path):
                         'patents': '1c_patents',
                         'entrepreneurship': '1d_entrepreneurship',
                         'nss': '2_nss',
-                        'fdp': '3_fdp',
+                        'fdpAttended': '3a_fdp_attended',
+                        'fdpOrganized': '3b_fdp_organized',
+                        'fdp': '3a_fdp_attended',
                         'sdp': '4_sdp',
                         'facultyAchievements': '5a_faculty_achievements',
                         'studentAchievements': '5b_student_achievements',
@@ -662,8 +672,10 @@ def parse_pdf_department_report(pdf_path):
                                 cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('participants',''), it.get('organizedBy',''), it.get('mode',''), it.get('keyOutcomes',''), it.get('link','')]
                             elif sec_prop == 'nss':
                                 cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('venue',''), it.get('type',''), it.get('participantsCount',''), it.get('typeOfParticipants',''), it.get('outcomes',''), it.get('coordinator',''), it.get('link','')]
-                            elif sec_prop == 'fdp':
-                                cells = [str(s_no), it.get('title',''), it.get('type',''), it.get('dates',''), it.get('organizingBody',''), it.get('mode',''), it.get('role',''), it.get('keyOutcomes',''), it.get('link','')]
+                            elif sec_prop in ('fdpAttended', 'fdp'):
+                                cells = [str(s_no), it.get('title',''), it.get('type',''), it.get('dates',''), it.get('organizingBody',''), it.get('mode',''), it.get('facultyAttended','') or it.get('role',''), it.get('link','')]
+                            elif sec_prop == 'fdpOrganized':
+                                cells = [str(s_no), it.get('title',''), it.get('type',''), it.get('dates',''), it.get('deptOrganized',''), it.get('mode',''), it.get('resourcePersonDetails',''), it.get('facultyCoordinators',''), it.get('link','')]
                             elif sec_prop == 'sdp':
                                 cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('resourcePerson',''), it.get('mode',''), it.get('keyOutcomes',''), it.get('participantsCount',''), it.get('coordinator',''), it.get('link','')]
                             elif sec_prop == 'facultyAchievements':

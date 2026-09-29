@@ -120,6 +120,29 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://sseptp.org/nss/ewaste-drive'
         }
       ],
+      fdpAttended: [
+        {
+          title: 'AICTE ATAL FDP on Cloud-Native Microservices Architecture with Kubernetes & Docker',
+          type: 'FDP',
+          dates: '07/04/2026 to 11/04/2026',
+          organizingBody: 'NIT Warangal',
+          mode: 'Online',
+          facultyAttended: 'Dr. Kethineni Vinod Kumar, Er. M. Sateesh',
+          link: 'https://atalacademy.aicte-india.org/cert/cse-warangal-481'
+        }
+      ],
+      fdpOrganized: [
+        {
+          title: 'One-Week National Level FDP on Generative AI, LLMOps and Foundation Models in Production',
+          type: 'FDP',
+          dates: '13/04/2026 to 18/04/2026',
+          deptOrganized: 'Computer Science & Engineering',
+          mode: 'Hybrid',
+          resourcePersonDetails: 'Dr. P. Ramanathan, Principal AI Scientist, NVIDIA India, Bengaluru, Karnataka - 560045',
+          facultyCoordinators: 'Dr. Kethineni Vinod Kumar, Er. C. Harika',
+          link: 'https://iith.ac.in/fdp/cse-genai-2026'
+        }
+      ],
       fdp: [
         {
           title: 'One-Week National Level FDP on Generative AI, LLMOps and Foundation Models in Production',
@@ -472,6 +495,29 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           outcomes: 'Repaired 52 non-functional domestic electronic appliances free of cost for local villagers',
           coordinator: 'Er. B. Madhavi',
           link: 'https://sseptp.org/nss/appliance-repair-camp'
+        }
+      ],
+      fdpAttended: [
+        {
+          title: 'AICTE ATAL FDP on 5G/6G Wireless Physical Layer Design and SDR Prototyping',
+          type: 'FDP',
+          dates: '06/04/2026 to 10/04/2026',
+          organizingBody: 'NIT Calicut',
+          mode: 'Online',
+          facultyAttended: 'Dr. V. Annapurna, Er. B. Madhavi',
+          link: 'https://atalacademy.aicte-india.org/cert/ece-calicut-901'
+        }
+      ],
+      fdpOrganized: [
+        {
+          title: 'One-Week National Level FDP on RISC-V Architecture & Open-Source Silicon Design Flow',
+          type: 'FDP',
+          dates: '14/04/2026 to 19/04/2026',
+          deptOrganized: 'Electronics & Communication Engineering',
+          mode: 'Hybrid',
+          resourcePersonDetails: 'Dr. S. Ramakrishna, Lead Silicon Architect, Intel India, Bengaluru, Karnataka - 560103',
+          facultyCoordinators: 'Dr. V. Annapurna, Er. K. Naresh',
+          link: 'https://iitm.ac.in/fdp/riscv-2026'
         }
       ],
       fdp: [
@@ -828,6 +874,29 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://sseptp.org/nss/electrical-safety-camp'
         }
       ],
+      fdpAttended: [
+        {
+          title: 'AICTE ATAL FDP on Smart Grid Operation, Wide-Area Monitoring & Cyber-Security in SCADA Systems',
+          type: 'FDP',
+          dates: '06/04/2026 to 10/04/2026',
+          organizingBody: 'NIT Surathkal',
+          mode: 'Online',
+          facultyAttended: 'Mr. K. Gangadhar, Er. D. Surendra',
+          link: 'https://atalacademy.aicte-india.org/cert/eee-surathkal-312'
+        }
+      ],
+      fdpOrganized: [
+        {
+          title: 'One-Week National FDP on Electric Vehicle Powertrain Architecture, BMS & Fast Charging Infrastructure',
+          type: 'FDP',
+          dates: '13/04/2026 to 18/04/2026',
+          deptOrganized: 'Electrical & Electronics Engineering',
+          mode: 'Hybrid',
+          resourcePersonDetails: 'Dr. V. Rajesh, Head of Power Systems R&D, Schneider Electric, Bengaluru, Karnataka - 560066',
+          facultyCoordinators: 'Mr. K. Gangadhar, Er. N. Venkatesh',
+          link: 'https://iitd.ac.in/fdp/ev-powertrain-2026'
+        }
+      ],
       fdp: [
         {
           title: 'One-Week National FDP on Electric Vehicle Powertrain Architecture, BMS & Fast Charging Infrastructure',
@@ -1182,6 +1251,29 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://sseptp.org/nss/village-literacy-camp'
         }
       ],
+      fdpAttended: [
+        {
+          title: 'AICTE ATAL FDP on Advanced Mathematical Modeling and Numerical Analysis Using Python & SciPy',
+          type: 'FDP',
+          dates: '06/04/2026 to 10/04/2026',
+          organizingBody: 'NIT Warangal Department of Mathematics',
+          mode: 'Online',
+          facultyAttended: 'Dr. Samba Sivaiah B, Dr. M. Sreenivas Prasad',
+          link: 'https://atalacademy.aicte-india.org/cert/hs-warangal-204'
+        }
+      ],
+      fdpOrganized: [
+        {
+          title: 'One-Week National Level FDP on Pedagogical Innovations & NEP 2020 Paradigm in Engineering Education',
+          type: 'FDP',
+          dates: '13/04/2026 to 18/04/2026',
+          deptOrganized: 'Humanities & Sciences',
+          mode: 'Hybrid',
+          resourcePersonDetails: 'Prof. K. Venkateswarlu, Dean of Academic Affairs, IIT Madras, Chennai, Tamil Nadu - 600036',
+          facultyCoordinators: 'Dr. Samba Sivaiah B, Mr. R. Naresh',
+          link: 'https://iitm.ac.in/tlc/nep-pedagogy-2026'
+        }
+      ],
       fdp: [
         {
           title: 'One-Week National Level FDP on Pedagogical Innovations & NEP 2020 Paradigm in Engineering Education',
@@ -1533,6 +1625,29 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
         outcomes: 'Tested 24 community borewell samples for pH, TDS, fluorides and submitted water report to local authorities',
         coordinator: 'Er. S. Kavitha (Environmental Lab In-charge)',
         link: 'https://sseptp.org/nss/water-testing-camp'
+      }
+    ],
+    fdpAttended: [
+      {
+        title: '5-Day Online AICTE-ATAL Academy FDP on Geotechnical Disaster Risk Reduction & Landslide Mitigation',
+        type: 'FDP',
+        dates: '06/04/2026 to 10/04/2026',
+        organizingBody: 'NIT Tiruchirappalli',
+        mode: 'Online',
+        facultyAttended: 'K Siva Prasad, Er. S. Kavitha',
+        link: 'https://atalacademy.aicte-india.org/cert/civil-928'
+      }
+    ],
+    fdpOrganized: [
+      {
+        title: 'One-Week National FDP on Advanced BIM Applications & Digital Twins in Civil Infrastructure',
+        type: 'FDP',
+        dates: '15/04/2026 to 20/04/2026',
+        deptOrganized: 'Civil Engineering',
+        mode: 'Hybrid',
+        resourcePersonDetails: 'Dr. C. Anjaneyulu, Senior Director of Infrastructure Engineering, L&T Construction, Chennai, Tamil Nadu - 600089',
+        facultyCoordinators: 'K Siva Prasad, Dr. M. Sreenivasulu',
+        link: 'https://iitm.ac.in/fdp/civil-bim-2026'
       }
     ],
     fdp: [

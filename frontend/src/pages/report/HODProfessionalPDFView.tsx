@@ -306,22 +306,66 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 3. FDPs */}
-      {sections.fdp.length > 0 && (
+      {/* 3a. FDPs Attended */}
+      {sections.fdpAttended.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            3. FACULTY DEVELOPMENT PROGRAMS (FDPS) ({sections.fdp.length})
+            3A. FACULTY DEVELOPMENT PROGRAMS (FDPS) — ATTENDED ({sections.fdpAttended.length})
           </div>
           <div>
-            {sections.fdp.map((item, idx) => (
+            {sections.fdpAttended.map((item, idx) => (
               <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
                 <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
                   <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
-                  <div style={{ color: '#334155', fontSize: '11px' }}><strong>Organizing Body:</strong> {item.organizingBody} &bull; <strong>Dates:</strong> {item.dates}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Role: {item.role} ({item.mode}) | Key Outcomes: {item.keyOutcomes}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px' }}>
+                    <strong>Type:</strong> {item.type} &bull; <strong>Dates:</strong> {item.dates} &bull; <strong>Mode:</strong> {item.mode}
+                  </div>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
+                    <strong>Organizing Body:</strong> {item.organizingBody} &bull; <strong style={{ color: '#1a365d' }}>Faculty Attended:</strong> {item.facultyAttended}
+                  </div>
+                  {item.link && (
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all' }}>
+                      <strong>Certificate/Proof Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3b. FDPs Organized */}
+      {sections.fdpOrganized.length > 0 && (
+        <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
+          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+            3B. FACULTY DEVELOPMENT PROGRAMS (FDPS) — ORGANIZED ({sections.fdpOrganized.length})
+          </div>
+          <div>
+            {sections.fdpOrganized.map((item, idx) => (
+              <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
+                <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
+                  {String(idx + 1).padStart(2, '0')}
+                </div>
+                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px' }}>
+                    <strong>Type:</strong> {item.type} &bull; <strong>Dates:</strong> {item.dates} &bull; <strong>Dept. Organized:</strong> {item.deptOrganized} ({item.mode})
+                  </div>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
+                    <strong>Resource Person:</strong> {item.resourcePersonDetails}
+                  </div>
+                  <div style={{ color: '#1a365d', fontSize: '10.5px', marginBottom: '2px' }}>
+                    <strong>Coordinator/s:</strong> {item.facultyCoordinators}
+                  </div>
+                  {item.link && (
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all' }}>
+                      <strong>Certificate/Proof Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

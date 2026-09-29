@@ -317,9 +317,23 @@ def generate_department_report(data, output_path):
         "3. Faculty Development Programs (FDPs)",
         "List every short-term training, development course, workshop, or seminar attended or organized by faculty for professional development. Attach certificates where possible."
     )
-    headers_5 = ['S. No.', 'Program Title', 'Type (FDP/Workshop/Seminar/Conference)', 'Dates', 'Organizing Body', 'Mode (Online/Offline/Hybrid)', 'Role (Attendee/Organizer/Resource Person)', 'Key Outcomes', 'Proof/Certificate Link']
-    keys_5 = ['title', 'type', 'dates', 'organizingBody', 'mode', 'role', 'keyOutcomes', 'link']
-    total_activities += add_table_data(doc, headers_5, sections_data.get('fdp', []), keys_5)
+    add_sub_heading(
+        "a) Faculty Development Programs Attended",
+        "Details of short-term training, courses, and workshops attended by faculty."
+    )
+    headers_5a = ['S. No.', 'Program Title', 'Type (FDP/Workshop/Seminar/Conference)', 'Dates', 'Organizing Body', 'Mode (Online/Offline/Hybrid)', 'Name of the faculty attended', 'Proof/Certificate Link']
+    keys_5a = ['title', 'type', 'dates', 'organizingBody', 'mode', 'facultyAttended', 'link']
+    fdp_att_data = sections_data.get('fdpAttended') or sections_data.get('fdp') or []
+    total_activities += add_table_data(doc, headers_5a, fdp_att_data, keys_5a)
+
+    add_sub_heading(
+        "b) Faculty Development Programs Organized",
+        "Details of faculty development programs and training organized by the department."
+    )
+    headers_5b = ['S. No.', 'Program Title', 'Type (FDP/Workshop/Seminar/Conference)', 'Dates', 'Dept. Organized', 'Mode (Online/Offline/Hybrid)', 'Resource person name, designation, co-organization and address', 'Name of the faculty coordinator/s', 'Proof/Certificate Link']
+    keys_5b = ['title', 'type', 'dates', 'deptOrganized', 'mode', 'resourcePersonDetails', 'facultyCoordinators', 'link']
+    fdp_org_data = sections_data.get('fdpOrganized') or []
+    total_activities += add_table_data(doc, headers_5b, fdp_org_data, keys_5b)
 
     # -------------------------------------------------------------
     # 4. Student Development Programs (SDPs) (Table 6)

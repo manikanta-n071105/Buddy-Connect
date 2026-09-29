@@ -77,7 +77,26 @@ export interface ReportSectionsData {
     coordinator: string;
     link: string;
   }>;
-  fdp: Array<{
+  fdpAttended: Array<{
+    title: string;
+    type: string;
+    dates: string;
+    organizingBody: string;
+    mode: string;
+    facultyAttended: string;
+    link: string;
+  }>;
+  fdpOrganized: Array<{
+    title: string;
+    type: string;
+    dates: string;
+    deptOrganized: string;
+    mode: string;
+    resourcePersonDetails: string;
+    facultyCoordinators: string;
+    link: string;
+  }>;
+  fdp?: Array<{
     title: string;
     type: string;
     dates: string;
@@ -178,6 +197,8 @@ export const INITIAL_SECTIONS: ReportSectionsData = {
   patents: [],
   entrepreneurship: [],
   nss: [],
+  fdpAttended: [],
+  fdpOrganized: [],
   fdp: [],
   sdp: [],
   facultyAchievements: [],
@@ -201,6 +222,20 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     patents: Array.isArray(raw.patents) ? raw.patents : [],
     entrepreneurship: Array.isArray(raw.entrepreneurship) ? raw.entrepreneurship : [],
     nss: Array.isArray(raw.nss) ? raw.nss : [],
+    fdpAttended: Array.isArray(raw.fdpAttended)
+      ? raw.fdpAttended
+      : (Array.isArray(raw.fdp)
+          ? raw.fdp.map((f: any) => ({
+              title: f.title || '',
+              type: f.type || '',
+              dates: f.dates || '',
+              organizingBody: f.organizingBody || '',
+              mode: f.mode || '',
+              facultyAttended: f.facultyAttended || f.role || '',
+              link: f.link || ''
+            }))
+          : []),
+    fdpOrganized: Array.isArray(raw.fdpOrganized) ? raw.fdpOrganized : [],
     fdp: Array.isArray(raw.fdp) ? raw.fdp : [],
     sdp: Array.isArray(raw.sdp) ? raw.sdp : [],
     facultyAchievements: Array.isArray(raw.facultyAchievements) ? raw.facultyAchievements : [],
@@ -343,7 +378,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '1c_patents', label: '1c. Patents', count: (safeSections.patents || []).length },
     { key: '1d_entrepreneurship', label: '1d. Entrepreneurship/Start-up Initiatives', count: (safeSections.entrepreneurship || []).length },
     { key: '2_nss', label: '2. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
-    { key: '3_fdp', label: '3. Faculty Development Programs (FDPs)', count: (safeSections.fdp || []).length },
+    { key: '3a_fdp_attended', label: '3a. FDPs Attended', count: (safeSections.fdpAttended || []).length },
+    { key: '3b_fdp_organized', label: '3b. FDPs Organized', count: (safeSections.fdpOrganized || []).length },
     { key: '4_sdp', label: '4. Student Development Programs (SDPs)', count: (safeSections.sdp || []).length },
     { key: '5a_faculty_achievements', label: '5a. Faculty Achievements', count: (safeSections.facultyAchievements || []).length },
     { key: '5b_student_achievements', label: '5b. Student Achievements', count: (safeSections.studentAchievements || []).length },
@@ -390,6 +426,12 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           break;
         case 'nss':
           copy.nss = [...(copy.nss || []), { event: '', date: '', venue: '', type: '', participantsCount: '', typeOfParticipants: '', outcomes: '', coordinator: '', link: '' }];
+          break;
+        case 'fdpAttended':
+          copy.fdpAttended = [...(copy.fdpAttended || []), { title: '', type: '', dates: '', organizingBody: '', mode: '', facultyAttended: '', link: '' }];
+          break;
+        case 'fdpOrganized':
+          copy.fdpOrganized = [...(copy.fdpOrganized || []), { title: '', type: '', dates: '', deptOrganized: department, mode: '', resourcePersonDetails: '', facultyCoordinators: '', link: '' }];
           break;
         case 'fdp':
           copy.fdp = [...(copy.fdp || []), { title: '', type: '', dates: '', organizingBody: '', mode: '', role: '', keyOutcomes: '', link: '' }];
@@ -1070,40 +1112,78 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </SectionContainer>
         )}
 
-        {/* Table 5: 3. Faculty Development Programs (FDPs) */}
-        {activeSectionKey === '3_fdp' && (
+        {/* Table 5A: 3a. Faculty Development Programs (FDPs) - Attended */}
+        {activeSectionKey === '3a_fdp_attended' && (
           <SectionContainer
-            title="3. Faculty Development Programs (FDPs)"
-            description="List every short-term training, development course, workshop, or seminar attended or organized by faculty for professional development. Attach certificates where possible."
-            count={safeSections.fdp.length}
-            onAdd={() => handleAddRow('fdp')}
+            title="3. Faculty Development Programs (FDPs) — a) Attended"
+            description="List every short-term training, development course, workshop, or seminar attended by faculty for professional development. Attach certificates where possible."
+            count={safeSections.fdpAttended.length}
+            onAdd={() => handleAddRow('fdpAttended')}
           >
-            {safeSections.fdp.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdp', idx)}>
+            {safeSections.fdpAttended.map((item, idx) => (
+              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpAttended', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
-                    <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdp', idx, 'title', v)} />
+                    <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpAttended', idx, 'title', v)} />
                   </div>
                   <div>
-                    <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdp', idx, 'type', v)} />
+                    <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpAttended', idx, 'type', v)} />
                   </div>
                   <div>
-                    <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdp', idx, 'dates', v)} />
+                    <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} />
                   </div>
                   <div>
-                    <FieldInput label="Organizing Body" value={item.organizingBody} onChange={(v) => handleUpdateField('fdp', idx, 'organizingBody', v)} />
+                    <FieldInput label="Organizing Body" value={item.organizingBody} onChange={(v) => handleUpdateField('fdpAttended', idx, 'organizingBody', v)} />
                   </div>
                   <div>
-                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdp', idx, 'mode', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Role (Attendee/Organizer/Resource Person)" value={item.role} onChange={(v) => handleUpdateField('fdp', idx, 'role', v)} />
+                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpAttended', idx, 'mode', v)} />
                   </div>
                   <div className="md:col-span-2">
-                    <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('fdp', idx, 'keyOutcomes', v)} />
+                    <FieldInput label="Name of the faculty attended" value={item.facultyAttended} onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
                   </div>
                   <div className="md:col-span-2">
-                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdp', idx, 'link', v)} />
+                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpAttended', idx, 'link', v)} />
+                  </div>
+                </div>
+              </EntryCard>
+            ))}
+          </SectionContainer>
+        )}
+
+        {/* Table 5B: 3b. Faculty Development Programs (FDPs) - Organized */}
+        {activeSectionKey === '3b_fdp_organized' && (
+          <SectionContainer
+            title="3. Faculty Development Programs (FDPs) — b) Organized"
+            description="List every short-term training, faculty development program, workshop, or seminar organized by the department."
+            count={safeSections.fdpOrganized.length}
+            onAdd={() => handleAddRow('fdpOrganized')}
+          >
+            {safeSections.fdpOrganized.map((item, idx) => (
+              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpOrganized', idx)}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div className="md:col-span-2">
+                    <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'title', v)} />
+                  </div>
+                  <div>
+                    <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'type', v)} />
+                  </div>
+                  <div>
+                    <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} />
+                  </div>
+                  <div>
+                    <FieldInput label="Dept. Organized" value={item.deptOrganized} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'deptOrganized', v)} />
+                  </div>
+                  <div>
+                    <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'mode', v)} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <FieldInput label="Resource person name, designation, co-organization and address" value={item.resourcePersonDetails} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'resourcePersonDetails', v)} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <FieldInput label="Name of the faculty coordinator/s" value={item.facultyCoordinators} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'link', v)} />
                   </div>
                 </div>
               </EntryCard>
