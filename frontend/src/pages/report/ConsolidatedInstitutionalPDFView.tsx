@@ -94,21 +94,35 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     fetchLogo();
   }, []);
 
-  // Standard 6 academic departments
-  const departmentList = [
-    { code: 'CIVIL', name: 'Civil Engineering', hod: 'K Siva Prasad' },
-    { code: 'CSE', name: 'Computer Science & Engineering', hod: 'Dr. Kethineni Vinod Kumar' },
-    { code: 'ECE', name: 'Electronics & Communication Engineering', hod: 'Dr. V. Annapurna' },
-    { code: 'EEE', name: 'Electrical & Electronics Engineering', hod: 'Mr. K. Gangadhar' },
-    { code: 'MECH', name: 'Mechanical Engineering', hod: 'C Anil Kumar Reddy' },
-    { code: 'H&S', name: 'Humanities & Sciences', hod: 'Dr. Samba Sivaiah B' }
+  // Standard 6 Academic Departments
+  const academicDepartments = [
+    { code: 'CIVIL', name: 'Civil Engineering', hod: 'Prof. K. Siva Prasad', type: 'ACADEMIC' as const },
+    { code: 'CSE', name: 'Computer Science & Engineering', hod: 'Dr. Kethineni Vinod Kumar', type: 'ACADEMIC' as const },
+    { code: 'ECE', name: 'Electronics & Communication Engineering', hod: 'Dr. V. Annapurna', type: 'ACADEMIC' as const },
+    { code: 'EEE', name: 'Electrical & Electronics Engineering', hod: 'Mr. K. Gangadhar', type: 'ACADEMIC' as const },
+    { code: 'MECH', name: 'Mechanical Engineering', hod: 'Prof. C. Anil Kumar Reddy', type: 'ACADEMIC' as const },
+    { code: 'H&S', name: 'Humanities & Sciences', hod: 'Dr. Samba Sivaiah B', type: 'ACADEMIC' as const }
   ];
 
-  // Gather data for all 5 departments with robust normalization
+  // Specialized Institutional Committees & Bodies
+  const institutionalCommittees = [
+    { code: 'IIC/EDC', name: 'Innovation And Entrepreneurship', hod: 'Dean / Convener - IIC & EDC', type: 'COMMITTEE' as const },
+    { code: 'CLUBS', name: 'Student Engagement and Clubs', hod: 'Faculty Advisor - Student Affairs', type: 'COMMITTEE' as const },
+    { code: 'NSS', name: 'NSS & Community Engagement', hod: 'Dr. Samba Sivaiah B (NSS Officer)', type: 'COMMITTEE' as const },
+    { code: 'DISCIP', name: 'Disciplinary Committee', hod: 'Disciplinary Committee Convener', type: 'COMMITTEE' as const },
+    { code: 'MOM', name: 'Minutes of the Meeting', hod: 'Member Secretary - Academic Committee', type: 'COMMITTEE' as const },
+    { code: 'T&P', name: 'Training & Placement Cell', hod: 'Head - Training & Placements', type: 'COMMITTEE' as const },
+    { code: 'R&D', name: 'Research & Development (R&D)', hod: 'Dean - Research & Development', type: 'COMMITTEE' as const }
+  ];
+
+  const allEntities = [...academicDepartments, ...institutionalCommittees];
+  const departmentList = allEntities;
+
+  // Gather data for all departments and committees with robust normalization
   const deptDataMap: Record<string, ReportSectionsData> = {};
-  departmentList.forEach(dept => {
-    const raw = customData?.[dept.name] || customData?.[dept.code] || getDepartmentSampleData(dept.name);
-    deptDataMap[dept.code] = normalizeSections(raw);
+  allEntities.forEach(ent => {
+    const raw = customData?.[ent.name] || customData?.[ent.code] || getDepartmentSampleData(ent.name);
+    deptDataMap[ent.code] = normalizeSections(raw);
   });
 
   // Aggregate matrix metrics
@@ -117,36 +131,48 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     { key: 'conferences', label: '1B. Conference Presentations' },
     { key: 'patents', label: '1C. Patents Filed / Awarded' },
     { key: 'entrepreneurship', label: '1D. Entrepreneurship & Start-up' },
-    { key: 'nss', label: '2. NSS & Extension Activities' },
     { key: 'fdpAttended', label: '3A. Faculty Development (FDP) — Attended' },
     { key: 'fdpOrganized', label: '3B. Faculty Development (FDP) — Organized' },
     { key: 'sdp', label: '4. Student Development (SDP)' },
     { key: 'facultyAchievements', label: '5A. Faculty Achievements & Honors' },
     { key: 'studentAchievements', label: '5B. Student Achievements & Awards' },
     { key: 'certifications', label: '5C. Certifications (NPTEL / Coursera)' },
-    { key: 'deptMeetings', label: '6A. Department Meetings & Governance' },
+    { key: 'deptMeetings', label: '2B. Meetings' },
     { key: 'mous', label: '6B. Collaborations & MoUs' },
-    { key: 'additionalInitiatives', label: '7. Additional Department Initiatives' },
     { key: 'techAssociation', label: '8. Technical Association Events' },
-    { key: 'iicCell', label: '9. IIC & Innovation Council' },
-    { key: 'syllabus', label: '10. Syllabus Course Tracking' }
+    { key: 'syllabus', label: '10. Syllabus Course Tracking' },
+    { key: 'studentEngagement', label: '11. Club & Student Engagement Activity' },
+    { key: 'nss', label: '2. NSS & Extension Activities' },
+    { key: 'additionalInitiatives', label: '12. Additional Department Initiatives' }
   ];
 
-  const deptTotals: Record<string, number> = { CIVIL: 0, CSE: 0, ECE: 0, EEE: 0, 'H&S': 0 };
+  const deptTotals: Record<string, number> = { CIVIL: 0, CSE: 0, ECE: 0, EEE: 0, MECH: 0, 'H&S': 0 };
+  let committeeTotalGrand = 0;
   let grandTotal = 0;
 
   const matrixRows = matrixCategories.map(cat => {
     const counts: Record<string, number> = {};
     let catTotal = 0;
-    departmentList.forEach(dept => {
+    let commTotal = 0;
+
+    academicDepartments.forEach(dept => {
       const arr = (deptDataMap[dept.code] as any)?.[cat.key];
       const count = Array.isArray(arr) ? arr.length : 0;
       counts[dept.code] = count;
       deptTotals[dept.code] += count;
       catTotal += count;
     });
+
+    institutionalCommittees.forEach(comm => {
+      const arr = (deptDataMap[comm.code] as any)?.[cat.key];
+      const count = Array.isArray(arr) ? arr.length : 0;
+      commTotal += count;
+      catTotal += count;
+    });
+
+    committeeTotalGrand += commTotal;
     grandTotal += catTotal;
-    return { label: cat.label, counts, total: catTotal };
+    return { label: cat.label, counts, committeeTotal: commTotal, total: catTotal };
   });
 
   // Standard Section Configurations: 8 rows for tall tables, 10 otherwise
@@ -584,7 +610,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     },
     {
       key: 'deptMeetings',
-      title: '6A. CONSOLIDATED DEPARTMENT MEETINGS & ACADEMIC GOVERNANCE',
+      title: '2B. CONSOLIDATED MEETINGS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.deptMeetings || []).map(it => ({ ...it, deptCode: d.code }))),
@@ -699,40 +725,6 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
-    {
-      key: 'iicCell',
-      title: '9. CONSOLIDATED IIC CELL & INNOVATION ACTIVITIES',
-      tall: false,
-      rowsPerPage: 10,
-      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.iicCell || []).map(it => ({ ...it, deptCode: d.code }))),
-      columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Activity / Initiative', width: '30%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.activity}</div> },
-        { 
-          header: 'Date & Resource Partner', 
-          width: '20%', 
-          align: 'center', 
-          render: (it) => (
-            <div style={{ color: '#334155' }}>
-              <div>{it.date}</div>
-              <div style={{ color: '#1a365d', fontSize: '8px' }}>Partner: {it.partner}</div>
-            </div>
-          )
-        },
-        { 
-          header: 'Beneficiaries & Impact Outcomes', 
-          width: '36%', 
-          align: 'left', 
-          render: (it) => (
-            <div style={{ color: '#475569' }}>
-              <div><strong>Beneficiaries:</strong> {it.beneficiaries}</div>
-              <div style={{ fontSize: '8px' }}>{it.outcomes}</div>
-            </div>
-          )
-        }
-      ]
-    }
   ];
 
   // Helper to render empty nil state
@@ -1006,21 +998,24 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                   </div>
                 </div>
 
-                {/* Executive Cross-Department Performance Matrix */}
+                {/* Executive Cross-Department & Committee Performance Matrix */}
                 <div>
-                  {renderSectionHeader(`EXECUTIVE CROSS-DEPARTMENT PERFORMANCE MATRIX (${period})`)}
+                  {renderSectionHeader(`EXECUTIVE INSTITUTIONAL PERFORMANCE MATRIX (${period})`)}
                   <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
-                        <th style={{ width: '37%', padding: '8px 10px', textAlign: 'left', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
-                          Activity Category / Section
+                        <th style={{ width: '33%', padding: '8px 8px', textAlign: 'left', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
+                          Activity Category / Domain
                         </th>
-                        {departmentList.map(d => (
-                          <th key={d.code} style={{ width: '8.5%', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
+                        {academicDepartments.map(d => (
+                          <th key={d.code} style={{ width: '7.5%', padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
                             {d.code}
                           </th>
                         ))}
-                        <th style={{ width: '12%', padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, backgroundColor: '#c2410c' }}>
+                        <th style={{ width: '11%', padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6', backgroundColor: '#4338ca' }}>
+                          Committees
+                        </th>
+                        <th style={{ width: '11%', padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, backgroundColor: '#c2410c' }}>
                           Total
                         </th>
                       </tr>
@@ -1028,33 +1023,39 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                     <tbody>
                       {matrixRows.map((row, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
-                          <td style={{ padding: '6.5px 10px', verticalAlign: 'middle', fontWeight: 600, color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
+                          <td style={{ padding: '6.5px 8px', verticalAlign: 'middle', fontWeight: 600, color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
                             {row.label}
                           </td>
-                          {departmentList.map(d => {
+                          {academicDepartments.map(d => {
                             const val = row.counts[d.code] || 0;
                             return (
-                              <td key={d.code} style={{ padding: '6.5px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: val > 0 ? 700 : 400, color: val > 0 ? '#0f172a' : '#94a3b8', borderRight: '1px solid #cbd5e1' }}>
+                              <td key={d.code} style={{ padding: '6.5px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: val > 0 ? 700 : 400, color: val > 0 ? '#0f172a' : '#94a3b8', borderRight: '1px solid #cbd5e1' }}>
                                 {val > 0 ? val : '-'}
                               </td>
                             );
                           })}
-                          <td style={{ padding: '6.5px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#c2410c', backgroundColor: '#fff7ed' }}>
+                          <td style={{ padding: '6.5px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: row.committeeTotal > 0 ? 800 : 400, color: row.committeeTotal > 0 ? '#4338ca' : '#94a3b8', backgroundColor: '#f5f3ff', borderRight: '1px solid #cbd5e1' }}>
+                            {row.committeeTotal > 0 ? row.committeeTotal : '-'}
+                          </td>
+                          <td style={{ padding: '6.5px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#c2410c', backgroundColor: '#fff7ed' }}>
                             {row.total}
                           </td>
                         </tr>
                       ))}
                       {/* Grand Total Row */}
                       <tr style={{ backgroundColor: '#e2e8f0', borderTop: '2px solid #94a3b8' }}>
-                        <td style={{ padding: '8px 10px', verticalAlign: 'middle', fontWeight: 800, color: '#0f172a', borderRight: '1px solid #cbd5e1', textTransform: 'uppercase' }}>
+                        <td style={{ padding: '8px 8px', verticalAlign: 'middle', fontWeight: 800, color: '#0f172a', borderRight: '1px solid #cbd5e1', textTransform: 'uppercase' }}>
                           Total Activities Reported
                         </td>
-                        {departmentList.map(d => (
-                          <td key={d.code} style={{ padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
+                        {academicDepartments.map(d => (
+                          <td key={d.code} style={{ padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
                             {deptTotals[d.code]}
                           </td>
                         ))}
-                        <td style={{ padding: '8px 4px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#c2410c', backgroundColor: '#fed7aa', fontSize: '10px' }}>
+                        <td style={{ padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#4338ca', backgroundColor: '#ede9fe', borderRight: '1px solid #cbd5e1' }}>
+                          {committeeTotalGrand}
+                        </td>
+                        <td style={{ padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#c2410c', backgroundColor: '#fed7aa', fontSize: '10px' }}>
                           {grandTotal}
                         </td>
                       </tr>

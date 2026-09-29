@@ -11,6 +11,7 @@ import {
   getDepartmentSubmissions,
   clearDepartmentSubmissions,
   uploadDepartmentReport,
+  uploadAutoMapReport,
   generateConsolidatedReportFromSubmissions,
   downloadDepartmentReport,
   generateManualDepartmentReport,
@@ -31,11 +32,12 @@ router.post('/save-consolidated-pdf', saveConsolidatedPDF);
 router.post('/regenerate-consolidated', regenerateConsolidatedReport);
 router.post('/upload-and-consolidate', uploadAndConsolidateZip);
 
-// HOD Submission & Live Super Admin Consolidation Routes (Dedicated Report Database)
+// HOD & Committee Submission & Live Super Admin Consolidation Routes (Dedicated Report Database)
 router.get('/department-submissions', getDepartmentSubmissions);
 router.delete('/department-submissions', clearDepartmentSubmissions);
 router.post('/clear-department-submissions', clearDepartmentSubmissions);
 router.post('/upload-department-report', uploadDepartmentReport);
+router.post('/upload-auto-map', uploadAutoMapReport);
 router.post('/generate-manual-report', generateManualDepartmentReport);
 router.post('/save-department-json', saveDepartmentJson);
 router.post('/save-department-draft', saveDepartmentDraft);

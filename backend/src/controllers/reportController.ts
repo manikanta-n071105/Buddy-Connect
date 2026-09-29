@@ -474,14 +474,91 @@ export const uploadAndConsolidateZip = async (req: any, res: Response) => {
   }
 };
 
-const STANDARD_DEPARTMENTS = [
-  { name: 'Civil Engineering', code: 'CIVIL', defaultHod: 'Prof. K. Siva Prasad' },
-  { name: 'Computer Science & Engineering', code: 'CSE', defaultHod: 'Dr. Kethineni Vinod Kumar' },
-  { name: 'Electronics & Communication Engineering', code: 'ECE', defaultHod: 'Dr. V. Annapurna' },
-  { name: 'Electrical & Electronics Engineering', code: 'EEE', defaultHod: 'Mr. K. Gangadhar' },
-  { name: 'Mechanical Engineering', code: 'MECH', defaultHod: 'Prof. C. Anil Kumar Reddy' },
-  { name: 'Humanities & Sciences', code: 'H&S', defaultHod: 'Dr. Samba Sivaiah B' },
+export interface StandardEntityConfig {
+  name: string;
+  code: string;
+  defaultHod: string;
+  type: 'ACADEMIC' | 'COMMITTEE';
+  keywords: string[];
+}
+
+export const STANDARD_DEPARTMENTS: StandardEntityConfig[] = [
+  { 
+    name: 'Civil Engineering', 
+    code: 'CIVIL', 
+    defaultHod: 'Prof. K. Siva Prasad', 
+    type: 'ACADEMIC',
+    keywords: ['civil engineering', 'civil', 'dept of civil']
+  },
+  { 
+    name: 'Computer Science & Engineering', 
+    code: 'CSE', 
+    defaultHod: 'Dr. Kethineni Vinod Kumar', 
+    type: 'ACADEMIC',
+    keywords: ['computer science', 'cse', 'computer science & engineering', 'computer science and engineering']
+  },
+  { 
+    name: 'Electronics & Communication Engineering', 
+    code: 'ECE', 
+    defaultHod: 'Dr. V. Annapurna', 
+    type: 'ACADEMIC',
+    keywords: ['electronics & communication', 'electronics and communication', 'ece', 'dept of ece']
+  },
+  { 
+    name: 'Electrical & Electronics Engineering', 
+    code: 'EEE', 
+    defaultHod: 'Mr. K. Gangadhar', 
+    type: 'ACADEMIC',
+    keywords: ['electrical & electronics', 'electrical and electronics', 'eee', 'dept of eee']
+  },
+  { 
+    name: 'Mechanical Engineering', 
+    code: 'MECH', 
+    defaultHod: 'Prof. C. Anil Kumar Reddy', 
+    type: 'ACADEMIC',
+    keywords: ['mechanical engineering', 'mech', 'mechanical', 'dept of mech']
+  },
+  { 
+    name: 'Humanities & Sciences', 
+    code: 'H&S', 
+    defaultHod: 'Dr. Samba Sivaiah B', 
+    type: 'ACADEMIC',
+    keywords: ['humanities & sciences', 'humanities and sciences', 'h&s', 'has', 'basic sciences']
+  },
 ];
+
+export const STANDARD_COMMITTEES: StandardEntityConfig[] = [
+  { 
+    name: 'Innovation And Entrepreneurship', 
+    code: 'IIC/EDC', 
+    defaultHod: 'Dean / Convener - IIC & EDC', 
+    type: 'COMMITTEE',
+    keywords: ['innovation and entrepreneurship', 'innovation & entrepreneurship', 'iic', 'edc', 'entrepreneurship', 'startup', 'start-up', 'incubation', 'patents', 'ipr']
+  },
+  { 
+    name: 'Student Engagement and Clubs', 
+    code: 'CLUBS', 
+    defaultHod: 'Faculty Advisor - Student Affairs', 
+    type: 'COMMITTEE',
+    keywords: ['student engagement and clubs', 'student engagement', 'student clubs', 'coding club', 'robotics club', 'student affairs', 'cultural club', 'hackathon']
+  },
+  { 
+    name: 'NSS & Community Engagement', 
+    code: 'NSS', 
+    defaultHod: 'Dr. Samba Sivaiah B (NSS Officer)', 
+    type: 'COMMITTEE',
+    keywords: ['nss & community engagement', 'nss', 'community engagement', 'social service', 'swachh bharat', 'blood donation', 'extension activities']
+  },
+  { 
+    name: 'Minutes of the Meeting', 
+    code: 'MOM', 
+    defaultHod: 'Member Secretary - Academic Committee', 
+    type: 'COMMITTEE',
+    keywords: ['minutes of the meeting', 'minutes of meeting', 'academic committee', 'dac meeting', 'bos meeting', 'governing body', 'advisory committee']
+  },
+];
+
+export const ALL_INSTITUTIONAL_ENTITIES = [...STANDARD_DEPARTMENTS, ...STANDARD_COMMITTEES];
 
 export const clearDepartmentSubmissions = async (req: any, res: Response) => {
   try {
@@ -505,7 +582,7 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
 
     return res.json({
       success: true,
-      message: `Cleared all departmental submissions for ${period}`
+      message: `Cleared all departmental and committee submissions for ${period}`
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
@@ -518,17 +595,19 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
 
     const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE period = $1 ORDER BY department ASC', [period]);
     const submittedMap = new Map();
-    rowsRes.rows.forEach((r: any) => submittedMap.set(r.department, r));
+    rowsRes.rows.forEach((r: any) => submittedMap.set(r.department.toLowerCase().trim(), r));
 
-    const departmentsStatus = STANDARD_DEPARTMENTS.map(d => {
-      const sub = submittedMap.get(d.name);
+    const mapStatus = (entity: StandardEntityConfig) => {
+      const sub = submittedMap.get(entity.name.toLowerCase().trim()) || 
+                  submittedMap.get(entity.code.toLowerCase().trim());
       return {
-        code: d.code,
-        name: d.name,
+        code: entity.code,
+        name: entity.name,
+        type: entity.type,
         isSubmitted: !!sub && sub.status === 'SUBMITTED',
         hasDraft: !!sub && sub.status === 'DRAFT',
         id: sub?.id || null,
-        hodName: sub?.hod_name || d.defaultHod,
+        hodName: sub?.hod_name || entity.defaultHod,
         submissionDate: sub?.submission_date || null,
         fileName: sub?.file_name || null,
         fileSizeBytes: sub?.file_size_bytes ? parseInt(sub.file_size_bytes) : 0,
@@ -538,19 +617,30 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
         updatedAt: sub?.updated_at || null,
         status: sub?.status || 'PENDING'
       };
-    });
+    };
 
-    const submittedCount = departmentsStatus.filter(d => d.isSubmitted).length;
-    const totalDepartments = departmentsStatus.length;
+    const departmentsStatus = STANDARD_DEPARTMENTS.map(mapStatus);
+    const committeesStatus = STANDARD_COMMITTEES.map(mapStatus);
+
+    const allEntities = [...departmentsStatus, ...committeesStatus];
+    const submittedCount = allEntities.filter(e => e.isSubmitted).length;
+    const submittedDeptsCount = departmentsStatus.filter(d => d.isSubmitted).length;
+    const submittedCommsCount = committeesStatus.filter(c => c.isSubmitted).length;
 
     return res.json({
       success: true,
       data: {
         period,
         submittedCount,
-        totalDepartments,
-        isComplete: submittedCount === totalDepartments,
-        departments: departmentsStatus
+        submittedDeptsCount,
+        submittedCommsCount,
+        totalDepartments: departmentsStatus.length,
+        totalCommittees: committeesStatus.length,
+        totalEntities: allEntities.length,
+        isComplete: submittedDeptsCount === departmentsStatus.length,
+        departments: departmentsStatus,
+        committees: committeesStatus,
+        allEntities
       }
     });
   } catch (err: any) {
@@ -562,7 +652,7 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
   try {
     const { department, hodName, period = 'April 2026', fileBase64, fileName } = req.body;
     if (!department || !fileBase64 || !fileName) {
-      return res.status(400).json({ success: false, message: 'Department, file, and fileName are required.' });
+      return res.status(400).json({ success: false, message: 'Department/Committee, file, and fileName are required.' });
     }
 
     const fs = await import('fs');
@@ -582,7 +672,18 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
     fs.writeFileSync(targetFilePath, buffer);
 
     const fileSizeBytes = buffer.length;
-    const itemsCount = 20;
+
+    // Detect items count using python inspector if available
+    let itemsCount = 20;
+    try {
+      const { execFileSync } = await import('child_process');
+      const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
+      const inspectOut = execFileSync(PYTHON_BIN, [scriptPath, '--inspect', targetFilePath], { encoding: 'utf-8', timeout: 8000 });
+      const parsed = JSON.parse(inspectOut.trim());
+      if (parsed && typeof parsed.itemsCount === 'number' && parsed.itemsCount > 0) {
+        itemsCount = parsed.itemsCount;
+      }
+    } catch (_) {}
 
     const upsertRes = await reportQuery(`
       INSERT INTO departmental_monthly_reports 
@@ -592,12 +693,138 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
       SET hod_name = EXCLUDED.hod_name, file_name = EXCLUDED.file_name, file_path = EXCLUDED.file_path, 
           file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, status = 'SUBMITTED', updated_at = CURRENT_TIMESTAMP
       RETURNING *
-    `, [department, period, hodName || 'HOD', fileName, targetFilePath, fileSizeBytes, itemsCount]);
+    `, [department, period, hodName || 'Convener / HOD', fileName, targetFilePath, fileSizeBytes, itemsCount]);
 
     return res.json({
       success: true,
       message: `Successfully uploaded monthly report for ${department}!`,
       data: upsertRes.rows[0]
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/**
+ * Intelligent Auto-Detect & Map Upload Handler:
+ * Committee or department uploads ANY report (.docx or .pdf) without specifying the department.
+ * The system automatically detects which Committee or Department it belongs to, maps it, and submits it!
+ */
+export const uploadAutoMapReport = async (req: any, res: Response) => {
+  try {
+    const { fileBase64, fileName, period = 'April 2026', department, hodName } = req.body;
+    if (!fileBase64 || !fileName) {
+      return res.status(400).json({ success: false, message: 'File and fileName are required.' });
+    }
+
+    const fs = await import('fs');
+    const path = await import('path');
+    const { execFileSync } = await import('child_process');
+    const projectRoot = path.resolve(process.cwd(), '..');
+
+    const scratchFolder = path.join(projectRoot, 'scratch');
+    fs.mkdirSync(scratchFolder, { recursive: true });
+    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
+    fs.mkdirSync(targetFolder, { recursive: true });
+
+    const cleanBase64 = fileBase64.replace(/^data:.*,/, '');
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const tempFilePath = path.join(scratchFolder, `inspect_${Date.now()}_${fileName}`);
+    fs.writeFileSync(tempFilePath, buffer);
+
+    let detectedName: string = (department && department !== 'auto') ? department : '';
+    let detectedHod: string = hodName || '';
+    let detectedPeriod: string = period;
+    let detectedItems: number = 15;
+    let detectedType: 'ACADEMIC' | 'COMMITTEE' = 'COMMITTEE';
+
+    // 1. Try Python inspector on the uploaded document
+    try {
+      const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
+      const inspectOut = execFileSync(PYTHON_BIN, [scriptPath, '--inspect', tempFilePath], { encoding: 'utf-8', timeout: 10000 });
+      const parsed = JSON.parse(inspectOut.trim());
+      if (parsed && parsed.success) {
+        if (!detectedName && parsed.department && parsed.department !== 'General') {
+          detectedName = parsed.department;
+        }
+        if (!detectedHod && parsed.hod) {
+          detectedHod = parsed.hod;
+        }
+        if (parsed.period) {
+          detectedPeriod = parsed.period;
+        }
+        if (typeof parsed.itemsCount === 'number') {
+          detectedItems = parsed.itemsCount;
+        }
+        if (parsed.type) {
+          detectedType = parsed.type;
+        }
+      }
+    } catch (e: any) {
+      console.warn('Python inspect notice:', e.message);
+    }
+
+    // 2. Fallback heuristic pattern matching on filename if still undetected
+    if (!detectedName || detectedName === 'General') {
+      const fnLow = fileName.toLowerCase();
+      for (const ent of ALL_INSTITUTIONAL_ENTITIES) {
+        if (ent.keywords.some(kw => fnLow.includes(kw))) {
+          detectedName = ent.name;
+          detectedType = ent.type;
+          if (!detectedHod) detectedHod = ent.defaultHod;
+          break;
+        }
+      }
+    }
+
+    // Default fallback if still unknown
+    if (!detectedName || detectedName === 'General') {
+      detectedName = 'Civil Engineering';
+      detectedType = 'ACADEMIC';
+    }
+
+    const matchedEntity = ALL_INSTITUTIONAL_ENTITIES.find(e => e.name.toLowerCase() === detectedName.toLowerCase());
+    if (matchedEntity) {
+      detectedName = matchedEntity.name;
+      detectedType = matchedEntity.type;
+      if (!detectedHod) detectedHod = matchedEntity.defaultHod;
+    }
+
+    // Move to permanent uploads path
+    const cleanDept = detectedName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeFileName = `${cleanDept}_${Date.now()}_${fileName}`;
+    const targetFilePath = path.join(targetFolder, safeFileName);
+    fs.copyFileSync(tempFilePath, targetFilePath);
+    try { fs.unlinkSync(tempFilePath); } catch (_) {}
+
+    const fileSizeBytes = buffer.length;
+
+    const upsertRes = await reportQuery(`
+      INSERT INTO departmental_monthly_reports 
+      (department, period, hod_name, file_name, file_path, file_size_bytes, items_count, status, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'SUBMITTED', CURRENT_TIMESTAMP)
+      ON CONFLICT (department, period) DO UPDATE 
+      SET hod_name = EXCLUDED.hod_name, file_name = EXCLUDED.file_name, file_path = EXCLUDED.file_path, 
+          file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, status = 'SUBMITTED', updated_at = CURRENT_TIMESTAMP
+      RETURNING *
+    `, [detectedName, detectedPeriod, detectedHod || 'Convener / HOD', fileName, targetFilePath, fileSizeBytes, detectedItems]);
+
+    return res.json({
+      success: true,
+      message: `Report automatically mapped to ${detectedName} (${matchedEntity?.code || 'SSE'})!`,
+      data: {
+        id: upsertRes.rows[0].id,
+        department: detectedName,
+        code: matchedEntity?.code || 'SSE',
+        type: detectedType,
+        hodName: detectedHod,
+        period: detectedPeriod,
+        fileName,
+        fileSizeBytes,
+        itemsCount: detectedItems,
+        uploadedAt: upsertRes.rows[0].uploaded_at
+      }
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
@@ -620,18 +847,57 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     if (submissionsRes.rows.length === 0) {
       return res.status(400).json({
         success: false,
-        message: `No departmental reports have been submitted for ${period} yet.`
+        message: `No departmental or committee reports have been submitted for ${period} yet.`
       });
     }
 
-    const filePaths = submissionsRes.rows
-      .map((r: any) => r.file_path)
-      .filter((p: string) => p && fs.existsSync(p));
+    // Auto-generate docx on the fly for any submission whose file_path is missing on disk but has sections_data
+    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
+    fs.mkdirSync(targetFolder, { recursive: true });
+
+    for (const sub of submissionsRes.rows) {
+      if ((!sub.file_path || !fs.existsSync(sub.file_path)) && sub.sections_data) {
+        try {
+          const scratchFolder = path.join(projectRoot, 'scratch');
+          fs.mkdirSync(scratchFolder, { recursive: true });
+          const tempJsonPath = path.join(scratchFolder, `auto_gen_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
+          const cleanDept = sub.department.replace(/[^a-zA-Z0-9_-]/g, '_');
+          const safeFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${Date.now()}.docx`;
+          const targetFilePath = path.join(targetFolder, safeFileName);
+
+          const payload = {
+            department: sub.department,
+            period,
+            hodName: sub.hod_name || 'HOD / Convener',
+            submissionDate: sub.submission_date || new Date().toLocaleDateString('en-GB'),
+            collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+            sections: typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : sub.sections_data
+          };
+
+          fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2), 'utf-8');
+          const genScript = path.join(projectRoot, 'scripts', 'generate_department_report.py');
+          const { execFileSync } = await import('child_process');
+          execFileSync(PYTHON_BIN, [genScript, tempJsonPath, targetFilePath], { timeout: 15000 });
+          try { fs.unlinkSync(tempJsonPath); } catch (_) {}
+
+          if (fs.existsSync(targetFilePath)) {
+            sub.file_path = targetFilePath;
+            await reportQuery('UPDATE departmental_monthly_reports SET file_path = $1, file_name = $2 WHERE id = $3', [targetFilePath, safeFileName, sub.id]);
+          }
+        } catch (err: any) {
+          console.warn(`Failed to auto-generate docx for ${sub.department}:`, err.message);
+        }
+      }
+    }
+
+    const validSubmissions = submissionsRes.rows.filter((r: any) => r.file_path && fs.existsSync(r.file_path));
+    const filePaths = validSubmissions.map((r: any) => r.file_path);
 
     if (filePaths.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Submitted report files could not be found on disk.'
+        message: 'Submitted report files could not be found or generated on disk.'
       });
     }
 
@@ -652,13 +918,16 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
         fs.copyFileSync(reportPath, standardOut);
       }
 
+      const departmentsCovered = validSubmissions.map((s: any) => s.department);
+
       return res.json({
         success: true,
-        message: `Successfully synthesized overall consolidated report from ${filePaths.length} departmental reports!`,
+        message: `Successfully synthesized overall consolidated report from ${filePaths.length} departmental and committee reports!`,
         data: {
           period,
           reportPath,
-          departmentsCount: filePaths.length,
+          reportsCount: filePaths.length,
+          entitiesCovered: departmentsCovered,
           output: stdout
         }
       });

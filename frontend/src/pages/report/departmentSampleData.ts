@@ -212,6 +212,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
     };
   }
 
+
   // 1. COMPUTER SCIENCE & ENGINEERING
   if (dept.includes('computer')) {
     return {

@@ -520,20 +520,19 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '1b_conferences', label: '1b. Conference Presentations', count: (safeSections.conferences || []).length },
     { key: '1c_patents', label: '2a. Patents', count: (safeSections.patents || []).length },
     { key: '1d_entrepreneurship', label: '2b. Start-up Initiatives', count: (safeSections.entrepreneurship || []).length },
-    { key: '2_nss', label: '2. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
     { key: '3a_fdp_attended', label: '3a. FDPs Attended', count: (safeSections.fdpAttended || []).length },
     { key: '3b_fdp_organized', label: '3b. FDPs Organized', count: (safeSections.fdpOrganized || []).length },
     { key: '4_sdp', label: '4. Student Development Programs (SDPs)', count: (safeSections.sdp || []).length },
     { key: '5a_faculty_achievements', label: '5a. Faculty Achievements', count: (safeSections.facultyAchievements || []).length },
     { key: '5b_student_achievements', label: '5b. Student Achievements', count: (safeSections.studentAchievements || []).length },
     { key: '5c_certifications', label: '5c. Certifications', count: (safeSections.certifications || []).length },
-    { key: '6a_dept_meetings', label: '6a. Department Meetings', count: (safeSections.deptMeetings || []).length },
+    { key: '6a_dept_meetings', label: '2b. Meetings', count: (safeSections.deptMeetings || []).length },
     { key: '6b_mous', label: '6b. Collaborations & MoUs', count: (safeSections.mous || []).length },
-    { key: '7_additional', label: '7. Additional/Other Relevant Initiatives', count: (safeSections.additionalInitiatives || []).length },
     { key: '8_tech_association', label: '8. Technical Association Activities', count: (safeSections.techAssociation || []).length },
-    { key: '9_iic_cell', label: '9. IIC Cell (Institution’s Innovation Council)', count: (safeSections.iicCell || []).length },
     { key: '10_syllabus', label: '10. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
-    { key: 'student_engagement', label: 'Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
+    { key: 'student_engagement', label: '11. Club & Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
+    { key: '2_nss', label: '2. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
+    { key: '7_additional', label: '12. Additional/Other Relevant Initiatives', count: (safeSections.additionalInitiatives || []).length },
   ];
 
   // Specific department filtering as requested:
@@ -1290,9 +1289,6 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <div>
                     <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participantsCount', v)} />
                   </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Key Outcomes (Startups Launched, Funding Received, Patents Filed, etc.)" value={item.keyOutcomes} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'keyOutcomes', v)} />
-                  </div>
                   <div>
                     <FieldInput label="Mentor/Coordinator" value={item.mentorCoordinator} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
                   </div>
@@ -1606,10 +1602,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </SectionContainer>
         )}
 
-        {/* Table 10: 6a. Department Meetings */}
+        {/* Table 10: 2b. Meetings */}
         {activeSectionKey === '6a_dept_meetings' && (
           <SectionContainer
-            title="6. Other Notable Activities — a) Department Meetings"
+            title="2b. Meetings"
             description="Details of official meetings: key decisions, date, and supporting documents."
             count={safeSections.deptMeetings.length}
             onAdd={() => handleAddRow('deptMeetings')}
@@ -1765,44 +1761,6 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </SectionContainer>
         )}
 
-        {/* Table 14: 9. IIC Cell (Institution’s Innovation Council) */}
-        {activeSectionKey === '9_iic_cell' && (
-          <SectionContainer
-            title="9. IIC Cell (Institution’s Innovation Council)"
-            description="Focuses on fostering innovation and entrepreneurship among students and faculty through various events and mentoring."
-            count={safeSections.iicCell.length}
-            onAdd={() => handleAddRow('iicCell')}
-          >
-            {safeSections.iicCell.map((item, idx) => (
-              <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('iicCell', idx)}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  <div className="md:col-span-2">
-                    <FieldInput label="Activity/Initiative" value={item.activity} onChange={(v) => handleUpdateField('iicCell', idx, 'activity', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('iicCell', idx, 'date', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Resource Person/Partner" value={item.partner} onChange={(v) => handleUpdateField('iicCell', idx, 'partner', v)} />
-                  </div>
-                  <div>
-                    <FieldInput label="Beneficiaries" value={item.beneficiaries} onChange={(v) => handleUpdateField('iicCell', idx, 'beneficiaries', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Description/Objective" value={item.description} onChange={(v) => handleUpdateField('iicCell', idx, 'description', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Key Outcomes/Impact" value={item.outcomes} onChange={(v) => handleUpdateField('iicCell', idx, 'outcomes', v)} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <FieldInput label="Evidence / Proof Link" value={item.link} onChange={(v) => handleUpdateField('iicCell', idx, 'link', v)} />
-                  </div>
-                </div>
-              </EntryCard>
-            ))}
-          </SectionContainer>
-        )}
-
         {/* Table 15: 10. Syllabus coverage Report */}
         {activeSectionKey === '10_syllabus' && (
           <SectionContainer
@@ -1841,7 +1799,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         {/* Student Engagement Activity Table */}
         {activeSectionKey === 'student_engagement' && (
           <SectionContainer
-            title="Student Engagement Activity"
+            title="11. Club & Student Engagement Activity"
             description="Record student workshops, guest lectures, expert talks, industrial visits, internships, mentoring sessions, and clubs."
             count={(safeSections.studentEngagement || []).length}
             onAdd={() => handleAddRow('studentEngagement')}

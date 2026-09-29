@@ -283,29 +283,6 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 2. NSS Activities */}
-      {sections.nss.length > 0 && (
-        <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            2. NSS &amp; OTHER EXTENSION ACTIVITIES ({sections.nss.length})
-          </div>
-          <div>
-            {sections.nss.map((item, idx) => (
-              <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
-                <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
-                  {String(idx + 1).padStart(2, '0')}
-                </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.event}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Date: {item.date} | Venue: {item.venue} | Participants: {item.participantsCount}</div>
-                  <div style={{ color: '#334155', fontSize: '11px' }}><strong>Outcomes:</strong> {item.outcomes}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* 3a. FDPs Attended */}
       {sections.fdpAttended.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
@@ -426,7 +403,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.deptMeetings.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            6A. DEPARTMENT MEETINGS &amp; ACADEMIC GOVERNANCE ({sections.deptMeetings.length})
+            2B. MEETINGS ({sections.deptMeetings.length})
           </div>
           <div>
             {sections.deptMeetings.map((item, idx) => (
@@ -476,10 +453,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       )}
 
       {/* 7, 8, 9. Other Initiatives */}
-      {(sections.additionalInitiatives.length > 0 || sections.techAssociation.length > 0 || sections.iicCell.length > 0) && (
+      {(sections.additionalInitiatives.length > 0 || sections.techAssociation.length > 0) && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            7–9. TECHNICAL ASSOCIATIONS &amp; INNOVATION INITIATIVES
+            7–8. TECHNICAL ASSOCIATIONS &amp; INNOVATION INITIATIVES
           </div>
           <div>
             {sections.additionalInitiatives.map((item, idx) => (
@@ -490,11 +467,6 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             {sections.techAssociation.map((item, idx) => (
               <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Technical Association:</span> {item.event} ({item.date}) &bull; Type: {item.type || 'Activity'}
-              </div>
-            ))}
-            {sections.iicCell.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
-                <span style={{ fontWeight: 'bold', color: '#1a365d' }}>IIC Cell:</span> {item.activity} ({item.date}) &mdash; {item.description}
               </div>
             ))}
           </div>
@@ -580,7 +552,31 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       )}
 
 
-      {/* 6. Official Institutional Sign-Off Block — Bulletproof Table Alignment */}
+      {/* NSS & Other Extension Activities — shown last */}
+      {sections.nss.length > 0 && (
+        <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
+          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+            NSS &amp; OTHER EXTENSION ACTIVITIES ({sections.nss.length})
+          </div>
+          <div>
+            {sections.nss.map((item, idx) => (
+              <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
+                <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
+                  {String(idx + 1).padStart(2, '0')}
+                </div>
+                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.event}</div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Date: {item.date} | Venue: {item.venue} | Participants: {item.participantsCount}</div>
+                  <div style={{ color: '#334155', fontSize: '11px' }}><strong>Outcomes:</strong> {item.outcomes}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+
+
       <div style={{ paddingTop: '16px', borderTop: '1px solid #cbd5e1', marginTop: '16px' }} className="break-inside-avoid">
         <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed' }}>
           <tbody>

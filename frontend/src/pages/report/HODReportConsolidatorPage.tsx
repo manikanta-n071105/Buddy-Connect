@@ -37,23 +37,33 @@ import { ConsolidatedInstitutionalPDFView, exportPagesToPdf } from './Consolidat
 interface DepartmentStatus {
   code: string;
   name: string;
+  type?: 'ACADEMIC' | 'COMMITTEE';
   isSubmitted: boolean;
+  hasDraft?: boolean;
   id: string | null;
   hodName: string;
+  submissionDate?: string | null;
   fileName: string | null;
   fileSizeBytes: number;
   fileSizeFormatted: string | null;
   itemsCount: number;
   uploadedAt: string | null;
+  updatedAt?: string | null;
   status: string;
 }
 
 interface SubmissionsData {
   period: string;
   submittedCount: number;
+  submittedDeptsCount?: number;
+  submittedCommsCount?: number;
   totalDepartments: number;
+  totalCommittees?: number;
+  totalEntities?: number;
   isComplete: boolean;
   departments: DepartmentStatus[];
+  committees?: DepartmentStatus[];
+  allEntities?: DepartmentStatus[];
 }
 
 const DEPARTMENT_CONFIG: Record<string, { badge: string; accent: string }> = {
@@ -81,6 +91,22 @@ const DEPARTMENT_CONFIG: Record<string, { badge: string; accent: string }> = {
     badge: 'bg-rose-50 text-rose-700 border-rose-200', 
     accent: 'bg-rose-600' 
   },
+  'IIC/EDC': {
+    badge: 'bg-amber-50 text-amber-800 border-amber-300',
+    accent: 'bg-amber-600'
+  },
+  CLUBS: {
+    badge: 'bg-pink-50 text-pink-700 border-pink-200',
+    accent: 'bg-pink-500'
+  },
+  NSS: {
+    badge: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    accent: 'bg-emerald-600'
+  },
+  MOM: {
+    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    accent: 'bg-indigo-600'
+  }
 };
 
 const EXECUTIVE_METRICS = [
@@ -93,12 +119,13 @@ const EXECUTIVE_METRICS = [
   { category: 'Faculty Achievements & Awards', civil: 1, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 4 },
   { category: 'Student Achievements & Awards', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 1, total: 4 },
   { category: 'Certifications (NPTEL / Coursera)', civil: 4, cse: 7, ece: 5, eee: 5, mech: 4, hs: 4, total: 29 },
-  { category: 'Department Meetings & Mentoring', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
+  { category: 'Meetings', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
   { category: 'MoUs & Collaborations', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
-  { category: 'Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
-  { category: 'IIC & Innovation Council Activities', civil: 8, cse: 16, ece: 14, eee: 12, mech: 10, hs: 16, total: 76 },
-  { category: 'NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
+  { category: 'Technical Association Activities', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
   { category: 'Syllabus Coverage Tracking', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
+  { category: '11. Club & Student Engagement Activity', civil: 0, cse: 2, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
+  { category: 'NSS & Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
+  { category: '12. Additional Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
 ];
 
 export const HODReportConsolidatorPage: React.FC = () => {
@@ -127,7 +154,15 @@ export const HODReportConsolidatorPage: React.FC = () => {
   const [uploadingZip, setUploadingZip] = useState(false);
   const zipFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Direct upload for individual department
+  // Tracker filtering state
+  const [trackerFilter, setTrackerFilter] = useState<'ALL' | 'ACADEMIC' | 'COMMITTEE'>('ALL');
+
+  // Auto-Detect & Map Upload State
+  const [autoMapping, setAutoMapping] = useState(false);
+  const [isAutoMapDragOver, setIsAutoMapDragOver] = useState(false);
+  const autoMapFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Direct upload for individual department or committee
   const [targetDeptForUpload, setTargetDeptForUpload] = useState<{ name: string; hod: string } | null>(null);
   const deptCardFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -220,18 +255,84 @@ export const HODReportConsolidatorPage: React.FC = () => {
     fetchSubmissions(period);
   }, [period]);
 
+  const allSubmissionsList = submissions?.allEntities || [
+    ...(submissions?.departments || []),
+    ...(submissions?.committees || [])
+  ];
+
+  const displayedEntities = allSubmissionsList.filter(item => {
+    if (trackerFilter === 'ALL') return true;
+    return item.type === trackerFilter;
+  });
+
   const handleDepartmentChange = (deptName: string) => {
     setSelectedDept(deptName);
-    const found = submissions?.departments.find(d => d.name === deptName);
+    if (deptName === 'auto') {
+      setHodName('Auto-Detect from Document');
+      return;
+    }
+    const found = allSubmissionsList.find(d => d.name === deptName);
     if (found?.hodName) {
       setHodName(found.hodName);
     } else {
-      if (deptName.includes('Civil')) setHodName('K Siva Prasad');
+      if (deptName.includes('Civil')) setHodName('Prof. K. Siva Prasad');
       else if (deptName.includes('Computer')) setHodName('Dr. Kethineni Vinod Kumar');
       else if (deptName.includes('Communication')) setHodName('Dr. V. Annapurna');
       else if (deptName.includes('Electrical')) setHodName('Mr. K. Gangadhar');
-      else if (deptName.includes('Mechanical')) setHodName('C Anil Kumar Reddy');
+      else if (deptName.includes('Mechanical')) setHodName('Prof. C. Anil Kumar Reddy');
       else if (deptName.includes('Humanities')) setHodName('Dr. Samba Sivaiah B');
+      else if (deptName.includes('Innovation')) setHodName('Dean / Convener - IIC & EDC');
+      else if (deptName.includes('Student Engagement')) setHodName('Faculty Advisor - Student Affairs');
+      else if (deptName.includes('NSS')) setHodName('Dr. Samba Sivaiah B (NSS Officer)');
+
+      else if (deptName.includes('Minutes')) setHodName('Member Secretary - Academic Committee');
+
+    }
+  };
+
+  const handleAutoMapFileSelected = async (file: File) => {
+    if (!file) return;
+    const nameLow = file.name.toLowerCase();
+    if (!nameLow.endsWith('.docx') && !nameLow.endsWith('.pdf')) {
+      toast.error('Please select a valid Word document (.docx) or PDF (.pdf).');
+      return;
+    }
+
+    try {
+      setAutoMapping(true);
+      toast.loading(`Auto-detecting and mapping ${file.name}...`, { id: 'auto-map' });
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const fileBase64 = reader.result as string;
+          const res = await api.post('/reports/upload-auto-map', {
+            fileBase64,
+            fileName: file.name,
+            period
+          });
+
+          if (res.data.success) {
+            const mapped = res.data.data;
+            toast.success(
+              `✨ Automatically mapped to ${mapped.department} (${mapped.code}) with ${mapped.itemsCount} activities!`,
+              { id: 'auto-map', duration: 5000 }
+            );
+            await fetchSubmissions(period);
+          } else {
+            toast.error(res.data.message || 'Auto-mapping failed', { id: 'auto-map' });
+          }
+        } catch (err: any) {
+          toast.error('Mapping error: ' + (err.response?.data?.message || err.message), { id: 'auto-map' });
+        } finally {
+          setAutoMapping(false);
+          if (autoMapFileInputRef.current) autoMapFileInputRef.current.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      toast.error('Upload failed: ' + err.message, { id: 'auto-map' });
+      setAutoMapping(false);
     }
   };
 
@@ -365,22 +466,22 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
     try {
       setUploadingHod(true);
-      toast.loading(`Submitting ${selectedDept} report...`, { id: 'hod-upload' });
+      toast.loading(`Submitting ${selectedDept === 'auto' ? 'report' : selectedDept}...`, { id: 'hod-upload' });
 
       const reader = new FileReader();
       reader.onload = async () => {
         try {
           const fileBase64 = reader.result as string;
-          const res = await api.post('/reports/upload-department-report', {
-            department: selectedDept,
-            hodName,
-            period,
-            fileBase64,
-            fileName: hodFile.name
-          });
+          const endpoint = selectedDept === 'auto' ? '/reports/upload-auto-map' : '/reports/upload-department-report';
+          const payload = selectedDept === 'auto'
+            ? { fileBase64, fileName: hodFile.name, period }
+            : { department: selectedDept, hodName, period, fileBase64, fileName: hodFile.name };
+
+          const res = await api.post(endpoint, payload);
 
           if (res.data.success) {
-            toast.success(`Report for ${selectedDept} uploaded successfully!`, { id: 'hod-upload' });
+            const mappedName = res.data.data?.department || selectedDept;
+            toast.success(`Report for ${mappedName} submitted & mapped successfully!`, { id: 'hod-upload' });
             setHodFile(null);
             if (hodFileInputRef.current) hodFileInputRef.current.value = '';
             await fetchSubmissions(period);
@@ -837,25 +938,99 @@ export const HODReportConsolidatorPage: React.FC = () => {
               </div>
             )}
 
-            {/* Department Cards Grid */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-orange-600" />
-                    Department Submissions Tracker ({period})
+            {/* ⚡ Auto-Detect & Map Dedicated Hero Upload Card */}
+            <div className="bg-linear-to-r from-orange-50 via-amber-50 to-indigo-50 border border-orange-200/90 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-600 text-white text-[11px] font-extrabold uppercase tracking-wider shadow-xs">
+                    <Sparkles className="w-3.5 h-3.5" /> Instant Auto-Mapping Engine
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900">
+                    Upload Any Committee or Department Report
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Upload or replace individual departmental reports directly.
+                  <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+                    Drop your committee report (e.g. <strong>IIC/EDC</strong>, <strong>NSS</strong>, <strong>Student Clubs</strong>, <strong>Disciplinary Committee</strong>, <strong>Placement Cell</strong>, <strong>R&amp;D</strong>) or department document. Our engine automatically detects the issuing body, indexes all performance data, and maps it directly into the master institutional dossier.
                   </p>
                 </div>
-                <div className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">
-                  {submittedCount} of {totalCount} Submitted
+
+                <div className="shrink-0 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => autoMapFileInputRef.current?.click()}
+                    disabled={autoMapping}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-extrabold transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
+                  >
+                    <UploadCloud className={`w-4 h-4 ${autoMapping ? 'animate-bounce' : ''}`} />
+                    <span>{autoMapping ? 'Detecting & Mapping...' : 'Upload & Auto-Map Report (.docx / .pdf)'}</span>
+                  </button>
+                  <input
+                    type="file"
+                    ref={autoMapFileInputRef}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleAutoMapFileSelected(f);
+                    }}
+                    accept=".docx,.pdf"
+                    className="hidden"
+                  />
                 </div>
               </div>
 
+              {/* Supported Bodies Quick Pill Badges */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-orange-200/60 text-[11px]">
+                <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">Auto-Supported Bodies:</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-800 font-bold">💡 Innovation &amp; Entrepreneurship (IIC)</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 font-bold">🤝 NSS &amp; Community</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-pink-200 text-pink-800 font-bold">🎯 Student Clubs</span>
+                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-indigo-200 text-indigo-800 font-bold">📋 Academic Committee Minutes</span>
+              </div>
+            </div>
+
+            {/* Submissions Tracker */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-orange-600" />
+                    Submissions &amp; Committee Tracker ({period})
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Track academic departments and institutional committees contributing to the dossier.
+                  </p>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-600">
+                  <button
+                    onClick={() => setTrackerFilter('ALL')}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      trackerFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+                    }`}
+                  >
+                    All ({allSubmissionsList.length})
+                  </button>
+                  <button
+                    onClick={() => setTrackerFilter('ACADEMIC')}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      trackerFilter === 'ACADEMIC' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+                    }`}
+                  >
+                    Departments ({submissions?.submittedDeptsCount || 0}/{submissions?.totalDepartments || 6})
+                  </button>
+                  <button
+                    onClick={() => setTrackerFilter('COMMITTEE')}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                      trackerFilter === 'COMMITTEE' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+                    }`}
+                  >
+                    Committees ({submissions?.submittedCommsCount || 0}/{submissions?.totalCommittees || 7})
+                  </button>
+                </div>
+              </div>
+
+              {/* Entity Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {submissions?.departments.map((dept) => {
+                {displayedEntities.map((dept) => {
                   const cfg = DEPARTMENT_CONFIG[dept.code] || {
                     badge: 'bg-slate-100 text-slate-700 border-slate-200',
                     accent: 'bg-slate-600'
@@ -872,15 +1047,22 @@ export const HODReportConsolidatorPage: React.FC = () => {
                       {/* Header Row */}
                       <div className="flex items-start justify-between gap-3 pt-1">
                         <div className="space-y-1">
-                          <span className={`inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${cfg.badge}`}>
-                            {dept.code}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${cfg.badge}`}>
+                              {dept.code}
+                            </span>
+                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                              dept.type === 'COMMITTEE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {dept.type === 'COMMITTEE' ? 'Committee' : 'Department'}
+                            </span>
+                          </div>
                           <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">
                             {dept.name}
                           </h4>
                           <div className="text-xs text-slate-500 flex items-center gap-1.5 pt-0.5">
                             <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                            <span>HOD: <strong className="text-slate-800 font-semibold">{dept.hodName}</strong></span>
+                            <span>Lead: <strong className="text-slate-800 font-semibold">{dept.hodName}</strong></span>
                           </div>
                         </div>
 
@@ -1022,12 +1204,21 @@ export const HODReportConsolidatorPage: React.FC = () => {
                   onChange={(e) => handleDepartmentChange(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm font-semibold focus:outline-none focus:border-blue-600 transition-colors cursor-pointer"
                 >
-                  <option value="Civil Engineering">Civil Engineering (CIVIL)</option>
-                  <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
-                  <option value="Electronics & Communication Engineering">Electronics & Communication Engineering (ECE)</option>
-                  <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering (EEE)</option>
-                  <option value="Mechanical Engineering">Mechanical Engineering (MECH)</option>
-                  <option value="Humanities & Sciences">Humanities & Sciences (H&S)</option>
+                  <option value="auto">⚡ Auto-Detect &amp; Map from Document (Recommended)</option>
+                  <optgroup label="Academic Departments">
+                    <option value="Civil Engineering">Civil Engineering (CIVIL)</option>
+                    <option value="Computer Science & Engineering">Computer Science & Engineering (CSE)</option>
+                    <option value="Electronics & Communication Engineering">Electronics & Communication Engineering (ECE)</option>
+                    <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering (EEE)</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering (MECH)</option>
+                    <option value="Humanities & Sciences">Humanities & Sciences (H&S)</option>
+                  </optgroup>
+                  <optgroup label="Institutional Committees & Specialized Bodies">
+                    <option value="Innovation And Entrepreneurship">Innovation And Entrepreneurship (IIC/EDC)</option>
+                    <option value="Student Engagement and Clubs">Student Engagement and Clubs (CLUBS)</option>
+                    <option value="NSS & Community Engagement">NSS & Community Engagement (NSS)</option>
+                    <option value="Minutes of the Meeting">Minutes of the Meeting (MOM)</option>
+                  </optgroup>
                 </select>
               </div>
 

@@ -17,21 +17,22 @@ def normalize_key(text):
     t = (text or '').lower().strip()
     if 'journal' in t: return '1a_journals'
     if 'conference' in t: return '1b_conferences'
-    if 'patent' in t: return '1c_patents'
-    if 'entrepreneurship' in t or 'start-up' in t: return '1d_entrepreneurship'
-    if 'nss' in t or 'extension' in t: return '2_nss'
+    if 'patent' in t or 'ipr' in t: return '1c_patents'
+    if 'entrepreneurship' in t or 'start-up' in t or 'startup' in t or 'incubation' in t or 'pitch' in t: return '1d_entrepreneurship'
+    if 'nss' in t or 'extension' in t or 'community' in t or 'social service' in t or 'blood donation' in t or 'swachh' in t: return '2_nss'
     if 'fdp' in t or 'faculty development' in t:
         if 'organized' in t or 'organise' in t:
             return '3b_fdp_organized'
         return '3a_fdp_attended'
     if 'sdp' in t or 'student development' in t: return '4_sdp'
-    if 'student achievements' in t or ('student' in t and 'achievement' in t): return '5b_student_achievements'
-    if 'faculty achievements' in t or ('faculty' in t and 'achievement' in t): return '5a_faculty_achievements'
-    if 'certification' in t: return '5c_certifications'
-    if 'department meetings' in t or 'department meeting' in t: return '6a_dept_meetings'
-    if 'collaboration' in t or 'mou' in t: return '6b_mous'
-    if 'additional' in t or 'initiatives' in t: return '7_additional_initiatives'
-    if 'technical association' in t: return '8_tech_association'
+    if 'student achievements' in t or ('student' in t and 'achievement' in t) or 'student award' in t: return '5b_student_achievements'
+    if 'faculty achievements' in t or ('faculty' in t and 'achievement' in t) or 'faculty award' in t: return '5a_faculty_achievements'
+    if 'certification' in t or 'nptel' in t or 'coursera' in t: return '5c_certifications'
+    if 'department meetings' in t or 'department meeting' in t or 'committee meeting' in t or 'minutes' in t or 'dac' in t or 'bos' in t or 'hearing' in t or 'disciplinary' in t or 'grievance' in t or 'governance' in t: return '6a_dept_meetings'
+    if 'collaboration' in t or 'mou' in t or 'industry tie-up' in t or 'corporate partnership' in t: return '6b_mous'
+    if 'additional' in t or 'initiatives' in t or 'special initiative' in t: return '7_additional_initiatives'
+    if 'technical association' in t or 'club activity' in t or 'student club' in t or 'student engagement' in t or 'hackathon' in t or 'expo' in t: return '8_tech_association'
+    if 'iic' in t or 'innovation council' in t or 'innovation activity' in t or 'innovation cell' in t: return '9_iic_cell'
     # Branch specific syllabus tables (must check before generic syllabus)
     if 'branch:' in t or 'branch' in t or 'syllabus' in t or 'coverage' in t:
         if 'cse - a' in t or 'cse a' in t or 'cse  a' in t: return '10_syllabus_cse_a'
@@ -42,7 +43,6 @@ def normalize_key(text):
         if 'civl' in t or 'civil' in t: return '10_syllabus_civil'
         if 'mech' in t: return '10_syllabus_mech'
         return '10_syllabus_general'
-    if 'iic' in t or 'innovation council' in t: return '9_iic_cell'
     if 'attendance' in t: return '11_attendance'
     return 'UNKNOWN'
 
@@ -81,7 +81,7 @@ def extract_tables_with_headings(doc):
     return tables_found
 
 def extract_department_info(doc, filepath=""):
-    """Extract department, period, HOD name from first few paragraphs/tables or filename."""
+    """Extract department, period, HOD/Convener name from first few paragraphs/tables or filename."""
     lines = [p.text.strip() for p in doc.paragraphs[:15] if p.text.strip()]
     if doc.tables:
         for row in doc.tables[0].rows[:3]:
@@ -89,37 +89,105 @@ def extract_department_info(doc, filepath=""):
                 if cell.text.strip():
                     lines.append(cell.text.strip())
     full_header_text = '\n'.join(lines)
-    text_to_check = full_header_text + '\n' + os.path.basename(filepath)
-    text_norm = text_to_check.lower()
+    fname = os.path.basename(filepath).lower() if filepath else ''
     
     dept = 'General'
-    if 'civil' in text_norm:
-        dept = 'Civil Engineering'
-    elif 'cse' in text_norm or 'computer science' in text_norm:
-        dept = 'Computer Science & Engineering'
-    elif 'ece' in text_norm or 'electronics and communication' in text_norm:
-        dept = 'Electronics & Communication Engineering'
-    elif 'eee' in text_norm or 'electrical' in text_norm:
-        dept = 'Electrical & Electronics Engineering'
-    elif 'humanities' in text_norm or 'has' in text_norm or 'h&s' in text_norm:
-        dept = 'Humanities & Sciences'
+    
+    # 1. First priority: Check explicit metadata label "Department:" or "Committee:" or "Entity:" or "Cell:"
+    dept_label_match = re.search(r'(?:Department|Committee|Cell|Body|Entity|Organizing Unit):\s*([^\n\r]+)', full_header_text, re.IGNORECASE)
+    if dept_label_match:
+        label_val = dept_label_match.group(1).lower().strip()
+        if 'humanities' in label_val or 'has' in label_val or 'h&s' in label_val:
+            dept = 'Humanities & Sciences'
+        elif 'civil' in label_val:
+            dept = 'Civil Engineering'
+        elif 'cse' in label_val or 'computer' in label_val:
+            dept = 'Computer Science & Engineering'
+        elif 'ece' in label_val or 'electronics' in label_val or 'communication' in label_val:
+            dept = 'Electronics & Communication Engineering'
+        elif 'eee' in label_val or 'electrical' in label_val:
+            dept = 'Electrical & Electronics Engineering'
+        elif 'mech' in label_val:
+            dept = 'Mechanical Engineering'
+        elif 'innovation' in label_val or 'entrepreneurship' in label_val or 'iic' in label_val or 'edc' in label_val:
+            dept = 'Innovation And Entrepreneurship'
+        elif 'club' in label_val or 'student engagement' in label_val:
+            dept = 'Student Engagement and Clubs'
+        elif 'nss' in label_val or 'community' in label_val:
+            dept = 'NSS & Community Engagement'
+        elif 'minutes' in label_val or 'meeting' in label_val or 'academic committee' in label_val:
+            dept = 'Minutes of the Meeting'
+
+    # 2. Second priority: Match from filename
+    if dept == 'General' and fname:
+        if 'has' in fname or 'humanities' in fname or 'h&s' in fname:
+            dept = 'Humanities & Sciences'
+        elif 'civil' in fname or 'civl' in fname:
+            dept = 'Civil Engineering'
+        elif 'cse' in fname or 'computer' in fname:
+            dept = 'Computer Science & Engineering'
+        elif 'ece' in fname or 'electronics' in fname:
+            dept = 'Electronics & Communication Engineering'
+        elif 'eee' in fname or 'electrical' in fname:
+            dept = 'Electrical & Electronics Engineering'
+        elif 'mech' in fname:
+            dept = 'Mechanical Engineering'
+        elif 'nss' in fname or 'community' in fname:
+            dept = 'NSS & Community Engagement'
+        elif 'minutes' in fname or 'mom' in fname:
+            dept = 'Minutes of the Meeting'
+        elif 'club' in fname or 'engagement' in fname:
+            dept = 'Student Engagement and Clubs'
+        elif 'innovation' in fname or 'iic' in fname or 'edc' in fname or 'entrepreneurship' in fname:
+            dept = 'Innovation And Entrepreneurship'
+
+    # 3. Third priority: Specific phrase check in header text
+    if dept == 'General':
+        text_norm = (full_header_text + '\n' + fname).lower()
+        if 'humanities & sciences' in text_norm or 'humanities and sciences' in text_norm or 'department of humanities' in text_norm:
+            dept = 'Humanities & Sciences'
+        elif 'department of civil' in text_norm or 'civil engineering' in text_norm:
+            dept = 'Civil Engineering'
+        elif 'computer science' in text_norm or 'department of cse' in text_norm:
+            dept = 'Computer Science & Engineering'
+        elif 'electronics & communication' in text_norm or 'electronics and communication' in text_norm or 'department of ece' in text_norm:
+            dept = 'Electronics & Communication Engineering'
+        elif 'electrical & electronics' in text_norm or 'electrical and electronics' in text_norm or 'department of eee' in text_norm:
+            dept = 'Electrical & Electronics Engineering'
+        elif 'department of mechanical' in text_norm or 'mechanical engineering' in text_norm:
+            dept = 'Mechanical Engineering'
+        elif 'institution\'s innovation council' in text_norm or 'innovation & entrepreneurship committee' in text_norm or 'iic cell' in text_norm or 'edc cell' in text_norm:
+            dept = 'Innovation And Entrepreneurship'
+        elif 'student engagement and clubs' in text_norm or 'student clubs & engagement' in text_norm:
+            dept = 'Student Engagement and Clubs'
+        elif 'nss & community' in text_norm or 'national service scheme' in text_norm or 'community engagement cell' in text_norm:
+            dept = 'NSS & Community Engagement'
+        elif 'minutes of the meeting' in text_norm or 'academic committee meeting' in text_norm or 'dac meeting' in text_norm:
+            dept = 'Minutes of the Meeting'
+        # Fallbacks for acronyms
+        elif re.search(r'\bcse\b', text_norm): dept = 'Computer Science & Engineering'
+        elif re.search(r'\bece\b', text_norm): dept = 'Electronics & Communication Engineering'
+        elif re.search(r'\beee\b', text_norm): dept = 'Electrical & Electronics Engineering'
+        elif re.search(r'\bmech\b', text_norm): dept = 'Mechanical Engineering'
+        elif re.search(r'\bcivil\b', text_norm): dept = 'Civil Engineering'
+        elif re.search(r'\bh&s\b|\bhas\b', text_norm): dept = 'Humanities & Sciences'
         
     period = 'April 2026'
     period_match = re.search(r'Reporting Period:\s*([^\n\r]+)', full_header_text, re.IGNORECASE)
     if period_match:
         raw_p = period_match.group(1).strip()
-        raw_p = re.split(r'HOD Name|Date of Submission|Department', raw_p, flags=re.IGNORECASE)[0].strip()
+        raw_p = re.split(r'HOD Name|Convener|Coordinator|Date of Submission|Department', raw_p, flags=re.IGNORECASE)[0].strip()
         if len(raw_p) > 2 and len(raw_p) < 60:
             period = raw_p
     elif 'aug' in text_norm:
         period = 'August 2026'
         
     hod = ''
-    hod_match = re.search(r'HOD Name:\s*([^\n\r]+)', full_header_text, re.IGNORECASE)
+    hod_match = re.search(r'(?:HOD Name|Convener|Coordinator|Officer|Chairperson|Dean|In-Charge|Member Secretary):\s*([^\n\r]+)', full_header_text, re.IGNORECASE)
     if hod_match:
         raw_h = hod_match.group(1).strip()
-        raw_h = re.split(r'Date of Submission|Reporting Period|Department', raw_h, flags=re.IGNORECASE)[0].strip()
-        if len(raw_h) < 60:
+        raw_h = re.split(r'Date of Submission|Reporting Period|Department|Authority', raw_h, flags=re.IGNORECASE)[0].strip()
+        if len(raw_h) < 70:
             hod = raw_h
         
     return {
@@ -354,30 +422,35 @@ def create_summary_matrix_xml(departments, category_data):
         ('1b_conferences', 'Conference Papers'),
         ('1c_patents', 'Patents Filed / Published'),
         ('1d_entrepreneurship', 'Entrepreneurship & Start-ups'),
-        ('2_nss', 'NSS & Extension Activities'),
         ('3a_fdp_attended', 'Faculty Development (FDP) — Attended'),
         ('3b_fdp_organized', 'Faculty Development (FDP) — Organized'),
         ('4_sdp', 'Student Development (SDP)'),
         ('5a_faculty_achievements', 'Faculty Achievements & Awards'),
         ('5b_student_achievements', 'Student Achievements & Awards'),
         ('5c_certifications', 'Certifications (NPTEL / Coursera)'),
-        ('6a_dept_meetings', 'Department Meetings & Mentoring'),
+        ('6a_dept_meetings', 'Meetings'),
         ('6b_mous', 'MoUs & Collaborations'),
-        ('7_additional_initiatives', 'Additional Initiatives'),
         ('8_tech_association', 'Technical Association Activities'),
-        ('9_iic_cell', 'IIC & Innovation Activities'),
+        ('student_engagement', '11. Club & Student Engagement Activity'),
+        ('2_nss', 'NSS & Extension Activities'),
+        ('7_additional_initiatives', '12. Additional Initiatives'),
     ]
     
-    # Calculate counts per category per department
+    # Calculate counts per category per department / committee
     dept_short = {}
     for d in departments:
-        if 'Civil' in d: dept_short[d] = 'CIVIL'
-        elif 'Computer' in d: dept_short[d] = 'CSE'
-        elif 'Communication' in d: dept_short[d] = 'ECE'
-        elif 'Electrical' in d: dept_short[d] = 'EEE'
-        elif 'Mechanical' in d or 'Mech' in d: dept_short[d] = 'MECH'
-        elif 'Humanities' in d or 'H&S' in d: dept_short[d] = 'H&S'
-        else: dept_short[d] = d[:6].upper()
+        d_low = d.lower()
+        if 'civil' in d_low: dept_short[d] = 'CIVIL'
+        elif 'computer' in d_low or 'cse' in d_low: dept_short[d] = 'CSE'
+        elif 'communication' in d_low or 'ece' in d_low: dept_short[d] = 'ECE'
+        elif 'electrical' in d_low or 'eee' in d_low: dept_short[d] = 'EEE'
+        elif 'mechanical' in d_low or 'mech' in d_low: dept_short[d] = 'MECH'
+        elif 'humanities' in d_low or 'h&s' in d_low or 'has' in d_low: dept_short[d] = 'H&S'
+        elif 'innovation' in d_low or 'entrepreneurship' in d_low or 'iic' in d_low or 'edc' in d_low: dept_short[d] = 'IIC/EDC'
+        elif 'student engagement' in d_low or 'club' in d_low: dept_short[d] = 'CLUBS'
+        elif 'nss' in d_low or 'community' in d_low: dept_short[d] = 'NSS'
+        elif 'minutes' in d_low or 'meeting' in d_low: dept_short[d] = 'MOM'
+        else: dept_short[d] = d[:7].upper()
 
     matrix_rows = []
     
@@ -464,11 +537,20 @@ def parse_pdf_department_report(pdf_path):
     }
     
     fname = os.path.basename(pdf_path).lower()
-    if 'civil' in fname: results['department'] = 'Civil Engineering'
+    if 'innovation' in fname or 'entrepreneurship' in fname or 'iic' in fname or 'edc' in fname:
+        results['department'] = 'Innovation And Entrepreneurship'
+    elif 'student engagement' in fname or 'student clubs' in fname or 'coding club' in fname or 'clubs' in fname:
+        results['department'] = 'Student Engagement and Clubs'
+    elif 'nss' in fname or 'community' in fname or 'social service' in fname:
+        results['department'] = 'NSS & Community Engagement'
+    elif 'minutes' in fname or 'meeting' in fname or 'academic committee' in fname:
+        results['department'] = 'Minutes of the Meeting'
+    elif 'civil' in fname: results['department'] = 'Civil Engineering'
     elif 'cse' in fname or 'computer' in fname: results['department'] = 'Computer Science & Engineering'
     elif 'ece' in fname or 'communication' in fname: results['department'] = 'Electronics & Communication Engineering'
     elif 'eee' in fname or 'electrical' in fname: results['department'] = 'Electrical & Electronics Engineering'
-    elif 'humanities' in fname or 'has' in fname: results['department'] = 'Humanities & Sciences'
+    elif 'mech' in fname or 'mechanical' in fname: results['department'] = 'Mechanical Engineering'
+    elif 'humanities' in fname or 'has' in fname or 'h&s' in fname: results['department'] = 'Humanities & Sciences'
 
     # 1. Try reading embedded JSON from PDF metadata (created by SSE application)
     try:
@@ -587,11 +669,20 @@ def parse_pdf_department_report(pdf_path):
 
         if full_text:
             text_norm = full_text.lower()
-            if 'civil' in text_norm: results['department'] = 'Civil Engineering'
+            if 'innovation' in text_norm or 'entrepreneurship' in text_norm or 'iic' in text_norm or 'edc' in text_norm:
+                results['department'] = 'Innovation And Entrepreneurship'
+            elif 'student engagement' in text_norm or 'student clubs' in text_norm or 'coding club' in text_norm or 'clubs' in text_norm:
+                results['department'] = 'Student Engagement and Clubs'
+            elif 'nss' in text_norm or 'community engagement' in text_norm or 'social service' in text_norm:
+                results['department'] = 'NSS & Community Engagement'
+            elif 'minutes' in text_norm or 'academic committee' in text_norm or 'dac meeting' in text_norm or 'bos meeting' in text_norm:
+                results['department'] = 'Minutes of the Meeting'
+            elif 'civil' in text_norm: results['department'] = 'Civil Engineering'
             elif 'computer' in text_norm or 'cse' in text_norm: results['department'] = 'Computer Science & Engineering'
             elif 'electronics' in text_norm or 'ece' in text_norm: results['department'] = 'Electronics & Communication Engineering'
             elif 'electrical' in text_norm or 'eee' in text_norm: results['department'] = 'Electrical & Electronics Engineering'
-            elif 'humanities' in text_norm or 'has' in text_norm: results['department'] = 'Humanities & Sciences'
+            elif 'mech' in text_norm or 'mechanical' in text_norm: results['department'] = 'Mechanical Engineering'
+            elif 'humanities' in text_norm or 'has' in text_norm or 'h&s' in text_norm: results['department'] = 'Humanities & Sciences'
 
             current_cat = None
             lines = [l.strip() for l in full_text.split('\n') if l.strip()]
@@ -967,12 +1058,73 @@ def consolidate_from_zip(zip_path, output_path=None):
         
     return consolidate_reports(input_files, output_path)
 
+def is_committee_entity(name):
+    low = (name or '').lower()
+    return any(c in low for c in ['committee', 'innovation', 'entrepreneurship', 'clubs', 'engagement', 'nss', 'minutes', 'placement', 'training', 'r&d', 'research'])
+
+def inspect_report_file(file_path):
+    """Inspects a DOCX or PDF file to detect its mapped entity (department/committee), period, HOD, and items count."""
+    try:
+        if not os.path.exists(file_path):
+            return {'success': False, 'error': f'File not found: {file_path}'}
+
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.pdf':
+            pdf_res = parse_pdf_department_report(file_path)
+            items_count = sum(len(v) for v in pdf_res.get('category_data', {}).values())
+            dept = pdf_res.get('department', 'General')
+            return {
+                'success': True,
+                'department': dept,
+                'period': pdf_res.get('period', 'April 2026'),
+                'hod': pdf_res.get('hod', 'Convener / Lead'),
+                'itemsCount': items_count,
+                'type': 'COMMITTEE' if is_committee_entity(dept) else 'ACADEMIC'
+            }
+        elif ext == '.docx':
+            d = docx.Document(file_path)
+            meta = extract_department_info(d, file_path)
+            doc_tables = extract_tables_with_headings(d)
+            items_count = 0
+            for t_info in doc_tables:
+                if t_info['category'] != 'UNKNOWN':
+                    tbl_elem = t_info['tbl_elem']
+                    tr_elems = tbl_elem.findall(f'{{{NS_W}}}tr')
+                    for r_elem in tr_elems[1:]:
+                        cells_text = [
+                            ''.join(elem.text for elem in tc.iter(f'{{{NS_W}}}t') if elem.text).strip()
+                            for tc in r_elem.findall(f'.//{{{NS_W}}}tc')
+                        ]
+                        if is_meaningful_row(cells_text):
+                            items_count += 1
+            dept = meta.get('department', 'General')
+            return {
+                'success': True,
+                'department': dept,
+                'period': meta.get('period', 'April 2026'),
+                'hod': meta.get('hod', 'HOD / Convener'),
+                'itemsCount': items_count,
+                'type': 'COMMITTEE' if is_committee_entity(dept) else 'ACADEMIC'
+            }
+        else:
+            return {'success': False, 'error': f'Unsupported format: {ext}'}
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) < 2:
         zip_file = r'c:\Users\nmani\OneDrive\Desktop\Buddy\Reports Zip File.zip'
         out_file = r'c:\Users\nmani\OneDrive\Desktop\Buddy\Consolidated_Institutional_HOD_Report_April_2026.docx'
         consolidate_from_zip(zip_file, out_file)
+    elif sys.argv[1] == '--inspect':
+        if len(sys.argv) > 2:
+            target_path = sys.argv[2]
+            inspect_res = inspect_report_file(target_path)
+            print(json.dumps(inspect_res))
+        else:
+            print(json.dumps({'success': False, 'error': 'No file path provided to inspect'}))
+        sys.exit(0)
     else:
         first_arg = sys.argv[1]
         out_file = sys.argv[2] if len(sys.argv) > 2 else r'c:\Users\nmani\OneDrive\Desktop\Buddy\Consolidated_Institutional_HOD_Report_April_2026.docx'
