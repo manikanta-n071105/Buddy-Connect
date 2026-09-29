@@ -679,14 +679,14 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.syllabus || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Course / Subject Title', width: '28%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.subject}</div> },
-        { header: 'Year / Sem', width: '12%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.yearSem || '-'}</span> },
-        { header: 'Faculty In-Charge', width: '20%', align: 'left', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.faculty}</span> },
-        { header: '% Done', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857' }}>{it.completed}</span> },
-        { header: '% Pend', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 700, color: '#b45309' }}>{it.pending}</span> },
-        { header: 'Remarks', width: '11%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8px', fontStyle: 'italic' }}>{it.remarks}</div> }
+        { header: '#', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Course / Subject Title', width: '21%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.subject}</div> },
+        { header: 'Year / Sem', width: '10%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.yearSem || '-'}</span> },
+        { header: 'Faculty In-Charge', width: '16%', align: 'left', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.faculty}</span> },
+        { header: '% Done', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857' }}>{it.completed}</span> },
+        { header: '% Pend', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 700, color: '#b45309' }}>{it.pending}</span> },
+        { header: 'Remarks', width: '28%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8.5px', fontStyle: 'italic', lineHeight: 1.35 }}>{it.remarks || '-'}</div> }
       ]
     },
     // 9. Club & Student Engagement Activity

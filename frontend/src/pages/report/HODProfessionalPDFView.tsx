@@ -483,12 +483,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                 <th style={{ width: '38px', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>S.No</th>
-                <th style={{ width: '24%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Subject / Course</th>
-                <th style={{ width: '15%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
-                <th style={{ width: '18%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Faculty</th>
-                <th style={{ width: '11%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>% Done</th>
-                <th style={{ width: '11%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>% Pend</th>
-                <th style={{ width: '21%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
+                <th style={{ width: '20%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Subject / Course</th>
+                <th style={{ width: '13%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
+                <th style={{ width: '17%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Faculty</th>
+                <th style={{ width: '9%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>% Done</th>
+                <th style={{ width: '9%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>% Pend</th>
+                <th style={{ width: '28%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
               </tr>
             </thead>
             <tbody>
