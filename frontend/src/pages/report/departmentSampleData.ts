@@ -1977,8 +1977,9 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
     };
   }
 
-  // 6. DEFAULT: CIVIL ENGINEERING
-  return {
+  // 6. CIVIL ENGINEERING
+  if (dept.includes('civil')) {
+    return {
     journals: [
       {
         title: 'Comparative Study on Conventional and Geopolymer Precast Concrete Systems for Sustainable Infrastructure',
@@ -2351,4 +2352,8 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
       }
     ]
   };
+}
+
+  // Safe fallback: empty template sections for unmapped committees or entities
+  return { ...INITIAL_SECTIONS };
 };
