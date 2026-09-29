@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { ReportSectionsData } from './HODManualReportBuilder';
+import { ReportSectionsData, normalizeSections } from './HODManualReportBuilder';
 import { getDepartmentSampleData } from './departmentSampleData';
 
 interface ConsolidatedInstitutionalPDFViewProps {
@@ -103,10 +103,11 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     { code: 'H&S', name: 'Humanities & Sciences', hod: 'Dr. Samba Sivaiah B' }
   ];
 
-  // Gather data for all 5 departments
+  // Gather data for all 5 departments with robust normalization
   const deptDataMap: Record<string, ReportSectionsData> = {};
   departmentList.forEach(dept => {
-    deptDataMap[dept.code] = customData?.[dept.name] || customData?.[dept.code] || getDepartmentSampleData(dept.name);
+    const raw = customData?.[dept.name] || customData?.[dept.code] || getDepartmentSampleData(dept.name);
+    deptDataMap[dept.code] = normalizeSections(raw);
   });
 
   // Aggregate matrix metrics
@@ -136,8 +137,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     const counts: Record<string, number> = {};
     let catTotal = 0;
     departmentList.forEach(dept => {
-      const arr = (deptDataMap[dept.code] as any)?.[cat.key] || [];
-      const count = arr.length;
+      const arr = (deptDataMap[dept.code] as any)?.[cat.key];
+      const count = Array.isArray(arr) ? arr.length : 0;
       counts[dept.code] = count;
       deptTotals[dept.code] += count;
       catTotal += count;

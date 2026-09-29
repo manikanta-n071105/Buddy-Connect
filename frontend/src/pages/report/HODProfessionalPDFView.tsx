@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ReportSectionsData } from './HODManualReportBuilder';
+import { ReportSectionsData, normalizeSections } from './HODManualReportBuilder';
 
 interface HODProfessionalPDFViewProps {
   department: string;
@@ -14,8 +14,9 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
   hodName,
   period,
   submissionDate,
-  sections
+  sections: rawSections
 }) => {
+  const sections = normalizeSections(rawSections);
   const [logoBase64, setLogoBase64] = useState<string>('/assets/sse-header-logo.png');
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
     fetchLogo();
   }, []);
 
-  const totalActivities = Object.values(sections).reduce((acc, curr) => acc + curr.length, 0);
+  const totalActivities = Object.values(sections).reduce((acc, curr) => acc + (Array.isArray(curr) ? curr.length : 0), 0);
 
 
   return (

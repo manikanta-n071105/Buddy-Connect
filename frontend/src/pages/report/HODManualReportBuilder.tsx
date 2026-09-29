@@ -172,7 +172,7 @@ export interface ReportSectionsData {
   }>;
 }
 
-const INITIAL_SECTIONS: ReportSectionsData = {
+export const INITIAL_SECTIONS: ReportSectionsData = {
   journals: [],
   conferences: [],
   patents: [],
@@ -191,6 +191,30 @@ const INITIAL_SECTIONS: ReportSectionsData = {
   syllabus: []
 };
 
+export const normalizeSections = (raw: any): ReportSectionsData => {
+  if (!raw || typeof raw !== 'object') {
+    return { ...INITIAL_SECTIONS };
+  }
+  return {
+    journals: Array.isArray(raw.journals) ? raw.journals : [],
+    conferences: Array.isArray(raw.conferences) ? raw.conferences : [],
+    patents: Array.isArray(raw.patents) ? raw.patents : [],
+    entrepreneurship: Array.isArray(raw.entrepreneurship) ? raw.entrepreneurship : [],
+    nss: Array.isArray(raw.nss) ? raw.nss : [],
+    fdp: Array.isArray(raw.fdp) ? raw.fdp : [],
+    sdp: Array.isArray(raw.sdp) ? raw.sdp : [],
+    facultyAchievements: Array.isArray(raw.facultyAchievements) ? raw.facultyAchievements : [],
+    studentAchievements: Array.isArray(raw.studentAchievements) ? raw.studentAchievements : [],
+    certifications: Array.isArray(raw.certifications) ? raw.certifications : [],
+    deptMeetings: Array.isArray(raw.deptMeetings) ? raw.deptMeetings : [],
+    mous: Array.isArray(raw.mous) ? raw.mous : [],
+    additionalInitiatives: Array.isArray(raw.additionalInitiatives) ? raw.additionalInitiatives : [],
+    techAssociation: Array.isArray(raw.techAssociation) ? raw.techAssociation : [],
+    iicCell: Array.isArray(raw.iicCell) ? raw.iicCell : [],
+    syllabus: Array.isArray(raw.syllabus) ? raw.syllabus : [],
+  };
+};
+
 interface HODManualReportBuilderProps {
   currentPeriod: string;
   onReportGenerated?: () => void;
@@ -206,7 +230,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   const [period, setPeriod] = useState(currentPeriod || '01/04/2026 to 25/04/2026');
   const [submissionDate, setSubmissionDate] = useState('25/04/2026');
 
-  const [sections, setSections] = useState<ReportSectionsData>(INITIAL_SECTIONS);
+  const [sections, setSections] = useState<ReportSectionsData>(() => normalizeSections(INITIAL_SECTIONS));
 
   useEffect(() => {
     if (currentPeriod) {
@@ -233,8 +257,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const res = await api.get(`/reports/department-report-data?department=${encodeURIComponent(dept)}&period=${encodeURIComponent(per)}`);
       if (res.data?.success && res.data.exists && res.data.data) {
         const d = res.data.data;
-        if (d.sections && typeof d.sections === 'object' && Object.keys(d.sections).length > 0) {
-          setSections(d.sections);
+        if (d.sections && typeof d.sections === 'object') {
+          setSections(normalizeSections(d.sections));
         }
         if (d.hodName) setHodName(d.hodName);
         if (d.submissionDate) setSubmissionDate(d.submissionDate);
@@ -305,98 +329,100 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     const hasData = Object.values(sections).some(arr => Array.isArray(arr) && arr.length > 0);
     if (hasData) {
       const newDeptData = getDepartmentSampleData(dept);
-      setSections(newDeptData);
+      setSections(normalizeSections(newDeptData));
       toast.info(`Switched to sample data for ${dept}`);
     }
   };
 
   // Exact 16 tables matching the template format:
+  const safeSections = normalizeSections(sections);
+
   const SECTION_TABS = [
-    { key: '1a_journals', label: '1a. Journal Publications', count: sections.journals.length },
-    { key: '1b_conferences', label: '1b. Conference Presentations', count: sections.conferences.length },
-    { key: '1c_patents', label: '1c. Patents', count: sections.patents.length },
-    { key: '1d_entrepreneurship', label: '1d. Entrepreneurship/Start-up Initiatives', count: sections.entrepreneurship.length },
-    { key: '2_nss', label: '2. NSS and Other Extension Activities', count: sections.nss.length },
-    { key: '3_fdp', label: '3. Faculty Development Programs (FDPs)', count: sections.fdp.length },
-    { key: '4_sdp', label: '4. Student Development Programs (SDPs)', count: sections.sdp.length },
-    { key: '5a_faculty_achievements', label: '5a. Faculty Achievements', count: sections.facultyAchievements.length },
-    { key: '5b_student_achievements', label: '5b. Student Achievements', count: sections.studentAchievements.length },
-    { key: '5c_certifications', label: '5c. Certifications', count: sections.certifications.length },
-    { key: '6a_dept_meetings', label: '6a. Department Meetings', count: sections.deptMeetings.length },
-    { key: '6b_mous', label: '6b. Collaborations & MoUs', count: sections.mous.length },
-    { key: '7_additional', label: '7. Additional/Other Relevant Initiatives', count: sections.additionalInitiatives.length },
-    { key: '8_tech_association', label: '8. Technical Association Activities', count: sections.techAssociation.length },
-    { key: '9_iic_cell', label: '9. IIC Cell (Institution’s Innovation Council)', count: sections.iicCell.length },
-    { key: '10_syllabus', label: '10. Syllabus coverage Report', count: sections.syllabus.length },
+    { key: '1a_journals', label: '1a. Journal Publications', count: (safeSections.journals || []).length },
+    { key: '1b_conferences', label: '1b. Conference Presentations', count: (safeSections.conferences || []).length },
+    { key: '1c_patents', label: '1c. Patents', count: (safeSections.patents || []).length },
+    { key: '1d_entrepreneurship', label: '1d. Entrepreneurship/Start-up Initiatives', count: (safeSections.entrepreneurship || []).length },
+    { key: '2_nss', label: '2. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
+    { key: '3_fdp', label: '3. Faculty Development Programs (FDPs)', count: (safeSections.fdp || []).length },
+    { key: '4_sdp', label: '4. Student Development Programs (SDPs)', count: (safeSections.sdp || []).length },
+    { key: '5a_faculty_achievements', label: '5a. Faculty Achievements', count: (safeSections.facultyAchievements || []).length },
+    { key: '5b_student_achievements', label: '5b. Student Achievements', count: (safeSections.studentAchievements || []).length },
+    { key: '5c_certifications', label: '5c. Certifications', count: (safeSections.certifications || []).length },
+    { key: '6a_dept_meetings', label: '6a. Department Meetings', count: (safeSections.deptMeetings || []).length },
+    { key: '6b_mous', label: '6b. Collaborations & MoUs', count: (safeSections.mous || []).length },
+    { key: '7_additional', label: '7. Additional/Other Relevant Initiatives', count: (safeSections.additionalInitiatives || []).length },
+    { key: '8_tech_association', label: '8. Technical Association Activities', count: (safeSections.techAssociation || []).length },
+    { key: '9_iic_cell', label: '9. IIC Cell (Institution’s Innovation Council)', count: (safeSections.iicCell || []).length },
+    { key: '10_syllabus', label: '10. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
   ];
 
-  const totalActivities = Object.values(sections).reduce((acc, curr) => acc + curr.length, 0);
+  const totalActivities = Object.values(safeSections).reduce((acc, curr) => acc + (Array.isArray(curr) ? curr.length : 0), 0);
 
   // Load comprehensive multi-item sample data for the selected department
   const handleLoadSampleData = () => {
     const data = getDepartmentSampleData(department);
-    setSections(data);
+    setSections(normalizeSections(data));
     toast.success(`Loaded sample data for ${department}!`);
   };
 
   const handleClearForm = () => {
     if (window.confirm('Clear all fields?')) {
-      setSections(INITIAL_SECTIONS);
+      setSections({ ...INITIAL_SECTIONS });
       toast.info('All fields cleared.');
     }
   };
 
   const handleAddRow = (sectionKey: keyof ReportSectionsData) => {
     setSections(prev => {
-      const copy = { ...prev };
+      const copy = normalizeSections(prev);
       switch (sectionKey) {
         case 'journals':
-          copy.journals = [...copy.journals, { title: '', authors: '', journalName: '', issnIsbn: '', volIssueYear: '', pageNos: '', indexedIn: '', link: '' }];
+          copy.journals = [...(copy.journals || []), { title: '', authors: '', journalName: '', issnIsbn: '', volIssueYear: '', pageNos: '', indexedIn: '', link: '' }];
           break;
         case 'conferences':
-          copy.conferences = [...copy.conferences, { title: '', authors: '', conferenceName: '', date: '', locationMode: '', indexedIn: '', link: '' }];
+          copy.conferences = [...(copy.conferences || []), { title: '', authors: '', conferenceName: '', date: '', locationMode: '', indexedIn: '', link: '' }];
           break;
         case 'patents':
-          copy.patents = [...copy.patents, { title: '', inventors: '', applicants: '', patentNumber: '', status: '', awardedDate: '', link: '' }];
+          copy.patents = [...(copy.patents || []), { title: '', inventors: '', applicants: '', patentNumber: '', status: '', awardedDate: '', link: '' }];
           break;
         case 'entrepreneurship':
-          copy.entrepreneurship = [...copy.entrepreneurship, { title: '', date: '', type: '', participants: '', organizedBy: '', mode: '', keyOutcomes: '', participantsCount: '', mentorCoordinator: '', status: '', link: '' }];
+          copy.entrepreneurship = [...(copy.entrepreneurship || []), { title: '', date: '', type: '', participants: '', organizedBy: '', mode: '', keyOutcomes: '', participantsCount: '', mentorCoordinator: '', status: '', link: '' }];
           break;
         case 'nss':
-          copy.nss = [...copy.nss, { event: '', date: '', venue: '', type: '', participantsCount: '', typeOfParticipants: '', outcomes: '', coordinator: '', link: '' }];
+          copy.nss = [...(copy.nss || []), { event: '', date: '', venue: '', type: '', participantsCount: '', typeOfParticipants: '', outcomes: '', coordinator: '', link: '' }];
           break;
         case 'fdp':
-          copy.fdp = [...copy.fdp, { title: '', type: '', dates: '', organizingBody: '', mode: '', role: '', keyOutcomes: '', link: '' }];
+          copy.fdp = [...(copy.fdp || []), { title: '', type: '', dates: '', organizingBody: '', mode: '', role: '', keyOutcomes: '', link: '' }];
           break;
         case 'sdp':
-          copy.sdp = [...copy.sdp, { title: '', date: '', type: '', resourcePerson: '', mode: '', keyOutcomes: '', participantsCount: '', coordinator: '', link: '' }];
+          copy.sdp = [...(copy.sdp || []), { title: '', date: '', type: '', resourcePerson: '', mode: '', keyOutcomes: '', participantsCount: '', coordinator: '', link: '' }];
           break;
         case 'facultyAchievements':
-          copy.facultyAchievements = [...copy.facultyAchievements, { name: '', award: '', organization: '', date: '', link: '' }];
+          copy.facultyAchievements = [...(copy.facultyAchievements || []), { name: '', award: '', organization: '', date: '', link: '' }];
           break;
         case 'studentAchievements':
-          copy.studentAchievements = [...copy.studentAchievements, { nameRoll: '', award: '', event: '', organization: '', durationDate: '', link: '' }];
+          copy.studentAchievements = [...(copy.studentAchievements || []), { nameRoll: '', award: '', event: '', organization: '', durationDate: '', link: '' }];
           break;
         case 'certifications':
-          copy.certifications = [...copy.certifications, { title: '', type: '', duration: '', platform: '', enrolled: '', certified: '', keyOutcomes: '', link: '' }];
+          copy.certifications = [...(copy.certifications || []), { title: '', type: '', duration: '', platform: '', enrolled: '', certified: '', keyOutcomes: '', link: '' }];
           break;
         case 'deptMeetings':
-          copy.deptMeetings = [...copy.deptMeetings, { date: '', decisions: '', policyChanges: '', link: '' }];
+          copy.deptMeetings = [...(copy.deptMeetings || []), { date: '', decisions: '', policyChanges: '', link: '' }];
           break;
         case 'mous':
-          copy.mous = [...copy.mous, { name: '', purpose: '', datePeriod: '', facultySpoc: '', link: '' }];
+          copy.mous = [...(copy.mous || []), { name: '', purpose: '', datePeriod: '', facultySpoc: '', link: '' }];
           break;
         case 'additionalInitiatives':
-          copy.additionalInitiatives = [...copy.additionalInitiatives, { initiative: '', date: '', description: '', outcomes: '', coordinator: '', link: '' }];
+          copy.additionalInitiatives = [...(copy.additionalInitiatives || []), { initiative: '', date: '', description: '', outcomes: '', coordinator: '', link: '' }];
           break;
         case 'techAssociation':
-          copy.techAssociation = [...copy.techAssociation, { event: '', date: '', type: '', resourcePersonCoordinator: '', participants: '', outcomes: '', link: '' }];
+          copy.techAssociation = [...(copy.techAssociation || []), { event: '', date: '', type: '', resourcePersonCoordinator: '', participants: '', outcomes: '', link: '' }];
           break;
         case 'iicCell':
-          copy.iicCell = [...copy.iicCell, { activity: '', date: '', description: '', partner: '', beneficiaries: '', outcomes: '', link: '' }];
+          copy.iicCell = [...(copy.iicCell || []), { activity: '', date: '', description: '', partner: '', beneficiaries: '', outcomes: '', link: '' }];
           break;
         case 'syllabus':
-          copy.syllabus = [...copy.syllabus, { subject: '', yearSem: '', faculty: '', completed: '', pending: '', remarks: '' }];
+          copy.syllabus = [...(copy.syllabus || []), { subject: '', yearSem: '', faculty: '', completed: '', pending: '', remarks: '' }];
           break;
       }
       return copy;
@@ -405,16 +431,16 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
   const handleRemoveRow = (sectionKey: keyof ReportSectionsData, index: number) => {
     setSections(prev => {
-      const copy = { ...prev };
-      (copy[sectionKey] as any[]) = (copy[sectionKey] as any[]).filter((_, i) => i !== index);
+      const copy = normalizeSections(prev);
+      (copy[sectionKey] as any[]) = (copy[sectionKey] as any[] || []).filter((_, i) => i !== index);
       return copy;
     });
   };
 
   const handleUpdateField = (sectionKey: keyof ReportSectionsData, index: number, field: string, value: string) => {
     setSections(prev => {
-      const copy = { ...prev };
-      const arr = [...(copy[sectionKey] as any[])];
+      const copy = normalizeSections(prev);
+      const arr = [...(copy[sectionKey] as any[] || [])];
       arr[index] = { ...arr[index], [field]: value };
       (copy[sectionKey] as any) = arr;
       return copy;
@@ -838,10 +864,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="1. Research, Innovation & Entrepreneurship — a) Journal Publications"
             description="List all research articles, review papers, or technical notes published by faculty/students in peer-reviewed journals during the reporting period."
-            count={sections.journals.length}
+            count={safeSections.journals.length}
             onAdd={() => handleAddRow('journals')}
           >
-            {sections.journals.map((item, idx) => (
+            {safeSections.journals.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('journals', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -879,10 +905,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="b) Conference Presentations"
             description="Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates and attach link to presentation or conference proceedings."
-            count={sections.conferences.length}
+            count={safeSections.conferences.length}
             onAdd={() => handleAddRow('conferences')}
           >
-            {sections.conferences.map((item, idx) => (
+            {safeSections.conferences.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('conferences', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -917,10 +943,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="c) Patents"
             description="Record granted or published patents, patent applications, and status updates for departmental innovations and intellectual property filings."
-            count={sections.patents.length}
+            count={safeSections.patents.length}
             onAdd={() => handleAddRow('patents')}
           >
-            {sections.patents.map((item, idx) => (
+            {safeSections.patents.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('patents', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -955,10 +981,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="d) Entrepreneurship/Start-up Initiatives"
             description="List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
-            count={sections.entrepreneurship.length}
+            count={safeSections.entrepreneurship.length}
             onAdd={() => handleAddRow('entrepreneurship')}
           >
-            {sections.entrepreneurship.map((item, idx) => (
+            {safeSections.entrepreneurship.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('entrepreneurship', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1005,10 +1031,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="2. NSS and Other Extension Activities"
             description="Capture all social outreach and community service work undertaken by the department, including NSS camps, awareness drives, and extension events."
-            count={sections.nss.length}
+            count={safeSections.nss.length}
             onAdd={() => handleAddRow('nss')}
           >
-            {sections.nss.map((item, idx) => (
+            {safeSections.nss.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('nss', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1049,10 +1075,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="3. Faculty Development Programs (FDPs)"
             description="List every short-term training, development course, workshop, or seminar attended or organized by faculty for professional development. Attach certificates where possible."
-            count={sections.fdp.length}
+            count={safeSections.fdp.length}
             onAdd={() => handleAddRow('fdp')}
           >
-            {sections.fdp.map((item, idx) => (
+            {safeSections.fdp.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdp', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1090,10 +1116,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="4. Student Development Programs (SDPs)"
             description="Include workshops, seminars, guest lectures, industrial visits, internships, symposiums, and community projects for students. Indicate type and outcomes for each."
-            count={sections.sdp.length}
+            count={safeSections.sdp.length}
             onAdd={() => handleAddRow('sdp')}
           >
-            {sections.sdp.map((item, idx) => (
+            {safeSections.sdp.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('sdp', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1134,10 +1160,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="5. Achievements & Awards — a) Faculty Achievements"
             description="Recognitions for teaching, research, professional work, or leadership."
-            count={sections.facultyAchievements.length}
+            count={safeSections.facultyAchievements.length}
             onAdd={() => handleAddRow('facultyAchievements')}
           >
-            {sections.facultyAchievements.map((item, idx) => (
+            {safeSections.facultyAchievements.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('facultyAchievements', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
@@ -1166,10 +1192,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="b) Student Achievements"
             description="Achievements in academic, co-curricular, extra-curricular, or professional events."
-            count={sections.studentAchievements.length}
+            count={safeSections.studentAchievements.length}
             onAdd={() => handleAddRow('studentAchievements')}
           >
-            {sections.studentAchievements.map((item, idx) => (
+            {safeSections.studentAchievements.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentAchievements', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
@@ -1201,10 +1227,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="c) Certifications"
             description="Certifications acquired by students and faculty."
-            count={sections.certifications.length}
+            count={safeSections.certifications.length}
             onAdd={() => handleAddRow('certifications')}
           >
-            {sections.certifications.map((item, idx) => (
+            {safeSections.certifications.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('certifications', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1242,10 +1268,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="6. Other Notable Activities — a) Department Meetings"
             description="Details of official meetings: key decisions, date, and supporting documents."
-            count={sections.deptMeetings.length}
+            count={safeSections.deptMeetings.length}
             onAdd={() => handleAddRow('deptMeetings')}
           >
-            {sections.deptMeetings.map((item, idx) => (
+            {safeSections.deptMeetings.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('deptMeetings', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
@@ -1271,10 +1297,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="b) Collaborations & MoUs"
             description="Formal agreements/ongoing collaborations with industry, academia, or organizations."
-            count={sections.mous.length}
+            count={safeSections.mous.length}
             onAdd={() => handleAddRow('mous')}
           >
-            {sections.mous.map((item, idx) => (
+            {safeSections.mous.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('mous', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1303,10 +1329,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="7. Additional/Other Relevant Initiatives"
             description="Alumni engagement, quality initiatives, special projects, or areas not elsewhere covered."
-            count={sections.additionalInitiatives.length}
+            count={safeSections.additionalInitiatives.length}
             onAdd={() => handleAddRow('additionalInitiatives')}
           >
-            {sections.additionalInitiatives.map((item, idx) => (
+            {safeSections.additionalInitiatives.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('additionalInitiatives', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1338,10 +1364,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="8. Technical Association Activities"
             description="Organizes technical workshops, competitions, industrial visits, and seminars to enhance technical skills."
-            count={sections.techAssociation.length}
+            count={safeSections.techAssociation.length}
             onAdd={() => handleAddRow('techAssociation')}
           >
-            {sections.techAssociation.map((item, idx) => (
+            {safeSections.techAssociation.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('techAssociation', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1376,10 +1402,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="9. IIC Cell (Institution’s Innovation Council)"
             description="Focuses on fostering innovation and entrepreneurship among students and faculty through various events and mentoring."
-            count={sections.iicCell.length}
+            count={safeSections.iicCell.length}
             onAdd={() => handleAddRow('iicCell')}
           >
-            {sections.iicCell.map((item, idx) => (
+            {safeSections.iicCell.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('iicCell', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="md:col-span-2">
@@ -1414,10 +1440,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           <SectionContainer
             title="10. Syllabus coverage Report (Summer Vacation holidays)"
             description="Tracking syllabus completion status across all classes and faculty."
-            count={sections.syllabus.length}
+            count={safeSections.syllabus.length}
             onAdd={() => handleAddRow('syllabus')}
           >
-            {sections.syllabus.map((item, idx) => (
+            {safeSections.syllabus.map((item, idx) => (
               <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('syllabus', idx)}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                   <div className="md:col-span-2">
