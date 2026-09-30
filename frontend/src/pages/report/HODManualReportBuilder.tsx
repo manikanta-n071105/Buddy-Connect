@@ -2211,33 +2211,89 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         </div>
       </div>
 
+      {/* Floating Quick Action Dock */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 bg-slate-950/90 backdrop-blur-md text-white p-2 sm:p-2.5 rounded-2xl border border-slate-700/80 shadow-2xl transition-all duration-300 hover:border-slate-500">
+        <div className="hidden md:flex flex-col text-right pr-2.5 border-r border-slate-700/80">
+          <span className="text-[11px] font-extrabold text-white truncate max-w-[170px]">{department}</span>
+          <span className="text-[10px] text-slate-400 font-semibold">{totalActivities} activities • {period}</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleSaveDraft}
+          disabled={savingDraft}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold transition-all shadow-md shadow-emerald-600/30 active:scale-95 disabled:opacity-50 cursor-pointer"
+          title="Save to Neon database"
+        >
+          <Database className={`w-3.5 h-3.5 ${savingDraft ? 'animate-spin' : ''}`} />
+          <span>{savingDraft ? 'Saving...' : 'Save DB'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          disabled={generatingPdf}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold transition-all shadow-md shadow-blue-600/30 active:scale-95 disabled:opacity-50 cursor-pointer"
+          title="Download Executive PDF"
+        >
+          <FileDown className={`w-3.5 h-3.5 ${generatingPdf ? 'animate-spin' : ''}`} />
+          <span>PDF</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleGenerateAndDownload}
+          disabled={submitting}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold transition-all shadow-md shadow-orange-600/30 active:scale-95 disabled:opacity-50 cursor-pointer"
+          title="Download Word Document"
+        >
+          <Download className={`w-3.5 h-3.5 ${submitting ? 'animate-spin' : ''}`} />
+          <span>DOCX</span>
+        </button>
+      </div>
+
     </div>
   );
 };
 
 interface SectionContainerProps {
+  id?: string;
   title: string;
-  description: string;
   count: number;
+  description?: string;
+  badgeLabel?: string;
   onAdd: () => void;
   children: React.ReactNode;
 }
 
 const SectionContainer: React.FC<SectionContainerProps> = ({
+  id,
   title,
-  description,
   count,
+  description,
+  badgeLabel,
   onAdd,
   children
 }) => (
-  <div className="space-y-5">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-      <div>
-        <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
-          {title}
-        </h3>
+  <div id={id} className="space-y-4 pt-2">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3.5">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          {badgeLabel && (
+            <span className="text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 tracking-wide">
+              {badgeLabel}
+            </span>
+          )}
+          <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+            {title}
+          </h3>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+            count > 0 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs' 
+              : 'bg-slate-100 text-slate-500 border-slate-200'
+          }`}>
+            {count > 0 ? `${count} Recorded` : '0 (NIL Row)'}
+          </span>
+        </div>
         {description && (
-          <p className="text-xs text-slate-500 mt-1 max-w-3xl">
+          <p className="text-xs text-slate-500 max-w-3xl leading-relaxed">
             {description}
           </p>
         )}
@@ -2246,30 +2302,33 @@ const SectionContainer: React.FC<SectionContainerProps> = ({
       <button
         type="button"
         onClick={onAdd}
-        className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-2xs"
+        className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-extrabold transition-all active:scale-95 cursor-pointer shadow-sm shadow-orange-500/20"
       >
         <Plus className="w-3.5 h-3.5" />
-        <span>Add Row</span>
+        <span>Add Entry</span>
       </button>
     </div>
 
     {count === 0 ? (
-      <div className="p-8 rounded-2xl bg-slate-50 border border-dashed border-slate-300 text-center space-y-2">
-        <p className="text-xs font-bold text-slate-700">No entries for this section</p>
-        <p className="text-[11px] text-slate-400">
-          Will be output as a standard NIL row in the generated report.
+      <div className="p-8 rounded-2xl bg-gradient-to-b from-slate-50 to-slate-100/60 border border-dashed border-slate-300/90 text-center space-y-2.5">
+        <div className="w-10 h-10 rounded-full bg-slate-200/70 text-slate-400 mx-auto flex items-center justify-center font-bold text-xs">
+          0
+        </div>
+        <p className="text-xs font-bold text-slate-700">No entries recorded for this section</p>
+        <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+          This section will automatically output a standardized NIL row in the official generated report.
         </p>
         <button
           type="button"
           onClick={onAdd}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold transition-all cursor-pointer shadow-2xs mt-2"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-extrabold transition-all cursor-pointer shadow-2xs mt-2 active:scale-95"
         >
           <Plus className="w-3.5 h-3.5 text-orange-600" />
-          <span>Add Row</span>
+          <span>+ Add First Entry</span>
         </button>
       </div>
     ) : (
-      <div className="space-y-3.5">
+      <div className="space-y-4">
         {children}
       </div>
     )}
@@ -2283,19 +2342,19 @@ interface EntryCardProps {
 }
 
 const EntryCard: React.FC<EntryCardProps> = ({ index, onDelete, children }) => (
-  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4 hover:border-slate-300 transition-colors relative group">
+  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/90 space-y-4 hover:border-slate-300 hover:bg-slate-50/90 transition-all relative group shadow-2xs">
     <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
-      <span className="text-xs font-black text-slate-700 flex items-center gap-2">
-        <span className="w-5 h-5 rounded-md bg-slate-900 text-white text-[10px] flex items-center justify-center">
+      <span className="text-xs font-black text-slate-800 flex items-center gap-2">
+        <span className="w-5 h-5 rounded-md bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shadow-2xs">
           {index + 1}
         </span>
-        Row #{index + 1}
+        Entry #{index + 1}
       </span>
 
       <button
         type="button"
         onClick={onDelete}
-        className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100/80 px-2.5 py-1 rounded-lg border border-red-200/60 transition-colors cursor-pointer"
       >
         <Trash2 className="w-3 h-3" />
         <span>Delete</span>
@@ -2311,19 +2370,21 @@ interface FieldInputProps {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  type?: string;
+  required?: boolean;
 }
 
-const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeholder }) => (
+const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeholder, type = 'text', required = false }) => (
   <div className="space-y-1">
-    <label className="text-[11px] font-bold text-slate-600 block">
-      {label}
+    <label className="text-[11px] font-bold text-slate-700 block">
+      {label} {required && <span className="text-red-500">*</span>}
     </label>
     <input
-      type="text"
+      type={type}
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all placeholder:text-slate-400"
+      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400"
     />
   </div>
 );
@@ -2385,8 +2446,8 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold text-slate-600 block">{label}</label>
-        <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+        <label className="text-[11px] font-bold text-slate-700 block">{label}</label>
+        <span className="text-[10px] text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
           Press Enter for auto-bullet (•)
         </span>
       </div>
@@ -2397,7 +2458,7 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
         onKeyDown={handleKeyDown}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all placeholder:text-slate-400 font-sans"
+        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-sans"
       />
     </div>
   );
