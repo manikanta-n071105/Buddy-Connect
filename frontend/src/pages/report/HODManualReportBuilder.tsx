@@ -271,11 +271,28 @@ export const getIsoDateFromDDMMYYYY = (val: string): string => {
 };
 
 export const handleDateInputAutoFormat = (input: string): string => {
-  const cleaned = input.replace(/[^\d/]/g, '');
-  if (/^\d{8}$/.test(cleaned)) {
-    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+  if (!input) return '';
+  // Automatically change hyphens (-), dots (.), and spaces to slashes (/)
+  let formatted = input.replace(/[-.\s]/g, '/');
+  
+  // Remove any remaining invalid characters
+  formatted = formatted.replace(/[^\d/]/g, '');
+
+  // Prevent multiple consecutive slashes
+  formatted = formatted.replace(/\/+/g, '/');
+
+  // If user pasted or entered YYYY/MM/DD, convert to DD/MM/YYYY
+  if (/^\d{4}\/\d{2}\/\d{2}$/.test(formatted)) {
+    const [y, m, d] = formatted.split('/');
+    return `${d}/${m}/${y}`;
   }
-  return cleaned;
+
+  // If pure 8 digits (e.g. 25042026), auto-insert slashes
+  if (/^\d{8}$/.test(formatted)) {
+    return `${formatted.slice(0, 2)}/${formatted.slice(2, 4)}/${formatted.slice(4, 8)}`;
+  }
+
+  return formatted;
 };
 
 export const INITIAL_SECTIONS: ReportSectionsData = {
