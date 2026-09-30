@@ -425,7 +425,7 @@ def generate_department_report(data, output_path):
     # -------------------------------------------------------------
     add_major_heading(
         "9. IIC Cell (Institution’s Innovation Council)",
-        "Focuses on fostering innovation and entrepreneurship among students and faculty through various events and mentoring."
+        "Focuses on fostering Innovation & Entrepreneurship among students and faculty through various events and mentoring."
     )
     headers_14 = ['S. No.', 'Activity/Initiative', 'Date', 'Description/Objective', 'Resource Person/Partner', 'Beneficiaries', 'Key Outcomes/Impact', 'Evidence / Proof Link']
     keys_14 = ['activity', 'date', 'description', 'partner', 'beneficiaries', 'outcomes', 'link']

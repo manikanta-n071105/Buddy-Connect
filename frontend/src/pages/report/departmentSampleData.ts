@@ -5,7 +5,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
 
   // SPECIALIZED PORTALS & COMMITTEES DEMO DATA
 
-  // A. INNOVATION AND ENTREPRENEURSHIP (Fills only 2a Patents & 2b Activities and Iniativies)
+  // A. Innovation & Entrepreneurship (Fills only 2a Patents & 2b Activities and Iniativies)
   if (dept.includes('innovation') || dept.includes('entrepreneurship')) {
     return {
       ...INITIAL_SECTIONS,
@@ -82,7 +82,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
     };
   }
 
-  // B. STUDENT ENGAGEMENT AND CLUBS (Fills only Student Engagement Activity)
+  // B. Student Engagement & Clubs (Fills only Student Engagement Activity)
   if (dept.includes('student engagement') || dept.includes('clubs')) {
     return {
       ...INITIAL_SECTIONS,

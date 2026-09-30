@@ -1206,8 +1206,8 @@ export const HODReportConsolidatorPage: React.FC = () => {
                     <option value="Humanities & Sciences">Humanities & Sciences (H&S)</option>
                   </optgroup>
                   <optgroup label="Institutional Committees & Specialized Bodies">
-                    <option value="Innovation And Entrepreneurship">Innovation And Entrepreneurship (IIC/EDC)</option>
-                    <option value="Student Engagement and Clubs">Student Engagement and Clubs (CLUBS)</option>
+                    <option value="Innovation & Entrepreneurship">Innovation & Entrepreneurship (IIC/EDC)</option>
+                    <option value="Student Engagement & Clubs">Student Engagement & Clubs (CLUBS)</option>
                     <option value="NSS & Community Engagement">NSS & Community Engagement (NSS)</option>
                     <option value="Minutes of the Meeting">Minutes of the Meeting (MOM)</option>
                   </optgroup>

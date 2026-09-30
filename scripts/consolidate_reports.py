@@ -110,9 +110,9 @@ def extract_department_info(doc, filepath=""):
         elif 'mech' in label_val:
             dept = 'Mechanical Engineering'
         elif 'innovation' in label_val or 'entrepreneurship' in label_val or 'iic' in label_val or 'edc' in label_val:
-            dept = 'Innovation And Entrepreneurship'
+            dept = 'Innovation & Entrepreneurship'
         elif 'club' in label_val or 'student engagement' in label_val:
-            dept = 'Student Engagement and Clubs'
+            dept = 'Student Engagement & Clubs'
         elif 'nss' in label_val or 'community' in label_val:
             dept = 'NSS & Community Engagement'
         elif 'minutes' in label_val or 'meeting' in label_val or 'academic committee' in label_val:
@@ -137,9 +137,9 @@ def extract_department_info(doc, filepath=""):
         elif 'minutes' in fname or 'mom' in fname:
             dept = 'Minutes of the Meeting'
         elif 'club' in fname or 'engagement' in fname:
-            dept = 'Student Engagement and Clubs'
+            dept = 'Student Engagement & Clubs'
         elif 'innovation' in fname or 'iic' in fname or 'edc' in fname or 'entrepreneurship' in fname:
-            dept = 'Innovation And Entrepreneurship'
+            dept = 'Innovation & Entrepreneurship'
 
     # 3. Third priority: Specific phrase check in header text
     if dept == 'General':
@@ -157,9 +157,9 @@ def extract_department_info(doc, filepath=""):
         elif 'department of mechanical' in text_norm or 'mechanical engineering' in text_norm:
             dept = 'Mechanical Engineering'
         elif 'institution\'s innovation council' in text_norm or 'innovation & entrepreneurship committee' in text_norm or 'iic cell' in text_norm or 'edc cell' in text_norm:
-            dept = 'Innovation And Entrepreneurship'
-        elif 'student engagement and clubs' in text_norm or 'student clubs & engagement' in text_norm:
-            dept = 'Student Engagement and Clubs'
+            dept = 'Innovation & Entrepreneurship'
+        elif 'Student Engagement & Clubs' in text_norm or 'student clubs & engagement' in text_norm:
+            dept = 'Student Engagement & Clubs'
         elif 'nss & community' in text_norm or 'national service scheme' in text_norm or 'community engagement cell' in text_norm:
             dept = 'NSS & Community Engagement'
         elif 'minutes of the meeting' in text_norm or 'academic committee meeting' in text_norm or 'dac meeting' in text_norm:
@@ -539,9 +539,9 @@ def parse_pdf_department_report(pdf_path):
     
     fname = os.path.basename(pdf_path).lower()
     if 'innovation' in fname or 'entrepreneurship' in fname or 'iic' in fname or 'edc' in fname:
-        results['department'] = 'Innovation And Entrepreneurship'
+        results['department'] = 'Innovation & Entrepreneurship'
     elif 'student engagement' in fname or 'student clubs' in fname or 'coding club' in fname or 'clubs' in fname:
-        results['department'] = 'Student Engagement and Clubs'
+        results['department'] = 'Student Engagement & Clubs'
     elif 'nss' in fname or 'community' in fname or 'social service' in fname:
         results['department'] = 'NSS & Community Engagement'
     elif 'minutes' in fname or 'meeting' in fname or 'academic committee' in fname:
@@ -671,9 +671,9 @@ def parse_pdf_department_report(pdf_path):
         if full_text:
             text_norm = full_text.lower()
             if 'innovation' in text_norm or 'entrepreneurship' in text_norm or 'iic' in text_norm or 'edc' in text_norm:
-                results['department'] = 'Innovation And Entrepreneurship'
+                results['department'] = 'Innovation & Entrepreneurship'
             elif 'student engagement' in text_norm or 'student clubs' in text_norm or 'coding club' in text_norm or 'clubs' in text_norm:
-                results['department'] = 'Student Engagement and Clubs'
+                results['department'] = 'Student Engagement & Clubs'
             elif 'nss' in text_norm or 'community engagement' in text_norm or 'social service' in text_norm:
                 results['department'] = 'NSS & Community Engagement'
             elif 'minutes' in text_norm or 'academic committee' in text_norm or 'dac meeting' in text_norm or 'bos meeting' in text_norm:

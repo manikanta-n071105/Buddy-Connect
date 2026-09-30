@@ -274,7 +274,7 @@ export const handleDateInputAutoFormat = (input: string): string => {
   if (!input) return '';
   // Automatically change hyphens (-), dots (.), and spaces to slashes (/)
   let formatted = input.replace(/[-.\s]/g, '/');
-  
+
   // Remove any remaining invalid characters
   formatted = formatted.replace(/[^\d/]/g, '');
 
@@ -606,15 +606,15 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   ];
 
   // Specific department filtering as requested:
-  // - Innovation And Entrepreneurship: only 1c and 1d
-  // - Student Engagement and Clubs: only Student Engagement Activity
+  // - Innovation & Entrepreneurship: only 1c and 1d
+  // - Student Engagement & Clubs: only Student Engagement Activity
   // - NSS & Community Engagement: only NSS & Extension Activities
   // - Minutes of the Meeting: only 6a Department Meetings
   const SECTION_TABS = React.useMemo(() => {
-    if (department === 'Innovation And Entrepreneurship') {
+    if (department === 'Innovation & Entrepreneurship') {
       return ALL_SECTION_TABS.filter(t => t.key === '1c_patents' || t.key === '1d_entrepreneurship');
     }
-    if (department === 'Student Engagement and Clubs') {
+    if (department === 'Student Engagement & Clubs') {
       return ALL_SECTION_TABS.filter(t => t.key === 'student_engagement');
     }
     if (department === 'NSS & Community Engagement') {
@@ -1038,8 +1038,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 <option value="Humanities & Sciences">Humanities & Sciences</option>
               </optgroup>
               <optgroup label="Specialized Portals & Committees">
-                <option value="Innovation And Entrepreneurship">Innovation And Entrepreneurship</option>
-                <option value="Student Engagement and Clubs">Student Engagement and Clubs</option>
+                <option value="Innovation & Entrepreneurship">Innovation & Entrepreneurship</option>
+                <option value="Student Engagement & Clubs">Student Engagement & Clubs</option>
                 <option value="NSS & Community Engagement">NSS & Community Engagement</option>
                 <option value="Minutes of the Meeting">Minutes of the Meeting</option>
               </optgroup>
@@ -2362,11 +2362,10 @@ const SectionContainer: React.FC<SectionContainerProps> = ({
           <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
             {title}
           </h3>
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
-            count > 0 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs' 
-              : 'bg-slate-100 text-slate-500 border-slate-200'
-          }`}>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${count > 0
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs'
+            : 'bg-slate-100 text-slate-500 border-slate-200'
+            }`}>
             {count > 0 ? `${count} Recorded` : '0 (NIL Row)'}
           </span>
         </div>

@@ -144,8 +144,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
 
   // Specialized Institutional Committees & Bodies
   const institutionalCommittees = [
-    { code: 'IIC/EDC', name: 'Innovation And Entrepreneurship', hod: 'Dean / Convener - IIC & EDC', type: 'COMMITTEE' as const },
-    { code: 'CLUBS', name: 'Student Engagement and Clubs', hod: 'Faculty Advisor - Student Affairs', type: 'COMMITTEE' as const },
+    { code: 'IIC/EDC', name: 'Innovation & Entrepreneurship', hod: 'Dean / Convener - IIC & EDC', type: 'COMMITTEE' as const },
+    { code: 'CLUBS', name: 'Student Engagement & Clubs', hod: 'Faculty Advisor - Student Affairs', type: 'COMMITTEE' as const },
     { code: 'NSS', name: 'NSS & Community Engagement', hod: 'Dr. Samba Sivaiah B (NSS Officer)', type: 'COMMITTEE' as const },
     { code: 'DISCIP', name: 'Disciplinary Committee', hod: 'Disciplinary Committee Convener', type: 'COMMITTEE' as const },
     { code: 'MOM', name: 'Minutes of the Meeting', hod: 'Member Secretary - Academic Committee', type: 'COMMITTEE' as const },

@@ -483,76 +483,76 @@ export interface StandardEntityConfig {
 }
 
 export const STANDARD_DEPARTMENTS: StandardEntityConfig[] = [
-  { 
-    name: 'Civil Engineering', 
-    code: 'CIVIL', 
-    defaultHod: 'Prof. K. Siva Prasad', 
+  {
+    name: 'Civil Engineering',
+    code: 'CIVIL',
+    defaultHod: 'Prof. K. Siva Prasad',
     type: 'ACADEMIC',
     keywords: ['civil engineering', 'civil', 'dept of civil']
   },
-  { 
-    name: 'Computer Science & Engineering', 
-    code: 'CSE', 
-    defaultHod: 'Dr. Kethineni Vinod Kumar', 
+  {
+    name: 'Computer Science & Engineering',
+    code: 'CSE',
+    defaultHod: 'Dr. Kethineni Vinod Kumar',
     type: 'ACADEMIC',
     keywords: ['computer science', 'cse', 'computer science & engineering', 'computer science and engineering']
   },
-  { 
-    name: 'Electronics & Communication Engineering', 
-    code: 'ECE', 
-    defaultHod: 'Dr. V. Annapurna', 
+  {
+    name: 'Electronics & Communication Engineering',
+    code: 'ECE',
+    defaultHod: 'Dr. V. Annapurna',
     type: 'ACADEMIC',
     keywords: ['electronics & communication', 'electronics and communication', 'ece', 'dept of ece']
   },
-  { 
-    name: 'Electrical & Electronics Engineering', 
-    code: 'EEE', 
-    defaultHod: 'Mr. K. Gangadhar', 
+  {
+    name: 'Electrical & Electronics Engineering',
+    code: 'EEE',
+    defaultHod: 'Mr. K. Gangadhar',
     type: 'ACADEMIC',
     keywords: ['electrical & electronics', 'electrical and electronics', 'eee', 'dept of eee']
   },
-  { 
-    name: 'Mechanical Engineering', 
-    code: 'MECH', 
-    defaultHod: 'Prof. C. Anil Kumar Reddy', 
+  {
+    name: 'Mechanical Engineering',
+    code: 'MECH',
+    defaultHod: 'Prof. C. Anil Kumar Reddy',
     type: 'ACADEMIC',
     keywords: ['mechanical engineering', 'mech', 'mechanical', 'dept of mech']
   },
-  { 
-    name: 'Humanities & Sciences', 
-    code: 'H&S', 
-    defaultHod: 'Dr. Samba Sivaiah B', 
+  {
+    name: 'Humanities & Sciences',
+    code: 'H&S',
+    defaultHod: 'Dr. Samba Sivaiah B',
     type: 'ACADEMIC',
     keywords: ['humanities & sciences', 'humanities and sciences', 'h&s', 'has', 'basic sciences']
   },
 ];
 
 export const STANDARD_COMMITTEES: StandardEntityConfig[] = [
-  { 
-    name: 'Innovation And Entrepreneurship', 
-    code: 'IIC/EDC', 
-    defaultHod: 'Dean / Convener - IIC & EDC', 
+  {
+    name: 'Innovation & Entrepreneurship',
+    code: 'IIC/EDC',
+    defaultHod: 'Dean / Convener - IIC & EDC',
     type: 'COMMITTEE',
-    keywords: ['innovation and entrepreneurship', 'innovation & entrepreneurship', 'iic', 'edc', 'entrepreneurship', 'startup', 'start-up', 'incubation', 'patents', 'ipr']
+    keywords: ['Innovation & Entrepreneurship', 'innovation & entrepreneurship', 'iic', 'edc', 'entrepreneurship', 'startup', 'start-up', 'incubation', 'patents', 'ipr']
   },
-  { 
-    name: 'Student Engagement and Clubs', 
-    code: 'CLUBS', 
-    defaultHod: 'Faculty Advisor - Student Affairs', 
+  {
+    name: 'Student Engagement & Clubs',
+    code: 'CLUBS',
+    defaultHod: 'Faculty Advisor - Student Affairs',
     type: 'COMMITTEE',
-    keywords: ['student engagement and clubs', 'student engagement', 'student clubs', 'coding club', 'robotics club', 'student affairs', 'cultural club', 'hackathon']
+    keywords: ['Student Engagement & Clubs', 'student engagement', 'student clubs', 'coding club', 'robotics club', 'student affairs', 'cultural club', 'hackathon']
   },
-  { 
-    name: 'NSS & Community Engagement', 
-    code: 'NSS', 
-    defaultHod: 'Dr. Samba Sivaiah B (NSS Officer)', 
+  {
+    name: 'NSS & Community Engagement',
+    code: 'NSS',
+    defaultHod: 'Dr. Samba Sivaiah B (NSS Officer)',
     type: 'COMMITTEE',
     keywords: ['nss & community engagement', 'nss', 'community engagement', 'social service', 'swachh bharat', 'blood donation', 'extension activities']
   },
-  { 
-    name: 'Minutes of the Meeting', 
-    code: 'MOM', 
-    defaultHod: 'Member Secretary - Academic Committee', 
+  {
+    name: 'Minutes of the Meeting',
+    code: 'MOM',
+    defaultHod: 'Member Secretary - Academic Committee',
     type: 'COMMITTEE',
     keywords: ['minutes of the meeting', 'minutes of meeting', 'academic committee', 'dac meeting', 'bos meeting', 'governing body', 'advisory committee']
   },
@@ -575,9 +575,9 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
       try {
         const files = fs.readdirSync(hodReportsFolder);
         for (const f of files) {
-          try { fs.unlinkSync(path.join(hodReportsFolder, f)); } catch (_) {}
+          try { fs.unlinkSync(path.join(hodReportsFolder, f)); } catch (_) { }
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     return res.json({
@@ -598,8 +598,8 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
     rowsRes.rows.forEach((r: any) => submittedMap.set(r.department.toLowerCase().trim(), r));
 
     const mapStatus = (entity: StandardEntityConfig) => {
-      const sub = submittedMap.get(entity.name.toLowerCase().trim()) || 
-                  submittedMap.get(entity.code.toLowerCase().trim());
+      const sub = submittedMap.get(entity.name.toLowerCase().trim()) ||
+        submittedMap.get(entity.code.toLowerCase().trim());
       return {
         code: entity.code,
         name: entity.name,
@@ -683,7 +683,7 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
       if (parsed && typeof parsed.itemsCount === 'number' && parsed.itemsCount > 0) {
         itemsCount = parsed.itemsCount;
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const upsertRes = await reportQuery(`
       INSERT INTO departmental_monthly_reports 
@@ -796,7 +796,7 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
     const safeFileName = `${cleanDept}_${Date.now()}_${fileName}`;
     const targetFilePath = path.join(targetFolder, safeFileName);
     fs.copyFileSync(tempFilePath, targetFilePath);
-    try { fs.unlinkSync(tempFilePath); } catch (_) {}
+    try { fs.unlinkSync(tempFilePath); } catch (_) { }
 
     const fileSizeBytes = buffer.length;
 
@@ -879,7 +879,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
           const genScript = path.join(projectRoot, 'scripts', 'generate_department_report.py');
           const { execFileSync } = await import('child_process');
           execFileSync(PYTHON_BIN, [genScript, tempJsonPath, targetFilePath], { timeout: 15000 });
-          try { fs.unlinkSync(tempJsonPath); } catch (_) {}
+          try { fs.unlinkSync(tempJsonPath); } catch (_) { }
 
           if (fs.existsSync(targetFilePath)) {
             sub.file_path = targetFilePath;
@@ -1010,7 +1010,7 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
     const scriptPath = path.join(projectRoot, 'scripts', 'generate_department_report.py');
 
     execFile(PYTHON_BIN, [scriptPath, tempJsonPath, targetFilePath], async (error, stdout, stderr) => {
-      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) {}
+      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
 
       if (error) {
         console.error('Department report generation error:', error, stderr);
