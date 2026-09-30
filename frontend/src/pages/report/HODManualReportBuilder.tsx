@@ -252,6 +252,32 @@ export const SDP_ACTIVITY_TYPES = [
   'Other'
 ];
 
+export const formatDateToDDMMYYYY = (val: string): string => {
+  if (!val) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    const [y, m, d] = val.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  return val;
+};
+
+export const getIsoDateFromDDMMYYYY = (val: string): string => {
+  if (!val) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    const [d, m, y] = val.split('/');
+    return `${y}-${m}-${d}`;
+  }
+  return '';
+};
+
+export const handleDateInputAutoFormat = (input: string): string => {
+  const cleaned = input.replace(/[^\d/]/g, '');
+  if (/^\d{8}$/.test(cleaned)) {
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+  }
+  return cleaned;
+};
+
 export const INITIAL_SECTIONS: ReportSectionsData = {
   journals: [],
   conferences: [],
@@ -1060,16 +1086,51 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-500" /> Date of Submission:
-            </label>
-            <input
-              type="text"
-              value={submissionDate}
-              onChange={(e) => setSubmissionDate(e.target.value)}
-              placeholder="e.g. 25/04/2026"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-600"
-            />
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-500" /> Date of Submission:
+              </label>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                  DD/MM/YYYY
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const d = String(now.getDate()).padStart(2, '0');
+                    const m = String(now.getMonth() + 1).padStart(2, '0');
+                    const y = now.getFullYear();
+                    setSubmissionDate(`${d}/${m}/${y}`);
+                  }}
+                  className="text-[10px] font-extrabold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer"
+                  title="Insert Today's Date in DD/MM/YYYY"
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={submissionDate}
+                onChange={(e) => setSubmissionDate(handleDateInputAutoFormat(e.target.value))}
+                placeholder="DD/MM/YYYY (e.g. 25/04/2026)"
+                maxLength={10}
+                className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 font-mono tracking-wide"
+              />
+              <input
+                type="date"
+                value={getIsoDateFromDDMMYYYY(submissionDate)}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSubmissionDate(formatDateToDDMMYYYY(e.target.value));
+                  }
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0"
+                title="Select date from calendar"
+              />
+            </div>
           </div>
         </div>
 
