@@ -277,8 +277,8 @@ def generate_department_report(data, output_path):
         "b) Conference Presentations",
         "Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates and attach link to presentation or conference proceedings."
     )
-    headers_1 = ['S. No.', 'Title of Paper', 'Authors', 'Conference Name', 'Date', 'Location/Mode', 'Indexed In', 'Link to Presentation/Report']
-    keys_1 = ['title', 'authors', 'conferenceName', 'date', 'locationMode', 'indexedIn', 'link']
+    headers_1 = ['S. No.', 'Title of Paper', 'Authors', 'Conference Name', 'Date', 'Location/Mode', 'Vol./Issue/Year', 'Page Nos.', 'ISSN/ISBN', 'Indexed In', 'Link to Presentation/Report']
+    keys_1 = ['title', 'authors', 'conferenceName', 'date', 'locationMode', 'volIssueYear', 'pageNos', 'issnIsbn', 'indexedIn', 'link']
     total_activities += add_table_data(doc, headers_1, sections_data.get('conferences', []), keys_1)
 
     # -------------------------------------------------------------
@@ -298,9 +298,9 @@ def generate_department_report(data, output_path):
     keys_2 = ['title', 'inventors', 'applicants', 'patentNumber', 'status', 'awardedDate', 'link']
     total_activities += add_table_data(doc, headers_2, sections_data.get('patents', []), keys_2)
 
-    # 2b) Start-up Initiatives (Table 3)
+    # 2b) Activities and Iniativies (Table 3)
     add_sub_heading(
-        "2b) Start-up Initiatives",
+        "2b) Activities and Iniativies",
         "List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
     )
     headers_3 = ['S. No.', 'Entrepreneurship Activity/Program Title', 'Date', 'Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)', 'Participants (Student/Faculty/Alumni)', 'Organized By (Department/ED Cell/Incubator)', 'Mode (Online/Offline/Hybrid)', 'Key Outcomes (Startups Launched, Funding Received, Patents Filed, etc.)', 'No. of Participants', 'Mentor/Coordinator', 'Status (Ongoing/Completed)', 'Proof/Report Link']
@@ -314,7 +314,7 @@ def generate_department_report(data, output_path):
         "2. NSS and Other Extension Activities",
         "Capture all social outreach and community service work undertaken by the department, including NSS camps, awareness drives, and extension events."
     )
-    headers_4 = ['S. No.', 'Event/Activity', 'Date', 'Venue', 'Type (NSS/Community)', 'No. of Participants', 'Type of Participants(Students/NSS Volunteers/Villagers/General Public/Faculty)', 'Outcomes', 'Coordinator', 'Report/Photo Link']
+    headers_4 = ['S. No.', 'Event Name', 'Date', 'Venue', 'Type (NSS/Community)', 'No. of Participants', 'Type of Participants(Students/NSS Volunteers/Villagers/General Public/Faculty)', 'Outcomes', 'Coordinator', 'Report/Photo Link']
     keys_4 = ['event', 'date', 'venue', 'type', 'participantsCount', 'typeOfParticipants', 'outcomes', 'coordinator', 'link']
     total_activities += add_table_data(doc, headers_4, sections_data.get('nss', []), keys_4)
 
@@ -435,7 +435,7 @@ def generate_department_report(data, output_path):
     # 10. Syllabus coverage Report (Summer Vacation holidays) (Table 15)
     # -------------------------------------------------------------
     add_major_heading("10. Syllabus coverage Report (Summer Vacation holidays)")
-    headers_15 = ['S.No', 'Subject', 'Year/sem', 'Faculty', 'Syllabus Status - Completed', 'Syllabus Status - Pending', 'Remarks']
+    headers_15 = ['S.No', 'Subject', 'Year/sem', 'Faculty', 'Syllabus Status - Completed (Total 5 Units)', 'Syllabus Status - Pending (Total 5 Units)', 'Remarks']
     keys_15 = ['subject', 'yearSem', 'faculty', 'completed', 'pending', 'remarks']
     total_activities += add_table_data(doc, headers_15, sections_data.get('syllabus', []), keys_15)
 

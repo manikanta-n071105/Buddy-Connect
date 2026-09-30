@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  FileCheck, 
-  Download, 
-  RefreshCw, 
-  UploadCloud, 
-  Building2, 
-  CheckCircle2, 
+import {
+  FileCheck,
+  Download,
+  RefreshCw,
+  UploadCloud,
+  Building2,
+  CheckCircle2,
   Clock,
-  Layers, 
-  FileSpreadsheet, 
+  Layers,
+  FileSpreadsheet,
   Sparkles,
   ArrowLeft,
   Calendar,
@@ -67,29 +67,29 @@ interface SubmissionsData {
 }
 
 const DEPARTMENT_CONFIG: Record<string, { badge: string; accent: string }> = {
-  CIVIL: { 
-    badge: 'bg-amber-50 text-amber-700 border-amber-200', 
-    accent: 'bg-amber-500' 
+  CIVIL: {
+    badge: 'bg-amber-50 text-amber-700 border-amber-200',
+    accent: 'bg-amber-500'
   },
-  CSE: { 
-    badge: 'bg-blue-50 text-blue-700 border-blue-200', 
-    accent: 'bg-blue-600' 
+  CSE: {
+    badge: 'bg-blue-50 text-blue-700 border-blue-200',
+    accent: 'bg-blue-600'
   },
-  ECE: { 
-    badge: 'bg-purple-50 text-purple-700 border-purple-200', 
-    accent: 'bg-purple-600' 
+  ECE: {
+    badge: 'bg-purple-50 text-purple-700 border-purple-200',
+    accent: 'bg-purple-600'
   },
-  EEE: { 
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', 
-    accent: 'bg-emerald-600' 
+  EEE: {
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    accent: 'bg-emerald-600'
   },
-  MECH: { 
-    badge: 'bg-cyan-50 text-cyan-700 border-cyan-200', 
-    accent: 'bg-cyan-600' 
+  MECH: {
+    badge: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+    accent: 'bg-cyan-600'
   },
-  'H&S': { 
-    badge: 'bg-rose-50 text-rose-700 border-rose-200', 
-    accent: 'bg-rose-600' 
+  'H&S': {
+    badge: 'bg-rose-50 text-rose-700 border-rose-200',
+    accent: 'bg-rose-600'
   },
   'IIC/EDC': {
     badge: 'bg-amber-50 text-amber-800 border-amber-300',
@@ -113,7 +113,7 @@ const EXECUTIVE_METRICS = [
   { category: '1a. Journal Publications', civil: 1, cse: 2, ece: 2, eee: 2, mech: 2, hs: 1, total: 10 },
   { category: '1b. Conference Presentations', civil: 2, cse: 3, ece: 3, eee: 2, mech: 2, hs: 2, total: 14 },
   { category: '2a. Patents', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
-  { category: '2b. Start-up Initiatives', civil: 0, cse: 1, ece: 1, eee: 0, mech: 0, hs: 0, total: 2 },
+  { category: '2b. Activities and Iniativies', civil: 0, cse: 1, ece: 1, eee: 0, mech: 0, hs: 0, total: 2 },
   { category: '3a. FDPs Attended', civil: 1, cse: 1, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
   { category: '3b. FDPs Organized', civil: 1, cse: 1, ece: 1, eee: 1, mech: 1, hs: 1, total: 6 },
   { category: '4. Student Development Programs (SDPs)', civil: 0, cse: 1, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
@@ -124,7 +124,7 @@ const EXECUTIVE_METRICS = [
   { category: '6b. Collaborations & MoUs', civil: 1, cse: 0, ece: 1, eee: 1, mech: 1, hs: 0, total: 4 },
   { category: '7. Technical Association Activities', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
   { category: '8. Syllabus coverage Report', civil: 1, cse: 0, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
-  { category: '9. Club & Student Engagement Activity', civil: 0, cse: 2, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
+  { category: '9. Clubs & Student Engagement Activity', civil: 0, cse: 2, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
   { category: '10. NSS and Other Extension Activities', civil: 0, cse: 0, ece: 0, eee: 0, mech: 1, hs: 2, total: 3 },
   { category: '11. Additional/Other Relevant Initiatives', civil: 0, cse: 1, ece: 0, eee: 1, mech: 1, hs: 0, total: 3 },
 ];
@@ -132,7 +132,7 @@ const EXECUTIVE_METRICS = [
 export const HODReportConsolidatorPage: React.FC = () => {
   // Navigation & View Mode
   const [activeTab, setActiveTab] = useState<'superadmin' | 'manual_entry' | 'hod_upload' | 'matrix' | 'zip_batch'>('manual_entry');
-  
+
   // Data State
   const [period, setPeriod] = useState('April 2026');
   const [submissions, setSubmissions] = useState<SubmissionsData | null>(null);
@@ -342,11 +342,11 @@ export const HODReportConsolidatorPage: React.FC = () => {
     try {
       setConsolidating(true);
       toast.loading('Synthesizing consolidated institutional report from all submitted HOD documents...', { id: 'consolidate' });
-      
+
       const res = await api.post('/reports/generate-from-submissions', { period });
       if (res.data.success) {
         toast.success(res.data.message || 'Consolidated Report successfully generated!', { id: 'consolidate' });
-        
+
         const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated`;
         const link = document.createElement('a');
         link.href = downloadUrl;
@@ -380,10 +380,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
     try {
       setConsolidatingPdf(true);
       toast.loading('Synthesizing official Consolidated Institutional PDF...', { id: 'consolidate-pdf' });
-      
+
       const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
       const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
-      
+
       const blobUrl = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -563,7 +563,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-orange-500/20 selection:text-orange-900 pb-16">
-      
+
       {/* Hidden File Input for Direct Department Card Upload */}
       <input
         type="file"
@@ -574,7 +574,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
+
         {/* Top Institutional Header Bar */}
         <header className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
@@ -702,7 +702,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
               <span className="text-xs text-slate-400 font-semibold">/ {totalCount} Depts</span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-3">
-              <div 
+              <div
                 className="bg-orange-600 h-full rounded-full transition-all duration-500"
                 style={{ width: `${completionPercentage}%` }}
               />
@@ -757,11 +757,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
         <div className="bg-white p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap gap-1.5">
           <button
             onClick={() => setActiveTab('manual_entry')}
-            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'manual_entry'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'manual_entry'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
           >
             <Sparkles className="w-4 h-4 text-orange-400" />
             <span>Manual Report Builder</span>
@@ -770,11 +769,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('superadmin')}
-            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'superadmin'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'superadmin'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
           >
             <ShieldCheck className="w-4 h-4" />
             <span>Consolidation Center</span>
@@ -782,11 +780,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('hod_upload')}
-            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'hod_upload'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'hod_upload'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
           >
             <FileUp className="w-4 h-4" />
             <span>HOD Upload Portal</span>
@@ -794,11 +791,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('matrix')}
-            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'matrix'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'matrix'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
           >
             <BarChart3 className="w-4 h-4" />
             <span>Performance Matrix</span>
@@ -806,11 +802,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('zip_batch')}
-            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'zip_batch'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
+            className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'zip_batch'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
           >
             <FolderArchive className="w-4 h-4" />
             <span>Batch ZIP Upload</span>
@@ -830,7 +825,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
         {/* TAB 1: Super Admin Command Center */}
         {activeTab === 'superadmin' && (
           <div className="space-y-6">
-            
+
             {/* Master Consolidated Action Banner */}
             <div className="bg-white border border-slate-200/90 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xs">
               <div className="flex items-center gap-4">
@@ -1004,25 +999,22 @@ export const HODReportConsolidatorPage: React.FC = () => {
                 <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-600">
                   <button
                     onClick={() => setTrackerFilter('ALL')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      trackerFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${trackerFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+                      }`}
                   >
                     All ({allSubmissionsList.length})
                   </button>
                   <button
                     onClick={() => setTrackerFilter('ACADEMIC')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      trackerFilter === 'ACADEMIC' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${trackerFilter === 'ACADEMIC' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+                      }`}
                   >
                     Departments ({submissions?.submittedDeptsCount || 0}/{submissions?.totalDepartments || 6})
                   </button>
                   <button
                     onClick={() => setTrackerFilter('COMMITTEE')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      trackerFilter === 'COMMITTEE' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${trackerFilter === 'COMMITTEE' ? 'bg-white text-slate-900 shadow-xs' : 'hover:text-slate-900'
+                      }`}
                   >
                     Committees ({submissions?.submittedCommsCount || 0}/{submissions?.totalCommittees || 7})
                   </button>
@@ -1052,9 +1044,8 @@ export const HODReportConsolidatorPage: React.FC = () => {
                             <span className={`inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${cfg.badge}`}>
                               {dept.code}
                             </span>
-                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
-                              dept.type === 'COMMITTEE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                            }`}>
+                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${dept.type === 'COMMITTEE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
                               {dept.type === 'COMMITTEE' ? 'Committee' : 'Department'}
                             </span>
                           </div>
@@ -1243,7 +1234,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                 <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
                   Attach Department Document (.docx or .pdf)
                 </label>
-                
+
                 <div
                   onClick={() => hodFileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -1258,11 +1249,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
                       toast.error('Please drop a valid .docx Word file or .pdf document');
                     }
                   }}
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 group ${
-                    isDragOver 
-                      ? 'border-orange-500 bg-orange-50/50' 
-                      : 'border-slate-300 hover:border-orange-500 bg-slate-50/60 hover:bg-orange-50/20'
-                  }`}
+                  className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 group ${isDragOver
+                    ? 'border-orange-500 bg-orange-50/50'
+                    : 'border-slate-300 hover:border-orange-500 bg-slate-50/60 hover:bg-orange-50/20'
+                    }`}
                 >
                   <input
                     type="file"
@@ -1410,125 +1400,125 @@ export const HODReportConsolidatorPage: React.FC = () => {
           </div>
         )}
 
-      {/* Off-screen Consolidated PDF container positioned at (0,0) with opacity 0 for pixel-perfect html2pdf capture */}
-      <div 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: -999,
-          opacity: 0,
-          pointerEvents: 'none',
-          backgroundColor: '#ffffff',
-          width: '750px'
-        }}
-      >
-        <ConsolidatedInstitutionalPDFView period={period} customData={allDeptCustomData} />
-      </div>
+        {/* Off-screen Consolidated PDF container positioned at (0,0) with opacity 0 for pixel-perfect html2pdf capture */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            zIndex: -999,
+            opacity: 0,
+            pointerEvents: 'none',
+            backgroundColor: '#ffffff',
+            width: '750px'
+          }}
+        >
+          <ConsolidatedInstitutionalPDFView period={period} customData={allDeptCustomData} />
+        </div>
 
-      {/* Interactive Consolidation Format Choice Modal */}
-      {showConsolidateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-bold uppercase tracking-wider">
-                  <Sparkles className="w-3 h-3" /> Master Institutional Report
+        {/* Interactive Consolidation Format Choice Modal */}
+        {showConsolidateModal && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3" /> Master Institutional Report
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    Consolidate Institutional Report
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Select your desired output format to consolidate all 5 departmental submissions for <strong>{period}</strong>:
+                  </p>
                 </div>
-                <h3 className="text-lg font-black text-slate-900">
-                  Consolidate Institutional Report
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Select your desired output format to consolidate all 5 departmental submissions for <strong>{period}</strong>:
-                </p>
+                <button
+                  onClick={() => setShowConsolidateModal(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setShowConsolidateModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              {/* Option 1: DOCX */}
-              <button
-                onClick={() => handleConsolidateChoice('docx')}
-                disabled={consolidating}
-                className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50/40 transition-all flex items-start gap-4 group cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-xl bg-orange-100 border border-orange-200 text-orange-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-orange-950">
-                      Word Document (.docx)
-                    </h4>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">DOCX</span>
+              <div className="grid grid-cols-1 gap-3">
+                {/* Option 1: DOCX */}
+                <button
+                  onClick={() => handleConsolidateChoice('docx')}
+                  disabled={consolidating}
+                  className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50/40 transition-all flex items-start gap-4 group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-orange-100 border border-orange-200 text-orange-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <FileText className="w-5 h-5" />
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Official institutional master format with editable tables for administration and record keeping.
-                  </p>
-                </div>
-              </button>
-
-              {/* Option 2: PDF */}
-              <button
-                onClick={() => handleConsolidateChoice('pdf')}
-                disabled={consolidatingPdf}
-                className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all flex items-start gap-4 group cursor-pointer"
-              >
-                <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <FileDown className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-950">
-                      Executive PDF Dossier (.pdf)
-                    </h4>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">PDF</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-slate-900 group-hover:text-orange-950">
+                        Word Document (.docx)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">DOCX</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Official institutional master format with editable tables for administration and record keeping.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Publication-grade executive document matching official SSE theme with the Executive Performance Matrix.
-                  </p>
-                </div>
-              </button>
+                </button>
 
-              {/* Option 3: Both */}
-              <button
-                onClick={() => handleConsolidateChoice('both')}
-                disabled={consolidating || consolidatingPdf}
-                className="w-full text-left p-4 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50/50 to-blue-50/50 hover:border-orange-500 transition-all flex items-start gap-4 group cursor-pointer shadow-2xs"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-black text-slate-900">
-                      Consolidate Both (.docx + .pdf)
-                    </h4>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-900 text-white">RECOMMENDED</span>
+                {/* Option 2: PDF */}
+                <button
+                  onClick={() => handleConsolidateChoice('pdf')}
+                  disabled={consolidatingPdf}
+                  className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all flex items-start gap-4 group cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <FileDown className="w-5 h-5" />
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Synthesizes both the editable Word document and the executive presentation PDF in a single click.
-                  </p>
-                </div>
-              </button>
-            </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-slate-900 group-hover:text-blue-950">
+                        Executive PDF Dossier (.pdf)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">PDF</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Publication-grade executive document matching official SSE theme with the Executive Performance Matrix.
+                    </p>
+                  </div>
+                </button>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setShowConsolidateModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
+                {/* Option 3: Both */}
+                <button
+                  onClick={() => handleConsolidateChoice('both')}
+                  disabled={consolidating || consolidatingPdf}
+                  className="w-full text-left p-4 rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50/50 to-blue-50/50 hover:border-orange-500 transition-all flex items-start gap-4 group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-black text-slate-900">
+                        Consolidate Both (.docx + .pdf)
+                      </h4>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-900 text-white">RECOMMENDED</span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Synthesizes both the editable Word document and the executive presentation PDF in a single click.
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setShowConsolidateModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       </div>
     </div>

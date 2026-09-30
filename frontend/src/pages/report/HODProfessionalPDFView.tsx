@@ -42,10 +42,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
 
 
   return (
-    <div 
-      id="hod-pdf-document" 
+    <div
+      id="hod-pdf-document"
       className="bg-white text-slate-900 font-sans text-xs print:p-0 print:m-0 border border-slate-300 shadow-xl print:shadow-none print:border-none mx-auto"
-      style={{ 
+      style={{
         width: '750px',
         maxWidth: '750px',
         minWidth: '750px',
@@ -62,9 +62,9 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         <tbody>
           <tr style={{ border: 'none' }}>
             <td style={{ width: '50%', border: 'none', verticalAlign: 'middle', textAlign: 'left', padding: '0 0 6px 0' }}>
-              <img 
-                src={logoBase64} 
-                alt="Sanskrithi School of Engineering Logo" 
+              <img
+                src={logoBase64}
+                alt="Sanskrithi School of Engineering Logo"
                 style={{ height: '36px', width: 'auto', display: 'block', objectFit: 'contain' }}
               />
             </td>
@@ -80,12 +80,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
 
       {/* 2. Document Title Block Matching Theme */}
       <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-        <h1 
-          style={{ 
-            fontSize: '18px', 
-            fontWeight: 900, 
-            color: '#1a365d', 
-            textTransform: 'uppercase', 
+        <h1
+          style={{
+            fontSize: '18px',
+            fontWeight: 900,
+            color: '#1a365d',
+            textTransform: 'uppercase',
             letterSpacing: '0.03em',
             margin: '0 0 4px 0'
           }}
@@ -102,16 +102,16 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
 
       {/* 3. Section: Program / Reporting Overview Table */}
       <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-        <div 
-          style={{ 
-            fontWeight: 800, 
-            color: '#1a365d', 
-            fontSize: '11px', 
-            textTransform: 'uppercase', 
-            letterSpacing: '0.05em', 
-            borderBottom: '1.5px solid #1a365d', 
-            paddingBottom: '4px', 
-            marginBottom: '8px' 
+        <div
+          style={{
+            fontWeight: 800,
+            color: '#1a365d',
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            borderBottom: '1.5px solid #1a365d',
+            paddingBottom: '4px',
+            marginBottom: '8px'
           }}
         >
           REPORTING OVERVIEW &amp; DEPARTMENT PROFILE
@@ -163,7 +163,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       </div>
 
       {/* 4. Active Sections — Minimalist Academic Theme */}
-      
+
       {/* 1a. Journal Publications */}
       {sections.journals.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
@@ -223,6 +223,9 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
                     {item.date && <span style={{ marginRight: '12px' }}><strong>Date:</strong> {item.date}</span>}
                     {item.locationMode && <span style={{ marginRight: '12px' }}><strong>Location/Mode:</strong> {item.locationMode}</span>}
+                    {item.volIssueYear && <span style={{ marginRight: '12px' }}><strong>Issue:</strong> {item.volIssueYear}</span>}
+                    {item.pageNos && <span style={{ marginRight: '12px' }}><strong>Pages:</strong> {item.pageNos}</span>}
+                    {item.issnIsbn && <span style={{ marginRight: '12px' }}><strong>ISBN:</strong> {item.issnIsbn}</span>}
                     {item.indexedIn && <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Indexing: {item.indexedIn}</span>}
                   </div>
                   {item.link && (
@@ -260,11 +263,11 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 2b. Start-up Initiatives */}
+      {/* 2b. Activities and Iniativies */}
       {sections.entrepreneurship.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            2B. START-UP INITIATIVES ({sections.entrepreneurship.length})
+            2B. Activities and Iniativies ({sections.entrepreneurship.length})
           </div>
           <div>
             {sections.entrepreneurship.map((item, idx) => (
@@ -486,9 +489,9 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <th style={{ width: '20%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Subject / Course</th>
                 <th style={{ width: '13%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
                 <th style={{ width: '17%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Faculty</th>
-                <th style={{ width: '9%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>% Done</th>
-                <th style={{ width: '9%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>% Pend</th>
-                <th style={{ width: '28%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
+                <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Done (5 Units)</th>
+                <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Pending</th>
+                <th style={{ width: '26%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
               </tr>
             </thead>
             <tbody>
@@ -529,8 +532,8 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             </thead>
             <tbody>
               {sections.studentEngagement.map((item, idx) => {
-                const displayType = (item.type === 'Other' && item.otherType) 
-                  ? `Other (${item.otherType})` 
+                const displayType = (item.type === 'Other' && item.otherType)
+                  ? `Other (${item.otherType})`
                   : (item.otherType || item.type || '-');
                 const displayDates = item.dates || (item.startDate && item.endDate ? `${item.startDate} to ${item.endDate}` : item.startDate || '-');
                 return (

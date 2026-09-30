@@ -4,8 +4,8 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
   const dept = deptName.toLowerCase();
 
   // SPECIALIZED PORTALS & COMMITTEES DEMO DATA
-  
-  // A. INNOVATION AND ENTREPRENEURSHIP (Fills only 2a Patents & 2b Start-up Initiatives)
+
+  // A. INNOVATION AND ENTREPRENEURSHIP (Fills only 2a Patents & 2b Activities and Iniativies)
   if (dept.includes('innovation') || dept.includes('entrepreneurship')) {
     return {
       ...INITIAL_SECTIONS,
@@ -1980,379 +1980,385 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
   // 6. CIVIL ENGINEERING
   if (dept.includes('civil')) {
     return {
-    journals: [
-      {
-        title: 'Comparative Study on Conventional and Geopolymer Precast Concrete Systems for Sustainable Infrastructure',
-        authors: 'Kummara Siva Prasad',
-        journalName: 'GIS SCIENCE JOURNAL',
-        issnIsbn: '1869-9391',
-        volIssueYear: '13/4',
-        pageNos: '1-23',
-        indexedIn: 'Scopus',
-        link: 'https://doi.org/20.18001.GSJ.2026.V13I4.26.72969390'
-      },
-      {
-        title: 'Experimental Investigation on Durability and Strength Characteristics of Self-Compacting Concrete with GGBS and Silica Fume',
-        authors: 'Dr. M. Sreenivasulu, K Siva Prasad',
-        journalName: 'International Journal of Structural Concrete & Materials',
-        issnIsbn: '2277-3878',
-        volIssueYear: '12/2',
-        pageNos: '45-58',
-        indexedIn: 'UGC CARE / Scopus',
-        link: 'https://doi.org/10.35940/ijscm.B1204.041226'
-      }
-    ],
-    conferences: [
-      {
-        title: 'Development of Eco-Friendly Precast Concrete Using Recycled Aggregates and Low-Carbon Cement Admixtures',
-        authors: 'K Siva Prasad',
-        conferenceName: 'ICIMES 2026',
-        date: '25th Aug 2026',
-        locationMode: 'Vizag, Hybrid Mode',
-        indexedIn: 'Scopus / Under Review',
-        link: 'https://icimes2026.org/proceedings/civil-04'
-      },
-      {
-        title: 'Non-Linear Seismic Vulnerability Assessment of Multi-Storey Reinforced Concrete Structures in Zone III',
-        authors: 'Er. B. Ramesh, K Siva Prasad',
-        conferenceName: 'International Conference on Sustainable Earthquake Engineering (ICSEE 2026)',
-        date: '14th April 2026',
-        locationMode: 'Bengaluru, In-Person',
-        indexedIn: 'Springer Proceedings',
-        link: 'https://icsee2026.org/papers/seismic-civil-89'
-      }
-    ],
-    patents: [
-      {
-        title: 'Smart Sensor-Integrated Geopolymer Precast Concrete Block for Real-Time Structural Health Monitoring',
-        inventors: 'K Siva Prasad, Dr. V. Annapurna',
-        applicants: 'Sanskrithi School of Engineering',
-        patentNumber: '202641018923 A',
-        status: 'Published',
-        awardedDate: '12/04/2026',
-        link: 'https://ipindiaservices.gov.in/publicsearch'
-      },
-      {
-        title: 'Automated Solar-Powered Accelerated Steam Curing Chamber for Rapid Highway Pavement Blocks',
-        inventors: 'K Siva Prasad, Er. B. Ramesh',
-        applicants: 'Sanskrithi School of Engineering',
-        patentNumber: '202541098231 B',
-        status: 'Awarded / Granted',
-        awardedDate: '04/04/2026',
-        link: 'https://ipindiaservices.gov.in/patents'
-      }
-    ],
-    entrepreneurship: [
-      {
-        title: 'Bootcamp on Sustainable Building Start-ups & Green Infrastructure Solutions',
-        date: '08/04/2026',
-        type: 'Student Hackathon & Ideation',
-        participants: '64 Students & 4 Mentors',
-        organizedBy: 'EDC Cell & Civil Engineering Department',
-        mode: 'Offline - SSE Seminar Hall',
-        keyOutcomes: '3 prototype business plans submitted for seed funding incubation',
-        participantsCount: '64',
-        mentorCoordinator: 'K Siva Prasad',
-        status: 'Completed',
-        link: 'https://sseptp.org/edc/green-concrete-2026'
-      },
-      {
-        title: 'Idea-to-Product Pitch on Upcycled Plastic-Aggregate Paver Tiles for Rural Roads',
-        date: '17/04/2026',
-        type: 'Incubation Pitch & Demonstration',
-        participants: '38 Students & 3 Local Contractors',
-        organizedBy: 'Civil Engineering EDC Chapter',
-        mode: 'SSE Concrete Technology Lab',
-        keyOutcomes: '1 student start-up registered under MSME Udyam portal',
-        participantsCount: '38',
-        mentorCoordinator: 'Dr. M. Sreenivasulu',
-        status: 'Incubated',
-        link: 'https://sseptp.org/edc/plastic-pavers-2026'
-      }
-    ],
-    nss: [
-      {
-        event: 'Campus Tree Plantation & Water Conservation Awareness Drive',
-        date: '14/04/2026',
-        venue: 'Beedupalli Village & SSE Green Belt',
-        type: 'Extension & Community Outreach',
-        participantsCount: '85 Volunteers',
-        typeOfParticipants: 'Civil Engineering Students',
-        outcomes: 'Planted 150 indigenous saplings and conducted rainwater harvesting workshop for local community',
-        coordinator: 'Mr. R. Naresh (NSS Program Officer)',
-        link: 'https://sseptp.org/nss/plantation-april-2026'
-      },
-      {
-        event: 'Potable Drinking Water Quality & Ground Water Table Testing Camp',
-        date: '20/04/2026',
-        venue: 'Prasanthigram Gram Panchayat',
-        type: 'Community Health & Water Testing',
-        participantsCount: '45 Student Volunteers',
-        typeOfParticipants: 'B.Tech Civil III Year',
-        outcomes: 'Tested 24 community borewell samples for pH, TDS, fluorides and submitted water report to local authorities',
-        coordinator: 'Er. S. Kavitha (Environmental Lab In-charge)',
-        link: 'https://sseptp.org/nss/water-testing-camp'
-      }
-    ],
-    fdpAttended: [
-      {
-        title: '5-Day Online AICTE-ATAL Academy FDP on Geotechnical Disaster Risk Reduction & Landslide Mitigation',
-        type: 'FDP',
-        dates: '06/04/2026 to 10/04/2026',
-        organizingBody: 'NIT Tiruchirappalli',
-        mode: 'Online',
-        facultyAttended: 'K Siva Prasad, Er. S. Kavitha',
-        link: 'https://atalacademy.aicte-india.org/cert/civil-928'
-      }
-    ],
-    fdpOrganized: [
-      {
-        title: 'One-Week National FDP on Advanced BIM Applications & Digital Twins in Civil Infrastructure',
-        type: 'FDP',
-        dates: '15/04/2026 to 20/04/2026',
-        deptOrganized: 'Civil Engineering',
-        mode: 'Hybrid',
-        resourcePersonDetails: 'Dr. C. Anjaneyulu, Senior Director of Infrastructure Engineering, L&T Construction, Chennai, Tamil Nadu - 600089',
-        facultyCoordinators: 'K Siva Prasad, Dr. M. Sreenivasulu',
-        link: 'https://iitm.ac.in/fdp/civil-bim-2026'
-      }
-    ],
-    fdp: [
-      {
-        title: 'One-Week National FDP on Advanced BIM Applications & Digital Twins in Civil Infrastructure',
-        type: 'National Level FDP',
-        dates: '15/04/2026 to 20/04/2026',
-        organizingBody: 'IIT Madras & SSE Centre of Excellence',
-        mode: 'Hybrid Mode',
-        role: 'Participant & Co-Host',
-        keyOutcomes: 'Faculty gained proficiency in Revit BIM modeling, structural simulations, and digital twin workflows',
-        link: 'https://iitm.ac.in/fdp/civil-bim-2026'
-      },
-      {
-        title: '5-Day Online AICTE-ATAL Academy FDP on Geotechnical Disaster Risk Reduction & Landslide Mitigation',
-        type: 'AICTE ATAL Sponsored',
-        dates: '06/04/2026 to 10/04/2026',
-        organizingBody: 'NIT Tiruchirappalli',
-        mode: 'Online Mode',
-        role: 'Participant',
-        keyOutcomes: 'Trained on numerical slope stability analysis using PLAXIS-2D and GeoStudio software',
-        link: 'https://atalacademy.aicte-india.org/cert/civil-928'
-      }
-    ],
-    sdp: [
-      {
-        title: 'Skill Certification Workshop on Total Station Surveying & Drone LiDAR Mapping',
-        date: '18/04/2026',
-        type: 'Hands-on Technical SDP',
-        resourcePerson: 'Er. M. Venkatesh (Senior GIS Specialist, Trimble India)',
-        mode: 'Offline Field Workshop',
-        keyOutcomes: '55 students certified in modern geomatics surveying and point-cloud data processing',
-        participantsCount: '55',
-        coordinator: 'K Siva Prasad',
-        link: 'https://sseptp.org/sdp/survey-drone-2026'
-      },
-      {
-        title: 'Industry Crash Course on ETABS & STAAD.Pro for High-Rise Earthquake Detailing',
-        date: '21/04/2026 to 23/04/2026',
-        type: 'Software Training SDP',
-        resourcePerson: 'Er. G. Suresh (Senior Structural Engineer, Shapoorji Pallonji)',
-        mode: 'SSE CAD Center',
-        keyOutcomes: '60 students designed and detailed G+10 commercial building frame under IS 1893:2016',
-        participantsCount: '60',
-        coordinator: 'Er. B. Ramesh',
-        link: 'https://sseptp.org/sdp/etabs-training'
-      }
-    ],
-    facultyAchievements: [
-      {
-        name: 'K Siva Prasad',
-        award: 'Outstanding Researcher in Sustainable Materials Award',
-        organization: 'Indian Concrete Institute (ICI) - AP Chapter',
-        date: '21/04/2026',
-        link: 'https://ici-india.net/awards-2026'
-      },
-      {
-        name: 'Dr. M. Sreenivasulu',
-        award: 'Best Technical Paper Presentation Award (Gold Medal)',
-        organization: 'Indian Geotechnical Society (IGS)',
-        date: '11/04/2026',
-        link: 'https://igs.org.in/awards/2026'
-      }
-    ],
-    studentAchievements: [
-      {
-        nameRoll: 'M. Harish (23SSE1A0114) & P. Sneha (23SSE1A0128)',
-        award: '1st Prize in National Model Making & Structural Bridge Design',
-        event: 'TECHKRITHI 2026',
-        organization: 'NIT Warangal',
-        durationDate: '10/04/2026 to 12/04/2026',
-        link: 'https://nitw.ac.in/techkrithi/results'
-      },
-      {
-        nameRoll: 'K. Tharun Kumar (22SSE1A0105)',
-        award: '2nd Prize in State Level AutoCAD 3D Civil Modeling Challenge',
-        event: 'SURVEYCON 2026',
-        organization: 'JNTU Anantapur',
-        durationDate: '15/04/2026',
-        link: 'https://jntua.ac.in/events/surveycon'
-      }
-    ],
-    certifications: [
-      {
-        title: 'Design of Reinforced Concrete Structures',
-        type: 'NPTEL-AICTE FDP Certification',
-        duration: '12 Weeks',
-        platform: 'SWAYAM / NPTEL (IIT Kharagpur)',
-        enrolled: '42',
-        certified: '38 (12 with Elite Silver)',
-        keyOutcomes: 'Enhanced analytical proficiency in limit state design and seismic load detailing',
-        link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26CE10'
-      },
-      {
-        title: 'Autodesk Certified Professional in Civil 3D Infrastructure Modeling',
-        type: 'Global Industry Professional Credential',
-        duration: '6 Weeks',
-        platform: 'Autodesk Education Portal',
-        enrolled: '25',
-        certified: '24 Certified',
-        keyOutcomes: 'Mastered corridor modeling, grading optimization, and stormwater pipe network design',
-        link: 'https://autodesk.com/verify/cert-civil-2026'
-      },
-      {
-        title: 'Advanced Foundation Engineering & Geotechnical Design',
-        type: 'NPTEL Elite Certification',
-        duration: '8 Weeks',
-        platform: 'SWAYAM / NPTEL (IIT Madras)',
-        enrolled: '30',
-        certified: '27 Certified',
-        keyOutcomes: 'Deepened competency in pile load calculations and machine foundation vibration design',
-        link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26CE18'
-      }
-    ],
-    deptMeetings: [
-      {
-        date: '03.04.2026',
-        decisions: 'Review of CSP Project milestones, course file completion verification, NAAC Criterion 3 & 4 data compilation, and final semester external viva schedule.',
-        policyChanges: 'Mandatory rubric-based assessment for 8th semester capstone internships implemented.',
-        link: 'https://sseptp.org/iqac/civil/minutes-03-04-2026'
-      },
-      {
-        date: '19.04.2026',
-        decisions: 'Mid-term academic audit analysis, syllabus coverage tracking review, allocation of remedial classes for slow learners, and finalization of CIVILERA 2026 schedule.',
-        policyChanges: 'Minimum 85% syllabus coverage mandatory before commencement of pre-final lab exams.',
-        link: 'https://sseptp.org/iqac/civil/minutes-19-04-2026'
-      }
-    ],
-    mous: [
-      {
-        name: 'UltraTech Cement Ltd. & SSE Department of Civil Engineering',
-        purpose: 'Industry Internship, Industrial Visits, Concrete Mix Testing Lab Sponsorship, and Graduate Trainee Campus Placement',
-        datePeriod: 'Valid 2025 to 2028 (3 Years)',
-        facultySpoc: 'K Siva Prasad (HOD - Civil)',
-        link: 'https://sseptp.org/mou/ultratech-civil'
-      },
-      {
-        name: 'National Highways Authority of India (NHAI) PIU Ananthapuramu',
-        purpose: 'Institutional Collaboration for Highway Quality Audits, Traffic Volume Surveys, and Summer Student Apprenticeship',
-        datePeriod: 'Valid 2024 to 2027 (3 Years)',
-        facultySpoc: 'Er. B. Ramesh (Assistant Professor - Civil)',
-        link: 'https://sseptp.org/mou/nhai-civil'
-      }
-    ],
-    additionalInitiatives: [
-      {
-        initiative: 'Establishment of Department Consultancy & Material Testing Cell',
-        date: '05/04/2026',
-        description: 'Commercial compressive strength and soil bearing capacity testing launched for local government contractors.',
-        outcomes: 'Generated Rs. 45,000 in testing revenue; provided students live industrial testing exposure.',
-        coordinator: 'Er. B. Ramesh',
-        link: 'https://sseptp.org/civil/consultancy-cell'
-      },
-      {
-        initiative: 'Civil Engineering Student Innovation & Model Exhibition Zone',
-        date: '12/04/2026',
-        description: 'Permanent display gallery set up in Civil Block featuring 1:50 scale models of cable-stayed bridges and green building concepts.',
-        outcomes: 'Showcases student engineering craftsmanship to campus visitors and school groups.',
-        coordinator: 'Er. S. Kavitha',
-        link: 'https://sseptp.org/civil/model-gallery'
-      }
-    ],
-    techAssociation: [
-      {
-        event: 'CIVILERA 2026 - Annual Technical Symposium & Paper Expo',
-        date: '22/04/2026',
-        type: 'Technical Association Event',
-        resourcePersonCoordinator: 'Er. S. Raghavan (Chief Structural Consultant, L&T Infra)',
-        participants: '140 Students across 6 Engineering Colleges',
-        outcomes: 'Technical paper presentations, CAD quiz, and live concrete cube breaking competition conducted.',
-        link: 'https://sseptp.org/associations/civilera-2026'
-      },
-      {
-        event: 'Guest Lecture on Modern Mega-Infrastructure & Tunnelling Projects in India',
-        date: '09/04/2026',
-        type: 'Technical Guest Lecture',
-        resourcePersonCoordinator: 'Dr. C. P. Reddy (Retired Chief Engineer, Indian Railways)',
-        participants: '95 Civil Engineering Students',
-        outcomes: 'Insightful exposure to geotechnical challenges in Himalayan railway tunnels and metro underground stations.',
-        link: 'https://sseptp.org/associations/guest-lecture-tunnel'
-      }
-    ],
-    iicCell: [
-      {
-        activity: 'Idea Pitch Session on Low-Cost Disaster-Resilient Housing',
-        date: '16/04/2026',
-        description: 'Under Institution Innovation Council (IIC 6.0), civil students pitched disaster-resistant rural dwelling designs.',
-        partner: 'Andhra Pradesh State Disaster Management Authority (APSDMA)',
-        beneficiaries: '75 Engineering Students & 8 Local Artisans',
-        outcomes: '2 student concepts shortlisted for state incubation grant.',
-        link: 'https://mic.gov.in/iic/sse-civil-pitch-2026'
-      },
-      {
-        activity: 'Intellectual Property Rights (IPR) & Patent Drafting Workshop for Civil Innovations',
-        date: '24/04/2026',
-        description: 'Practical training on patent search databases, provisional drafting, and novelty claims in building materials.',
-        partner: 'National Research Development Corporation (NRDC)',
-        beneficiaries: '60 Students & 14 Faculty Members',
-        outcomes: '4 potential provisional patent specifications formulated for department filing.',
-        link: 'https://mic.gov.in/iic/ipr-civil-workshop'
-      }
-    ],
-    syllabus: [
-      {
-        subject: 'Structural Analysis - II',
-        yearSem: 'III B.Tech II Sem',
-        faculty: 'K Siva Prasad',
-        completed: '100%',
-        pending: 'Nil',
-        remarks: 'Completed. 2 revision sessions and previous question papers solved.'
-      },
-      {
-        subject: 'Design of Reinforced Concrete Structures',
-        yearSem: 'III B.Tech II Sem',
-        faculty: 'Dr. M. Sreenivasulu',
-        completed: '95%',
-        pending: '5%',
-        remarks: 'Retaining walls design module underway; extra classes scheduled.'
-      },
-      {
-        subject: 'Geotechnical Engineering - I',
-        yearSem: 'II B.Tech II Sem',
-        faculty: 'Er. B. Ramesh',
-        completed: '92%',
-        pending: '8%',
-        remarks: 'Direct shear and unconfined compression lab revision underway.'
-      },
-      {
-        subject: 'Environmental Engineering & Wastewater Treatment',
-        yearSem: 'III B.Tech II Sem',
-        faculty: 'Er. S. Kavitha',
-        completed: '100%',
-        pending: 'Nil',
-        remarks: 'Syllabus fully completed. Model question papers and solutions distributed.'
-      }
-    ]
-  };
-}
+      journals: [
+        {
+          title: 'Comparative Study on Conventional and Geopolymer Precast Concrete Systems for Sustainable Infrastructure',
+          authors: 'Kummara Siva Prasad',
+          journalName: 'GIS SCIENCE JOURNAL',
+          issnIsbn: '1869-9391',
+          volIssueYear: '13/4',
+          pageNos: '1-23',
+          indexedIn: 'Scopus',
+          link: 'https://doi.org/20.18001.GSJ.2026.V13I4.26.72969390'
+        },
+        {
+          title: 'Experimental Investigation on Durability and Strength Characteristics of Self-Compacting Concrete with GGBS and Silica Fume',
+          authors: 'Dr. M. Sreenivasulu, K Siva Prasad',
+          journalName: 'International Journal of Structural Concrete & Materials',
+          issnIsbn: '2277-3878',
+          volIssueYear: '12/2',
+          pageNos: '45-58',
+          indexedIn: 'UGC CARE / Scopus',
+          link: 'https://doi.org/10.35940/ijscm.B1204.041226'
+        }
+      ],
+      conferences: [
+        {
+          title: 'Development of Eco-Friendly Precast Concrete Using Recycled Aggregates and Low-Carbon Cement Admixtures',
+          authors: 'K Siva Prasad',
+          conferenceName: 'ICIMES 2026',
+          date: '25th Aug 2026',
+          locationMode: 'Vizag, Hybrid Mode',
+          volIssueYear: 'Vol. 8, Issue 2, 2026',
+          pageNos: 'pp. 142-155',
+          issnIsbn: 'ISBN: 978-93-91355-08-1',
+          indexedIn: 'Scopus',
+          link: 'https://icimes2026.org/proceedings/civil-04'
+        },
+        {
+          title: 'Non-Linear Seismic Vulnerability Assessment of Multi-Storey Reinforced Concrete Structures in Zone III',
+          authors: 'Er. B. Ramesh, K Siva Prasad',
+          conferenceName: 'International Conference on Sustainable Earthquake Engineering (ICSEE 2026)',
+          date: '14th April 2026',
+          locationMode: 'Bengaluru, In-Person',
+          volIssueYear: 'Vol. 14, Issue 1, 2026',
+          pageNos: 'pp. 88-99',
+          issnIsbn: 'ISBN: 978-93-91355-14-2',
+          indexedIn: 'Scopus',
+          link: 'https://icsee2026.org/papers/seismic-civil-89'
+        }
+      ],
+      patents: [
+        {
+          title: 'Smart Sensor-Integrated Geopolymer Precast Concrete Block for Real-Time Structural Health Monitoring',
+          inventors: 'K Siva Prasad, Dr. V. Annapurna',
+          applicants: 'Sanskrithi School of Engineering',
+          patentNumber: '202641018923 A',
+          status: 'Published',
+          awardedDate: '12/04/2026',
+          link: 'https://ipindiaservices.gov.in/publicsearch'
+        },
+        {
+          title: 'Automated Solar-Powered Accelerated Steam Curing Chamber for Rapid Highway Pavement Blocks',
+          inventors: 'K Siva Prasad, Er. B. Ramesh',
+          applicants: 'Sanskrithi School of Engineering',
+          patentNumber: '202541098231 B',
+          status: 'Awarded / Granted',
+          awardedDate: '04/04/2026',
+          link: 'https://ipindiaservices.gov.in/patents'
+        }
+      ],
+      entrepreneurship: [
+        {
+          title: 'Bootcamp on Sustainable Building Start-ups & Green Infrastructure Solutions',
+          date: '08/04/2026',
+          type: 'Student Hackathon & Ideation',
+          participants: '64 Students & 4 Mentors',
+          organizedBy: 'EDC Cell & Civil Engineering Department',
+          mode: 'Offline - SSE Seminar Hall',
+          keyOutcomes: '3 prototype business plans submitted for seed funding incubation',
+          participantsCount: '64',
+          mentorCoordinator: 'K Siva Prasad',
+          status: 'Completed',
+          link: 'https://sseptp.org/edc/green-concrete-2026'
+        },
+        {
+          title: 'Idea-to-Product Pitch on Upcycled Plastic-Aggregate Paver Tiles for Rural Roads',
+          date: '17/04/2026',
+          type: 'Incubation Pitch & Demonstration',
+          participants: '38 Students & 3 Local Contractors',
+          organizedBy: 'Civil Engineering EDC Chapter',
+          mode: 'SSE Concrete Technology Lab',
+          keyOutcomes: '1 student start-up registered under MSME Udyam portal',
+          participantsCount: '38',
+          mentorCoordinator: 'Dr. M. Sreenivasulu',
+          status: 'Incubated',
+          link: 'https://sseptp.org/edc/plastic-pavers-2026'
+        }
+      ],
+      nss: [
+        {
+          event: 'Campus Tree Plantation & Water Conservation Awareness Drive',
+          date: '14/04/2026',
+          venue: 'Beedupalli Village & SSE Green Belt',
+          type: 'Extension & Community Outreach',
+          participantsCount: '85 Volunteers',
+          typeOfParticipants: 'Civil Engineering Students',
+          outcomes: 'Planted 150 indigenous saplings and conducted rainwater harvesting workshop for local community',
+          coordinator: 'Mr. R. Naresh (NSS Program Officer)',
+          link: 'https://sseptp.org/nss/plantation-april-2026'
+        },
+        {
+          event: 'Potable Drinking Water Quality & Ground Water Table Testing Camp',
+          date: '20/04/2026',
+          venue: 'Prasanthigram Gram Panchayat',
+          type: 'Community Health & Water Testing',
+          participantsCount: '45 Student Volunteers',
+          typeOfParticipants: 'B.Tech Civil III Year',
+          outcomes: 'Tested 24 community borewell samples for pH, TDS, fluorides and submitted water report to local authorities',
+          coordinator: 'Er. S. Kavitha (Environmental Lab In-charge)',
+          link: 'https://sseptp.org/nss/water-testing-camp'
+        }
+      ],
+      fdpAttended: [
+        {
+          title: '5-Day Online AICTE-ATAL Academy FDP on Geotechnical Disaster Risk Reduction & Landslide Mitigation',
+          type: 'FDP',
+          dates: '06/04/2026 to 10/04/2026',
+          organizingBody: 'NIT Tiruchirappalli',
+          mode: 'Online',
+          facultyAttended: 'K Siva Prasad, Er. S. Kavitha',
+          link: 'https://atalacademy.aicte-india.org/cert/civil-928'
+        }
+      ],
+      fdpOrganized: [
+        {
+          title: 'One-Week National FDP on Advanced BIM Applications & Digital Twins in Civil Infrastructure',
+          type: 'FDP',
+          dates: '15/04/2026 to 20/04/2026',
+          deptOrganized: 'Civil Engineering',
+          mode: 'Hybrid',
+          resourcePersonDetails: 'Dr. C. Anjaneyulu, Senior Director of Infrastructure Engineering, L&T Construction, Chennai, Tamil Nadu - 600089',
+          facultyCoordinators: 'K Siva Prasad, Dr. M. Sreenivasulu',
+          link: 'https://iitm.ac.in/fdp/civil-bim-2026'
+        }
+      ],
+      fdp: [
+        {
+          title: 'One-Week National FDP on Advanced BIM Applications & Digital Twins in Civil Infrastructure',
+          type: 'National Level FDP',
+          dates: '15/04/2026 to 20/04/2026',
+          organizingBody: 'IIT Madras & SSE Centre of Excellence',
+          mode: 'Hybrid Mode',
+          role: 'Participant & Co-Host',
+          keyOutcomes: 'Faculty gained proficiency in Revit BIM modeling, structural simulations, and digital twin workflows',
+          link: 'https://iitm.ac.in/fdp/civil-bim-2026'
+        },
+        {
+          title: '5-Day Online AICTE-ATAL Academy FDP on Geotechnical Disaster Risk Reduction & Landslide Mitigation',
+          type: 'AICTE ATAL Sponsored',
+          dates: '06/04/2026 to 10/04/2026',
+          organizingBody: 'NIT Tiruchirappalli',
+          mode: 'Online Mode',
+          role: 'Participant',
+          keyOutcomes: 'Trained on numerical slope stability analysis using PLAXIS-2D and GeoStudio software',
+          link: 'https://atalacademy.aicte-india.org/cert/civil-928'
+        }
+      ],
+      sdp: [
+        {
+          title: 'Skill Certification Workshop on Total Station Surveying & Drone LiDAR Mapping',
+          date: '18/04/2026',
+          type: 'Hands-on Technical SDP',
+          resourcePerson: 'Er. M. Venkatesh (Senior GIS Specialist, Trimble India)',
+          mode: 'Offline Field Workshop',
+          keyOutcomes: '55 students certified in modern geomatics surveying and point-cloud data processing',
+          participantsCount: '55',
+          coordinator: 'K Siva Prasad',
+          link: 'https://sseptp.org/sdp/survey-drone-2026'
+        },
+        {
+          title: 'Industry Crash Course on ETABS & STAAD.Pro for High-Rise Earthquake Detailing',
+          date: '21/04/2026 to 23/04/2026',
+          type: 'Software Training SDP',
+          resourcePerson: 'Er. G. Suresh (Senior Structural Engineer, Shapoorji Pallonji)',
+          mode: 'SSE CAD Center',
+          keyOutcomes: '60 students designed and detailed G+10 commercial building frame under IS 1893:2016',
+          participantsCount: '60',
+          coordinator: 'Er. B. Ramesh',
+          link: 'https://sseptp.org/sdp/etabs-training'
+        }
+      ],
+      facultyAchievements: [
+        {
+          name: 'K Siva Prasad',
+          award: 'Outstanding Researcher in Sustainable Materials Award',
+          organization: 'Indian Concrete Institute (ICI) - AP Chapter',
+          date: '21/04/2026',
+          link: 'https://ici-india.net/awards-2026'
+        },
+        {
+          name: 'Dr. M. Sreenivasulu',
+          award: 'Best Technical Paper Presentation Award (Gold Medal)',
+          organization: 'Indian Geotechnical Society (IGS)',
+          date: '11/04/2026',
+          link: 'https://igs.org.in/awards/2026'
+        }
+      ],
+      studentAchievements: [
+        {
+          nameRoll: 'M. Harish (23SSE1A0114) & P. Sneha (23SSE1A0128)',
+          award: '1st Prize in National Model Making & Structural Bridge Design',
+          event: 'TECHKRITHI 2026',
+          organization: 'NIT Warangal',
+          durationDate: '10/04/2026 to 12/04/2026',
+          link: 'https://nitw.ac.in/techkrithi/results'
+        },
+        {
+          nameRoll: 'K. Tharun Kumar (22SSE1A0105)',
+          award: '2nd Prize in State Level AutoCAD 3D Civil Modeling Challenge',
+          event: 'SURVEYCON 2026',
+          organization: 'JNTU Anantapur',
+          durationDate: '15/04/2026',
+          link: 'https://jntua.ac.in/events/surveycon'
+        }
+      ],
+      certifications: [
+        {
+          title: 'Design of Reinforced Concrete Structures',
+          type: 'NPTEL-AICTE FDP Certification',
+          duration: '12 Weeks',
+          platform: 'SWAYAM / NPTEL (IIT Kharagpur)',
+          enrolled: '42',
+          certified: '38 (12 with Elite Silver)',
+          keyOutcomes: 'Enhanced analytical proficiency in limit state design and seismic load detailing',
+          link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26CE10'
+        },
+        {
+          title: 'Autodesk Certified Professional in Civil 3D Infrastructure Modeling',
+          type: 'Global Industry Professional Credential',
+          duration: '6 Weeks',
+          platform: 'Autodesk Education Portal',
+          enrolled: '25',
+          certified: '24 Certified',
+          keyOutcomes: 'Mastered corridor modeling, grading optimization, and stormwater pipe network design',
+          link: 'https://autodesk.com/verify/cert-civil-2026'
+        },
+        {
+          title: 'Advanced Foundation Engineering & Geotechnical Design',
+          type: 'NPTEL Elite Certification',
+          duration: '8 Weeks',
+          platform: 'SWAYAM / NPTEL (IIT Madras)',
+          enrolled: '30',
+          certified: '27 Certified',
+          keyOutcomes: 'Deepened competency in pile load calculations and machine foundation vibration design',
+          link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26CE18'
+        }
+      ],
+      deptMeetings: [
+        {
+          date: '03.04.2026',
+          decisions: 'Review of CSP Project milestones, course file completion verification, NAAC Criterion 3 & 4 data compilation, and final semester external viva schedule.',
+          policyChanges: 'Mandatory rubric-based assessment for 8th semester capstone internships implemented.',
+          link: 'https://sseptp.org/iqac/civil/minutes-03-04-2026'
+        },
+        {
+          date: '19.04.2026',
+          decisions: 'Mid-term academic audit analysis, syllabus coverage tracking review, allocation of remedial classes for slow learners, and finalization of CIVILERA 2026 schedule.',
+          policyChanges: 'Minimum 85% syllabus coverage mandatory before commencement of pre-final lab exams.',
+          link: 'https://sseptp.org/iqac/civil/minutes-19-04-2026'
+        }
+      ],
+      mous: [
+        {
+          name: 'UltraTech Cement Ltd. & SSE Department of Civil Engineering',
+          purpose: 'Industry Internship, Industrial Visits, Concrete Mix Testing Lab Sponsorship, and Graduate Trainee Campus Placement',
+          datePeriod: 'Valid 2025 to 2028 (3 Years)',
+          facultySpoc: 'K Siva Prasad (HOD - Civil)',
+          link: 'https://sseptp.org/mou/ultratech-civil'
+        },
+        {
+          name: 'National Highways Authority of India (NHAI) PIU Ananthapuramu',
+          purpose: 'Institutional Collaboration for Highway Quality Audits, Traffic Volume Surveys, and Summer Student Apprenticeship',
+          datePeriod: 'Valid 2024 to 2027 (3 Years)',
+          facultySpoc: 'Er. B. Ramesh (Assistant Professor - Civil)',
+          link: 'https://sseptp.org/mou/nhai-civil'
+        }
+      ],
+      additionalInitiatives: [
+        {
+          initiative: 'Establishment of Department Consultancy & Material Testing Cell',
+          date: '05/04/2026',
+          description: 'Commercial compressive strength and soil bearing capacity testing launched for local government contractors.',
+          outcomes: 'Generated Rs. 45,000 in testing revenue; provided students live industrial testing exposure.',
+          coordinator: 'Er. B. Ramesh',
+          link: 'https://sseptp.org/civil/consultancy-cell'
+        },
+        {
+          initiative: 'Civil Engineering Student Innovation & Model Exhibition Zone',
+          date: '12/04/2026',
+          description: 'Permanent display gallery set up in Civil Block featuring 1:50 scale models of cable-stayed bridges and green building concepts.',
+          outcomes: 'Showcases student engineering craftsmanship to campus visitors and school groups.',
+          coordinator: 'Er. S. Kavitha',
+          link: 'https://sseptp.org/civil/model-gallery'
+        }
+      ],
+      techAssociation: [
+        {
+          event: 'CIVILERA 2026 - Annual Technical Symposium & Paper Expo',
+          date: '22/04/2026',
+          type: 'Technical Association Event',
+          resourcePersonCoordinator: 'Er. S. Raghavan (Chief Structural Consultant, L&T Infra)',
+          participants: '140 Students across 6 Engineering Colleges',
+          outcomes: 'Technical paper presentations, CAD quiz, and live concrete cube breaking competition conducted.',
+          link: 'https://sseptp.org/associations/civilera-2026'
+        },
+        {
+          event: 'Guest Lecture on Modern Mega-Infrastructure & Tunnelling Projects in India',
+          date: '09/04/2026',
+          type: 'Technical Guest Lecture',
+          resourcePersonCoordinator: 'Dr. C. P. Reddy (Retired Chief Engineer, Indian Railways)',
+          participants: '95 Civil Engineering Students',
+          outcomes: 'Insightful exposure to geotechnical challenges in Himalayan railway tunnels and metro underground stations.',
+          link: 'https://sseptp.org/associations/guest-lecture-tunnel'
+        }
+      ],
+      iicCell: [
+        {
+          activity: 'Idea Pitch Session on Low-Cost Disaster-Resilient Housing',
+          date: '16/04/2026',
+          description: 'Under Institution Innovation Council (IIC 6.0), civil students pitched disaster-resistant rural dwelling designs.',
+          partner: 'Andhra Pradesh State Disaster Management Authority (APSDMA)',
+          beneficiaries: '75 Engineering Students & 8 Local Artisans',
+          outcomes: '2 student concepts shortlisted for state incubation grant.',
+          link: 'https://mic.gov.in/iic/sse-civil-pitch-2026'
+        },
+        {
+          activity: 'Intellectual Property Rights (IPR) & Patent Drafting Workshop for Civil Innovations',
+          date: '24/04/2026',
+          description: 'Practical training on patent search databases, provisional drafting, and novelty claims in building materials.',
+          partner: 'National Research Development Corporation (NRDC)',
+          beneficiaries: '60 Students & 14 Faculty Members',
+          outcomes: '4 potential provisional patent specifications formulated for department filing.',
+          link: 'https://mic.gov.in/iic/ipr-civil-workshop'
+        }
+      ],
+      syllabus: [
+        {
+          subject: 'Structural Analysis - II',
+          yearSem: 'III B.Tech II Sem',
+          faculty: 'K Siva Prasad',
+          completed: '5 Units (100%)',
+          pending: 'Nil',
+          remarks: 'Completed all 5 units. 2 revision sessions and previous question papers solved.'
+        },
+        {
+          subject: 'Design of Reinforced Concrete Structures',
+          yearSem: 'III B.Tech II Sem',
+          faculty: 'Dr. M. Sreenivasulu',
+          completed: '4.75 Units (95%)',
+          pending: '0.25 Units (5%)',
+          remarks: 'Unit 5 Retaining walls design module underway; extra classes scheduled.'
+        },
+        {
+          subject: 'Geotechnical Engineering - I',
+          yearSem: 'II B.Tech II Sem',
+          faculty: 'Er. B. Ramesh',
+          completed: '4.6 Units (92%)',
+          pending: '0.4 Units (8%)',
+          remarks: 'Direct shear and unconfined compression lab revision underway.'
+        },
+        {
+          subject: 'Environmental Engineering & Wastewater Treatment',
+          yearSem: 'III B.Tech II Sem',
+          faculty: 'Er. S. Kavitha',
+          completed: '5 Units (100%)',
+          pending: 'Nil',
+          remarks: 'All 5 units fully completed. Model question papers and solutions distributed.'
+        }
+      ]
+    };
+  }
 
   // Safe fallback: empty template sections for unmapped committees or entities
   return { ...INITIAL_SECTIONS };

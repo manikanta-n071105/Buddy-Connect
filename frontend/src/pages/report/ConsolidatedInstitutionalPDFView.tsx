@@ -261,30 +261,37 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.conferences || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Presentation Title', width: '38%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>{it.title}</div> },
+        { header: '#', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Presentation Title', width: '34%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35 }}>{it.title}</div> },
         {
-          header: 'Authors & Conference Name',
-          width: '30%',
+          header: 'Authors & Conference Details',
+          width: '32%',
           align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div><strong>Authors:</strong> {it.authors}</div>
               <div style={{ color: '#475569' }}><strong>Conference:</strong> {it.conferenceName}</div>
+              {(it.volIssueYear || it.pageNos || it.issnIsbn) && (
+                <div style={{ color: '#64748b', fontSize: '8px', marginTop: '2px' }}>
+                  {it.volIssueYear && <span style={{ marginRight: '6px' }}><strong>Issue:</strong> {it.volIssueYear}</span>}
+                  {it.pageNos && <span style={{ marginRight: '6px' }}><strong>Pages:</strong> {it.pageNos}</span>}
+                  {it.issnIsbn && <span><strong>ISBN:</strong> {it.issnIsbn}</span>}
+                </div>
+              )}
             </div>
           )
         },
         {
           header: 'Date, Venue & Indexing',
-          width: '18%',
+          width: '23%',
           align: 'left',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
               <div>Date: <strong>{it.date}</strong></div>
               <div style={{ color: '#475569' }}>Venue: {it.locationMode}</div>
-              <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn}</div>
-              <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>
+              <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn || '-'}</div>
+              {it.link && <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>}
             </div>
           )
         }
@@ -700,10 +707,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Course / Subject Title', width: '21%', align: 'left', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a' }}>{it.subject}</div> },
         { header: 'Year / Sem', width: '10%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.yearSem || '-'}</span> },
-        { header: 'Faculty In-Charge', width: '16%', align: 'left', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.faculty}</span> },
-        { header: '% Done', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857' }}>{it.completed}</span> },
-        { header: '% Pend', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 700, color: '#b45309' }}>{it.pending}</span> },
-        { header: 'Remarks', width: '28%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8.5px', fontStyle: 'italic', lineHeight: 1.35 }}>{it.remarks || '-'}</div> }
+        { header: 'Faculty In-Charge', width: '15%', align: 'left', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.faculty}</span> },
+        { header: 'Done (5 Units)', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857', fontSize: '8.5px' }}>{it.completed}</span> },
+        { header: 'Pending', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 700, color: '#b45309', fontSize: '8.5px' }}>{it.pending}</span> },
+        { header: 'Remarks', width: '26%', align: 'left', render: (it) => <div style={{ color: '#475569', fontSize: '8.5px', fontStyle: 'italic', lineHeight: 1.35 }}>{it.remarks || '-'}</div> }
       ]
     },
     // 9. Clubs & Student Engagement Activity

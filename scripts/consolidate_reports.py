@@ -421,7 +421,7 @@ def create_summary_matrix_xml(departments, category_data):
         ('1a_journals', '1a. Journal Publications'),
         ('1b_conferences', '1b. Conference Presentations'),
         ('1c_patents', '2a. Patents'),
-        ('1d_entrepreneurship', '2b. Start-up Initiatives'),
+        ('1d_entrepreneurship', '2b. Activities and Iniativies'),
         ('3a_fdp_attended', '3a. FDPs Attended'),
         ('3b_fdp_organized', '3b. FDPs Organized'),
         ('4_sdp', '4. Student Development Programs (SDPs)'),
@@ -432,7 +432,7 @@ def create_summary_matrix_xml(departments, category_data):
         ('6b_mous', '6b. Collaborations & MoUs'),
         ('8_tech_association', '7. Technical Association Activities'),
         ('10_syllabus_general', '8. Syllabus coverage Report'),
-        ('student_engagement', '9. Club & Student Engagement Activity'),
+        ('student_engagement', '9. Clubs & Student Engagement Activity'),
         ('2_nss', '10. NSS and Other Extension Activities'),
         ('7_additional_initiatives', '11. Additional/Other Relevant Initiatives'),
     ]

@@ -42,6 +42,9 @@ export interface ReportSectionsData {
     conferenceName: string;
     date: string;
     locationMode: string;
+    volIssueYear?: string;
+    pageNos?: string;
+    issnIsbn?: string;
     indexedIn: string;
     link: string;
   }>;
@@ -220,8 +223,32 @@ export const STUDENT_ENGAGEMENT_ACTIVITY_TYPES = [
   'Technical Association Activity',
   'Hackathon / Project Expo',
   'Certification Course',
-  'Field Trip',
   'Club Event / Cultural Activity',
+  'Other'
+];
+
+export const INDEXED_IN_OPTIONS = [
+  'Scopus',
+  'WoS',
+  'UGC',
+  'Google Scholar',
+  'Other'
+];
+
+export const SDP_ACTIVITY_TYPES = [
+  'Workshop',
+  'Hands-on Technical SDP',
+  'Software Training SDP',
+  'Guest Lecture',
+  'Expert Lecture',
+  'Seminar',
+  'Industry Crash Course',
+  'Industrial Visit',
+  'Internship',
+  'Symposium / Hackathon',
+  'Community Project',
+  'Value Added Course',
+  'Certification Training',
   'Other'
 ];
 
@@ -519,7 +546,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '1a_journals', label: '1a. Journal Publications', count: (safeSections.journals || []).length },
     { key: '1b_conferences', label: '1b. Conference Presentations', count: (safeSections.conferences || []).length },
     { key: '1c_patents', label: '2a. Patents', count: (safeSections.patents || []).length },
-    { key: '1d_entrepreneurship', label: '2b. Start-up Initiatives', count: (safeSections.entrepreneurship || []).length },
+    { key: '1d_entrepreneurship', label: '2b. Activities and Iniativies', count: (safeSections.entrepreneurship || []).length },
     { key: '3a_fdp_attended', label: '3a. FDPs Attended', count: (safeSections.fdpAttended || []).length },
     { key: '3b_fdp_organized', label: '3b. FDPs Organized', count: (safeSections.fdpOrganized || []).length },
     { key: '4_sdp', label: '4. Student Development Programs (SDPs)', count: (safeSections.sdp || []).length },
@@ -530,7 +557,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '6b_mous', label: '6b. Collaborations & MoUs', count: (safeSections.mous || []).length },
     { key: '8_tech_association', label: '7. Technical Association Activities', count: (safeSections.techAssociation || []).length },
     { key: '10_syllabus', label: '8. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
-    { key: 'student_engagement', label: '9. Club & Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
+    { key: 'student_engagement', label: '9. Clubs & Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
     { key: '2_nss', label: '10. NSS and Other Extension Activities', count: (safeSections.nss || []).length },
     { key: '7_additional', label: '11. Additional/Other Relevant Initiatives', count: (safeSections.additionalInitiatives || []).length },
   ];
@@ -588,7 +615,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.journals = [...(copy.journals || []), { title: '', authors: '', journalName: '', issnIsbn: '', volIssueYear: '', pageNos: '', indexedIn: '', link: '' }];
           break;
         case 'conferences':
-          copy.conferences = [...(copy.conferences || []), { title: '', authors: '', conferenceName: '', date: '', locationMode: '', indexedIn: '', link: '' }];
+          copy.conferences = [...(copy.conferences || []), { title: '', authors: '', conferenceName: '', date: '', locationMode: '', volIssueYear: '', pageNos: '', issnIsbn: '', indexedIn: 'Scopus', link: '' }];
           break;
         case 'patents':
           copy.patents = [...(copy.patents || []), { title: '', inventors: '', applicants: '', patentNumber: '', status: '', awardedDate: '', link: '' }];
@@ -1166,8 +1193,32 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Page Nos." value={item.pageNos} onChange={(v) => handleUpdateField('journals', idx, 'pageNos', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Indexed In (e.g., Scopus)" value={item.indexedIn} onChange={(v) => handleUpdateField('journals', idx, 'indexedIn', v)} />
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Indexed In *
+                        </label>
+                        <select
+                          value={INDEXED_IN_OPTIONS.includes(item.indexedIn) ? item.indexedIn : (item.indexedIn ? 'Other' : 'Scopus')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleUpdateField('journals', idx, 'indexedIn', val === 'Other' ? '' : val);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                        >
+                          {INDEXED_IN_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
                       </div>
+                      {(!INDEXED_IN_OPTIONS.includes(item.indexedIn) || item.indexedIn === 'Other' || item.indexedIn === '') && (
+                        <div>
+                          <FieldInput
+                            label="Specify Custom Indexing (if Other)"
+                            value={item.indexedIn === 'Other' ? '' : item.indexedIn}
+                            placeholder="e.g. IEEE Xplore, PubMed, SCI, Springer..."
+                            onChange={(v) => handleUpdateField('journals', idx, 'indexedIn', v)}
+                          />
+                        </div>
+                      )}
                       <div className="md:col-span-2">
                         <FieldInput label="Link to Publication/Document" value={item.link} onChange={(v) => handleUpdateField('journals', idx, 'link', v)} />
                       </div>
@@ -1204,9 +1255,42 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Location/Mode" value={item.locationMode} onChange={(v) => handleUpdateField('conferences', idx, 'locationMode', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Indexed In" value={item.indexedIn} onChange={(v) => handleUpdateField('conferences', idx, 'indexedIn', v)} />
+                        <FieldInput label="Vol./Issue/Year" value={item.volIssueYear || ''} placeholder="e.g. Vol. 14, Issue 2, 2026" onChange={(v) => handleUpdateField('conferences', idx, 'volIssueYear', v)} />
                       </div>
                       <div>
+                        <FieldInput label="Page Nos." value={item.pageNos || ''} placeholder="e.g. pp. 112-124" onChange={(v) => handleUpdateField('conferences', idx, 'pageNos', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="ISSN/ISBN" value={item.issnIsbn || ''} placeholder="e.g. ISBN: 978-93-91355-12-8" onChange={(v) => handleUpdateField('conferences', idx, 'issnIsbn', v)} />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Indexed In *
+                        </label>
+                        <select
+                          value={INDEXED_IN_OPTIONS.includes(item.indexedIn) ? item.indexedIn : (item.indexedIn ? 'Other' : 'Scopus')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleUpdateField('conferences', idx, 'indexedIn', val === 'Other' ? '' : val);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                        >
+                          {INDEXED_IN_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {(!INDEXED_IN_OPTIONS.includes(item.indexedIn) || item.indexedIn === 'Other' || item.indexedIn === '') && (
+                        <div>
+                          <FieldInput
+                            label="Specify Custom Indexing (if Other)"
+                            value={item.indexedIn === 'Other' ? '' : item.indexedIn}
+                            placeholder="e.g. IEEE Xplore, Springer, Scopus / Under Review..."
+                            onChange={(v) => handleUpdateField('conferences', idx, 'indexedIn', v)}
+                          />
+                        </div>
+                      )}
+                      <div className="md:col-span-2">
                         <FieldInput label="Link to Presentation/Report" value={item.link} onChange={(v) => handleUpdateField('conferences', idx, 'link', v)} />
                       </div>
                     </div>
@@ -1253,10 +1337,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               </SectionContainer>
             )}
 
-            {/* Table 3: 2b. Start-up Initiatives */}
+            {/* Table 3: 2b. Activities and Iniativies */}
             {activeSectionKey === '1d_entrepreneurship' && (
               <SectionContainer
-                title="2. Innovation & Entrepreneurship — b) Start-up Initiatives"
+                title="2. Innovation & Entrepreneurship — b) Activities and Iniativies"
                 description="List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
                 count={safeSections.entrepreneurship.length}
                 onAdd={() => handleAddRow('entrepreneurship')}
@@ -1312,7 +1396,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('nss', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Event/Activity" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
+                        <FieldInput label="Event Name" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
                       </div>
                       <div>
                         <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} />
@@ -1464,8 +1548,32 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Type (Guest Lecture/Workshop/Seminar/Industrial Visit/Internship/Symposium/Community Project)" value={item.type} onChange={(v) => handleUpdateField('sdp', idx, 'type', v)} />
+                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                          Type of Activity *
+                        </label>
+                        <select
+                          value={SDP_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'Workshop')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleUpdateField('sdp', idx, 'type', val === 'Other' ? '' : val);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
+                        >
+                          {SDP_ACTIVITY_TYPES.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
                       </div>
+                      {(!SDP_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other' || item.type === '') && (
+                        <div>
+                          <FieldInput
+                            label="Specify Custom Type (if Other)"
+                            value={item.type === 'Other' ? '' : item.type}
+                            placeholder="e.g. Hands-on Technical SDP, Software Training SDP..."
+                            onChange={(v) => handleUpdateField('sdp', idx, 'type', v)}
+                          />
+                        </div>
+                      )}
                       <div className="md:col-span-2">
                         <FieldInput label="Resource Person with designation /Organization" value={item.resourcePerson} onChange={(v) => handleUpdateField('sdp', idx, 'resourcePerson', v)} />
                       </div>
@@ -1778,10 +1886,20 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Faculty" value={item.faculty} onChange={(v) => handleUpdateField('syllabus', idx, 'faculty', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Syllabus Status - Completed" value={item.completed} onChange={(v) => handleUpdateField('syllabus', idx, 'completed', v)} />
+                        <FieldInput
+                          label="Syllabus Status - Completed (Total 5 Units)"
+                          value={item.completed}
+                          placeholder="e.g. 5 Units (100%), 4.5 Units (90%), 4 Units (80%)"
+                          onChange={(v) => handleUpdateField('syllabus', idx, 'completed', v)}
+                        />
                       </div>
                       <div>
-                        <FieldInput label="Syllabus Status - Pending" value={item.pending} onChange={(v) => handleUpdateField('syllabus', idx, 'pending', v)} />
+                        <FieldInput
+                          label="Syllabus Status - Pending (Total 5 Units)"
+                          value={item.pending}
+                          placeholder="e.g. Nil, 0.5 Units (10%), 1 Unit (20%)"
+                          onChange={(v) => handleUpdateField('syllabus', idx, 'pending', v)}
+                        />
                       </div>
                       <div className="md:col-span-3">
                         <FieldInput label="Remarks" value={item.remarks} onChange={(v) => handleUpdateField('syllabus', idx, 'remarks', v)} />
@@ -1795,7 +1913,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             {/* Student Engagement Activity Table */}
             {activeSectionKey === 'student_engagement' && (
               <SectionContainer
-                title="9. Club & Student Engagement Activity"
+                title="9. Clubs & Student Engagement Activity"
                 description="Record student workshops, guest lectures, expert talks, industrial visits, internships, mentoring sessions, and clubs."
                 count={(safeSections.studentEngagement || []).length}
                 onAdd={() => handleAddRow('studentEngagement')}
@@ -2192,9 +2310,10 @@ interface FieldInputProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  placeholder?: string;
 }
 
-const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange }) => (
+const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeholder }) => (
   <div className="space-y-1">
     <label className="text-[11px] font-bold text-slate-600 block">
       {label}
@@ -2202,6 +2321,7 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange }) => (
     <input
       type="text"
       value={value}
+      placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all placeholder:text-slate-400"
     />
