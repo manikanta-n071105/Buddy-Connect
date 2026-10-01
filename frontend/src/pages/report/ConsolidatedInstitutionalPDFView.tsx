@@ -196,7 +196,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn}</div>
               {it.link && (
                 <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
-                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
                     {it.link}
                   </a>
                 </div>
@@ -246,7 +246,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn || '-'}</div>
               {it.link && (
                 <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
-                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
                     {it.link}
                   </a>
                 </div>
@@ -388,7 +388,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyAttended}</div>
               {it.link && (
                 <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
-                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
                     {it.link}
                   </a>
                 </div>
@@ -438,7 +438,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyCoordinators}</div>
               {it.link && (
                 <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
-                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
                     {it.link}
                   </a>
                 </div>

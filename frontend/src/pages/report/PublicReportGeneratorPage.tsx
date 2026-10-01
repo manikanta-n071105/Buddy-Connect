@@ -1146,8 +1146,8 @@ export const PublicReportGeneratorPage: React.FC = () => {
                         href={linkedinUrl || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline font-medium text-xs inline-flex items-center gap-1"
-                        style={{ fontFamily: 'Cambria, Georgia, serif' }}
+                        className="text-blue-600 hover:text-blue-800 no-underline font-medium text-xs inline-flex items-center gap-1"
+                        style={{ fontFamily: 'Cambria, Georgia, serif', textDecoration: 'none' }}
                       >
                         <span>{linkedinUrl || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}</span>
                         <ExternalLink className="w-3 h-3 shrink-0 print:hidden" />
