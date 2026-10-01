@@ -818,9 +818,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const opt = {
         margin: [6, 6, 6, 6] as [number, number, number, number],
         filename: `${department.replace(/\s+/g, '_')}_Monthly_Report_${period.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 1.0 },
+        enableLinks: true,
         html2canvas: {
-          scale: 2,
+          scale: 3,
           useCORS: true,
           logging: false,
           letterRendering: true,

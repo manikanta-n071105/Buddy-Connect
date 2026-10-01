@@ -870,8 +870,9 @@ export const ApprovalWorkflowPage: React.FC = () => {
       const opt = {
         margin: [marginMm, marginMm, marginMm, marginMm],
         filename: defaultFilename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        image: { type: 'jpeg', quality: 1.0 },
+        enableLinks: true,
+        html2canvas: { scale: 3, useCORS: true, logging: false, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };

@@ -76,10 +76,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
           </tr>
         </tbody>
       </table>
-      <div style={{ height: '2px', backgroundColor: '#1e293b', width: '100%', marginBottom: '14px' }}></div>
+      <div style={{ height: '2px', backgroundColor: '#1e293b', width: '100%', marginBottom: '17px' }}></div>
 
       {/* 2. Document Title Block Matching Theme */}
-      <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '17px' }}>
         <h1
           style={{
             fontSize: '18px',
@@ -87,12 +87,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             color: '#1a365d',
             textTransform: 'uppercase',
             letterSpacing: '0.03em',
-            margin: '0 0 4px 0'
+            margin: '0 0 7px 0'
           }}
         >
           MONTHLY DEPARTMENTAL PROGRESS REPORT
         </h1>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', margin: '0 0 2px 0' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', margin: '0 0 5px 0' }}>
           Department of {department}
         </div>
         <div style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>
@@ -168,7 +168,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.journals.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            1A. RESEARCH &mdash; JOURNAL PUBLICATIONS ({sections.journals.length})
+            1. RESEARCH &mdash; a) JOURNAL PUBLICATIONS ({sections.journals.length})
           </div>
           <div>
             {sections.journals.map((item, idx) => (
@@ -191,7 +191,15 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   </div>
                   {item.link && (
                     <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
-                      <strong>Paper Link / DOI:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                      <strong>Paper Link / DOI:</strong>{' '}
+                      <a
+                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1d4ed8', textDecoration: 'underline' }}
+                      >
+                        {item.link}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -205,7 +213,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {sections.conferences.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            1B. RESEARCH &mdash; CONFERENCE PRESENTATIONS ({sections.conferences.length})
+            1. RESEARCH &mdash; b) CONFERENCE PRESENTATIONS ({sections.conferences.length})
           </div>
           <div>
             {sections.conferences.map((item, idx) => (
@@ -230,7 +238,15 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   </div>
                   {item.link && (
                     <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
-                      <strong>Proceedings Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                      <strong>Proceedings Link:</strong>{' '}
+                      <a
+                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1d4ed8', textDecoration: 'underline' }}
+                      >
+                        {item.link}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -308,7 +324,15 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   </div>
                   {item.link && (
                     <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
-                      <strong>Certificate/Proof Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                      <strong>Certificate/Proof Link:</strong>{' '}
+                      <a
+                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1d4ed8', textDecoration: 'underline' }}
+                      >
+                        {item.link}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -343,7 +367,15 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   </div>
                   {item.link && (
                     <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
-                      <strong>Certificate/Proof Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                      <strong>Certificate/Proof Link:</strong>{' '}
+                      <a
+                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1d4ed8', textDecoration: 'underline' }}
+                      >
+                        {item.link}
+                      </a>
                     </div>
                   )}
                 </div>
@@ -429,7 +461,15 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   )}
                   {item.link && (
                     <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px', textAlign: 'justify' }}>
-                      <strong>Minutes Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
+                      <strong>Minutes Link:</strong>{' '}
+                      <a
+                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1d4ed8', textDecoration: 'underline' }}
+                      >
+                        {item.link}
+                      </a>
                     </div>
                   )}
                 </div>

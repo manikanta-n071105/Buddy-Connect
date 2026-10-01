@@ -31,7 +31,7 @@ interface SectionConfig<T = any> {
  * Captures each `.pdf-page` element individually on a dedicated A4 sheet.
  * Completely eliminates auto-slicing and mid-table page breaks.
  */
-export const exportPagesToPdf = async (containerId: string, filename?: string): Promise<Blob> => {
+export const exportPagesToPdf = async (containerId: string, _filename?: string): Promise<Blob> => {
   const container = document.getElementById(containerId);
   if (!container) throw new Error(`PDF container #${containerId} not found in DOM`);
 
@@ -47,7 +47,7 @@ export const exportPagesToPdf = async (containerId: string, filename?: string): 
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
     const canvas = await html2canvas(page, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       logging: false,
       width: 750,
@@ -57,11 +57,26 @@ export const exportPagesToPdf = async (containerId: string, filename?: string): 
       scrollY: 0
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
     if (i > 0) {
       pdf.addPage('a4', 'portrait');
     }
     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+    // Map all clickable links (<a> tags) to jsPDF links on this page
+    const pageRect = page.getBoundingClientRect();
+    const links = page.querySelectorAll<HTMLAnchorElement>('a[href]');
+    links.forEach((a) => {
+      const href = a.getAttribute('href');
+      if (!href) return;
+      const rect = a.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const xMm = ((rect.left - pageRect.left) / pageRect.width) * 210;
+      const yMm = ((rect.top - pageRect.top) / pageRect.height) * 297;
+      const wMm = (rect.width / pageRect.width) * 210;
+      const hMm = (rect.height / pageRect.height) * 297;
+      pdf.link(xMm, yMm, wMm, hMm, { url: href });
+    });
   }
 
   return pdf.output('blob');
@@ -151,12 +166,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 1A. Journal Publications
     {
       key: 'journals',
-      title: '1A. JOURNAL PUBLICATIONS',
+      title: 'Research — a) Journal Publications',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.journals || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Paper Title', width: '38%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.title}</div> },
         {
@@ -179,7 +194,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
               <div>ISSN: <strong>{it.issnIsbn}</strong></div>
               <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn}</div>
-              <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>
+              {it.link && (
+                <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                    {it.link}
+                  </a>
+                </div>
+              )}
             </div>
           )
         }
@@ -188,12 +209,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 1B. Conference Presentations
     {
       key: 'conferences',
-      title: '1B. CONFERENCE PRESENTATIONS',
+      title: 'Research — b) Conference Presentations',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.conferences || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Presentation Title', width: '34%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.title}</div> },
         {
@@ -223,7 +244,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div>Date: <strong>{it.date}</strong></div>
               <div style={{ color: '#475569' }}>Venue: {it.locationMode}</div>
               <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn || '-'}</div>
-              {it.link && <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>}
+              {it.link && (
+                <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                    {it.link}
+                  </a>
+                </div>
+              )}
             </div>
           )
         }
@@ -237,7 +264,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.patents || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Patent / Innovation Title', width: '42%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.title}</div> },
         {
@@ -272,7 +299,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Program / Activity Title',
@@ -328,7 +355,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpAttended || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Program Title & Type',
@@ -359,7 +386,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
               <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyAttended}</div>
-              {it.link && <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>}
+              {it.link && (
+                <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                    {it.link}
+                  </a>
+                </div>
+              )}
             </div>
           )
         }
@@ -373,7 +406,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpOrganized || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Program Title & Type',
@@ -403,7 +436,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
               <div style={{ fontWeight: 700, color: '#1a365d' }}>{it.facultyCoordinators}</div>
-              {it.link && <div style={{ color: '#1d4ed8', wordBreak: 'break-all', fontSize: '7.5px' }}>{it.link}</div>}
+              {it.link && (
+                <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'underline' }}>
+                    {it.link}
+                  </a>
+                </div>
+              )}
             </div>
           )
         }
@@ -417,7 +456,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.sdp || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Event Title & Type',
@@ -473,7 +512,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.facultyAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Faculty Member', width: '28%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#1a365d' }}>{it.name}</span> },
         { header: 'Award / Recognition', width: '34%', align: 'justify', render: (it) => <span style={{ fontWeight: 600, color: '#0f172a' }}>{it.award}</span> },
@@ -488,7 +527,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Student Name & ID', width: '30%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#0f172a' }}>{it.nameRoll}</span> },
         { header: 'Prize / Accomplishment', width: '32%', align: 'justify', render: (it) => <span style={{ fontWeight: 600, color: '#0f172a' }}>{it.award}</span> },
@@ -503,7 +542,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.certifications || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Course / Certification Title', width: '36%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.title}</div> },
         {
@@ -549,7 +588,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Date & Forum',
@@ -574,7 +613,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.mous || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Partner Entity / Industry', width: '32%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.name}</div> },
         { header: 'Validity Period', width: '16%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.datePeriod}</span> },
@@ -590,7 +629,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.techAssociation || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Association Event & Type',
@@ -635,7 +674,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.syllabus || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Course / Subject Title', width: '21%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.subject}</div> },
         { header: 'Year / Sem', width: '10%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.yearSem || '-'}</span> },
@@ -653,7 +692,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentEngagement || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Activity / Event Title', width: '26%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.title}</div> },
         {
@@ -684,7 +723,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.nss || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Event / Activity Name',
@@ -740,7 +779,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.additionalInitiatives || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: '#', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Initiative / Activity', width: '32%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.initiative}</div> },
         {
