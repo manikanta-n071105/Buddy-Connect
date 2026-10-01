@@ -1055,20 +1055,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               onChange={(e) => setPeriod(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
             >
-              <optgroup label="Academic Year 2025–26">
-                <option value="June 2025">June 2025</option>
-                <option value="July 2025">July 2025</option>
-                <option value="August 2025">August 2025</option>
-                <option value="September 2025">September 2025</option>
-                <option value="October 2025">October 2025</option>
-                <option value="November 2025">November 2025</option>
-                <option value="December 2025">December 2025</option>
-                <option value="January 2026">January 2026</option>
-                <option value="February 2026">February 2026</option>
-                <option value="March 2026">March 2026</option>
-                <option value="April 2026">April 2026</option>
-                <option value="May 2026">May 2026</option>
-              </optgroup>
+          
               <optgroup label="Academic Year 2026–27">
                 <option value="June 2026">June 2026</option>
                 <option value="July 2026">July 2026</option>

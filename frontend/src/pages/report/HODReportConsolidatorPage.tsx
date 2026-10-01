@@ -612,20 +612,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                 onChange={(e) => setPeriod(e.target.value)}
                 className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer text-xs"
               >
-                <optgroup label="Academic Year 2025–26">
-                  <option value="June 2025">June 2025</option>
-                  <option value="July 2025">July 2025</option>
-                  <option value="August 2025">August 2025</option>
-                  <option value="September 2025">September 2025</option>
-                  <option value="October 2025">October 2025</option>
-                  <option value="November 2025">November 2025</option>
-                  <option value="December 2025">December 2025</option>
-                  <option value="January 2026">January 2026</option>
-                  <option value="February 2026">February 2026</option>
-                  <option value="March 2026">March 2026</option>
-                  <option value="April 2026">April 2026</option>
-                  <option value="May 2026">May 2026</option>
-                </optgroup>
+                
                 <optgroup label="Academic Year 2026–27">
                   <option value="June 2026">June 2026</option>
                   <option value="July 2026">July 2026</option>
