@@ -380,6 +380,322 @@ const SeptemberData = {
     }
   },
 
+  'Electrical & Electronics Engineering': {
+    hodName: 'Dr. Naarisetti Srinivasa Rao',
+    submissionDate: '30/09/2026',
+    sections: {
+      fdp: [
+        {
+          link: '',
+          mode: 'Online',
+          role: 'Dr. Naarisetti Srinivasa Rao(Attendee)',
+          type: 'FDP',
+          dates: '05/09/2026-06/09/2026 ',
+          title: 'OBE TO EXCELLENCE',
+          keyOutcomes: 'Outcome Based Education, how to calculate COS & POS',
+          organizingBody: 'WOW Light Signal AI Academy'
+        },
+        {
+          link: '',
+          mode: 'ONLINE',
+          role: 'Dr. Naarisetti Srinivasa Rao(Attendee)',
+          type: 'FDP',
+          dates: '31/08/2026-04/09/2026',
+          title: 'AI Powered Pedagogy',
+          keyOutcomes: 'Innovative Digital Strategies for Educators',
+          organizingBody: 'Manusciptindia'
+        }
+      ],
+      nss: [
+        {
+          date: '15/09/2026',
+          link: '',
+          type: 'Projects Expo',
+          event: 'Projects Expo',
+          venue: 'SKU. ANANTHAPURAMU',
+          outcomes: 'Participation Certificate',
+          coordinator: 'Mr. K. Gangadhar',
+          participantsCount: '15',
+          typeOfParticipants: 'students participated'
+        }
+      ],
+      sdp: [],
+      mous: [],
+      iicCell: [
+        {
+          date: '24/09/2026',
+          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
+          partner: 'Mr. P. Dhanjnjaya',
+          activity: 'Innovation Day – Student Innovation & Prototype Challenge ',
+          outcomes: 'dynamic learning experience and offered multiple academic, technical, and professional benefits to participating students:',
+          description: 'dynamic learning experience and offered multiple academic, technical, and professional benefits to participating students:',
+          beneficiaries: '7 faculty and 200 students participated'
+        },
+        {
+          date: '25/09/2026',
+          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
+          partner: 'P. Ajay Kumar',
+          activity: 'SEVA FIRST INNOVATION CHALLENGE (SFIC)',
+          outcomes: 'Innovation Exposure: Students gain exposure to a national initiative focused on practical problem-solving and innovation',
+          description: 'Webinar, Innovation Exposure: Students gain exposure to a national initiative focused on practical problem-solving and innovation',
+          beneficiaries: '3 Faculty Members; 60 Students'
+        }
+      ],
+      patents: [],
+      journals: [
+        {
+          link: 'https://doi.org/10.1063/5.0317101',
+          title: 'IoT-Based Low-Cost Smart Egg Incubator for Poultry Farms',
+          authors: 'Mr. P. Dhanunjaya',
+          pageNos: '10',
+          issnIsbn: 'ISSN 1551-7616',
+          indexedIn: 'scopus',
+          journalName: 'API Conference',
+          volIssueYear: 'issue 1, volume 3341'
+        }
+      ],
+      syllabus: [
+        {
+          faculty: 'Mrs. R. M. Lavanya',
+          pending: '',
+          remarks: '',
+          subject: 'Complex Variables & Numerical Methods',
+          yearSem: 'II EEE, SEM 1',
+          completed: '80%'
+        },
+        {
+          faculty: 'Mr. P. Gousal Azam',
+          pending: '',
+          remarks: '',
+          subject: 'Universal Human Values- Understanding Harmony',
+          yearSem: 'II EEE, SEM 1',
+          completed: '70%'
+        },
+        {
+          faculty: 'Mr. N Pavan Kumar',
+          pending: '',
+          remarks: '',
+          subject: 'Electromagnetic Field Theory',
+          yearSem: 'II EEE, SEM 1',
+          completed: '100%'
+        },
+        {
+          faculty: 'Mrs. P. Prathyusha',
+          pending: '',
+          remarks: '',
+          subject: 'Electrical Circuit Analysis-II',
+          yearSem: 'II EEE, SEM 1',
+          completed: '80%'
+        },
+        {
+          faculty: 'Dr. N. Srinivasa Rao',
+          pending: '',
+          remarks: '',
+          subject: 'Electrical Circuit Analysis-II and Simulation Lab',
+          yearSem: 'II EEE, SEM 1',
+          completed: '84%'
+        },
+        {
+          faculty: 'Mr. P. Dhanunjaya',
+          pending: '',
+          remarks: '',
+          subject: 'DC Machines & Transformers',
+          yearSem: 'II EEE, SEM 1',
+          completed: '98%'
+        },
+        {
+          faculty: 'Mr. N. Pavan Kumar',
+          pending: '',
+          remarks: '',
+          subject: 'DC Machines & Transformers Lab',
+          yearSem: 'II EEE, SEM 1',
+          completed: '100%'
+        },
+        {
+          faculty: 'Ms. C. Girisha',
+          pending: '',
+          remarks: '',
+          subject: 'Data Structures',
+          yearSem: 'II EEE, SEM 1',
+          completed: '50%'
+        },
+        {
+          faculty: 'Ms. Chndhana',
+          pending: '',
+          remarks: '',
+          subject: 'Python Programming-Development Hour',
+          yearSem: 'II EEE, SEM 1',
+          completed: '75%'
+        },
+        {
+          faculty: 'Dr. N. Srinivasa Rao',
+          pending: '',
+          remarks: '',
+          subject: 'Utilisation of Electrical Energy',
+          yearSem: 'III EEE, SEM 1',
+          completed: '80%, 4 units '
+        },
+        {
+          faculty: 'Mrs. P. Prathyusha',
+          pending: '',
+          remarks: '',
+          subject: 'Power Electronics',
+          yearSem: 'III EEE, SEM 1',
+          completed: 'unit 4, 80%'
+        },
+        {
+          faculty: 'Dr. S Harikrishnan',
+          pending: '',
+          remarks: '',
+          subject: 'Digital Circuits',
+          yearSem: 'III EEE, SEM 1',
+          completed: '60%'
+        },
+        {
+          faculty: 'Mr. K. Ramu',
+          pending: '',
+          remarks: '',
+          subject: 'Power Systems-II',
+          yearSem: 'III EEE, SEM 1',
+          completed: '70%'
+        },
+        {
+          faculty: 'Mr. G. Vamsi Krishna',
+          pending: '',
+          remarks: '',
+          subject: 'Introduction To Quantum Technologies and Applications',
+          yearSem: 'III EEE, SEM 1',
+          completed: '60%'
+        },
+        {
+          faculty: 'Mr. P.Dhanujaya',
+          pending: '',
+          remarks: '',
+          subject: 'Entrepreneurship and New Venture Creation(OE-1)',
+          yearSem: 'III EEE, SEM 1',
+          completed: '95%'
+        },
+        {
+          faculty: 'Mr. K. Ramu',
+          pending: '',
+          remarks: '',
+          subject: 'ELECTRICAL DISTRIBUTION SYSTEMS',
+          yearSem: 'III EEE, SEM 1',
+          completed: '80%'
+        },
+        {
+          faculty: 'Mr. Gangadhar',
+          pending: '',
+          remarks: '',
+          subject: 'POWER SYSTEM OPERATION AND CONTROL',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: '60%'
+        },
+        {
+          faculty: 'Mr. S. HARI KRISHNAN',
+          pending: '',
+          remarks: '',
+          subject: 'DIGITAL SIGNAL PROCESSING',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: '70%'
+        },
+        {
+          faculty: 'Mr. G. RAMAMOHAN',
+          pending: '',
+          remarks: '',
+          subject: 'SOLID WASTE MANAGEMENT',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: '90%'
+        },
+        {
+          faculty: 'Mr. ANUJ VERMA',
+          pending: '',
+          remarks: '',
+          subject: 'MANAGEMNET SCIENCE',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: '70%'
+        },
+        {
+          faculty: 'Ms. VAISHNAVI',
+          pending: '',
+          remarks: '',
+          subject: 'CYBER SECURITY',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: '90%'
+        },
+        {
+          faculty: 'Mr. K. HARI PRASAD',
+          pending: '',
+          remarks: '',
+          subject: 'SOFT SKILLS',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: 'GENERAL TOPICS COMPLETED AS PER SYLLABUS'
+        },
+        {
+          faculty: 'K. Gangadhar',
+          pending: '',
+          remarks: '',
+          subject: 'PSS LAB',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: '6 experiment completed'
+        },
+        {
+          faculty: 'Mr. VISWAS',
+          pending: '',
+          remarks: '',
+          subject: 'APTITUTE',
+          yearSem: 'IV EEE, 1 SEM',
+          completed: 'GENERAL TOPICS  REASONING AND QUANTITATIVE COMPLETED AS PER SYLLABUS'
+        }
+      ],
+      conferences: [],
+      deptMeetings: [
+        {
+          date: '16/09/2026',
+          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
+          decisions: 'Chairperson: Dr. Naarisetti Srinivasa Rao, Head of the Department, EEE Attendees: All faculty members of the EEE Department Discussion Points 1. First Project Review — Final Year Academic Projects The first review of final year academic projects is scheduled for 21/09/2026. All final year students must publish their project work in conferences, and the publications should be indexed in the Scopus database. Where applicable, students should also be guided to file patents for their project work. 2. Attendance for Campus Interview Training Several final year students have been showing low attendance in campus interview training sessions. Faculty members concerned are to issue a formal warning to these students and ensure improved attendance going forward. 3. FRS Attendance FRS Attendance is mandatory for all concerned, both in the morning and in the evening sessions. 4. Faculty Reporting Time All faculty members must report to the college by 8:35 AM, with particular attention to faculty holding the first hour class. 5. Leave Procedure Faculty members availing leave must arrange for adjustment of their class work in advance and ensure the same is updated in the ERP system without fail. 6. Committee Responsibilities Apart from regular teaching duties, all faculty members are required to actively participate in and complete their assigned committee responsibilities. 7. Student Assignment Uploads Students are to upload their assignments through the designated portal system as per schedule. 8. ATAL FDP — External Faculty For the upcoming ATAL FDP, faculty members are requested to identify and invite participation of faculty from other colleges. 9. Lab Equipment Servicing All faculty members concerned should ensure that lab equipment requiring servicing is ready and handed over for service by this Saturday. 10. Campus Interview Preparation — EEE Core Subjects Mr. K. Ramu Sir raised the point regarding upcoming campus interviews, and requested that all faculty members should know abou campus training and placements so that they can extend support in training and preparing students in EEE core subjects for the same.',
+          policyChanges: 'no'
+        },
+        {
+          date: '09/09/2026',
+          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
+          decisions: 'Items Approved and Suggestions Received: 1. The members approved and suggested to follow the presented course structure for the II B.Tech I Sem & II Sem (EEE)(R25). 2. The members approved and suggested to follow the presented course Syllabus for the II B.Tech I Sem & II Sem (EEE)(R25). 3. University Nominee and Members suggested For the Swapping of the course need approval in Academic Council meeting and take clarity from JNTUA, Ananthapuramu',
+          policyChanges: 'Items for Consideration and Approval: 1. Course Structure for II B. Tech I and II Semester(R25). 2. Syllabus for II B. Tech I and II Semester(R25) (EEE Courses). 3. Proposed swapping of courses between Electromagnetic Fields (I B.Tech II Semester) and Analog Circuits (II B. Tech I Semester) under the R26 (New Regulation).'
+        }
+      ],
+      certifications: [],
+      techAssociation: [],
+      entrepreneurship: [],
+      facultyAchievements: [
+        {
+          date: '05/09/2026',
+          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
+          name: 'Dr. NAARISETTI SRINIVASA RAO',
+          award: 'BEST ACADEMICIAN AWARD',
+          organization: 'Xavier Institute of Research and Development'
+        },
+        {
+          date: '16/08/2026',
+          link: '',
+          name: 'Dr. NAARISETTI SRINIVASA RAO',
+          award: 'Advisory Committee Member For am International Conference',
+          organization: 'ICET-2026'
+        }
+      ],
+      studentAchievements: [],
+      additionalInitiatives: [
+        {
+          date: '11/09/2026',
+          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
+          outcomes: 'The visit to PABR Hydro Power Plant was a valuable educational experience that successfully connected classroom learning with real-world industrial applications. Students gained practical exposure to hydroelectric power generation, turbines, generators, substations, switchgear, control panels, protection systems and auxiliary equipment. The visit strengthened our understanding of Power Systems and Electrical Engineering and encouraged us to explore the practical and professional aspects of the field. “True learning becomes meaningful when theoretical knowledge meets real-world application.”',
+          initiative: 'INDUSTRIAL VISIT, PABR Hydro Power Plant, 25 II EEE STUDENTS',
+          coordinator: 'Mr. P. Dhanunjaya, Mrs. Pratyusha',
+          description: 'The industrial visit was an informative and enriching learning experience for all participating students. The explanations provided by the plant officials helped students develop a clearer understanding of the practical aspects of power generation and electrical engineering. Observing actual equipment made the concepts studied through textbooks and classroom diagrams easier to understand.'
+        }
+      ]
+    }
+  },
+
   'Mechanical Engineering': {
     hodName: 'Prof. C. Anil Kumar Reddy',
     submissionDate: '30/09/2026',
