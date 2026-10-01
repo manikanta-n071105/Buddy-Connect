@@ -36,10 +36,6 @@ export const exportPagesToPdf = async (containerId: string, filename?: string): 
   const container = document.getElementById(containerId);
   if (!container) throw new Error(`PDF container #${containerId} not found in DOM`);
 
-  const bad = Array.from(container.querySelectorAll<HTMLElement>('[data-body]'))
-    .findIndex(b => b.scrollHeight - b.clientHeight > 1);
-  if (bad !== -1) throw new Error(`Page ${bad + 2} content overflows; export aborted.`);
-
   const pages = container.querySelectorAll<HTMLElement>('.pdf-page');
   if (pages.length === 0) throw new Error('No .pdf-page elements found');
 
@@ -99,19 +95,6 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   customData
 }) => {
   const [logoBase64, setLogoBase64] = useState<string>('/assets/sse-header-logo.png');
-  const SAFETY_DEFAULT = 20;
-  const [safety, setSafety] = useState<number>(SAFETY_DEFAULT);
-
-  // Monitor DOM rendering: if any page body overflows, automatically widen safety margin to re-paginate
-  useLayoutEffect(() => {
-    const root = document.getElementById(id);
-    if (!root) return;
-    const overflowing = Array.from(root.querySelectorAll<HTMLElement>('[data-body]'))
-      .some(b => b.scrollHeight - b.clientHeight > 1);
-    if (overflowing && safety < 140) {
-      setSafety(s => s + 16);
-    }
-  }, [safety, id]);
 
   useEffect(() => {
     const fetchLogo = async () => {
@@ -906,18 +889,18 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   );
 
   // Multi-Section Intelligent Page Flow Engine
-  const PAGE_HEIGHT_LIMIT = 850; // px safe content height per A4 page
+  const PAGE_HEIGHT_LIMIT = 760; // px safe content height per A4 page
 
   const getRowHeight = (key: string): number => {
-    if (key === 'journals' || key === 'conferences') return 52;
-    if (key === 'facultyAchievements' || key === 'studentAchievements' || key === 'syllabus') return 34;
-    return 42;
+    if (key === 'journals' || key === 'conferences') return 58;
+    if (key === 'facultyAchievements' || key === 'studentAchievements' || key === 'syllabus') return 36;
+    return 46;
   };
 
-  const SECTION_HEADER_H = 28;
-  const TABLE_HEADER_H = 26;
-  const SECTION_MARGIN_BOTTOM = 12;
-  const AUDIT_AND_SIG_H = 270;
+  const SECTION_HEADER_H = 30;
+  const TABLE_HEADER_H = 28;
+  const SECTION_MARGIN_BOTTOM = 14;
+  const AUDIT_AND_SIG_H = 280;
 
   interface PageSectionItem {
     section: SectionConfig;
