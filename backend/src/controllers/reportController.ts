@@ -593,7 +593,7 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
   try {
     const period = (req.query.period as string) || 'September 2026';
 
-    const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE period = $1 ORDER BY department ASC', [period]);
+    const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1)) ORDER BY department ASC', [period]);
     const submittedMap = new Map();
     rowsRes.rows.forEach((r: any) => submittedMap.set(r.department.toLowerCase().trim(), r));
 
@@ -840,7 +840,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     const projectRoot = path.resolve(process.cwd(), '..');
 
     const submissionsRes = await reportQuery(
-      'SELECT * FROM departmental_monthly_reports WHERE period = $1 AND status = \'SUBMITTED\'',
+      'SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1)) AND status = \'SUBMITTED\'',
       [period]
     );
 
@@ -1169,7 +1169,7 @@ export const getDepartmentReportData = async (req: any, res: Response) => {
     }
 
     const rowRes = await reportQuery(
-      'SELECT * FROM departmental_monthly_reports WHERE department = $1 AND period = $2',
+      'SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(department)) = LOWER(TRIM($1)) AND LOWER(TRIM(period)) = LOWER(TRIM($2))',
       [department as string, period as string]
     );
 
@@ -1212,7 +1212,7 @@ export const getAllDepartmentReportData = async (req: any, res: Response) => {
   try {
     const period = (req.query.period as string) || 'September 2026';
     const rowsRes = await reportQuery(
-      'SELECT department, sections_data, hod_name, status, updated_at FROM departmental_monthly_reports WHERE period = $1',
+      'SELECT department, sections_data, hod_name, status, updated_at FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
       [period]
     );
 
