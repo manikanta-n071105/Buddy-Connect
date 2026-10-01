@@ -748,7 +748,6 @@ export const HODReportConsolidatorPage: React.FC = () => {
           >
             <Sparkles className="w-4 h-4 text-orange-400" />
             <span>Manual Report Builder</span>
-            <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-black">NEW</span>
           </button>
 
           <button
