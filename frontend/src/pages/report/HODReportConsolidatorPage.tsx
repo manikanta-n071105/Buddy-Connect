@@ -134,7 +134,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'superadmin' | 'manual_entry' | 'hod_upload' | 'matrix' | 'zip_batch'>('manual_entry');
 
   // Data State
-  const [period, setPeriod] = useState('April 2026');
+  const [period, setPeriod] = useState('September 2026');
   const [submissions, setSubmissions] = useState<SubmissionsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [consolidating, setConsolidating] = useState(false);

@@ -480,7 +480,7 @@ export const initDepartmentalReportsTable = async () => {
       CREATE TABLE IF NOT EXISTS departmental_monthly_reports (
           id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
           department VARCHAR(100) NOT NULL,
-          period VARCHAR(50) NOT NULL DEFAULT 'April 2026',
+          period VARCHAR(50) NOT NULL DEFAULT 'September 2026',
           hod_name VARCHAR(150),
           file_name VARCHAR(255) NOT NULL,
           file_path TEXT NOT NULL,

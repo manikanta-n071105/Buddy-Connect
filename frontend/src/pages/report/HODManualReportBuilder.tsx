@@ -368,8 +368,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   // Only the 4 metadata fields present in the template header:
   const [department, setDepartment] = useState('Civil Engineering');
   const [hodName, setHodName] = useState('K Siva Prasad');
-  const [period, setPeriod] = useState(currentPeriod || 'April 2026');
-  const [submissionDate, setSubmissionDate] = useState('25/04/2026');
+  const [period, setPeriod] = useState(currentPeriod || 'September 2026');
+  const [submissionDate, setSubmissionDate] = useState('30/09/2026');
 
   const [sections, setSections] = useState<ReportSectionsData>(() => normalizeSections(INITIAL_SECTIONS));
 

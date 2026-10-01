@@ -838,19 +838,6 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </table>
   );
 
-  // Multi-Section Intelligent Page Flow Engine with Anti-Orphan & Anti-Overflow Protection
-  const PAGE_1_HEIGHT_LIMIT = 820; // px safe content height for Page 1 (accommodates top official header + title)
-  const PAGE_HEIGHT_LIMIT = 900; // px safe content height for Page 2+
-
-  const getRowHeight = (key: string): number => {
-    if (key === 'journals' || key === 'conferences') return 52;
-    if (key === 'facultyAchievements' || key === 'studentAchievements' || key === 'syllabus') return 30;
-    return 38;
-  };
-
-  const OVERHEAD = 64; // Section Header (28px) + Table Header (26px) + Bottom Margin (10px)
-  const AUDIT_AND_SIG_H = 260;
-
   interface PageSectionItem {
     section: SectionConfig;
     items: any[];
@@ -863,105 +850,51 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     type: 'content' | 'final';
     isFirstPage?: boolean;
     sections?: PageSectionItem[];
-    hasFinalAudit?: boolean;
   }
 
   const generatedPages: GeneratedPage[] = [];
 
-  // Bin-pack sections onto pages dynamically starting directly from Page 1
+  // Generate dedicated page per category (every category starts on its own page)
   let isFirstPage = true;
-  let currentPageSections: PageSectionItem[] = [];
-  let currentPageHeight = 0;
 
   sectionsConfig.forEach(sec => {
     const allItems = sec.getItems(deptDataMap, departmentList);
-    if (allItems.length === 0) return; // Skip empty sections so the dossier is compact and executive-grade
+    if (allItems.length === 0) return; // Skip empty categories
 
-    const rowHeight = getRowHeight(sec.key);
+    const firstPageCapacity = sec.tall ? 7 : (sec.key === 'syllabus' ? 10 : 8);
+    const standardCapacity = sec.tall ? 8 : (sec.key === 'syllabus' ? 12 : (sec.rowsPerPage || 10));
+
     let remainingItems = allItems;
     let chunkStartIndex = 0;
-    let isContinued = false;
+    let chunkIdx = 0;
 
     while (remainingItems.length > 0) {
-      const pageLimit = isFirstPage ? PAGE_1_HEIGHT_LIMIT : PAGE_HEIGHT_LIMIT;
-      const availableSpace = pageLimit - currentPageHeight;
-      const totalNeeded = OVERHEAD + remainingItems.length * rowHeight;
+      const isCurrentFirst = isFirstPage && chunkIdx === 0;
+      const capacity = isCurrentFirst ? firstPageCapacity : standardCapacity;
+      const chunk = remainingItems.slice(0, capacity);
 
-      // Condition 1: Can the entire remaining items of this section fit on the current page?
-      if (totalNeeded <= availableSpace) {
-        currentPageSections.push({
+      generatedPages.push({
+        type: 'content',
+        isFirstPage: isCurrentFirst,
+        sections: [{
           section: sec,
-          items: remainingItems,
+          items: chunk,
           startIndex: chunkStartIndex,
-          isContinued: isContinued,
+          isContinued: chunkIdx > 0,
           totalCount: allItems.length
-        });
-        currentPageHeight += totalNeeded;
-        break;
-      }
-
-      // Condition 2: It does NOT fit on the current page.
-      // Check if it fits completely on a fresh page or if splitting would leave an orphan
-      const fitsOnFreshPage = totalNeeded <= PAGE_HEIGHT_LIMIT;
-      const maxRowsOnCurrentPage = Math.floor((availableSpace - OVERHEAD) / rowHeight);
-      const leavesOrphanOnNextPage = (remainingItems.length - maxRowsOnCurrentPage) <= 2;
-
-      if (currentPageSections.length > 0 && (fitsOnFreshPage || maxRowsOnCurrentPage < 3 || leavesOrphanOnNextPage)) {
-        // Start this section cleanly on the next page instead of splitting/overflowing
-        generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections });
-        currentPageSections = [];
-        currentPageHeight = 0;
-        isFirstPage = false;
-        continue;
-      }
-
-      // Condition 3: Section is large and needs to split across pages cleanly
-      const activeLimit = isFirstPage ? PAGE_1_HEIGHT_LIMIT : PAGE_HEIGHT_LIMIT;
-      const spaceForRows = activeLimit - currentPageHeight - OVERHEAD;
-      let countToTake = Math.max(3, Math.floor(spaceForRows / rowHeight));
-
-      if (remainingItems.length - countToTake > 0 && remainingItems.length - countToTake <= 2) {
-        countToTake = Math.max(3, remainingItems.length - 3);
-      }
-      countToTake = Math.min(remainingItems.length, countToTake);
-
-      const chunk = remainingItems.slice(0, countToTake);
-
-      currentPageSections.push({
-        section: sec,
-        items: chunk,
-        startIndex: chunkStartIndex,
-        isContinued: isContinued,
-        totalCount: allItems.length
+        }]
       });
 
-      currentPageHeight += OVERHEAD + (chunk.length * rowHeight);
       chunkStartIndex += chunk.length;
       remainingItems = remainingItems.slice(chunk.length);
-      isContinued = true;
-
-      // If more items remain in this section, commit page and continue
-      if (remainingItems.length > 0) {
-        generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections });
-        currentPageSections = [];
-        currentPageHeight = 0;
-        isFirstPage = false;
-      }
+      chunkIdx++;
     }
+
+    isFirstPage = false;
   });
 
-  // Final Audit Summary & Sign-off Block placement
-  if (currentPageSections.length > 0) {
-    const activePageLimit = isFirstPage ? PAGE_1_HEIGHT_LIMIT : PAGE_HEIGHT_LIMIT;
-    if (currentPageHeight + AUDIT_AND_SIG_H <= activePageLimit) {
-      generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections, hasFinalAudit: true });
-    } else {
-      generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections, hasFinalAudit: false });
-      generatedPages.push({ type: 'final' });
-    }
-  } else {
-    generatedPages.push({ type: 'final' });
-  }
+  // Final Dedicated Page: Audit Summary & Sign-off Block
+  generatedPages.push({ type: 'final' });
 
   const totalCalculatedPages = generatedPages.length;
 
@@ -1216,7 +1149,6 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                       {renderDataTable(sItem.section.columns, sItem.items || [], sItem.startIndex || 0)}
                     </div>
                   ))}
-                  {pageDef.hasFinalAudit && renderAuditAndSignOff()}
                 </div>
               </div>
               {renderRunningFooter(pageNumber)}

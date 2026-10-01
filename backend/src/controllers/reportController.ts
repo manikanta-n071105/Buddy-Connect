@@ -335,7 +335,7 @@ export const getConsolidatedReportStatus = async (_req: any, res: Response) => {
           'Humanities & Sciences'
         ],
         totalAggregatedItems: 135,
-        period: 'April 2026',
+        period: 'September 2026',
         sectionsCount: 16
       };
     }
@@ -562,7 +562,7 @@ export const ALL_INSTITUTIONAL_ENTITIES = [...STANDARD_DEPARTMENTS, ...STANDARD_
 
 export const clearDepartmentSubmissions = async (req: any, res: Response) => {
   try {
-    const period = (req.query.period as string) || (req.body?.period as string) || 'April 2026';
+    const period = (req.query.period as string) || (req.body?.period as string) || 'September 2026';
     const fs = await import('fs');
     const path = await import('path');
     const projectRoot = path.resolve(process.cwd(), '..');
@@ -591,7 +591,7 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
 
 export const getDepartmentSubmissions = async (req: any, res: Response) => {
   try {
-    const period = (req.query.period as string) || 'April 2026';
+    const period = (req.query.period as string) || 'September 2026';
 
     const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE period = $1 ORDER BY department ASC', [period]);
     const submittedMap = new Map();
@@ -650,7 +650,7 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
 
 export const uploadDepartmentReport = async (req: any, res: Response) => {
   try {
-    const { department, hodName, period = 'April 2026', fileBase64, fileName } = req.body;
+    const { department, hodName, period = 'September 2026', fileBase64, fileName } = req.body;
     if (!department || !fileBase64 || !fileName) {
       return res.status(400).json({ success: false, message: 'Department/Committee, file, and fileName are required.' });
     }
@@ -712,7 +712,7 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
  */
 export const uploadAutoMapReport = async (req: any, res: Response) => {
   try {
-    const { fileBase64, fileName, period = 'April 2026', department, hodName } = req.body;
+    const { fileBase64, fileName, period = 'September 2026', department, hodName } = req.body;
     if (!fileBase64 || !fileName) {
       return res.status(400).json({ success: false, message: 'File and fileName are required.' });
     }
@@ -833,7 +833,7 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
 
 export const generateConsolidatedReportFromSubmissions = async (req: any, res: Response) => {
   try {
-    const period = (req.body.period as string) || 'April 2026';
+    const period = (req.body.period as string) || 'September 2026';
     const path = await import('path');
     const fs = await import('fs');
     const { execFile } = await import('child_process');
@@ -968,7 +968,7 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
   try {
     const {
       department,
-      period = 'April 2026',
+      period = 'September 2026',
       hodName,
       submissionDate,
       sections = {},
@@ -1103,7 +1103,7 @@ export const saveDepartmentDraft = async (req: any, res: Response) => {
   try {
     const {
       department,
-      period = 'April 2026',
+      period = 'September 2026',
       hodName,
       submissionDate,
       sections = {},
@@ -1163,7 +1163,7 @@ export const saveDepartmentDraft = async (req: any, res: Response) => {
  */
 export const getDepartmentReportData = async (req: any, res: Response) => {
   try {
-    const { department, period = 'April 2026' } = req.query;
+    const { department, period = 'September 2026' } = req.query;
     if (!department) {
       return res.status(400).json({ success: false, message: 'Department is required.' });
     }
@@ -1210,7 +1210,7 @@ export const getDepartmentReportData = async (req: any, res: Response) => {
  */
 export const getAllDepartmentReportData = async (req: any, res: Response) => {
   try {
-    const period = (req.query.period as string) || 'April 2026';
+    const period = (req.query.period as string) || 'September 2026';
     const rowsRes = await reportQuery(
       'SELECT department, sections_data, hod_name, status, updated_at FROM departmental_monthly_reports WHERE period = $1',
       [period]
