@@ -44,7 +44,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
   return (
     <div
       id="hod-pdf-document"
-      className="bg-white text-slate-900 font-sans text-xs print:p-0 print:m-0 border border-slate-300 shadow-xl print:shadow-none print:border-none mx-auto"
+      className="bg-white text-slate-900 font-sans text-xs print:p-0 print:m-0 border-none shadow-xl print:shadow-none mx-auto"
       style={{
         width: '750px',
         maxWidth: '750px',

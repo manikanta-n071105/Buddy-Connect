@@ -110,25 +110,41 @@ export const PublicReportGeneratorPage: React.FC = () => {
       .map((line) => line.replace(/^(\d+[\.\)]|\*|-|\u2022)\s*/, ''));
   };
 
-  // Add Photo Handlers
+  // Add Photo Handlers (Max 4 photos)
   const handlePhotoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
+    if (photos.length >= 4) {
+      toast.error('Maximum 4 photographs allowed per report.');
+      return;
+    }
+
+    const availableSlots = 4 - photos.length;
+    const filesToProcess = Array.from(files).slice(0, availableSlots);
+    if (files.length > availableSlots) {
+      toast.warning(`Only ${availableSlots} more photo(s) could be added (maximum 4 photos allowed).`);
+    }
+
+    filesToProcess.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64Url = event.target?.result as string;
         if (base64Url) {
-          setPhotos((prev) => [
-            ...prev,
-            { url: base64Url, caption: photoCaptionInput.trim() || file.name.replace(/\.[^/.]+$/, '') }
-          ]);
+          setPhotos((prev) => {
+            if (prev.length >= 4) return prev;
+            return [
+              ...prev,
+              { url: base64Url, caption: photoCaptionInput.trim() || '' }
+            ];
+          });
           setPhotoCaptionInput('');
         }
       };
       reader.readAsDataURL(file);
     });
+
+    e.target.value = '';
   };
 
   const handleAddPhotoFromUrl = () => {
@@ -136,10 +152,17 @@ export const PublicReportGeneratorPage: React.FC = () => {
       toast.error('Please enter image URL or select a photo file');
       return;
     }
-    setPhotos((prev) => [
-      ...prev,
-      { url: photoUrlInput.trim(), caption: photoCaptionInput.trim() || 'Event Photo' }
-    ]);
+    if (photos.length >= 4) {
+      toast.error('Maximum 4 photographs allowed per report.');
+      return;
+    }
+    setPhotos((prev) => {
+      if (prev.length >= 4) return prev;
+      return [
+        ...prev,
+        { url: photoUrlInput.trim(), caption: photoCaptionInput.trim() || '' }
+      ];
+    });
     setPhotoUrlInput('');
     setPhotoCaptionInput('');
   };
@@ -282,21 +305,22 @@ export const PublicReportGeneratorPage: React.FC = () => {
 
     let photosHTML = '';
     if (processedPhotos && processedPhotos.length > 0) {
+      const exportList = processedPhotos.slice(0, 4);
       photosHTML = `
         <h3 style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; color: #0f172a; border-bottom: 2pt solid #0f172a; padding-bottom: 3pt; margin-top: 16pt; margin-bottom: 8pt; page-break-after: avoid;">
-          EVENT PHOTOGRAPHS &amp; VISUAL EVIDENCE
+          EVENT PHOTOGRAPHS &amp; VISUAL EVIDENCE (${exportList.length})
         </h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 6pt; page-break-inside: avoid;" class="no-border">
           <tr>
-            ${processedPhotos
+            ${exportList
               .map(
                 (p, idx) => `
-              <td style="width: 50%; padding: 4pt; vertical-align: top; border: none; page-break-inside: avoid;" align="center">
+              <td style="width: 50%; padding: 6pt; vertical-align: top; border: none; page-break-inside: avoid;" align="center">
                 <div style="border: 1.5pt solid #0f172a; background-color: #ffffff; padding: 6pt; text-align: center; border-radius: 4pt; width: 230px; margin: 0 auto;">
                   <table style="width: 100%; border: none;" class="no-border">
                     <tr style="border: none;">
-                      <td style="border: none; text-align: center; vertical-align: middle; height: 140px; background-color: #f8fafc; padding: 2px;" align="center">
-                        <img src="${p.url}" width="220" height="135" alt="${p.caption || 'Event Photo'}" style="width: 220px; height: 135px; border: 1pt solid #cbd5e1; display: block; margin: 0 auto;" />
+                      <td style="border: none; text-align: center; vertical-align: middle; height: 135px; background-color: #f8fafc; padding: 2px;" align="center">
+                        <img src="${p.url}" width="220" height="130" alt="${p.caption || 'Event Photo'}" style="width: 220px; height: 130px; border: 1pt solid #cbd5e1; display: block; margin: 0 auto; object-fit: cover;" />
                       </td>
                     </tr>
                   </table>
@@ -305,7 +329,7 @@ export const PublicReportGeneratorPage: React.FC = () => {
                   </p>
                 </div>
               </td>
-              ${(idx + 1) % 2 === 0 && idx < processedPhotos.length - 1 ? '</tr><tr style="page-break-inside: avoid;">' : ''}
+              ${(idx + 1) % 2 === 0 && idx < exportList.length - 1 ? '</tr><tr style="page-break-inside: avoid;">' : ''}
             `
               )
               .join('')}
@@ -819,30 +843,49 @@ export const PublicReportGeneratorPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-700/60 pb-3">
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-bold text-slate-100 text-sm">Event Photographs ({photos.length})</h3>
+                <h3 className="font-bold text-slate-100 text-sm">Event Photographs ({photos.length}/4)</h3>
               </div>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${photos.length >= 4 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-700/50 text-slate-400'}`}>
+                {photos.length >= 4 ? 'Max 4 Uploaded' : `${4 - photos.length} slot(s) left`}
+              </span>
             </div>
 
-            {/* Existing Photos List */}
+            {/* Existing Photos List with Caption Input */}
             {photos.length > 0 && (
               <div className="space-y-2">
                 {photos.map((p, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-2 bg-slate-900/80 border border-slate-700/60 rounded-xl">
-                    <img src={p.url} alt={p.caption} className="w-12 h-10 object-cover rounded-md shrink-0 bg-slate-950" />
-                    <input
-                      type="text"
-                      value={p.caption}
-                      onChange={(e) => {
-                        const newCaptions = [...photos];
-                        newCaptions[idx].caption = e.target.value;
-                        setPhotos(newCaptions);
-                      }}
-                      className="flex-1 px-2.5 py-1 bg-slate-950 border border-slate-800 text-white rounded-lg text-xs outline-none focus:border-emerald-500"
-                    />
+                    <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} className="w-12 h-10 object-cover rounded-md shrink-0 bg-slate-950 border border-slate-700" />
+                    <div className="flex-1 flex flex-col gap-0.5">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-slate-400 font-semibold">Photo {idx + 1} Caption</span>
+                        {!p.caption?.trim() && (
+                          <span className="text-amber-400 font-bold animate-pulse text-[9px] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                            Caption required
+                          </span>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={p.caption}
+                        placeholder={`Event Photo ${idx + 1} (Enter caption...)`}
+                        onChange={(e) => {
+                          const newCaptions = [...photos];
+                          newCaptions[idx].caption = e.target.value;
+                          setPhotos(newCaptions);
+                        }}
+                        className={`w-full px-2.5 py-1 rounded-lg text-xs outline-none transition-all ${
+                          !p.caption?.trim()
+                            ? 'bg-amber-950/30 border-2 border-amber-500/70 text-amber-100 placeholder-amber-400/60'
+                            : 'bg-slate-950 border border-slate-800 text-white focus:border-emerald-500'
+                        }`}
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
-                      className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-red-400 transition-colors shrink-0"
+                      title="Remove photo"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -851,62 +894,69 @@ export const PublicReportGeneratorPage: React.FC = () => {
               </div>
             )}
 
-            {/* Add New Photo Inputs */}
-            <div className="pt-2 border-t border-slate-700/50 space-y-2">
+            {/* Add New Photo Inputs (Only if under 4 photos) */}
+            {photos.length < 4 ? (
+              <div className="pt-2 border-t border-slate-700/50 space-y-2">
+                <input
+                  type="text"
+                  value={photoCaptionInput}
+                  onChange={(e) => setPhotoCaptionInput(e.target.value)}
+                  placeholder="Photo Caption (e.g. Chief Guest Inaugurating Session)"
+                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs outline-none"
+                />
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={photoUrlInput}
+                    onChange={(e) => setPhotoUrlInput(e.target.value)}
+                    placeholder="Paste Image URL or select file..."
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPhotoFromUrl}
+                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-semibold shrink-0"
+                  >
+                    Add URL
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoFileUpload}
+                    className="hidden"
+                    id="public-photo-file-input"
+                  />
+                  <label
+                    htmlFor="public-photo-file-input"
+                    className="w-full py-2 border border-dashed border-slate-600 hover:border-emerald-500 rounded-xl bg-slate-900/60 flex items-center justify-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-4 h-4 text-emerald-400" /> Upload Image File (Max 4 Total)
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center text-amber-300 text-xs font-medium">
+                Maximum 4 photographs added. Delete an existing photo to upload a different one.
+              </div>
+            )}
+
+            {/* LINKEDIN POST URL INPUT */}
+            <div className="pt-2 border-t border-slate-700/50 space-y-1">
+              <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                <Linkedin className="w-3.5 h-3.5 text-blue-400" /> LinkedIn Event Post URL
+              </label>
               <input
                 type="text"
-                value={photoCaptionInput}
-                onChange={(e) => setPhotoCaptionInput(e.target.value)}
-                placeholder="Photo Caption (e.g. Chief Guest Inaugurating Session)"
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs outline-none"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                placeholder="https://www.linkedin.com/posts/..."
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs outline-none focus:border-blue-500"
               />
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={photoUrlInput}
-                  onChange={(e) => setPhotoUrlInput(e.target.value)}
-                  placeholder="Paste Image URL or select file..."
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddPhotoFromUrl}
-                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-semibold shrink-0"
-                >
-                  Add URL
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoFileUpload}
-                  className="hidden"
-                  id="public-photo-file-input"
-                />
-                <label
-                  htmlFor="public-photo-file-input"
-                  className="w-full py-2 border border-dashed border-slate-600 hover:border-emerald-500 rounded-xl bg-slate-900/60 flex items-center justify-center gap-2 text-xs font-semibold text-slate-300 cursor-pointer transition-colors"
-                >
-                  <Upload className="w-4 h-4 text-emerald-400" /> Upload Image File from Computer
-                </label>
-              </div>
-
-              {/* LINKEDIN POST URL INPUT */}
-              <div className="pt-2 border-t border-slate-700/50 space-y-1">
-                <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-                  <Linkedin className="w-3.5 h-3.5 text-blue-400" /> LinkedIn Event Post URL
-                </label>
-                <input
-                  type="text"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  placeholder="https://www.linkedin.com/posts/..."
-                  className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs outline-none focus:border-blue-500"
-                />
-              </div>
             </div>
           </div>
         </div>
@@ -923,8 +973,8 @@ export const PublicReportGeneratorPage: React.FC = () => {
               <span className="text-xs text-slate-400 font-medium">Standard SSE Post-Event Format</span>
             </div>
 
-            {/* A4 PRINTABLE DOCUMENT CONTAINER */}
-            <div id="printable-report-area" className="bg-white text-slate-900 p-6 sm:p-10 font-sans text-xs print:p-0 print:m-0">
+            {/* A4 PRINTABLE DOCUMENT CONTAINER (BORDERLESS) */}
+            <div id="printable-report-area" className="bg-white text-slate-900 p-6 sm:p-10 font-sans text-xs print:p-0 print:m-0 rounded-none border-0 shadow-none outline-none">
               
               {/* PAGE 1: OVERVIEW, EXECUTIVE SUMMARY & KEY OUTCOMES */}
               <div className="print-page-1 min-h-[750px] print:min-h-0 flex flex-col justify-between space-y-3 print:space-y-2">
@@ -945,9 +995,7 @@ export const PublicReportGeneratorPage: React.FC = () => {
                     <div className="text-xs sm:text-sm font-bold text-slate-900">
                       {customTitle || 'Program / Event Title'}
                     </div>
-                    <div className="text-[11px] font-semibold text-slate-600">
-                      Event Date: {eventDate || '22 March 2024'}
-                    </div>
+                    
                   </div>
 
                   {/* Section 1: Program Overview */}
@@ -1009,7 +1057,7 @@ export const PublicReportGeneratorPage: React.FC = () => {
                               {String(idx + 1).padStart(2, '0')}
                             </span>
                             <div>
-                              <span className="font-bold text-slate-900 text-xs mr-1">{title}:</span>
+                              
                               <span className="text-slate-700 text-xs leading-snug">{desc}</span>
                             </div>
                           </div>
@@ -1031,8 +1079,8 @@ export const PublicReportGeneratorPage: React.FC = () => {
               </div>
 
               {/* PAGE 2: SDG ALIGNMENT, PHOTOGRAPHS & SIGNATURES */}
-              <div className="print-page-2 min-h-[780px] print:min-h-[268mm] flex flex-col justify-between space-y-4 page-break-before-always" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
-                <div className="space-y-4 flex-1 flex flex-col justify-start">
+              <div className="print-page-2 min-h-[780px] print:min-h-[268mm] flex flex-col justify-between space-y-3 page-break-before-always" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
+                <div className="space-y-3 flex-1 flex flex-col justify-start">
                   {/* Page 2 Header */}
                   <div className="flex items-center justify-between pb-2 border-b-2 border-slate-800">
                     <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
@@ -1042,11 +1090,11 @@ export const PublicReportGeneratorPage: React.FC = () => {
                   </div>
 
                   {/* Section 1: Sustainable Development Goal Alignment */}
-                  <div className="pt-1 mb-[10px]">
-                    <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
+                  <div className="pt-0.5 mb-1">
+                    <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-2">
                       SUSTAINABLE DEVELOPMENT GOAL ALIGNMENT
                     </h3>
-                    <div className="flex flex-wrap items-center gap-3.5 pt-1">
+                    <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
                       {selectedSdgs.map((sdg) => (
                         <a
                           key={sdg.id}
@@ -1058,27 +1106,28 @@ export const PublicReportGeneratorPage: React.FC = () => {
                           <img
                             src={sdg.iconUrl}
                             alt={`${sdg.code}: ${sdg.name}`}
-                            className="w-16 h-16 sm:w-20 sm:h-20 print:w-16 print:h-16 rounded-xl object-contain shadow-xs"
+                            className="report-sdg-img w-16 h-16 sm:w-[68px] sm:h-[68px] print:w-[64px] print:h-[64px] rounded-lg object-contain shadow-xs"
+                            style={{ width: '64px', height: '64px' }}
                           />
                         </a>
                       ))}
                     </div>
                   </div>
 
-                  {/* Section 2: Event Photographs (Without box borders) */}
-                  {photos.length > 0 && photos.length <= 2 && (
-                    <div className="pt-1 mb-[10px]">
-                      <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-[10px]">
+                  {/* Section 2: Event Photographs (Right below SDG Alignment) */}
+                  {photos.length > 0 && (
+                    <div className="pt-1 mb-1">
+                      <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-2">
                         EVENT PHOTOGRAPHS &amp; VISUAL EVIDENCE
                       </h3>
-                      <div className="report-photo-grid flex flex-row gap-5 pt-1 w-full justify-center">
-                        {photos.map((p, idx) => (
-                          <div key={idx} className="report-photo-item flex-1 text-center flex flex-col items-center">
-                            <div className="w-full h-40 sm:h-44 bg-slate-50 rounded-xl overflow-hidden shadow-xs flex items-center justify-center">
-                              <img src={p.url} alt={p.caption} className="report-photo-img w-full h-full object-cover rounded-xl" />
+                      <div className="report-photo-grid grid grid-cols-2 gap-3 pt-0.5 w-full justify-center">
+                        {photos.slice(0, 4).map((p, idx) => (
+                          <div key={idx} className="report-photo-item text-center flex flex-col items-center">
+                            <div className="w-full h-[150px] bg-slate-50 rounded-lg overflow-hidden shadow-xs flex items-center justify-center">
+                              <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} className="report-photo-img w-full h-[150px] object-cover rounded-lg" style={{ height: '150px', maxHeight: '150px' }} />
                             </div>
                             <p className="report-caption text-[10px] sm:text-[11px] font-semibold italic text-slate-700 pt-1" style={{ fontFamily: 'Arial, sans-serif' }}>
-                              {p.caption || `Event Photo ${idx + 1}`}
+                              {p.caption?.trim() ? p.caption.trim() : `Event Photo ${idx + 1}`}
                             </p>
                           </div>
                         ))}
@@ -1086,46 +1135,49 @@ export const PublicReportGeneratorPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* LinkedIn Media & Social Coverage Hyperlink */}
-                  <div className="pt-[30px] pb-1 mb-[10px] text-center">
-                    <span className="font-bold text-[#1a365d] text-xs mr-1.5" style={{ fontFamily: 'Cambria, Georgia, serif' }}>LinkedIn Post URL:</span>
-                    <a
-                      href={linkedinUrl || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline font-medium text-xs inline-flex items-center gap-1"
-                      style={{ fontFamily: 'Cambria, Georgia, serif' }}
-                    >
-                      <span>{linkedinUrl || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}</span>
-                      <ExternalLink className="w-3 h-3 shrink-0 print:hidden" />
-                    </a>
+                  {/* Section 3: Social Media & Digital Coverage */}
+                  <div className="pt-1 mb-1">
+                    <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b border-[#1a365d] pb-1 mb-1.5">
+                      SOCIAL MEDIA &amp; DIGITAL COVERAGE
+                    </h3>
+                    <div className="pt-0.5 text-left">
+                      <span className="font-bold text-[#1a365d] text-xs mr-1.5" style={{ fontFamily: 'Cambria, Georgia, serif' }}>LinkedIn Post URL:</span>
+                      <a
+                        href={linkedinUrl || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline font-medium text-xs inline-flex items-center gap-1"
+                        style={{ fontFamily: 'Cambria, Georgia, serif' }}
+                      >
+                        <span>{linkedinUrl || 'https://www.linkedin.com/school/sanskrithi-school-of-engineering'}</span>
+                        <ExternalLink className="w-3 h-3 shrink-0 print:hidden" />
+                      </a>
+                    </div>
                   </div>
 
                   {/* Official Signatures - Pinned at bottom of page 2 */}
-                  {photos.length <= 2 && (
-                    <div className="report-signatures-grid pt-10 pb-4 flex flex-row justify-between text-center mt-auto w-full">
-                      <div className="report-signature-col flex-1 space-y-1">
-                        <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
-                          {secretaryName || 'Faculty Coordinator'}
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-medium">Event Convener</div>
+                  <div className="report-signatures-grid pt-6 pb-2 flex flex-row justify-between text-center mt-auto w-full">
+                    <div className="report-signature-col flex-1 space-y-1">
+                      <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
+                        {secretaryName || 'Faculty Coordinator'}
                       </div>
-
-                      <div className="report-signature-col flex-1 space-y-1">
-                        <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
-                          Head of Department
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-medium">Department of {department}</div>
-                      </div>
-
-                      <div className="report-signature-col flex-1 space-y-1">
-                        <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
-                          Principal
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-medium">Sanskrithi School of Engineering</div>
-                      </div>
+                      <div className="text-[11px] text-slate-600 font-medium">Event Convener</div>
                     </div>
-                  )}
+
+                    <div className="report-signature-col flex-1 space-y-1">
+                      <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
+                        Head of Department
+                      </div>
+                      <div className="text-[11px] text-slate-600 font-medium">Department of {department}</div>
+                    </div>
+
+                    <div className="report-signature-col flex-1 space-y-1">
+                      <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
+                        Principal
+                      </div>
+                      <div className="text-[11px] text-slate-600 font-medium">Sanskrithi School of Engineering</div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Page 2 Footer */}
@@ -1133,76 +1185,6 @@ export const PublicReportGeneratorPage: React.FC = () => {
                   2
                 </div>
               </div>
-
-              {/* PAGE 3: EVENT PHOTOGRAPHS & SIGNATURES (Only if more than 2 photos added) */}
-              {photos.length > 2 && (
-                <>
-                  <div className="py-2 flex items-center justify-center gap-2 border-y border-dashed border-slate-300 bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider rounded-lg print:hidden">
-                    <span>Page 2 (Outcomes &amp; SDGs) &bull; Page 3 (Additional Photographs &amp; Signatures) Below</span>
-                  </div>
-
-                  <div className="print-page-3 min-h-[750px] print:min-h-0 flex flex-col justify-between space-y-4 print:space-y-3 page-break-before-always" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
-                    <div className="space-y-4 flex-1 flex flex-col">
-                      {/* Page 3 Header */}
-                      <div className="flex items-center justify-between pb-2 border-b-2 border-slate-800">
-                        <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
-                        <span className="text-slate-800 font-extrabold text-xs uppercase tracking-wide">
-                          Department of {department || 'Humanities & Sciences'}
-                        </span>
-                      </div>
-
-                      {/* Event Photographs Grid */}
-                      <div className="space-y-3 pt-2">
-                        <h3 className="font-extrabold text-[#1a365d] text-xs sm:text-sm uppercase tracking-wider border-b-2 border-[#1a365d] pb-1.5 mb-2">
-                          ADDITIONAL EVENT PHOTOGRAPHS &amp; VISUAL EVIDENCE
-                        </h3>
-
-                        <div className="report-photo-grid flex flex-row gap-5 pt-1 w-full justify-center">
-                          {photos.slice(2).map((p, idx) => (
-                            <div key={idx} className="report-photo-item flex-1 text-center flex flex-col items-center">
-                              <div className="w-full h-40 sm:h-44 bg-slate-50 rounded-xl overflow-hidden shadow-xs flex items-center justify-center">
-                                <img src={p.url} alt={p.caption} className="report-photo-img w-full h-full object-cover rounded-xl" />
-                              </div>
-                              <p className="text-[10px] sm:text-[11px] font-semibold italic text-slate-700 pt-1">
-                                {p.caption || `Event Photo ${idx + 3}`}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Official Signatures */}
-                      <div className="pt-10 grid grid-cols-3 gap-4 text-center mt-auto">
-                        <div className="space-y-1">
-                          <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
-                            {secretaryName || 'Faculty Coordinator'}
-                          </div>
-                          <div className="text-[11px] text-slate-600 font-medium">Event Convener</div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
-                            Head of Department
-                          </div>
-                          <div className="text-[11px] text-slate-600 font-medium">Department of {department}</div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="border-t-2 border-slate-800 w-32 sm:w-36 mx-auto pt-1.5 font-extrabold text-slate-900 text-xs">
-                            Principal
-                          </div>
-                          <div className="text-[11px] text-slate-600 font-medium">Sanskrithi School of Engineering</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Page 3 Footer */}
-                    <div className="pt-2 border-t border-slate-200 text-center font-extrabold text-[#1a365d] text-xs mt-auto">
-                      3
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

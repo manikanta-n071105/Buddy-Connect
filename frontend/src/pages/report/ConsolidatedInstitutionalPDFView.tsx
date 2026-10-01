@@ -915,7 +915,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       }}
     >
       <span>Sanskrithi School of Engineering (Autonomous)</span>
-      <span>Institutional HOD Progress Report &bull; {period}</span>
+      <span>INSTITUTIONAL PROGRESS REPORT &bull; {period}</span>
     </div>
   );
 
@@ -958,17 +958,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       >
         {title} {isContinued && <span style={{ color: '#c2410c' }}>(CONTINUED)</span>}
       </div>
-      {count !== undefined && (
-        <span
-          style={{
-            fontSize: '9px',
-            fontWeight: 700,
-            color: '#475569'
-          }}
-        >
-          Total: {count} Entries
-        </span>
-      )}
+
     </div>
   );
 
@@ -1128,11 +1118,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                           margin: '0 0 3px 0'
                         }}
                       >
-                        INSTITUTIONAL HOD PROGRESS REPORT
+                        INSTITUTIONAL PROGRESS REPORT
                       </h1>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', margin: '0 0 3px 0' }}>
-                        Comprehensive Performance Dossier across All Academic Departments
-                      </div>
                       <div style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>
                         Reporting Period: <strong style={{ color: '#0f172a' }}>{period}</strong>
                       </div>

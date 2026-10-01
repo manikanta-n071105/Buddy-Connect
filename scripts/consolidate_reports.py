@@ -917,7 +917,7 @@ def consolidate_reports(report_paths, output_path, college_name="SANSKRITHI SCHO
     # 1. Update Master Document Header Paragraphs
     for p in master_doc.paragraphs[:10]:
         if 'Department:' in p.text:
-            p.text = f"Institution: {college_name} | INSTITUTIONAL HOD PROGRESS REPORT"
+            p.text = f"Institution: {college_name} | INSTITUTIONAL PROGRESS REPORT"
             if p.runs:
                 p.runs[0].bold = True
                 p.runs[0].font.size = Pt(13)
