@@ -23,7 +23,6 @@ import {
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { HODProfessionalPDFView } from './HODProfessionalPDFView';
-import { getDepartmentSampleData } from './departmentSampleData';
 
 export interface ReportSectionsData {
   journals: Array<{
@@ -636,12 +635,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
   const totalActivities = Object.values(safeSections).reduce((acc, curr) => acc + (Array.isArray(curr) ? curr.length : 0), 0);
 
-  // Load comprehensive multi-item sample data for the selected department
-  const handleLoadSampleData = () => {
-    const data = getDepartmentSampleData(department);
-    setSections(normalizeSections(data));
-    toast.success(`Loaded sample data for ${department}!`);
-  };
+
 
   const handleClearForm = () => {
     if (window.confirm('Clear all fields?')) {
@@ -914,15 +908,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handleLoadSampleData}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-bold transition-all cursor-pointer"
-              title={`Load complete 16-section sample data tailored for ${department}`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              <span>Fill {department.includes('Civil') ? 'Civil' : department.includes('Computer') ? 'CSE' : department.includes('Communication') ? 'ECE' : department.includes('Electrical') ? 'EEE' : department.includes('Mechanical') ? 'Mech' : department.includes('Humanities') ? 'H&S' : department.includes('Innovation') ? 'I&E' : department.includes('Student Engagement') ? 'Clubs' : department.includes('NSS') ? 'NSS' : department.includes('Minutes') ? 'MoM' : 'Sample'} Sample</span>
-            </button>
+
 
             <button
               type="button"

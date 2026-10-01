@@ -2,7 +2,6 @@ import React, { useState, useEffect, useLayoutEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { ReportSectionsData, normalizeSections } from './HODManualReportBuilder';
-import { getDepartmentSampleData } from './departmentSampleData';
 
 interface ConsolidatedInstitutionalPDFViewProps {
   id?: string;
@@ -139,11 +138,11 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   const allEntities = [...academicDepartments, ...institutionalCommittees];
   const departmentList = allEntities;
 
-  // Gather data for all departments and committees with robust normalization and valid data fallback
+  // Gather data for all departments and committees from database
   const deptDataMap: Record<string, ReportSectionsData> = {};
   allEntities.forEach(ent => {
     const custom = customData?.[ent.name] || customData?.[ent.code];
-    const raw = (custom && hasAnyMeaningfulData(custom)) ? custom : getDepartmentSampleData(ent.name);
+    const raw = custom || {};
     deptDataMap[ent.code] = normalizeSections(raw);
   });
 
