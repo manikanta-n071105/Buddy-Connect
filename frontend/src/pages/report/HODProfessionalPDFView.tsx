@@ -154,7 +154,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
               <td style={{ padding: '6px 10px', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
                 Activities Summary
               </td>
-              <td style={{ padding: '6px 10px', fontWeight: 600, color: '#334155' }}>
+              <td style={{ padding: '6px 10px', fontWeight: 600, color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>
                 {totalActivities} recorded activities &bull; {sections.journals.length + sections.conferences.length} Publications &bull; {sections.syllabus.length} Syllabus Course(s)
               </td>
             </tr>
@@ -176,21 +176,21 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     {item.title || 'Untitled Article'}
                   </div>
-                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px' }}>
+                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Author(s):</strong> {item.authors || '-'} &bull; <strong>Journal:</strong> {item.journalName || '-'}
                   </div>
-                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     {item.issnIsbn && <span style={{ marginRight: '12px' }}><strong>ISSN/ISBN:</strong> {item.issnIsbn}</span>}
                     {item.volIssueYear && <span style={{ marginRight: '12px' }}><strong>Issue:</strong> {item.volIssueYear}</span>}
                     {item.pageNos && <span style={{ marginRight: '12px' }}><strong>Pages:</strong> {item.pageNos}</span>}
                     {item.indexedIn && <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Indexed in: {item.indexedIn}</span>}
                   </div>
                   {item.link && (
-                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
                       <strong>Paper Link / DOI:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
                     </div>
                   )}
@@ -213,14 +213,14 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     {item.title || 'Untitled Presentation'}
                   </div>
-                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px' }}>
+                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Author(s):</strong> {item.authors || '-'} &bull; <strong>Conference:</strong> {item.conferenceName || '-'}
                   </div>
-                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     {item.date && <span style={{ marginRight: '12px' }}><strong>Date:</strong> {item.date}</span>}
                     {item.locationMode && <span style={{ marginRight: '12px' }}><strong>Location/Mode:</strong> {item.locationMode}</span>}
                     {item.volIssueYear && <span style={{ marginRight: '12px' }}><strong>Issue:</strong> {item.volIssueYear}</span>}
@@ -229,7 +229,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                     {item.indexedIn && <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Indexing: {item.indexedIn}</span>}
                   </div>
                   {item.link && (
-                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
                       <strong>Proceedings Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
                     </div>
                   )}
@@ -252,10 +252,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
-                  <div style={{ color: '#334155', fontSize: '11px' }}><strong>Inventors:</strong> {item.inventors} &bull; <strong>Applicants:</strong> {item.applicants}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Patent No: {item.patentNumber} | Status: {item.status} | Date: {item.awardedDate}</div>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}><strong>Inventors:</strong> {item.inventors} &bull; <strong>Applicants:</strong> {item.applicants}</div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Patent No: {item.patentNumber} | Status: {item.status} | Date: {item.awardedDate}</div>
                 </div>
               </div>
             ))}
@@ -275,10 +275,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Date: {item.date} | Participants: {item.participantsCount}</div>
-                  <div style={{ color: '#334155', fontSize: '11px' }}><strong>Key Outcomes:</strong> {item.keyOutcomes}</div>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Date: {item.date} | Participants: {item.participantsCount}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}><strong>Key Outcomes:</strong> {item.keyOutcomes}</div>
                 </div>
               </div>
             ))}
@@ -298,16 +298,16 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
-                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px' }}>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Type:</strong> {item.type} &bull; <strong>Dates:</strong> {item.dates} &bull; <strong>Mode:</strong> {item.mode}
                   </div>
-                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Organizing Body:</strong> {item.organizingBody} &bull; <strong style={{ color: '#1a365d' }}>Faculty Attended:</strong> {item.facultyAttended}
                   </div>
                   {item.link && (
-                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
                       <strong>Certificate/Proof Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
                     </div>
                   )}
@@ -330,19 +330,19 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
-                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px' }}>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Type:</strong> {item.type} &bull; <strong>Dates:</strong> {item.dates} &bull; <strong>Dept. Organized:</strong> {item.deptOrganized} ({item.mode})
                   </div>
-                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px' }}>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Resource Person:</strong> {item.resourcePersonDetails}
                   </div>
-                  <div style={{ color: '#1a365d', fontSize: '10.5px', marginBottom: '2px' }}>
+                  <div style={{ color: '#1a365d', fontSize: '10.5px', marginBottom: '2px', textAlign: 'justify' }}>
                     <strong>Coordinator/s:</strong> {item.facultyCoordinators}
                   </div>
                   {item.link && (
-                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', textAlign: 'justify' }}>
                       <strong>Certificate/Proof Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
                     </div>
                   )}
@@ -365,10 +365,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.title}</div>
-                  <div style={{ color: '#334155', fontSize: '11px' }}>Date: {item.date} &bull; Resource Person: {item.resourcePerson} &bull; Participants: {item.participantsCount}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Outcomes: {item.keyOutcomes}</div>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}>Date: {item.date} &bull; Resource Person: {item.resourcePerson} &bull; Participants: {item.participantsCount}</div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Outcomes: {item.keyOutcomes}</div>
                 </div>
               </div>
             ))}
@@ -384,17 +384,17 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
           </div>
           <div>
             {sections.facultyAchievements.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Faculty Honor:</span> {item.name} &mdash; {item.award} ({item.organization}, {item.date})
               </div>
             ))}
             {sections.studentAchievements.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Student Honor:</span> {item.nameRoll} &mdash; {item.award} at {item.event} ({item.organization}, {item.durationDate})
               </div>
             ))}
             {sections.certifications.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Certification:</span> {item.title} ({item.type}) on {item.platform} &mdash; Certified: {item.certified}
               </div>
             ))}
@@ -414,21 +414,21 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                     <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px' }}>Department Meeting #{idx + 1}</span>
                     <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>Date: {item.date || '-'}</span>
                   </div>
-                  <div style={{ color: '#334155', fontSize: '11px', lineHeight: 1.4 }}>
+                  <div style={{ color: '#334155', fontSize: '11px', lineHeight: 1.4, textAlign: 'justify' }}>
                     <strong>Decisions &amp; Key Discussions:</strong> {item.decisions || 'Routine departmental operations and academic agenda reviewed.'}
                   </div>
                   {item.policyChanges && (
-                    <div style={{ color: '#475569', fontSize: '10.5px', marginTop: '2px' }}>
+                    <div style={{ color: '#475569', fontSize: '10.5px', marginTop: '2px', textAlign: 'justify' }}>
                       <strong>Policy Updates:</strong> {item.policyChanges}
                     </div>
                   )}
                   {item.link && (
-                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px' }}>
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px', textAlign: 'justify' }}>
                       <strong>Minutes Link:</strong> <span style={{ textDecoration: 'underline' }}>{item.link}</span>
                     </div>
                   )}
@@ -447,7 +447,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
           </div>
           <div>
             {sections.mous.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#0f172a' }}>{idx + 1}. {item.name}</span> &bull; Period: {item.datePeriod} &bull; Scope: {item.purpose}
               </div>
             ))}
@@ -463,12 +463,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
           </div>
           <div>
             {sections.additionalInitiatives.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Additional Initiative:</span> {item.initiative} ({item.date}) &mdash; {item.description}
               </div>
             ))}
             {sections.techAssociation.map((item, idx) => (
-              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Technical Association:</span> {item.event} ({item.date}) &bull; Type: {item.type || 'Activity'}
               </div>
             ))}
@@ -487,7 +487,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                 <th style={{ width: '38px', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>S.No</th>
                 <th style={{ width: '20%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Subject / Course</th>
-                <th style={{ width: '13%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
+                <th style={{ width: '13%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
                 <th style={{ width: '17%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Faculty</th>
                 <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Done (5 Units)</th>
                 <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Pending</th>
@@ -498,12 +498,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
               {sections.syllabus.map((item, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                   <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#334155' }}>{idx + 1}</td>
-                  <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#0f172a' }}>{item.subject || '-'}</td>
-                  <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{item.yearSem || '-'}</td>
-                  <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{item.faculty || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{item.subject || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'center' }}>{item.yearSem || '-'}</td>
+                  <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>{item.faculty || '-'}</td>
                   <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#047857' }}>{item.completed || '-'}</td>
                   <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#b45309' }}>{item.pending || '-'}</td>
-                  <td style={{ padding: '6px 8px', color: '#475569', fontStyle: 'italic', fontSize: '10px' }}>{item.remarks || '-'}</td>
+                  <td style={{ padding: '6px 8px', color: '#475569', fontStyle: 'italic', fontSize: '10px', textAlign: 'justify', textJustify: 'inter-word' }}>{item.remarks || '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -524,7 +524,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <th style={{ width: '22%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Title of Activity</th>
                 <th style={{ width: '14%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Type of Activity</th>
                 <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Days</th>
-                <th style={{ width: '16%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Dates</th>
+                <th style={{ width: '16%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Dates</th>
                 <th style={{ width: '8%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Part.</th>
                 <th style={{ width: '14%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Co-Ordinator</th>
                 <th style={{ width: '16%', padding: '6px 6px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
@@ -539,13 +539,13 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 return (
                   <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
                     <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#334155' }}>{idx + 1}</td>
-                    <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#0f172a' }}>{item.title || '-'}</td>
-                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{displayType}</td>
+                    <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{item.title || '-'}</td>
+                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>{displayType}</td>
                     <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#334155' }}>{item.noOfDays || '1 day'}</td>
-                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{displayDates}</td>
+                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'center' }}>{displayDates}</td>
                     <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#047857' }}>{item.participantsCount || '-'}</td>
-                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155' }}>{item.coordinator || '-'}</td>
-                    <td style={{ padding: '6px 6px', color: '#475569', fontStyle: 'italic', fontSize: '10px' }}>{item.remarks || '-'}</td>
+                    <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>{item.coordinator || '-'}</td>
+                    <td style={{ padding: '6px 6px', color: '#475569', fontStyle: 'italic', fontSize: '10px', textAlign: 'justify', textJustify: 'inter-word' }}>{item.remarks || '-'}</td>
                   </tr>
                 );
               })}
@@ -567,10 +567,10 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
                   {String(idx + 1).padStart(2, '0')}
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px' }}>{item.event}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px' }}>Date: {item.date} | Venue: {item.venue} | Participants: {item.participantsCount}</div>
-                  <div style={{ color: '#334155', fontSize: '11px' }}><strong>Outcomes:</strong> {item.outcomes}</div>
+                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.event}</div>
+                  <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Date: {item.date} | Venue: {item.venue} | Participants: {item.participantsCount}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}><strong>Outcomes:</strong> {item.outcomes}</div>
                 </div>
               </div>
             ))}
