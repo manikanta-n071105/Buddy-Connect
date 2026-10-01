@@ -147,56 +147,6 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     deptDataMap[ent.code] = normalizeSections(raw);
   });
 
-  // Aggregate matrix metrics matching Monthly Department Report Entry order (1a - 11)
-  const matrixCategories = [
-    { key: 'journals', label: '1a. Journal Publications' },
-    { key: 'conferences', label: '1b. Conference Presentations' },
-    { key: 'patents', label: '2a. Patents' },
-    { key: 'entrepreneurship', label: '2b. Activities and Iniativies' },
-    { key: 'fdpAttended', label: '3a. FDPs Attended' },
-    { key: 'fdpOrganized', label: '3b. FDPs Organized' },
-    { key: 'sdp', label: '4. Student Development Programs (SDPs)' },
-    { key: 'facultyAchievements', label: '5a. Faculty Achievements' },
-    { key: 'studentAchievements', label: '5b. Student Achievements' },
-    { key: 'certifications', label: '5c. Certifications' },
-    { key: 'deptMeetings', label: '6a. Meetings' },
-    { key: 'mous', label: '6b. Collaborations & MoUs' },
-    { key: 'techAssociation', label: '7. Technical Association Activities' },
-    { key: 'syllabus', label: '8. Syllabus coverage Report' },
-    { key: 'studentEngagement', label: '9. Clubs & Student Engagement Activity' },
-    { key: 'nss', label: '10. NSS and Other Extension Activities' },
-    { key: 'additionalInitiatives', label: '11. Additional/Other Relevant Initiatives' }
-  ];
-
-  const deptTotals: Record<string, number> = { CIVIL: 0, CSE: 0, ECE: 0, EEE: 0, MECH: 0, 'H&S': 0 };
-  let committeeTotalGrand = 0;
-  let grandTotal = 0;
-
-  const matrixRows = matrixCategories.map(cat => {
-    const counts: Record<string, number> = {};
-    let catTotal = 0;
-    let commTotal = 0;
-
-    academicDepartments.forEach(dept => {
-      const arr = (deptDataMap[dept.code] as any)?.[cat.key];
-      const count = Array.isArray(arr) ? arr.filter(isMeaningfulItem).length : 0;
-      counts[dept.code] = count;
-      deptTotals[dept.code] += count;
-      catTotal += count;
-    });
-
-    institutionalCommittees.forEach(comm => {
-      const arr = (deptDataMap[comm.code] as any)?.[cat.key];
-      const count = Array.isArray(arr) ? arr.filter(isMeaningfulItem).length : 0;
-      commTotal += count;
-      catTotal += count;
-    });
-
-    committeeTotalGrand += commTotal;
-    grandTotal += catTotal;
-    return { label: cat.label, counts, committeeTotal: commTotal, total: catTotal };
-  });
-
   // Standard Section Configurations matching Monthly Department Report Entry (1a - 11)
   const sectionsConfig: SectionConfig[] = [
     // 1A. Journal Publications
@@ -889,7 +839,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   );
 
   // Multi-Section Intelligent Page Flow Engine
-  const PAGE_HEIGHT_LIMIT = 760; // px safe content height per A4 page
+  const PAGE_HEIGHT_LIMIT = 760; // px safe content height for Page 2+
+  const PAGE_1_HEIGHT_LIMIT = 600; // px safe content height for Page 1 (accommodates top official header + title)
 
   const getRowHeight = (key: string): number => {
     if (key === 'journals' || key === 'conferences') return 58;
@@ -911,17 +862,16 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   }
 
   interface GeneratedPage {
-    type: 'cover' | 'content' | 'final';
+    type: 'content' | 'final';
+    isFirstPage?: boolean;
     sections?: PageSectionItem[];
     hasFinalAudit?: boolean;
   }
 
   const generatedPages: GeneratedPage[] = [];
 
-  // Page 1: Cover & Executive Performance Matrix
-  generatedPages.push({ type: 'cover' });
-
-  // Bin-pack sections onto pages dynamically
+  // Bin-pack sections onto pages dynamically starting directly from Page 1 (No Performance Matrix)
+  let isFirstPage = true;
   let currentPageSections: PageSectionItem[] = [];
   let currentPageHeight = 0;
 
@@ -935,19 +885,22 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     let isContinued = false;
 
     while (remainingItems.length > 0) {
+      const pageLimit = isFirstPage ? PAGE_1_HEIGHT_LIMIT : PAGE_HEIGHT_LIMIT;
       const overhead = SECTION_HEADER_H + TABLE_HEADER_H + SECTION_MARGIN_BOTTOM;
-      const availableSpace = PAGE_HEIGHT_LIMIT - currentPageHeight;
+      const availableSpace = pageLimit - currentPageHeight;
 
       // If cannot fit header + 1 row on this page, start fresh page
       if (availableSpace < overhead + rowHeight) {
         if (currentPageSections.length > 0) {
-          generatedPages.push({ type: 'content', sections: currentPageSections });
+          generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections });
           currentPageSections = [];
           currentPageHeight = 0;
+          isFirstPage = false;
         }
       }
 
-      const spaceForRows = PAGE_HEIGHT_LIMIT - currentPageHeight - overhead;
+      const activePageLimit = isFirstPage ? PAGE_1_HEIGHT_LIMIT : PAGE_HEIGHT_LIMIT;
+      const spaceForRows = activePageLimit - currentPageHeight - overhead;
       const maxRowsFit = Math.max(1, Math.floor(spaceForRows / rowHeight));
       const countToTake = Math.min(remainingItems.length, maxRowsFit);
       const chunk = remainingItems.slice(0, countToTake);
@@ -967,19 +920,21 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
 
       // If more items remain in this section, commit page and continue
       if (remainingItems.length > 0) {
-        generatedPages.push({ type: 'content', sections: currentPageSections });
+        generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections });
         currentPageSections = [];
         currentPageHeight = 0;
+        isFirstPage = false;
       }
     }
   });
 
   // Final Audit Summary & Sign-off Block placement
   if (currentPageSections.length > 0) {
-    if (currentPageHeight + AUDIT_AND_SIG_H <= PAGE_HEIGHT_LIMIT) {
-      generatedPages.push({ type: 'content', sections: currentPageSections, hasFinalAudit: true });
+    const activePageLimit = isFirstPage ? PAGE_1_HEIGHT_LIMIT : PAGE_HEIGHT_LIMIT;
+    if (currentPageHeight + AUDIT_AND_SIG_H <= activePageLimit) {
+      generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections, hasFinalAudit: true });
     } else {
-      generatedPages.push({ type: 'content', sections: currentPageSections, hasFinalAudit: false });
+      generatedPages.push({ type: 'content', isFirstPage, sections: currentPageSections, hasFinalAudit: false });
       generatedPages.push({ type: 'final' });
     }
   } else {
@@ -1176,132 +1131,62 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       {generatedPages.map((pageDef, pIdx) => {
         const pageNumber = pIdx + 1;
 
-        if (pageDef.type === 'cover') {
-          return (
-            <div key={pIdx} className="pdf-page" style={fixedA4PageStyle}>
-              <div>
-                {/* Official Header */}
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed', marginBottom: '8px' }}>
-                  <tbody>
-                    <tr style={{ border: 'none' }}>
-                      <td style={{ width: '50%', border: 'none', verticalAlign: 'middle', textAlign: 'left', padding: '0 0 4px 0' }}>
-                        <img
-                          src={logoBase64}
-                          alt="Sanskrithi School of Engineering Logo"
-                          style={{ height: '38px', width: 'auto', display: 'block', objectFit: 'contain' }}
-                        />
-                      </td>
-                      <td style={{ width: '50%', border: 'none', verticalAlign: 'middle', textAlign: 'right', padding: '0 0 4px 0' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#1e293b' }}>
-                          SANSKRITHI SCHOOL OF ENGINEERING
-                        </div>
-                        <div style={{ fontSize: '9px', fontWeight: 700, color: '#c2410c', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: '2px' }}>
-                          AUTONOMOUS
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div style={{ height: '2px', backgroundColor: '#1a365d', width: '100%', marginBottom: '18px' }}></div>
-
-                {/* Document Title Block */}
-                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                  <h1
-                    style={{
-                      fontSize: '18px',
-                      fontWeight: 900,
-                      color: '#1a365d',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.03em',
-                      margin: '0 0 5px 0'
-                    }}
-                  >
-                    INSTITUTIONAL HOD PROGRESS REPORT
-                  </h1>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', margin: '0 0 5px 0' }}>
-                    Comprehensive Performance Dossier across All Academic Departments
-                  </div>
-                  <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>
-                    Reporting Period: <strong style={{ color: '#0f172a' }}>{period}</strong>
-                  </div>
-                </div>
-
-                {/* Executive Cross-Department & Committee Performance Matrix */}
-                <div>
-                  {renderSectionHeader(`EXECUTIVE INSTITUTIONAL PERFORMANCE MATRIX (${period})`)}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
-                        <th style={{ width: '33%', padding: '8px 8px', textAlign: 'left', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
-                          Activity Category / Domain
-                        </th>
-                        {academicDepartments.map(d => (
-                          <th key={d.code} style={{ width: '7.5%', padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6' }}>
-                            {d.code}
-                          </th>
-                        ))}
-                        <th style={{ width: '11%', padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, borderRight: '1px solid #3b82f6', backgroundColor: '#4338ca' }}>
-                          Committees
-                        </th>
-                        <th style={{ width: '11%', padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, backgroundColor: '#c2410c' }}>
-                          Total
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {matrixRows.map((row, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
-                          <td style={{ padding: '6.5px 8px', verticalAlign: 'middle', fontWeight: 600, color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
-                            {row.label}
-                          </td>
-                          {academicDepartments.map(d => {
-                            const val = row.counts[d.code] || 0;
-                            return (
-                              <td key={d.code} style={{ padding: '6.5px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: val > 0 ? 700 : 400, color: val > 0 ? '#0f172a' : '#94a3b8', borderRight: '1px solid #cbd5e1' }}>
-                                {val > 0 ? val : '-'}
-                              </td>
-                            );
-                          })}
-                          <td style={{ padding: '6.5px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: row.committeeTotal > 0 ? 800 : 400, color: row.committeeTotal > 0 ? '#4338ca' : '#94a3b8', backgroundColor: '#f5f3ff', borderRight: '1px solid #cbd5e1' }}>
-                            {row.committeeTotal > 0 ? row.committeeTotal : '-'}
-                          </td>
-                          <td style={{ padding: '6.5px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#c2410c', backgroundColor: '#fff7ed' }}>
-                            {row.total}
-                          </td>
-                        </tr>
-                      ))}
-                      {/* Grand Total Row */}
-                      <tr style={{ backgroundColor: '#e2e8f0', borderTop: '2px solid #94a3b8' }}>
-                        <td style={{ padding: '8px 8px', verticalAlign: 'middle', fontWeight: 800, color: '#0f172a', borderRight: '1px solid #cbd5e1', textTransform: 'uppercase' }}>
-                          Total Activities Reported
-                        </td>
-                        {academicDepartments.map(d => (
-                          <td key={d.code} style={{ padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 800, color: '#0f172a', borderRight: '1px solid #cbd5e1' }}>
-                            {deptTotals[d.code]}
-                          </td>
-                        ))}
-                        <td style={{ padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#4338ca', backgroundColor: '#ede9fe', borderRight: '1px solid #cbd5e1' }}>
-                          {committeeTotalGrand}
-                        </td>
-                        <td style={{ padding: '8px 2px', textAlign: 'center', verticalAlign: 'middle', fontWeight: 900, color: '#c2410c', backgroundColor: '#fed7aa', fontSize: '10px' }}>
-                          {grandTotal}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {renderRunningFooter(pageNumber)}
-            </div>
-          );
-        }
-
         if (pageDef.type === 'content') {
           return (
             <div key={pIdx} className="pdf-page" style={fixedA4PageStyle}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                {renderRunningHeader()}
+                {pageDef.isFirstPage ? (
+                  <div>
+                    {/* Official Page 1 Header */}
+                    <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed', marginBottom: '6px' }}>
+                      <tbody>
+                        <tr style={{ border: 'none' }}>
+                          <td style={{ width: '50%', border: 'none', verticalAlign: 'middle', textAlign: 'left', padding: '0 0 4px 0' }}>
+                            <img
+                              src={logoBase64}
+                              alt="Sanskrithi School of Engineering Logo"
+                              style={{ height: '36px', width: 'auto', display: 'block', objectFit: 'contain' }}
+                            />
+                          </td>
+                          <td style={{ width: '50%', border: 'none', verticalAlign: 'middle', textAlign: 'right', padding: '0 0 4px 0' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#1e293b' }}>
+                              SANSKRITHI SCHOOL OF ENGINEERING
+                            </div>
+                            <div style={{ fontSize: '8.5px', fontWeight: 700, color: '#c2410c', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: '1px' }}>
+                              AUTONOMOUS
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div style={{ height: '2px', backgroundColor: '#1a365d', width: '100%', marginBottom: '12px' }}></div>
+
+                    {/* Document Title Block */}
+                    <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+                      <h1
+                        style={{
+                          fontSize: '16px',
+                          fontWeight: 900,
+                          color: '#1a365d',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.03em',
+                          margin: '0 0 3px 0'
+                        }}
+                      >
+                        INSTITUTIONAL HOD PROGRESS REPORT
+                      </h1>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', margin: '0 0 3px 0' }}>
+                        Comprehensive Performance Dossier across All Academic Departments
+                      </div>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>
+                        Reporting Period: <strong style={{ color: '#0f172a' }}>{period}</strong>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  renderRunningHeader()
+                )}
+
                 <div data-body style={{ flex: 1, minHeight: 0 }}>
                   {pageDef.sections?.map((sItem, sIdx) => (
                     <div key={sIdx} style={{ marginBottom: '8px' }}>
