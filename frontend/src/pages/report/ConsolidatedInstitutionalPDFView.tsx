@@ -265,10 +265,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
-    // 2B. Activities and Iniativies
+    // 2B. Activities and Initiatives
     {
       key: 'entrepreneurship',
-      title: '2B. Activities and Iniativies',
+      title: '2B. Activities and Initiatives',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),

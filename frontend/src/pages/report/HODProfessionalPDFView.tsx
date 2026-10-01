@@ -263,11 +263,11 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 2b. Activities and Iniativies */}
+      {/* 2b. Activities and Initiatives */}
       {sections.entrepreneurship.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
           <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            2B. Activities and Iniativies ({sections.entrepreneurship.length})
+            2B. Activities and Initiatives ({sections.entrepreneurship.length})
           </div>
           <div>
             {sections.entrepreneurship.map((item, idx) => (

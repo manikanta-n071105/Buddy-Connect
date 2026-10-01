@@ -421,7 +421,7 @@ def create_summary_matrix_xml(departments, category_data):
         ('1a_journals', '1a. Journal Publications'),
         ('1b_conferences', '1b. Conference Presentations'),
         ('1c_patents', '2a. Patents'),
-        ('1d_entrepreneurship', '2b. Activities and Iniativies'),
+        ('1d_entrepreneurship', '2b. Activities and Initiatives'),
         ('3a_fdp_attended', '3a. FDPs Attended'),
         ('3b_fdp_organized', '3b. FDPs Organized'),
         ('4_sdp', '4. Student Development Programs (SDPs)'),

@@ -5,7 +5,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
 
   // SPECIALIZED PORTALS & COMMITTEES DEMO DATA
 
-  // A. Innovation & Entrepreneurship (Fills only 2a Patents & 2b Activities and Iniativies)
+  // A. Innovation & Entrepreneurship (Fills only 2a Patents & 2b Activities and Initiatives)
   if (dept.includes('innovation') || dept.includes('entrepreneurship')) {
     return {
       ...INITIAL_SECTIONS,

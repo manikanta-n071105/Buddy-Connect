@@ -589,7 +589,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '1a_journals', label: '1a. Journal Publications', count: (safeSections.journals || []).length },
     { key: '1b_conferences', label: '1b. Conference Presentations', count: (safeSections.conferences || []).length },
     { key: '1c_patents', label: '2a. Patents', count: (safeSections.patents || []).length },
-    { key: '1d_entrepreneurship', label: '2b. Activities and Iniativies', count: (safeSections.entrepreneurship || []).length },
+    { key: '1d_entrepreneurship', label: '2b. Activities and Initiatives', count: (safeSections.entrepreneurship || []).length },
     { key: '3a_fdp_attended', label: '3a. FDPs Attended', count: (safeSections.fdpAttended || []).length },
     { key: '3b_fdp_organized', label: '3b. FDPs Organized', count: (safeSections.fdpOrganized || []).length },
     { key: '4_sdp', label: '4. Student Development Programs (SDPs)', count: (safeSections.sdp || []).length },
@@ -1055,7 +1055,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               onChange={(e) => setPeriod(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
             >
-          
+
               <optgroup label="Academic Year 2026–27">
                 <option value="September 2026">September 2026</option>
                 <option value="October 2026">October 2026</option>
@@ -1399,10 +1399,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               </SectionContainer>
             )}
 
-            {/* Table 3: 2b. Activities and Iniativies */}
+            {/* Table 3: 2b. Activities and Initiatives */}
             {activeSectionKey === '1d_entrepreneurship' && (
               <SectionContainer
-                title="2. Innovation & Entrepreneurship — b) Activities and Iniativies"
+                title="2. Innovation & Entrepreneurship — b) Activities and Initiatives"
                 description="List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
                 count={safeSections.entrepreneurship.length}
                 onAdd={() => handleAddRow('entrepreneurship')}

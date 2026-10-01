@@ -113,7 +113,7 @@ const EXECUTIVE_METRICS = [
   { category: '1a. Journal Publications', civil: 1, cse: 2, ece: 2, eee: 2, mech: 2, hs: 1, total: 10 },
   { category: '1b. Conference Presentations', civil: 2, cse: 3, ece: 3, eee: 2, mech: 2, hs: 2, total: 14 },
   { category: '2a. Patents', civil: 0, cse: 1, ece: 1, eee: 0, mech: 1, hs: 0, total: 3 },
-  { category: '2b. Activities and Iniativies', civil: 0, cse: 1, ece: 1, eee: 0, mech: 0, hs: 0, total: 2 },
+  { category: '2b. Activities and Initiatives', civil: 0, cse: 1, ece: 1, eee: 0, mech: 0, hs: 0, total: 2 },
   { category: '3a. FDPs Attended', civil: 1, cse: 1, ece: 1, eee: 1, mech: 2, hs: 1, total: 7 },
   { category: '3b. FDPs Organized', civil: 1, cse: 1, ece: 1, eee: 1, mech: 1, hs: 1, total: 6 },
   { category: '4. Student Development Programs (SDPs)', civil: 0, cse: 1, ece: 0, eee: 0, mech: 1, hs: 1, total: 3 },
@@ -612,7 +612,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                 onChange={(e) => setPeriod(e.target.value)}
                 className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer text-xs"
               >
-                
+
                 <optgroup label="Academic Year 2026–27">
                   <option value="September 2026">September 2026</option>
                   <option value="October 2026">October 2026</option>

@@ -298,9 +298,9 @@ def generate_department_report(data, output_path):
     keys_2 = ['title', 'inventors', 'applicants', 'patentNumber', 'status', 'awardedDate', 'link']
     total_activities += add_table_data(doc, headers_2, sections_data.get('patents', []), keys_2)
 
-    # 2b) Activities and Iniativies (Table 3)
+    # 2b) Activities and Initiatives (Table 3)
     add_sub_heading(
-        "2b) Activities and Iniativies",
+        "2b) Activities and Initiatives",
         "List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
     )
     headers_3 = ['S. No.', 'Entrepreneurship Activity/Program Title', 'Date', 'Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)', 'Participants (Student/Faculty/Alumni)', 'Organized By (Department/ED Cell/Incubator)', 'Mode (Online/Offline/Hybrid)', 'Key Outcomes (Startups Launched, Funding Received, Patents Filed, etc.)', 'No. of Participants', 'Mentor/Coordinator', 'Status (Ongoing/Completed)', 'Proof/Report Link']
