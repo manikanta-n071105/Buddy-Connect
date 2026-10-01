@@ -234,6 +234,14 @@ export const INDEXED_IN_OPTIONS = [
   'Other'
 ];
 
+export const PATENT_STATUS_OPTIONS = [
+  'Filed',
+  'Published',
+  'Granted',
+  'Commercialized'
+];
+
+
 export const SDP_ACTIVITY_TYPES = [
   'Workshop',
   'Hands-on Technical SDP',
@@ -1371,7 +1379,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Patent Number" value={item.patentNumber} onChange={(v) => handleUpdateField('patents', idx, 'patentNumber', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Patent Status (Filed/Published/Granted/Commercialized)" value={item.status} onChange={(v) => handleUpdateField('patents', idx, 'status', v)} />
+                        <FieldSelect
+                          label="Patent Status"
+                          value={item.status}
+                          options={PATENT_STATUS_OPTIONS}
+                          placeholder="Select Status"
+                          onChange={(v) => handleUpdateField('patents', idx, 'status', v)}
+                        />
                       </div>
                       <div>
                         <FieldInput label="Awarded Date" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} />
@@ -2435,6 +2449,43 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeho
     />
   </div>
 );
+
+interface FieldSelectProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+  required?: boolean;
+}
+
+const FieldSelect: React.FC<FieldSelectProps> = ({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = 'Select option...',
+  required = false
+}) => (
+  <div className="space-y-1">
+    <label className="text-[11px] font-bold text-slate-700 block">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all cursor-pointer"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
 
 interface BulletTextareaProps {
   label: string;
