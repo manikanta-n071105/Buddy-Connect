@@ -614,9 +614,6 @@ export const HODReportConsolidatorPage: React.FC = () => {
               >
                 
                 <optgroup label="Academic Year 2026–27">
-                  <option value="June 2026">June 2026</option>
-                  <option value="July 2026">July 2026</option>
-                  <option value="August 2026">August 2026</option>
                   <option value="September 2026">September 2026</option>
                   <option value="October 2026">October 2026</option>
                   <option value="November 2026">November 2026</option>
