@@ -482,8 +482,10 @@ export const initDepartmentalReportsTable = async () => {
           department VARCHAR(100) NOT NULL,
           period VARCHAR(50) NOT NULL DEFAULT 'September 2026',
           hod_name VARCHAR(150),
-          file_name VARCHAR(255) NOT NULL,
-          file_path TEXT NOT NULL,
+          submission_date VARCHAR(50),
+          sections_data JSONB DEFAULT '{}'::jsonb,
+          file_name VARCHAR(255),
+          file_path TEXT,
           file_size_bytes INT NOT NULL DEFAULT 0,
           items_count INT DEFAULT 0,
           status VARCHAR(30) DEFAULT 'SUBMITTED',
@@ -491,6 +493,10 @@ export const initDepartmentalReportsTable = async () => {
           updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(department, period)
       );
+      ALTER TABLE departmental_monthly_reports ADD COLUMN IF NOT EXISTS submission_date VARCHAR(50);
+      ALTER TABLE departmental_monthly_reports ADD COLUMN IF NOT EXISTS sections_data JSONB DEFAULT '{}'::jsonb;
+      ALTER TABLE departmental_monthly_reports ALTER COLUMN file_name DROP NOT NULL;
+      ALTER TABLE departmental_monthly_reports ALTER COLUMN file_path DROP NOT NULL;
       CREATE INDEX IF NOT EXISTS idx_dept_monthly_period ON departmental_monthly_reports(period);
     `);
   } catch (err: any) {
