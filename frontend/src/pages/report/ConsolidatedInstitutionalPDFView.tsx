@@ -843,7 +843,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       <td
         colSpan={colSpan}
         style={{
-          padding: '16px',
+          padding: '12px',
           textAlign: 'center',
           color: '#64748b',
           fontStyle: 'italic',
@@ -856,11 +856,9 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </tr>
   );
 
-  // Helper to render reusable generic section data tables
-  const MAX_ROW_H = 140; // px; roughly 11 lines of 9px text
-
+  // Helper to render reusable generic section data tables with flawless vertical text rendering
   const renderDataTable = <T,>(columns: ColumnConfig<T>[], items: T[], startIndex: number) => (
-    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '8.5px', border: '1px solid #cbd5e1', marginBottom: '8px' }}>
       <thead>
         <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
           {columns.map((col, cIdx) => (
@@ -868,11 +866,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               key={cIdx}
               style={{
                 width: col.width,
-                padding: '8px 6px',
+                padding: '6px 5px',
                 textAlign: col.align || 'left',
                 verticalAlign: 'middle',
                 fontWeight: 800,
-                borderRight: cIdx < columns.length - 1 ? '1px solid #3b82f6' : 'none'
+                fontSize: '8.5px',
+                borderRight: cIdx < columns.length - 1 ? '1px solid #3b82f6' : 'none',
+                lineHeight: 1.3
               }}
             >
               {col.header}
@@ -887,17 +887,16 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <td
                 key={cIdx}
                 style={{
-                  padding: col.align === 'center' ? '8px 4px' : '8px 10px',
+                  padding: col.align === 'center' ? '5px 3px' : '5px 6px',
                   textAlign: col.align || 'left',
                   verticalAlign: 'middle',
                   borderRight: cIdx < columns.length - 1 ? '1px solid #cbd5e1' : 'none',
                   wordBreak: 'break-word',
-                  overflowWrap: 'anywhere'
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.35
                 }}
               >
-                <div style={{ maxHeight: `${MAX_ROW_H}px`, overflow: 'hidden' }}>
-                  {col.render(item, startIndex + rIdx)}
-                </div>
+                {col.render(item, startIndex + rIdx)}
               </td>
             ))}
           </tr>
@@ -906,14 +905,32 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </table>
   );
 
-  // Generate dedicated page per category; overloads continue to new pages
+  // Multi-Section Intelligent Page Flow Engine
+  const PAGE_HEIGHT_LIMIT = 850; // px safe content height per A4 page
+
+  const getRowHeight = (key: string): number => {
+    if (key === 'journals' || key === 'conferences') return 52;
+    if (key === 'facultyAchievements' || key === 'studentAchievements' || key === 'syllabus') return 34;
+    return 42;
+  };
+
+  const SECTION_HEADER_H = 28;
+  const TABLE_HEADER_H = 26;
+  const SECTION_MARGIN_BOTTOM = 12;
+  const AUDIT_AND_SIG_H = 270;
+
+  interface PageSectionItem {
+    section: SectionConfig;
+    items: any[];
+    startIndex: number;
+    isContinued: boolean;
+    totalCount: number;
+  }
+
   interface GeneratedPage {
-    type: 'cover' | 'section' | 'final';
-    section?: SectionConfig;
-    items?: any[];
-    startIndex?: number;
-    isContinued?: boolean;
-    totalCount?: number;
+    type: 'cover' | 'content' | 'final';
+    sections?: PageSectionItem[];
+    hasFinalAudit?: boolean;
   }
 
   const generatedPages: GeneratedPage[] = [];
@@ -921,40 +938,70 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   // Page 1: Cover & Executive Performance Matrix
   generatedPages.push({ type: 'cover' });
 
-  // Dedicated Pages: Each section starts on a new page; overloads continue on new pages
+  // Bin-pack sections onto pages dynamically
+  let currentPageSections: PageSectionItem[] = [];
+  let currentPageHeight = 0;
+
   sectionsConfig.forEach(sec => {
     const allItems = sec.getItems(deptDataMap, departmentList);
-    const totalCount = allItems.length;
+    if (allItems.length === 0) return; // Skip empty sections so the dossier is compact and executive-grade
 
-    if (totalCount === 0) {
-      generatedPages.push({
-        type: 'section',
-        section: sec,
-        items: [],
-        startIndex: 0,
-        isContinued: false,
-        totalCount: 0
-      });
-    } else {
-      const chunks: any[][] = [];
-      for (let i = 0; i < totalCount; i += sec.rowsPerPage) {
-        chunks.push(allItems.slice(i, i + sec.rowsPerPage));
+    const rowHeight = getRowHeight(sec.key);
+    let remainingItems = allItems;
+    let chunkStartIndex = 0;
+    let isContinued = false;
+
+    while (remainingItems.length > 0) {
+      const overhead = SECTION_HEADER_H + TABLE_HEADER_H + SECTION_MARGIN_BOTTOM;
+      const availableSpace = PAGE_HEIGHT_LIMIT - currentPageHeight;
+
+      // If cannot fit header + 1 row on this page, start fresh page
+      if (availableSpace < overhead + rowHeight) {
+        if (currentPageSections.length > 0) {
+          generatedPages.push({ type: 'content', sections: currentPageSections });
+          currentPageSections = [];
+          currentPageHeight = 0;
+        }
       }
-      chunks.forEach((chunk, chunkIdx) => {
-        generatedPages.push({
-          type: 'section',
-          section: sec,
-          items: chunk,
-          startIndex: chunkIdx * sec.rowsPerPage,
-          isContinued: chunkIdx > 0,
-          totalCount: totalCount
-        });
+
+      const spaceForRows = PAGE_HEIGHT_LIMIT - currentPageHeight - overhead;
+      const maxRowsFit = Math.max(1, Math.floor(spaceForRows / rowHeight));
+      const countToTake = Math.min(remainingItems.length, maxRowsFit);
+      const chunk = remainingItems.slice(0, countToTake);
+
+      currentPageSections.push({
+        section: sec,
+        items: chunk,
+        startIndex: chunkStartIndex,
+        isContinued: isContinued,
+        totalCount: allItems.length
       });
+
+      currentPageHeight += overhead + (chunk.length * rowHeight);
+      chunkStartIndex += chunk.length;
+      remainingItems = remainingItems.slice(chunk.length);
+      isContinued = true;
+
+      // If more items remain in this section, commit page and continue
+      if (remainingItems.length > 0) {
+        generatedPages.push({ type: 'content', sections: currentPageSections });
+        currentPageSections = [];
+        currentPageHeight = 0;
+      }
     }
   });
 
-  // Final Page: Academic Audit & Institutional Governance Sign-Off
-  generatedPages.push({ type: 'final' });
+  // Final Audit Summary & Sign-off Block placement
+  if (currentPageSections.length > 0) {
+    if (currentPageHeight + AUDIT_AND_SIG_H <= PAGE_HEIGHT_LIMIT) {
+      generatedPages.push({ type: 'content', sections: currentPageSections, hasFinalAudit: true });
+    } else {
+      generatedPages.push({ type: 'content', sections: currentPageSections, hasFinalAudit: false });
+      generatedPages.push({ type: 'final' });
+    }
+  } else {
+    generatedPages.push({ type: 'final' });
+  }
 
   const totalCalculatedPages = generatedPages.length;
 
@@ -966,7 +1013,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         alignItems: 'center',
         borderBottom: '1.5px solid #cbd5e1',
         paddingBottom: '8px',
-        marginBottom: '14px',
+        marginBottom: '12px',
         fontSize: '9px',
         fontWeight: 700,
         color: '#475569',
@@ -987,7 +1034,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         alignItems: 'center',
         borderTop: '1px solid #cbd5e1',
         paddingTop: '8px',
-        marginTop: '16px',
+        marginTop: '12px',
         fontSize: '8.5px',
         color: '#64748b'
       }}
@@ -1003,15 +1050,15 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         alignItems: 'center',
         justifyContent: 'space-between',
         borderBottom: '2px solid #1a365d',
-        paddingBottom: '4px',
-        marginBottom: '12px'
+        paddingBottom: '3px',
+        marginBottom: '8px'
       }}
     >
       <div
         style={{
           fontWeight: 900,
           color: '#1a365d',
-          fontSize: '11px',
+          fontSize: '10px',
           textTransform: 'uppercase',
           letterSpacing: '0.04em'
         }}
@@ -1021,7 +1068,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       {count !== undefined && (
         <span
           style={{
-            fontSize: '9.5px',
+            fontSize: '9px',
             fontWeight: 700,
             color: '#475569'
           }}
@@ -1032,18 +1079,98 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </div>
   );
 
+  const renderAuditAndSignOff = () => (
+    <div style={{ marginTop: '12px' }}>
+      {/* Institutional Academic & Attendance Compliance Audit */}
+      <div style={{ marginBottom: '16px' }}>
+        {renderSectionHeader('INSTITUTIONAL ACADEMIC & ATTENDANCE AUDIT SUMMARY')}
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1', marginBottom: '12px' }}>
+          <tbody>
+            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+              <td style={{ width: '28%', padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                Curriculum Delivery Compliance
+              </td>
+              <td style={{ width: '72%', padding: '7px 10px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
+                100% Target Met &bull; All Academic Branches Maintained Prescribed Syllabus Progression
+              </td>
+            </tr>
+            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                Biometric &amp; ERP Attendance Audit
+              </td>
+              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
+                100% Verified Compliant &bull; No Statutory Condonation Shortages Identified
+              </td>
+            </tr>
+            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
+              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                Dean / Academic Director Remarks
+              </td>
+              <td style={{ padding: '7px 10px', verticalAlign: 'middle', color: '#475569', fontStyle: 'italic', fontSize: '8.5px', lineHeight: 1.35 }}>
+                All departments maintained prescribed academic engagement. Remedial classes, technical association activities, and academic bridge initiatives organized as mandated.
+              </td>
+            </tr>
+            <tr>
+              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
+                IQAC Review &amp; Quality Audit
+              </td>
+              <td style={{ padding: '7px 10px', verticalAlign: 'middle', color: '#1e3a8a', fontWeight: 600, fontSize: '8.5px', lineHeight: 1.35 }}>
+                All departmental reports verified and consolidated according to autonomous institutional governance framework.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Official Institutional Governance & Sign-Off Block */}
+      <div style={{ paddingTop: '14px', borderTop: '1.5px solid #cbd5e1' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed' }}>
+          <tbody>
+            <tr style={{ border: 'none' }}>
+              <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
+                <div style={{ height: '32px' }}></div>
+                <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
+                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>Dr. Sreenivas Prasad</div>
+                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>IQAC Coordinator</div>
+                <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
+              </td>
+
+              <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
+                <div style={{ height: '32px' }}></div>
+                <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
+                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>Dean of Academics</div>
+                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>Academic Governance</div>
+                <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
+              </td>
+
+              <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
+                <div style={{ height: '32px' }}></div>
+                <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
+                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>Principal</div>
+                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>Institutional Endorsement</div>
+                <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   const fixedA4PageStyle: React.CSSProperties = {
     width: '750px',
+    minHeight: '1060px',
     height: '1060px',
     maxHeight: '1060px',
     boxSizing: 'border-box',
-    padding: '24px 32px 18px 32px',
+    padding: '24px 30px 18px 30px',
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: '#ffffff',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
   };
 
   return (
@@ -1055,8 +1182,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         maxWidth: '750px',
         minWidth: '750px',
         boxSizing: 'border-box',
-        fontFamily: "'Calibri', 'Arial', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-        lineHeight: 1.45,
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        lineHeight: 1.4,
         color: '#0f172a',
         backgroundColor: '#ffffff',
         border: 'none',
@@ -1095,7 +1222,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                 <div style={{ height: '2px', backgroundColor: '#1a365d', width: '100%', marginBottom: '18px' }}></div>
 
                 {/* Document Title Block */}
-                <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                   <h1
                     style={{
                       fontSize: '18px',
@@ -1187,14 +1314,20 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           );
         }
 
-        if (pageDef.type === 'section' && pageDef.section) {
-          const sec = pageDef.section;
+        if (pageDef.type === 'content') {
           return (
             <div key={pIdx} className="pdf-page" style={fixedA4PageStyle}>
-              {renderRunningHeader()}
-              <div data-body style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                {renderSectionHeader(sec.title, pageDef.totalCount, pageDef.isContinued)}
-                {renderDataTable(sec.columns, pageDef.items || [], pageDef.startIndex || 0)}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {renderRunningHeader()}
+                <div data-body style={{ flex: 1, minHeight: 0 }}>
+                  {pageDef.sections?.map((sItem, sIdx) => (
+                    <div key={sIdx} style={{ marginBottom: '8px' }}>
+                      {renderSectionHeader(sItem.section.title, sItem.totalCount, sItem.isContinued)}
+                      {renderDataTable(sItem.section.columns, sItem.items || [], sItem.startIndex || 0)}
+                    </div>
+                  ))}
+                  {pageDef.hasFinalAudit && renderAuditAndSignOff()}
+                </div>
               </div>
               {renderRunningFooter(pageNumber)}
             </div>
@@ -1204,87 +1337,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         if (pageDef.type === 'final') {
           return (
             <div key={pIdx} className="pdf-page" style={fixedA4PageStyle}>
-              <div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 {renderRunningHeader()}
-
-                {/* Institutional Academic & Attendance Compliance Audit */}
-                <div style={{ marginBottom: '20px' }}>
-                  {renderSectionHeader('INSTITUTIONAL ACADEMIC & ATTENDANCE AUDIT SUMMARY')}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9.5px', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
-                    <tbody>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ width: '28%', padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                          Curriculum Delivery Compliance
-                        </td>
-                        <td style={{ width: '72%', padding: '9px 12px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
-                          100% Target Met &bull; All Academic Branches Maintained Prescribed Syllabus Progression
-                        </td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                          Biometric &amp; ERP Attendance Audit
-                        </td>
-                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
-                          100% Verified Compliant &bull; No Statutory Condonation Shortages Identified
-                        </td>
-                      </tr>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                          Dean / Academic Director Remarks
-                        </td>
-                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', color: '#475569', fontStyle: 'italic', fontSize: '9px', lineHeight: 1.4 }}>
-                          All departments maintained prescribed academic engagement. Remedial classes, technical association activities, and academic bridge initiatives organized as mandated.
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                          IQAC Review &amp; Quality Audit
-                        </td>
-                        <td style={{ padding: '9px 12px', verticalAlign: 'middle', color: '#1e3a8a', fontWeight: 600, fontSize: '9px', lineHeight: 1.4 }}>
-                          All departmental reports verified and consolidated according to autonomous institutional governance framework.
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div data-body style={{ flex: 1, minHeight: 0 }}>
+                  {renderAuditAndSignOff()}
                 </div>
               </div>
-
-              {/* Official Institutional Governance & Sign-Off Block */}
-              <div>
-                <div style={{ paddingTop: '18px', borderTop: '1.5px solid #cbd5e1' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed' }}>
-                    <tbody>
-                      <tr style={{ border: 'none' }}>
-                        <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
-                          <div style={{ height: '38px' }}></div>
-                          <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10.5px', color: '#0f172a' }}>Dr. Sreenivas Prasad</div>
-                          <div style={{ fontSize: '9px', color: '#475569', fontWeight: 600 }}>IQAC Coordinator</div>
-                          <div style={{ fontSize: '8px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
-                        </td>
-
-                        <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
-                          <div style={{ height: '38px' }}></div>
-                          <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10.5px', color: '#0f172a' }}>Dean of Academics</div>
-                          <div style={{ fontSize: '9px', color: '#475569', fontWeight: 600 }}>Academic Governance</div>
-                          <div style={{ fontSize: '8px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
-                        </td>
-
-                        <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
-                          <div style={{ height: '38px' }}></div>
-                          <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10.5px', color: '#0f172a' }}>Principal</div>
-                          <div style={{ fontSize: '9px', color: '#475569', fontWeight: 600 }}>Institutional Endorsement</div>
-                          <div style={{ fontSize: '8px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {renderRunningFooter(pageNumber)}
-              </div>
+              {renderRunningFooter(pageNumber)}
             </div>
           );
         }
@@ -1296,3 +1355,4 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
 };
 
 export default ConsolidatedInstitutionalPDFView;
+
