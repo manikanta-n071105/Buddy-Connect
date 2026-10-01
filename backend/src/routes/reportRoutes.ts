@@ -18,7 +18,8 @@ import {
   saveDepartmentJson,
   saveDepartmentDraft,
   getDepartmentReportData,
-  getAllDepartmentReportData
+  getAllDepartmentReportData,
+  syncSeptemberSeed
 } from '../controllers/reportController';
 import { authenticate } from '../middleware/auth';
 
@@ -31,6 +32,8 @@ router.get('/download-consolidated-pdf', downloadConsolidatedPDF);
 router.post('/save-consolidated-pdf', saveConsolidatedPDF);
 router.post('/regenerate-consolidated', regenerateConsolidatedReport);
 router.post('/upload-and-consolidate', uploadAndConsolidateZip);
+router.get('/sync-seed', syncSeptemberSeed);
+router.post('/sync-seed', syncSeptemberSeed);
 
 // HOD & Committee Submission & Live Super Admin Consolidation Routes (Dedicated Report Database)
 router.get('/department-submissions', getDepartmentSubmissions);

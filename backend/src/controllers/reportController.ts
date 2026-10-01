@@ -1235,6 +1235,19 @@ export const getAllDepartmentReportData = async (req: any, res: Response) => {
 
 export const saveDepartmentJson = saveDepartmentDraft;
 
-
-
-
+/**
+ * Explicitly re-sync latest September 2026 data from septemberSeedData.ts into database
+ */
+export const syncSeptemberSeed = async (_req: any, res: Response) => {
+  try {
+    const { syncSeptemberSeedData } = await import('../config/reportDb');
+    const result = await syncSeptemberSeedData();
+    return res.json({
+      success: true,
+      message: 'September 2026 reports synchronized successfully from seed file!',
+      result
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};

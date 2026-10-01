@@ -72,34 +72,52 @@ export const initReportDatabase = async () => {
     `);
     console.log('✅ Dedicated Reports Database initialized successfully on Neon PostgreSQL!');
 
-    // Auto-seed September 2026 data if not present or incomplete
-    const countRes = await reportQuery(
-      "SELECT COUNT(*) FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = 'september 2026' AND items_count > 0"
-    );
-    const existingCount = parseInt(countRes.rows[0]?.count || '0', 10);
-
-    if (existingCount < Object.keys(SEPTEMBER_REPORT_DATA).length) {
-      console.log('🌱 Auto-seeding September 2026 departmental reports in deployment database...');
-      for (const [dept, entry] of Object.entries(SEPTEMBER_REPORT_DATA)) {
-        const totalItems = Object.values(entry.sections).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-        await reportQuery(`
-          INSERT INTO departmental_monthly_reports 
-          (department, period, hod_name, submission_date, sections_data, items_count, status, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, 'SUBMITTED', CURRENT_TIMESTAMP)
-          ON CONFLICT (department, period) DO UPDATE 
-          SET hod_name = EXCLUDED.hod_name,
-              submission_date = EXCLUDED.submission_date,
-              sections_data = EXCLUDED.sections_data,
-              items_count = EXCLUDED.items_count,
-              status = 'SUBMITTED',
-              updated_at = CURRENT_TIMESTAMP
-        `, [dept, 'September 2026', entry.hodName, entry.submissionDate, JSON.stringify(entry.sections), totalItems]);
-      }
-      // Clean any uppercase duplicates
-      await reportQuery("DELETE FROM departmental_monthly_reports WHERE period = 'SEPTEMBER 2026'");
-      console.log('🎉 September 2026 data successfully auto-seeded on deployment server!');
-    }
+    // Always sync latest September 2026 data from septemberSeedData.ts on startup
+    await syncSeptemberSeedData();
   } catch (err: any) {
     console.error('❌ Error initializing dedicated reports database:', err.message);
   }
 };
+
+/**
+ * Synchronizes the latest SEPTEMBER_REPORT_DATA definition into the database
+ */
+export const syncSeptemberSeedData = async () => {
+  try {
+    console.log('🌱 Syncing September 2026 departmental reports in database...');
+    for (const [dept, entry] of Object.entries(SEPTEMBER_REPORT_DATA)) {
+      const totalItems = Object.values(entry.sections).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+      await reportQuery(`
+        INSERT INTO departmental_monthly_reports 
+        (department, period, hod_name, submission_date, sections_data, items_count, status, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, 'SUBMITTED', CURRENT_TIMESTAMP)
+        ON CONFLICT (department, period) DO UPDATE 
+        SET hod_name = EXCLUDED.hod_name,
+            submission_date = EXCLUDED.submission_date,
+            sections_data = EXCLUDED.sections_data,
+            items_count = EXCLUDED.items_count,
+            status = 'SUBMITTED',
+            updated_at = CURRENT_TIMESTAMP
+      `, [dept, 'September 2026', entry.hodName, entry.submissionDate, JSON.stringify(entry.sections), totalItems]);
+    }
+
+    // Delete any department that is no longer in SEPTEMBER_REPORT_DATA (e.g. EEE)
+    const validDepts = Object.keys(SEPTEMBER_REPORT_DATA);
+    if (validDepts.length > 0) {
+      await reportQuery(
+        `DELETE FROM departmental_monthly_reports 
+         WHERE LOWER(TRIM(period)) = 'september 2026' 
+         AND department != ALL($1)`,
+        [validDepts]
+      );
+    }
+    // Clean any legacy uppercase duplicates
+    await reportQuery("DELETE FROM departmental_monthly_reports WHERE period = 'SEPTEMBER 2026'");
+    console.log('🎉 September 2026 data successfully synchronized from seed definition!');
+    return { success: true, count: Object.keys(SEPTEMBER_REPORT_DATA).length };
+  } catch (err: any) {
+    console.error('❌ Error syncing September seed data:', err.message);
+    throw err;
+  }
+};
+
