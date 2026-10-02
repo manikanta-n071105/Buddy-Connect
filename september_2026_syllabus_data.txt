@@ -1,0 +1,133 @@
+====================================================================================================
+               SEPTEMBER 2026 - SYLLABUS COVERAGE & PROGRESS REPORT (DEPARTMENT-WISE)
+====================================================================================================
+
+====================================================================================================
+1. CIVIL ENGINEERING (HOD: Prof. K. Siva Prasad)
+====================================================================================================
+S.No | Subject / Course                                                     | Year/Sem | Faculty Name               | Completed                                         | Pending               | Remarks
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1    | GRES                                                                 | 4-1      | K Siva prasad              | 1,2,3,4                                           | 5-80%                 | -
+2    | Management Science                                                   | 4-1      | Mr. Anju Verma             | I,II,III Units Completed                          | IV Unit               | -
+3    | Ground improvement techniques                                        | 4-1      | Dr J Surya Prakash reddy   | 1,2,3,4                                           | 5 Started             | -
+4    | Finite element analysis                                              | 4-1      | Mr. E Sai Kumar Reddy      | 1,2,3 Units Completed, 4 Unit Started             | 5                     | -
+5    | Chemistry of Nano materials                                          | 4-1      | Dr B sambasivaah           | 1,2,3,4                                           | 5                     | -
+6    | 3D Printing Technologies                                             | 4-1      | Mr B Pardeep Kumar         | 1,2,3 Units Completed, 4 Unit 75% Complete        | 5 Unit                | -
+7    | Environmental Impact assessment                                      | 3-1      | Mr. K Siva prasad          | 1,2,3,4                                           | 5-60%                 | -
+8    | Geotechnical Engineering                                             | 3-1      | Dr J Surya Prakash reddy   | 1,2,3,4                                           | 5-50%                 | -
+9    | Design of Reinforced concrete structures                             | 3-1      | Mr. P Tharun Kumar         | 1,2,3                                             | 4-20% and 5           | -
+10   | Chemistry for Energy Systems                                         | 3-1      | Dr. B. Sambasiva           | 1,2,3,4-50%                                       | 5                     | -
+11   | Introduction to Quantum Technologies and Applications                | 3-1      | Mr. M. Vamsi krishna       | 1,2,3 Units Completed                             | 4,5                   | -
+12   | Water Resources engineering                                          | 3-1      | Mr. E.Saikumar reddy       | 1,2,3Unit 90% Complete                            | 4,5 Unit              | -
+13   | Surveying                                                            | 2-1      | Dr J Surya Prakash reddy   | 1,2,3,4                                           | 5                     | -
+14   | FLUID MECHANICS                                                      | 2-1      | Mr.K Siva prasad           | 1,2,3,4                                           | 5-60%                 | -
+15   | Universal Human Values-Understanding Harmony& Ethical Human Conduct  | 2-1      | Mr.P Gousal Azam           | 1,2,3                                             | 4,5                   | -
+16   | Numerical Methods & Transform Techniques                             | 2-1      | Mr. M. Yaswanth Sai        | 1,2,3,4-50%                                       | 5                     | -
+17   | Strength of materials                                                | 2-1      | Mr P Tharun Kumar          | 1,2,3,4-50%                                       | 5                     | -
+
+
+====================================================================================================
+2. COMPUTER SCIENCE & ENGINEERING (HOD: Dr. Kethineni Vinod Kumar)
+====================================================================================================
+S.No | Subject / Course                                                     | Year/Sem | Faculty Name               | Completed                                         | Pending               | Remarks
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1    | Artificial Intelligence                                              | 3-1      | Mr. P. Ajay Krishna        | 3                                                 | -                     | -
+2    | Computer Networks & Internet Protocol                                | 3-1      | Dr. K. Vinod kumar         | 3.5                                               | -                     | -
+3    | Automata Theory and Compiler Design                                  | 3-1      | Mr. Srinivasa Prasad       | 3                                                 | -                     | -
+4    | Object Oriented Analysis and Design                                  | 3-1      | Mr. P Yuvateja             | 3                                                 | -                     | -
+5    | Introduction to Quantum Technologies & Applications                  | 3-1      | Mr. Vamsi krishna          | 3                                                 | -                     | -
+6    | Computer Networks & Internet Protocol                                | 3-1      | Ms. C. Girisha             | 3                                                 | -                     | -
+7    | Automata Theory and Compiler Design                                  | 3-1      | Mr S. Noormohammed         | 3.5                                               | -                     | -
+8    | Deep Learning                                                        | 4-1      | Ms. A. Vyshnavi            | 4                                                 | -                     | -
+9    | Internet of Things                                                   | 4-1      | Mr. G. Harinadha Reddy     | 3.5                                               | -                     | -
+10   | Computer Vision                                                      | 4-1      | Mr Srinivasa Prasad        | 4                                                 | -                     | -
+11   | Prompt Engineering                                                   | 4-1      | Mr. P. Maruthi             | 4                                                 | -                     | -
+12   | Solid Waste Management                                               | 4-1      | Mr. K. Siva Prasad         | 4                                                 | -                     | -
+13   | DISCRETE MATHEMATICS & GRAPH THEORY                                  | 2-1      | Mr. Yeswanth               | 3                                                 | -                     | -
+14   | ADVANCED DATA STRUCTURES & ALGORITHM ANALYSIS                        | 2-1      | Mr. K. Dharmendra          | 3.5                                               | -                     | -
+15   | OBJECT-ORIENTED PROGRAMMING THROUGH JAVA                             | 2-1      | Ms. C Chandana             | 3                                                 | -                     | -
+16   | OBJECT-ORIENTED PROGRAMMING THROUGH JAVA                             | 2-1      | P.maruthi                  | 4                                                 | -                     | -
+17   | PYTHON PROGRAMMING-Skill oriented                                    | 2-1      | Ms. M. V Laxmi Prasanna    | 4                                                 | -                     | -
+18   | UNIVERSAL HUMAN VALUES                                               | 2-1      | Mr. Anuj Verma             | 4                                                 | -                     | -
+19   | DIGITAL LOGIC AND COMPUTER ORGANIZATION                              | 2-1      | Mr. Rajesh                 | 4                                                 | -                     | -
+20   | ENVIRONMENTAL SCIENCE                                                | 2-1      | Mr. K. Sai kumar Reddy     | 3                                                 | -                     | -
+21   | PYTHON PROGRAMMING-                                                  | 2-1      | Dr. N. Ramesh Babu         | 4                                                 | -                     | -
+
+
+====================================================================================================
+3. ELECTRONICS & COMMUNICATION ENGINEERING (HOD: Dr. V. Annapurna)
+====================================================================================================
+S.No | Subject / Course                                                     | Year/Sem | Faculty Name               | Completed                                         | Pending               | Remarks
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1    | Probability and Complex Variables                                    | II/I     | Dr. Lavanya                | 2 Units Completed                                 | 3 Unit Running        | -
+2    | Universal Human Values                                               | II/I     | Mr. Azam                   | 3 Units Completed                                 | 4 Unit Running        | -
+3    | Signals, Systems and Stochastic Processes                            | II/I     | Mr. B. Venkatesu           | 2 Units Completed                                 | 3 Unit Running        | -
+4    | Electronic Devices and Circuits                                      | II/I     | Electronic Devices & Circ. | 2 Units Completed                                 | 3 Unit Running        | -
+5    | Digital Circuits Design                                              | II/I     | Dr. V. Annapurna           | 3 Units Completed                                 | 4 Unit Running        | -
+6    | Analog and Digital IC Applications                                   | III/I    | Mr. B. Venkatesu           | 2 Units Completed                                 | 3 Unit Running        | -
+7    | Antennas & Wave Propagation                                          | III/I    | Prof. D. Nagaraju          | 2 Units Completed                                 | 3 Unit Running        | -
+8    | Microprocessors and Microcontrollers                                 | III/I    | Ms. D.V. Supriya           | 3 Units Completed                                 | 4 Unit Running        | -
+9    | Introduction To Quantum Technologies and Applications                | III/I    | Mr. M. Rajesh              | 3 Units Completed                                 | 4 Unit Running        | -
+10   | Computer Architecture & Organization                                 | III/I    | Mr. R. Vijaya Ramaraju     | 3 Units Completed                                 | 4 Unit Running        | -
+11   | Electrical Safety Practices and Standards                            | III/I    | Mr. K. Gangadhar           | 3 Units Completed                                 | 4 Unit Running        | -
+12   | Data Communications and Networking                                   | IV/I     | Mr. R. Vijaya Ramraj       | 3 Units Completed                                 | 4 Unit Running        | -
+13   | Management Science                                                   | IV/I     | Mr. M. Vedavyas            | 2 Units Completed                                 | 3 Unit Running        | -
+14   | Radar Engineering                                                    | IV/I     | Prof. D. Nagaraju          | 4 Units Completed                                 | 5 Unit Running        | -
+15   | 5G Communications                                                    | IV/I     | Prof. D. Nagaraju          | 1 Unit Completed                                  | 2 Unit Running        | -
+16   | Building Materials & Services                                        | IV/I     | Mr. Sai Kumar Reddy        | 2 Units Completed                                 | 3 Unit Running        | -
+17   | Internet of Things                                                   | IV/I     | Dr. V. Annapurna           | 2 Units Completed                                 | 3 Unit Running        | -
+
+
+====================================================================================================
+4. ELECTRICAL & ELECTRONICS ENGINEERING (HOD: Dr. Naarisetti Srinivasa Rao)
+====================================================================================================
+S.No | Subject / Course                                                     | Year/Sem       | Faculty Name         | Completed                                         | Pending               | Remarks
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1    | Complex Variables & Numerical Methods                                | II EEE, SEM 1  | Mrs. R. M. Lavanya   | 80%                                               | -                     | -
+2    | Universal Human Values- Understanding Harmony                        | II EEE, SEM 1  | Mr. P. Gousal Azam   | 70%                                               | -                     | -
+3    | Electromagnetic Field Theory                                         | II EEE, SEM 1  | Mr. N Pavan Kumar    | 100%                                              | -                     | -
+4    | Electrical Circuit Analysis-II                                       | II EEE, SEM 1  | Mrs. P. Prathyusha   | 80%                                               | -                     | -
+5    | Electrical Circuit Analysis-II and Simulation Lab                    | II EEE, SEM 1  | Dr. N. Srinivasa Rao | 84%                                               | -                     | -
+6    | DC Machines & Transformers                                           | II EEE, SEM 1  | Mr. P. Dhanunjaya    | 98%                                               | -                     | -
+7    | DC Machines & Transformers Lab                                       | II EEE, SEM 1  | Mr. N. Pavan Kumar   | 100%                                              | -                     | -
+8    | Data Structures                                                      | II EEE, SEM 1  | Ms. C. Girisha       | 50%                                               | -                     | -
+9    | Python Programming-Development Hour                                  | II EEE, SEM 1  | Ms. Chndhana         | 75%                                               | -                     | -
+10   | Utilisation of Electrical Energy                                     | III EEE, SEM 1 | Dr. N. Srinivasa Rao | 80%, 4 units                                      | -                     | -
+11   | Power Electronics                                                    | III EEE, SEM 1 | Mrs. P. Prathyusha   | unit 4, 80%                                       | -                     | -
+12   | Digital Circuits                                                     | III EEE, SEM 1 | Dr. S Harikrishnan   | 60%                                               | -                     | -
+13   | Power Systems-II                                                     | III EEE, SEM 1 | Mr. K. Ramu          | 70%                                               | -                     | -
+14   | Introduction To Quantum Technologies and Applications                | III EEE, SEM 1 | Mr. G. Vamsi Krishna | 60%                                               | -                     | -
+15   | Entrepreneurship and New Venture Creation(OE-1)                      | III EEE, SEM 1 | Mr. P.Dhanujaya      | 95%                                               | -                     | -
+16   | ELECTRICAL DISTRIBUTION SYSTEMS                                      | III EEE, SEM 1 | Mr. K. Ramu          | 80%                                               | -                     | -
+17   | POWER SYSTEM OPERATION AND CONTROL                                   | IV EEE, 1 SEM  | Mr. Gangadhar        | 60%                                               | -                     | -
+18   | DIGITAL SIGNAL PROCESSING                                            | IV EEE, 1 SEM  | Mr. S. HARI KRISHNAN | 70%                                               | -                     | -
+19   | SOLID WASTE MANAGEMENT                                               | IV EEE, 1 SEM  | Mr. G. RAMAMOHAN     | 90%                                               | -                     | -
+20   | MANAGEMNET SCIENCE                                                   | IV EEE, 1 SEM  | Mr. ANUJ VERMA       | 70%                                               | -                     | -
+21   | CYBER SECURITY                                                       | IV EEE, 1 SEM  | Ms. VAISHNAVI        | 90%                                               | -                     | -
+22   | SOFT SKILLS                                                          | IV EEE, 1 SEM  | Mr. K. HARI PRASAD   | GENERAL TOPICS COMPLETED AS PER SYLLABUS          | -                     | -
+23   | PSS LAB                                                              | IV EEE, 1 SEM  | K. Gangadhar         | 6 experiment completed                            | -                     | -
+24   | APTITUTE                                                             | IV EEE, 1 SEM  | Mr. VISWAS           | GENERAL TOPICS REASONING AND QUANTITATIVE COMPL.  | -                     | -
+
+
+====================================================================================================
+5. MECHANICAL ENGINEERING (HOD: Prof. C. Anil Kumar Reddy)
+====================================================================================================
+S.No | Subject / Course                                                     | Year/Sem | Faculty Name               | Completed                                         | Pending               | Remarks
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1    | Numerical Methods &Transform Techniques                              | 2-1      | Mr. M. Yaswanth Sai        | I Unit Complete, II Unit Completed                | III Unit 30% complete | -
+2    | Universal Human Values-Understanding Harmony& Ethical Human Conduct  | 2-1      | Mr.P Gousal Azam           | I,II Units Completed                              | III Unit Started      | -
+3    | Thermodynamics                                                       | 2-1      | Mr. P. Pradeep Kumar       | I,II Units Completed                              | III Unit Started      | -
+4    | Mechanics of Solids                                                  | 2-1      | Mr. G. Vasikerappa         | I,II Units (70%)                                  | III Unit 30%          | -
+5    | Material Science and Metallurgy                                      | 2-1      | Mr.G.Sudhakar              | I, II, III Unit                                   | III Unit 90% Complete | -
+6    | Machining Process                                                    | 3-1      | Mr. C. Anil Kumar Reddy    | I,II Units Completed                              | III Unit 30% Completed| -
+7    | Thermal Engineering                                                  | 3-1      | Mr. P. Pradeep Kumar       | I,II Units Completed                              | III Unit Started 30%  | -
+8    | Metrology and Measurements                                           | 3-1      | Mr. G. Sudhakar            | I, II, III Unit 90% Complete                      | III Unit 90% Complete | -
+9    | Chemistry for Energy Systems                                         | 3-1      | Dr. B. Sambasiva           | I,II, III Units Completed                         | IV Started            | -
+10   | Introduction to Quantum Technologies and Applications                | 3-1      | Mr. M. Rajesh              | I,II,III Units Completed                          | IV Started            | -
+11   | AI & ML for Mechanical Engineering                                   | 4-1      | Mr. C. Anil Kumar Reddy    | I,II Units Completed, III Unit Started            | III Unit Started      | -
+12   | Management Science                                                   | 4-1      | Mr. Anju Verma             | I,II,III Units Completed                          | IV Started            | -
+13   | Power Plant Engineering                                              | 4-1      | Mr. G. Vasikerappa         | I,II,III Units Completed                          | IV Started            | -
+14   | Non-Destructive Testing                                              | 4-1      | Mr. C. Anil Kumar Reddy    | I,II Units Completed                              | III Unit Started      | -
+15   | Building Materials and Services                                      | 4-1      | Mr. P. Tarun Kumar         | I, II,III Units Completed                         | IV Started            | -
+16   | Electric Vehicles                                                    | 4-1      | Dr.N. Srinivasa Rao        | I,II,III Units Completed, IV Unit 75% Complete   | IV Unit 75% Complete  | -
+====================================================================================================

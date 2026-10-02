@@ -397,6 +397,84 @@ export const SDP_ACTIVITY_TYPES = [
   'Other'
 ];
 
+export interface SyllabusUnitOption {
+  value: string;
+  label: string;
+  units: number;
+  pending: string;
+  pct: number;
+}
+
+export const SYLLABUS_THEORY_OPTIONS: SyllabusUnitOption[] = [
+  { value: '5 Units (100%)', label: '5 Units (100% - Completed)', units: 5, pending: 'Nil', pct: 100 },
+  { value: '4.5 Units (90%)', label: '4.5 Units (90%)', units: 4.5, pending: '0.5 Units (10%)', pct: 90 },
+  { value: '4 Units (80%)', label: '4 Units (80%)', units: 4, pending: '1 Unit (20%)', pct: 80 },
+  { value: '3.5 Units (70%)', label: '3.5 Units (70%)', units: 3.5, pending: '1.5 Units (30%)', pct: 70 },
+  { value: '3 Units (60%)', label: '3 Units (60%)', units: 3, pending: '2 Units (40%)', pct: 60 },
+  { value: '2.5 Units (50%)', label: '2.5 Units (50%)', units: 2.5, pending: '2.5 Units (50%)', pct: 50 },
+  { value: '2 Units (40%)', label: '2 Units (40%)', units: 2, pending: '3 Units (60%)', pct: 40 },
+  { value: '1.5 Units (30%)', label: '1.5 Units (30%)', units: 1.5, pending: '3.5 Units (70%)', pct: 30 },
+  { value: '1 Unit (20%)', label: '1 Unit (20%)', units: 1, pending: '4 Units (80%)', pct: 20 },
+  { value: '0.5 Units (10%)', label: '0.5 Units (10%)', units: 0.5, pending: '4.5 Units (90%)', pct: 10 },
+  { value: '0 Units (0%)', label: '0 Units (0% - Not Started)', units: 0, pending: '5 Units (100%)', pct: 0 },
+];
+
+export interface SyllabusLabOption {
+  value: string;
+  label: string;
+  done: number;
+  total: number;
+  pending: string;
+  pct: number;
+}
+
+export const SYLLABUS_LAB_OPTIONS: SyllabusLabOption[] = [
+  { value: '10 Experiments (100%)', label: '10 / 10 Experiments (100% - Completed)', done: 10, total: 10, pending: 'Nil', pct: 100 },
+  { value: '9 Experiments (90%)', label: '9 / 10 Experiments (90%)', done: 9, total: 10, pending: '1 Exp Pending (10%)', pct: 90 },
+  { value: '8 Experiments (80%)', label: '8 / 10 Experiments (80%)', done: 8, total: 10, pending: '2 Exp Pending (20%)', pct: 80 },
+  { value: '7 Experiments (70%)', label: '7 / 10 Experiments (70%)', done: 7, total: 10, pending: '3 Exp Pending (30%)', pct: 70 },
+  { value: '6 Experiments (60%)', label: '6 / 10 Experiments (60%)', done: 6, total: 10, pending: '4 Exp Pending (40%)', pct: 60 },
+  { value: '5 Experiments (50%)', label: '5 / 10 Experiments (50%)', done: 5, total: 10, pending: '5 Exp Pending (50%)', pct: 50 },
+  { value: '4 Experiments (40%)', label: '4 / 10 Experiments (40%)', done: 4, total: 10, pending: '6 Exp Pending (60%)', pct: 40 },
+  { value: '3 Experiments (30%)', label: '3 / 10 Experiments (30%)', done: 3, total: 10, pending: '7 Exp Pending (70%)', pct: 30 },
+  { value: '2 Experiments (20%)', label: '2 / 10 Experiments (20%)', done: 2, total: 10, pending: '8 Exp Pending (80%)', pct: 20 },
+  { value: '1 Experiment (10%)', label: '1 / 10 Experiments (10%)', done: 1, total: 10, pending: '9 Exp Pending (90%)', pct: 10 },
+  { value: '0 Experiments (0%)', label: '0 Experiments (0% - Not Started)', done: 0, total: 10, pending: '10 Experiments (100%)', pct: 0 },
+];
+
+export const calculatePendingFromCompleted = (completedStr: string, isLab: boolean): string => {
+  if (!completedStr) return '';
+  if (isLab) {
+    const matched = SYLLABUS_LAB_OPTIONS.find(o => o.value === completedStr);
+    if (matched) return matched.pending;
+    const numMatch = completedStr.match(/(\d+(?:\.\d+)?)/);
+    if (numMatch) {
+      const done = parseFloat(numMatch[1]);
+      const total = 10;
+      const rem = Math.max(0, total - done);
+      if (rem === 0) return 'Nil';
+      const pct = Math.round((rem / total) * 100);
+      return `${rem} Exp Pending (${pct}%)`;
+    }
+    return '';
+  }
+
+  const matched = SYLLABUS_THEORY_OPTIONS.find(o => o.value === completedStr);
+  if (matched) return matched.pending;
+
+  const numMatch = completedStr.match(/(\d+(?:\.\d+)?)/);
+  if (numMatch) {
+    const doneUnits = parseFloat(numMatch[1]);
+    if (!isNaN(doneUnits) && doneUnits >= 0 && doneUnits <= 5) {
+      const pendingUnits = Math.round((5 - doneUnits) * 10) / 10;
+      if (pendingUnits === 0) return 'Nil';
+      const pct = Math.round((pendingUnits / 5) * 100);
+      return `${pendingUnits} ${pendingUnits === 1 ? 'Unit' : 'Units'} (${pct}%)`;
+    }
+  }
+  return '';
+};
+
 export const formatDateToDDMMYYYY = (val: string): string => {
   if (!val) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
@@ -2696,40 +2774,272 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 count={safeSections.syllabus.length}
                 onAdd={() => handleAddRow('syllabus')}
               >
-                {safeSections.syllabus.map((item, idx) => (
-                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('syllabus', idx)}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                      <div className="md:col-span-2">
-                        <FieldInput label="Subject" value={item.subject} onChange={(v) => handleUpdateField('syllabus', idx, 'subject', v)} />
+                {safeSections.syllabus.map((item, idx) => {
+                  const isLab = (item.subject || '').toLowerCase().includes('lab') ||
+                    (item.subject || '').toLowerCase().includes('practical') ||
+                    (item.subject || '').toLowerCase().includes('simulation') ||
+                    (item.completed || '').toLowerCase().includes('exp') ||
+                    (item.completed || '').toLowerCase().includes('experiment');
+
+                  const theoryMatched = SYLLABUS_THEORY_OPTIONS.find(o => o.value === item.completed);
+                  const labMatched = SYLLABUS_LAB_OPTIONS.find(o => o.value === item.completed);
+                  const isCustomValue = !theoryMatched && !labMatched && Boolean(item.completed);
+
+                  // Extract percentage for progress bar
+                  let currentPct = 0;
+                  if (theoryMatched) currentPct = theoryMatched.pct;
+                  else if (labMatched) currentPct = labMatched.pct;
+                  else {
+                    const pctMatch = (item.completed || '').match(/(\d+(?:\.\d+)?)\s*%/);
+                    if (pctMatch) currentPct = Math.min(100, parseFloat(pctMatch[1]));
+                    else {
+                      const numMatch = (item.completed || '').match(/(\d+(?:\.\d+)?)/);
+                      if (numMatch) {
+                        const n = parseFloat(numMatch[1]);
+                        currentPct = isLab ? Math.min(100, Math.round((n / 10) * 100)) : Math.min(100, Math.round((n / 5) * 100));
+                      }
+                    }
+                  }
+
+                  return (
+                    <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('syllabus', idx)}>
+                      <div className="space-y-4">
+                        {/* Course Category Badge & Quick Status */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-100/80 rounded-xl border border-slate-200">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1.5 ${
+                              isLab ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}>
+                              <span>{isLab ? '🔬 Lab / Practical Course' : '📘 Theory Course (Total: 5 Units)'}</span>
+                            </span>
+                            <span className="text-xs font-bold text-slate-700 truncate max-w-[280px]">
+                              {item.subject || 'Course Title Not Specified'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-bold text-slate-500">Progress:</span>
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
+                              currentPct >= 100 ? 'bg-emerald-100 text-emerald-800' : currentPct >= 70 ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {currentPct}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Visual Progress Bar */}
+                        <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              currentPct >= 100 ? 'bg-emerald-500' : currentPct >= 70 ? 'bg-blue-600' : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${currentPct}%` }}
+                          />
+                        </div>
+
+                        {/* Main Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                          <div className="md:col-span-2">
+                            <FieldInput
+                              label="Course / Subject Title *"
+                              value={item.subject}
+                              placeholder="e.g. Operating Systems / Power Electronics Lab"
+                              onChange={(v) => handleUpdateField('syllabus', idx, 'subject', v)}
+                            />
+                          </div>
+                          <div>
+                            <FieldInput
+                              label="Year / Semester"
+                              value={item.yearSem}
+                              placeholder="e.g. III B.Tech I Sem / 3-1"
+                              onChange={(v) => handleUpdateField('syllabus', idx, 'yearSem', v)}
+                            />
+                          </div>
+                          <div className="md:col-span-3">
+                            <FieldInput
+                              label="Faculty In-Charge"
+                              value={item.faculty}
+                              placeholder="e.g. Dr. Kethineni Vinod Kumar"
+                              onChange={(v) => handleUpdateField('syllabus', idx, 'faculty', v)}
+                            />
+                          </div>
+
+                          {/* Completed Units / Experiments Selector */}
+                          <div className="md:col-span-2 space-y-2">
+                            <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                              <span>
+                                {isLab ? 'Completed Experiments (out of Lab Total) *' : 'Completed Units (Select 0 to 5 Units) *'}
+                              </span>
+                              {isCustomValue && (
+                                <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                  Custom / Legacy Value Active
+                                </span>
+                              )}
+                            </label>
+
+                            {/* Dropdown Selector */}
+                            <select
+                              value={item.completed}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'CUSTOM') {
+                                  // Keep current value or blank
+                                  return;
+                                }
+                                const autoPending = calculatePendingFromCompleted(val, isLab);
+                                const copy = [...safeSections.syllabus];
+                                copy[idx] = {
+                                  ...copy[idx],
+                                  completed: val,
+                                  pending: autoPending || copy[idx].pending
+                                };
+                                setSections(prev => ({ ...prev, syllabus: copy }));
+                              }}
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 cursor-pointer transition-all"
+                            >
+                              <option value="" disabled>-- Select Completed Units / Progress --</option>
+                              {isLab ? (
+                                <optgroup label="🔬 Lab Experiments Completed">
+                                  {SYLLABUS_LAB_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </optgroup>
+                              ) : (
+                                <optgroup label="📘 Theory Units Completed (Total 5 Units)">
+                                  {SYLLABUS_THEORY_OPTIONS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              {isCustomValue && (
+                                <option value={item.completed}>Custom: "{item.completed}"</option>
+                              )}
+                            </select>
+
+                            {/* Quick Units Buttons for Instant 1-Click Selection */}
+                            {!isLab ? (
+                              <div className="pt-1">
+                                <div className="text-[10px] font-bold text-slate-500 mb-1 flex items-center gap-1">
+                                  <span>⚡ Quick Units Selector:</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {SYLLABUS_THEORY_OPTIONS.map(opt => {
+                                    const isSelected = item.completed === opt.value;
+                                    return (
+                                      <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => {
+                                          const copy = [...safeSections.syllabus];
+                                          copy[idx] = {
+                                            ...copy[idx],
+                                            completed: opt.value,
+                                            pending: opt.pending
+                                          };
+                                          setSections(prev => ({ ...prev, syllabus: copy }));
+                                        }}
+                                        className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer border ${
+                                          isSelected
+                                            ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                                            : 'bg-white hover:bg-blue-50 text-slate-700 border-slate-200'
+                                        }`}
+                                      >
+                                        {opt.units} {opt.units === 1 ? 'Unit' : 'Units'}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="pt-1">
+                                <div className="text-[10px] font-bold text-slate-500 mb-1 flex items-center gap-1">
+                                  <span>⚡ Quick Experiments Selector:</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                  {SYLLABUS_LAB_OPTIONS.map(opt => {
+                                    const isSelected = item.completed === opt.value;
+                                    return (
+                                      <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => {
+                                          const copy = [...safeSections.syllabus];
+                                          copy[idx] = {
+                                            ...copy[idx],
+                                            completed: opt.value,
+                                            pending: opt.pending
+                                          };
+                                          setSections(prev => ({ ...prev, syllabus: copy }));
+                                        }}
+                                        className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer border ${
+                                          isSelected
+                                            ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                                            : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
+                                        }`}
+                                      >
+                                        {opt.done} Exp
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Custom Manual Entry if needed */}
+                            {isCustomValue && (
+                              <div className="pt-1">
+                                <FieldInput
+                                  label="Custom Completed Status"
+                                  value={item.completed}
+                                  placeholder="e.g. 1,2,3,4 Units Completed"
+                                  onChange={(v) => {
+                                    const autoPending = calculatePendingFromCompleted(v, isLab);
+                                    handleUpdateField('syllabus', idx, 'completed', v);
+                                    if (autoPending) {
+                                      handleUpdateField('syllabus', idx, 'pending', autoPending);
+                                    }
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Auto-Calculated Pending Field */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-slate-700">
+                                Pending Status *
+                              </label>
+                              <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                ⚡ Auto-calculated
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              value={item.pending || ''}
+                              placeholder={isLab ? 'e.g. Nil or 2 Exp Pending' : 'e.g. Nil or 1 Unit (20%)'}
+                              onChange={(e) => handleUpdateField('syllabus', idx, 'pending', e.target.value)}
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 font-mono tracking-wide"
+                            />
+                            <p className="text-[10px] text-slate-400">
+                              Automatically computed as ({isLab ? 'Total - Done' : '5 - Completed Units'}). You can also edit if needed.
+                            </p>
+                          </div>
+
+                          {/* Remarks */}
+                          <div className="md:col-span-3">
+                            <FieldInput
+                              label="Remarks / Action Plan"
+                              value={item.remarks}
+                              placeholder="e.g. Extra classes scheduled / Revision sessions underway"
+                              onChange={(v) => handleUpdateField('syllabus', idx, 'remarks', v)}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <FieldInput label="Year/sem" value={item.yearSem} onChange={(v) => handleUpdateField('syllabus', idx, 'yearSem', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Faculty" value={item.faculty} onChange={(v) => handleUpdateField('syllabus', idx, 'faculty', v)} />
-                      </div>
-                      <div>
-                        <FieldInput
-                          label="Syllabus Status - Completed (Total 5 Units)"
-                          value={item.completed}
-                          placeholder="e.g. 5 Units (100%), 4.5 Units (90%), 4 Units (80%)"
-                          onChange={(v) => handleUpdateField('syllabus', idx, 'completed', v)}
-                        />
-                      </div>
-                      <div>
-                        <FieldInput
-                          label="Syllabus Status - Pending (Total 5 Units)"
-                          value={item.pending}
-                          placeholder="e.g. Nil, 0.5 Units (10%), 1 Unit (20%)"
-                          onChange={(v) => handleUpdateField('syllabus', idx, 'pending', v)}
-                        />
-                      </div>
-                      <div className="md:col-span-3">
-                        <FieldInput label="Remarks" value={item.remarks} onChange={(v) => handleUpdateField('syllabus', idx, 'remarks', v)} />
-                      </div>
-                    </div>
-                  </EntryCard>
-                ))}
+                    </EntryCard>
+                  );
+                })}
               </SectionContainer>
             )}
 
