@@ -1674,7 +1674,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Conference Name" value={item.conferenceName} onChange={(v) => handleUpdateField('conferences', idx, 'conferenceName', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('conferences', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('conferences', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Location/Mode" value={item.locationMode} onChange={(v) => handleUpdateField('conferences', idx, 'locationMode', v)} />
@@ -1757,7 +1757,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         />
                       </div>
                       <div>
-                        <FieldInput label="Awarded Date" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} />
+                        <DateFieldInput label="Awarded / Filing Date" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Link to Document/Proof" value={item.link} onChange={(v) => handleUpdateField('patents', idx, 'link', v)} />
@@ -1783,7 +1783,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Entrepreneurship Activity/Program Title" value={item.title} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)" value={item.type} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'type', v)} />
@@ -1830,7 +1830,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Event Name" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Venue" value={item.venue} onChange={(v) => handleUpdateField('nss', idx, 'venue', v)} />
@@ -1900,7 +1900,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpAttended', idx, 'type', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} />
+                        <DateFieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Organizing Body" value={item.organizingBody} onChange={(v) => handleUpdateField('fdpAttended', idx, 'organizingBody', v)} />
@@ -1938,7 +1938,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'type', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} />
+                        <DateFieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Dept. Organized" value={item.deptOrganized} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'deptOrganized', v)} />
@@ -1976,7 +1976,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Event Title" value={item.title} onChange={(v) => handleUpdateField('sdp', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <label className="text-[11px] font-bold text-slate-600 block mb-1">
@@ -2050,7 +2050,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Organization/Body" value={item.organization} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'organization', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'link', v)} />
@@ -2085,7 +2085,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Organization" value={item.organization} onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Duration and date" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} />
+                        <DateFieldInput label="Duration and Date" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} placeholder="DD/MM/YYYY or Duration & Date" />
                       </div>
                       <div>
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('studentAchievements', idx, 'link', v)} />
@@ -2189,10 +2189,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                           />
                         </div>
                         <div>
-                          <FieldInput
+                          <DateFieldInput
                             label="Date"
                             value={item.date || ''}
-                            placeholder="e.g. 16 September 2026"
+                            placeholder="DD/MM/YYYY or e.g. 16/09/2026"
                             onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'date', v)}
                           />
                         </div>
@@ -2435,13 +2435,31 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                                             onChange={(e) => handleUpdateReviewRow(mIdx, dIdx, rIdx, 'review', e.target.value)}
                                             className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
                                           />
-                                          <input
-                                            type="text"
-                                            value={rRow.date}
-                                            placeholder="e.g. 21 September 2026"
-                                            onChange={(e) => handleUpdateReviewRow(mIdx, dIdx, rIdx, 'date', e.target.value)}
-                                            className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
-                                          />
+                                          <div className="flex-1 relative flex items-center">
+                                            <input
+                                              type="text"
+                                              value={rRow.date}
+                                              placeholder="DD/MM/YYYY"
+                                              onChange={(e) => handleUpdateReviewRow(mIdx, dIdx, rIdx, 'date', handleDateInputAutoFormat(e.target.value))}
+                                              className="w-full pl-2.5 pr-8 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 font-mono"
+                                            />
+                                            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                                              <input
+                                                type="date"
+                                                value={getIsoDateFromDDMMYYYY(rRow.date)}
+                                                onChange={(e) => {
+                                                  if (e.target.value) {
+                                                    handleUpdateReviewRow(mIdx, dIdx, rIdx, 'date', formatDateToDDMMYYYY(e.target.value));
+                                                  }
+                                                }}
+                                                className="opacity-0 absolute inset-0 w-6 h-6 cursor-pointer"
+                                                title="Pick review date"
+                                              />
+                                              <div className="p-0.5 rounded bg-slate-50 border border-slate-200 pointer-events-none text-slate-600">
+                                                <Calendar className="w-3 h-3 text-blue-600" />
+                                              </div>
+                                            </div>
+                                          </div>
                                           <button
                                             type="button"
                                             onClick={() => handleRemoveReviewRow(mIdx, dIdx, rIdx)}
@@ -2563,7 +2581,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Nature & Purpose" value={item.purpose} onChange={(v) => handleUpdateField('mous', idx, 'purpose', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date of Signing/Active Period" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} />
+                        <DateFieldInput label="Date of Signing/Active Period" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} placeholder="DD/MM/YYYY or Period" />
                       </div>
                       <div>
                         <FieldInput label="Faculty Involved(SPOC)" value={item.facultySpoc} onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
@@ -2592,7 +2610,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Initiative/Activity" value={item.initiative} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'initiative', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Coordinator(s)" value={item.coordinator} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
@@ -2627,7 +2645,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Event / Activity" value={item.event} onChange={(v) => handleUpdateField('techAssociation', idx, 'event', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} />
+                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <label className="text-[11px] font-bold text-slate-600 block mb-1">
@@ -3192,6 +3210,86 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeho
     />
   </div>
 );
+
+interface DateFieldInputProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}
+
+const DateFieldInput: React.FC<DateFieldInputProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder = 'DD/MM/YYYY',
+  required = false
+}) => {
+  const getIso = (val: string): string => {
+    if (!val) return '';
+    const ddmmyyyy = val.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+    if (ddmmyyyy) {
+      const d = ddmmyyyy[1].padStart(2, '0');
+      const m = ddmmyyyy[2].padStart(2, '0');
+      const y = ddmmyyyy[3];
+      return `${y}-${m}-${d}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+    return '';
+  };
+
+  const isoVal = getIso(value);
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5 text-blue-600" />
+          <span>{label}</span>
+          {required && <span className="text-red-500">*</span>}
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            onChange(`${d}/${m}/${y}`);
+          }}
+          className="text-[10px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer"
+          title="Set Today's Date in DD/MM/YYYY"
+        >
+          Today
+        </button>
+      </div>
+
+      <div className="relative flex items-center">
+        <input
+          type="text"
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(handleDateInputAutoFormat(e.target.value))}
+          className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-mono tracking-wide"
+        />
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
+          <input
+            type="date"
+            value={isoVal}
+            onChange={(e) => {
+              if (e.target.value) {
+                onChange(formatDateToDDMMYYYY(e.target.value));
+              }
+            }}
+            className="w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0 text-slate-600"
+            title="Open calendar to pick date"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface FieldSelectProps {
   label: string;
