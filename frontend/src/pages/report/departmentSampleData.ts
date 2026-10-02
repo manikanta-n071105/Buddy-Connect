@@ -1,4 +1,4 @@
-import { ReportSectionsData, INITIAL_SECTIONS } from './HODManualReportBuilder';
+import { ReportSectionsData, INITIAL_SECTIONS, DEFAULT_MOM_24_TEMPLATE } from './HODManualReportBuilder';
 
 export const getDepartmentSampleData = (deptName: string): ReportSectionsData => {
   const dept = deptName.toLowerCase();
@@ -185,29 +185,12 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
     };
   }
 
-  // D. MINUTES OF THE MEETING (Fills only 6a. Department Meetings with Auto-Bullets)
+  // D. MINUTES OF THE MEETING (Fills structured Word Document MOM format)
   if (dept.includes('minutes') || dept.includes('meeting')) {
     return {
       ...INITIAL_SECTIONS,
       deptMeetings: [
-        {
-          date: '04/04/2026',
-          policyChanges: 'Introduced rigorous continuous evaluation rubric and mandatory peer reviews for final year projects.',
-          decisions: `• Reviewed end-semester question paper standard and verified Bloom's taxonomy mapping across all courses
-• Approved procurement of high-performance GPU compute cluster for Department AI & Robotics Lab
-• Finalized dates and external evaluation panel for major project demonstrations and viva voce
-• Resolved to organize structured 10-day bridge courses in Data Structures & Algorithms before campus recruitment season`,
-          link: 'https://sseptp.org/governance/academic-minutes-04-04-2026'
-        },
-        {
-          date: '21/04/2026',
-          policyChanges: 'Revised student industry internship monitoring policy with mandatory weekly digital log submissions.',
-          decisions: `• Scrutinized and approved summer internship offers received from top MNCs and Tier-1 research labs
-• Reviewed feedback from recent campus placement drives and approved industry-specific technical mock interview sessions
-• Finalized dates for upcoming Department Advisory Board (DAB) and Board of Studies (BoS) curriculum consultations
-• Established departmental student mentoring circles pairing high-performing seniors with junior students`,
-          link: 'https://sseptp.org/governance/academic-minutes-21-04-2026'
-        }
+        JSON.parse(JSON.stringify(DEFAULT_MOM_24_TEMPLATE))
       ]
     };
   }
@@ -465,20 +448,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://coursera.org/verify/specialization/deeplearning'
         }
       ],
-      deptMeetings: [
-        {
-          date: '04.04.2026',
-          decisions: 'Review of Capstone Project external viva schedule, allocation of faculty mentors for Smart India Hackathon, and academic audit of lab records.',
-          policyChanges: 'Mandatory Git repository submission and automated code quality linting for all major projects.',
-          link: 'https://sseptp.org/iqac/cse/minutes-04-04-2026'
-        },
-        {
-          date: '20.04.2026',
-          decisions: 'Analysis of Mid-term examinations, syllabus coverage review across all 4 years, and organization of CYBERKSHETRA 2026 annual symposium.',
-          policyChanges: 'Minimum 90% attendance mandatory for appearing in pre-final lab practical exams.',
-          link: 'https://sseptp.org/iqac/cse/minutes-20-04-2026'
-        }
-      ],
+      deptMeetings: [],
       mous: [
         {
           name: 'Infosys Springboard & SSE Department of Computer Science & Engineering',
@@ -842,20 +812,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://mathworks.com/verify/cert/dsp-2026'
         }
       ],
-      deptMeetings: [
-        {
-          date: '02.04.2026',
-          decisions: 'Review of Texas Instruments Innovation Lab procurement, major project evaluation rubrics, and NAAC Criterion 2 documentation.',
-          policyChanges: 'Mandatory hardware working prototype demonstration required for final year mini-projects.',
-          link: 'https://sseptp.org/iqac/ece/minutes-02-04-2026'
-        },
-        {
-          date: '18.04.2026',
-          decisions: 'Mid-term evaluation results review, syllabus completion tracking, and scheduling of ELECTROFEST 2026 technical association events.',
-          policyChanges: 'Allocation of extra 2 hours of lab time weekly for students working on competitive hardware challenges.',
-          link: 'https://sseptp.org/iqac/ece/minutes-18-04-2026'
-        }
-      ],
+      deptMeetings: [],
       mous: [
         {
           name: 'Texas Instruments University Program & SSE Department of ECE',
@@ -1219,20 +1176,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://schneider-electric.com/energy-university'
         }
       ],
-      deptMeetings: [
-        {
-          date: '03.04.2026',
-          decisions: 'Review of Electric Vehicles lab setup, finalization of external examiners for major project vivas, and NAAC Criterion 3 data compilation.',
-          policyChanges: 'Mandatory simulation verification in MATLAB/Simulink before hardware fabrication of all minor projects.',
-          link: 'https://sseptp.org/iqac/eee/minutes-03-04-2026'
-        },
-        {
-          date: '17.04.2026',
-          decisions: 'Mid-term academic performance analysis, syllabus completion monitoring, and finalization of schedule for VOLTKSHETRA 2026.',
-          policyChanges: 'Remedial coaching classes scheduled every Saturday for students scoring below 50% in mid-examinations.',
-          link: 'https://sseptp.org/iqac/eee/minutes-17-04-2026'
-        }
-      ],
+      deptMeetings: [],
       mous: [
         {
           name: 'Rayalaseema Thermal Power Station (RTPS) / APGENCO',
@@ -1596,20 +1540,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26PH08'
         }
       ],
-      deptMeetings: [
-        {
-          date: '02.04.2026',
-          decisions: 'Review of First-Year B.Tech Mid-Term examination results, course file verification, bridge course outcomes, and mentor-mentee counseling.',
-          policyChanges: 'Mandatory bilingual peer-tutoring sessions scheduled for students from rural vernacular backgrounds.',
-          link: 'https://sseptp.org/iqac/hs/minutes-02-04-2026'
-        },
-        {
-          date: '17.04.2026',
-          decisions: 'Syllabus coverage review across all 5 engineering branches, laboratory equipment audit, and scheduling of SCIENCE FEST 2026.',
-          policyChanges: 'Minimum 90% syllabus completion required before commencement of model practical exams.',
-          link: 'https://sseptp.org/iqac/hs/minutes-17-04-2026'
-        }
-      ],
+      deptMeetings: [],
       mous: [
         {
           name: 'Cambridge University Press & Assessment India',
@@ -1891,14 +1822,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://coursera.org/verify/professional-cert/mech-inventor-sse'
         }
       ],
-      deptMeetings: [
-        {
-          date: '06/04/2026',
-          decisions: 'Conducted Department Advisory Committee (DAC) meeting. Approved revisions in Machine Drawing and Automobile Lab manuals. Scheduled remedial classes for engineering mechanics.',
-          policyChanges: 'Mandatory internship placement protocol finalized for all 3rd year mechanical students.',
-          link: 'https://sseptp.org/governance/mech-dac-minutes-april26'
-        }
-      ],
+      deptMeetings: [],
       mous: [
         {
           name: 'Bharat Earth Movers Limited (BEML) Training & R&D Hub, Palakkad',
@@ -2235,20 +2159,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
           link: 'https://nptel.ac.in/noc/Ecertificate/?q=NPTEL26CE18'
         }
       ],
-      deptMeetings: [
-        {
-          date: '03.04.2026',
-          decisions: 'Review of CSP Project milestones, course file completion verification, NAAC Criterion 3 & 4 data compilation, and final semester external viva schedule.',
-          policyChanges: 'Mandatory rubric-based assessment for 8th semester capstone internships implemented.',
-          link: 'https://sseptp.org/iqac/civil/minutes-03-04-2026'
-        },
-        {
-          date: '19.04.2026',
-          decisions: 'Mid-term academic audit analysis, syllabus coverage tracking review, allocation of remedial classes for slow learners, and finalization of CIVILERA 2026 schedule.',
-          policyChanges: 'Minimum 85% syllabus coverage mandatory before commencement of pre-final lab exams.',
-          link: 'https://sseptp.org/iqac/civil/minutes-19-04-2026'
-        }
-      ],
+      deptMeetings: [],
       mous: [
         {
           name: 'UltraTech Cement Ltd. & SSE Department of Civil Engineering',

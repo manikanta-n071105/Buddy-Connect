@@ -167,7 +167,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 1a. Journal Publications */}
       {sections.journals.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1e3a8a', paddingBottom: '4px', marginBottom: '8px' }}>
             1. RESEARCH &mdash; a) JOURNAL PUBLICATIONS ({sections.journals.length})
           </div>
           <div>
@@ -212,7 +212,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 1b. Conference Presentations */}
       {sections.conferences.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1e3a8a', paddingBottom: '4px', marginBottom: '8px' }}>
             1. RESEARCH &mdash; b) CONFERENCE PRESENTATIONS ({sections.conferences.length})
           </div>
           <div>
@@ -259,7 +259,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 2a. Patents */}
       {sections.patents.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#6b21a8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #6b21a8', paddingBottom: '4px', marginBottom: '8px' }}>
             2A. PATENTS ({sections.patents.length})
           </div>
           <div>
@@ -282,8 +282,8 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 2b. Activities and Initiatives */}
       {sections.entrepreneurship.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            2B. Activities and Initiatives ({sections.entrepreneurship.length})
+          <div style={{ fontWeight: 800, color: '#0f766e', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #0f766e', paddingBottom: '4px', marginBottom: '8px' }}>
+            2B. ACTIVITIES AND INITIATIVES ({sections.entrepreneurship.length})
           </div>
           <div>
             {sections.entrepreneurship.map((item, idx) => (
@@ -294,7 +294,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
                   <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
                   <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Date: {item.date} | Participants: {item.participantsCount}</div>
-                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}><strong>Key Outcomes:</strong> {item.keyOutcomes}</div>
+                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}>
+                    <strong>Status:</strong> <span style={{ color: (item.status || '').toLowerCase() === 'completed' ? '#047857' : '#1a365d', fontWeight: 'bold' }}>{item.status || 'Active'}</span>
+                    {item.keyOutcomes && item.keyOutcomes.trim() !== '' && item.keyOutcomes.trim().toLowerCase() !== (item.status || '').trim().toLowerCase() && (
+                      <span> &bull; <strong>Outcomes:</strong> {item.keyOutcomes}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -305,7 +310,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 3a. FDPs Attended */}
       {sections.fdpAttended.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#0369a1', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #0369a1', paddingBottom: '4px', marginBottom: '8px' }}>
             3A. FACULTY DEVELOPMENT PROGRAMS (FDPS) — ATTENDED ({sections.fdpAttended.length})
           </div>
           <div>
@@ -345,7 +350,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 3b. FDPs Organized */}
       {sections.fdpOrganized.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#0369a1', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #0369a1', paddingBottom: '4px', marginBottom: '8px' }}>
             3B. FACULTY DEVELOPMENT PROGRAMS (FDPS) — ORGANIZED ({sections.fdpOrganized.length})
           </div>
           <div>
@@ -388,7 +393,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 4. SDPs */}
       {sections.sdp.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#047857', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #047857', paddingBottom: '4px', marginBottom: '8px' }}>
             4. STUDENT DEVELOPMENT PROGRAMS (SDPS) ({sections.sdp.length})
           </div>
           <div>
@@ -411,7 +416,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 5. Honors & Achievements */}
       {(sections.facultyAchievements.length > 0 || sections.studentAchievements.length > 0 || sections.certifications.length > 0) && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#b45309', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #b45309', paddingBottom: '4px', marginBottom: '8px' }}>
             5. HONORS, AWARDS &amp; CERTIFICATIONS
           </div>
           <div>
@@ -434,56 +439,241 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
         </div>
       )}
 
-      {/* 6a. Department Meetings */}
-      {sections.deptMeetings.length > 0 && (
-        <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            6A. MEETINGS ({sections.deptMeetings.length})
+      {/* Meetings (Minutes of the Meeting committee only) */}
+      {sections.deptMeetings.length > 0 && department === 'Minutes of the Meeting' && (
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #1e293b', paddingBottom: '4px', marginBottom: '12px' }}>
+            MINUTES OF THE MEETING ({sections.deptMeetings.length})
           </div>
-          <div>
-            {sections.deptMeetings.map((item, idx) => (
-              <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
-                <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
-                  {String(idx + 1).padStart(2, '0')}
-                </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px' }}>Department Meeting #{idx + 1}</span>
-                    <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>Date: {item.date || '-'}</span>
-                  </div>
-                  <div style={{ color: '#334155', fontSize: '11px', lineHeight: 1.4, textAlign: 'justify' }}>
-                    <strong>Decisions &amp; Key Discussions:</strong> {item.decisions || 'Routine departmental operations and academic agenda reviewed.'}
-                  </div>
-                  {item.policyChanges && (
-                    <div style={{ color: '#475569', fontSize: '10.5px', marginTop: '2px', textAlign: 'justify' }}>
-                      <strong>Policy Updates:</strong> {item.policyChanges}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {sections.deptMeetings.map((item, idx) => {
+              const hasStructuredData = (item.attendees && item.attendees.length > 0) || item.agenda || (item.discussions && item.discussions.length > 0) || item.title;
+
+              if (!hasStructuredData) {
+                // Legacy simple format
+                return (
+                  <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '8px 0' }} className="break-inside-avoid">
+                    <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
+                      {String(idx + 1).padStart(2, '0')}
                     </div>
-                  )}
-                  {item.link && (
-                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px', textAlign: 'justify' }}>
-                      <strong>Minutes Link:</strong>{' '}
-                      <a
-                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: '#1d4ed8', textDecoration: 'none' }}
-                      >
-                        {item.link}
-                      </a>
+                    <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px' }}>Meeting #{idx + 1}</span>
+                        <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>Date: {item.date || '-'}</span>
+                      </div>
+                      <div style={{ color: '#334155', fontSize: '11px', lineHeight: 1.4, textAlign: 'justify' }}>
+                        <strong>Decisions &amp; Key Discussions:</strong> {item.decisions || 'Routine operations and agenda reviewed.'}
+                      </div>
+                      {item.policyChanges && (
+                        <div style={{ color: '#475569', fontSize: '10.5px', marginTop: '2px', textAlign: 'justify' }}>
+                          <strong>Policy Updates:</strong> {item.policyChanges}
+                        </div>
+                      )}
+                      {item.link && (
+                        <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px', textAlign: 'justify' }}>
+                          <strong>Minutes Link:</strong>{' '}
+                          <a
+                            href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#1d4ed8', textDecoration: 'none' }}
+                          >
+                            {item.link}
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                );
+              }
+
+              // Full Structured Institutional MOM Layout
+              return (
+                <div key={idx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#ffffff' }} className="break-inside-avoid">
+                  
+                  {/* Meeting Header Banner */}
+                  <div style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #cbd5e1', padding: '10px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em' }}>
+                          {item.title || "HoD's Meeting with Principal"}
+                        </div>
+                        <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569', marginTop: '2px' }}>
+                          {item.date && <span>{item.date}</span>}
+                          {item.time && <span> | TIME: {item.time}</span>}
+                          {item.venue && <span> | Venue: {item.venue}</span>}
+                        </div>
+                      </div>
+                      {item.meetingNo && (
+                        <span style={{ fontSize: '10px', fontWeight: 800, backgroundColor: '#1e293b', color: '#ffffff', padding: '2px 8px', borderRadius: '4px' }}>
+                          {item.meetingNo}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+                    {/* 1. Attendees Table */}
+                    {item.attendees && item.attendees.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>
+                          Attendees:
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                              <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', width: '38px', textAlign: 'center', color: '#1e293b', fontWeight: 700 }}>S.No</th>
+                              <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'left', color: '#1e293b', fontWeight: 700 }}>Faculty / Name</th>
+                              <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'left', color: '#1e293b', fontWeight: 700 }}>Designation / Role</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {item.attendees.map((att, aIdx) => (
+                              <tr key={aIdx} style={{ backgroundColor: aIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{aIdx + 1}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', color: '#0f172a', fontWeight: 600 }}>{att.name}</td>
+                                <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', color: '#334155' }}>{att.designation}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* 2. Agenda Box */}
+                    {item.agenda && (
+                      <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>
+                          Agenda
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: '#334155', lineHeight: 1.5, textAlign: 'justify' }}>
+                          {item.agenda.split('\n').map((line, lIdx) => (
+                            <div key={lIdx} style={{ padding: '1px 0' }}>
+                              {line.trim().startsWith('•') || /^\d+\./.test(line.trim()) ? line : `• ${line}`}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. Detailed Minutes & Discussions */}
+                    {item.discussions && item.discussions.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {item.discussions.map((disc, dIdx) => (
+                          <div key={dIdx} style={{ fontSize: '10.5px', lineHeight: 1.45, color: '#334155' }}>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '11px', marginBottom: '3px' }}>
+                              {disc.heading.trim().startsWith(String(dIdx + 1)) ? disc.heading : `${dIdx + 1}. ${disc.heading}`}
+                            </div>
+
+                            {disc.details && (
+                              <div style={{ color: '#334155', textAlign: 'justify', textJustify: 'inter-word', marginBottom: '6px' }}>
+                                {disc.details.split('\n').map((para, pIdx) => {
+                                  const trimmed = para.trim();
+                                  if (!trimmed) return null;
+                                  return (
+                                    <div key={pIdx} style={{ marginBottom: '2px' }}>
+                                      {trimmed.startsWith('•') ? trimmed : `• ${trimmed}`}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Embedded Review Schedule Table */}
+                            {disc.tableType === 'project_reviews' && disc.reviewSchedule && disc.reviewSchedule.length > 0 && (
+                              <div style={{ margin: '6px 0' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                                  <thead>
+                                    <tr style={{ backgroundColor: '#f1f5f9' }}>
+                                      <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'left', color: '#0f172a', fontWeight: 700 }}>Review</th>
+                                      <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 700 }}>Target Date</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {disc.reviewSchedule.map((rRow, rIdx) => (
+                                      <tr key={rIdx} style={{ backgroundColor: rIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', fontWeight: 600, color: '#1e293b' }}>{rRow.review}</td>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#334155' }}>{rRow.date}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {/* Embedded Publication Targets Table */}
+                            {disc.tableType === 'publication_targets' && disc.publicationTargets && disc.publicationTargets.length > 0 && (
+                              <div style={{ margin: '6px 0' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                                  <thead>
+                                    <tr style={{ backgroundColor: '#f1f5f9' }}>
+                                      <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'left', color: '#0f172a', fontWeight: 700 }}>Department</th>
+                                      <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 700 }}>Research Papers</th>
+                                      <th style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 700 }}>Patents</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {disc.publicationTargets.map((tRow, tIdx) => (
+                                      <tr key={tIdx} style={{ backgroundColor: tIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', fontWeight: 600, color: '#1e293b' }}>{tRow.department}</td>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 700 }}>{tRow.researchPapers}</td>
+                                        <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', textAlign: 'center', color: '#0f172a', fontWeight: 700 }}>{tRow.patents}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+
+                            {disc.postTableDetails && (
+                              <div style={{ color: '#475569', fontStyle: 'italic', marginTop: '3px', textAlign: 'justify' }}>
+                                {disc.postTableDetails}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Policy / Decisions / Proof Link */}
+                    {(item.policyChanges || item.link) && (
+                      <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '10.5px' }}>
+                        {item.policyChanges && (
+                          <div style={{ color: '#475569', textAlign: 'justify' }}>
+                            <strong>Policy Directives:</strong> {item.policyChanges}
+                          </div>
+                        )}
+                        {item.link && (
+                          <div style={{ color: '#1d4ed8', wordBreak: 'break-all' }}>
+                            <strong>Signed Minutes / Proof:</strong>{' '}
+                            <a
+                              href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#1d4ed8', textDecoration: 'none' }}
+                            >
+                              {item.link}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* 6b. MoUs */}
+      {/* 6. MoUs */}
       {sections.mous.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
-            6B. COLLABORATIONS &amp; MOUS ({sections.mous.length})
+          <div style={{ fontWeight: 800, color: '#4338ca', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #4338ca', paddingBottom: '4px', marginBottom: '8px' }}>
+            6. COLLABORATIONS &amp; MOUS ({sections.mous.length})
           </div>
           <div>
             {sections.mous.map((item, idx) => (
@@ -498,7 +688,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 7, 8, 9. Other Initiatives */}
       {(sections.additionalInitiatives.length > 0 || sections.techAssociation.length > 0) && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#0e7490', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #0e7490', paddingBottom: '4px', marginBottom: '8px' }}>
             7. TECHNICAL ASSOCIATIONS &amp; INNOVATION INITIATIVES
           </div>
           <div>
@@ -519,7 +709,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* 10. Syllabus Coverage Report Table Matching Theme */}
       {sections.syllabus.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#1d4ed8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1d4ed8', paddingBottom: '4px', marginBottom: '8px' }}>
             8. SYLLABUS COVERAGE &amp; CURRICULUM PROGRESS ({sections.syllabus.length})
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10.5px', border: '1px solid #cbd5e1' }}>
@@ -554,7 +744,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* Student Engagement Activity Table Matching Theme */}
       {sections.studentEngagement && sections.studentEngagement.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#be123c', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #be123c', paddingBottom: '4px', marginBottom: '8px' }}>
             9. CLUB &amp; STUDENT ENGAGEMENT ACTIVITIES ({sections.studentEngagement.length})
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '10.5px', border: '1px solid #cbd5e1' }}>
@@ -598,7 +788,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
       {/* NSS & Other Extension Activities — shown last */}
       {sections.nss.length > 0 && (
         <div style={{ marginBottom: '15px' }} className="break-inside-avoid">
-          <div style={{ fontWeight: 800, color: '#1a365d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #1a365d', paddingBottom: '4px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 800, color: '#15803d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1.5px solid #15803d', paddingBottom: '4px', marginBottom: '8px' }}>
             10. NSS &amp; OTHER EXTENSION ACTIVITIES ({sections.nss.length})
           </div>
           <div>

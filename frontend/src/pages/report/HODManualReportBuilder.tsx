@@ -24,6 +24,149 @@ import { toast } from 'sonner';
 import api from '../../services/api';
 import { HODProfessionalPDFView } from './HODProfessionalPDFView';
 
+export interface MomAttendee {
+  name: string;
+  designation: string;
+}
+
+export interface MomReviewRow {
+  review: string;
+  date: string;
+}
+
+export interface MomTargetRow {
+  department: string;
+  researchPapers: string;
+  patents: string;
+}
+
+export interface MomDiscussionItem {
+  heading: string;
+  details: string;
+  tableType?: 'none' | 'project_reviews' | 'publication_targets' | 'custom';
+  customTableHeaders?: string[];
+  customTableRows?: string[][];
+  reviewSchedule?: MomReviewRow[];
+  publicationTargets?: MomTargetRow[];
+  postTableDetails?: string;
+}
+
+export interface DeptMeetingItem {
+  date: string;
+  time?: string;
+  venue?: string;
+  title?: string;
+  meetingNo?: string;
+  attendees?: MomAttendee[];
+  agenda?: string;
+  discussions?: MomDiscussionItem[];
+  decisions?: string;
+  policyChanges?: string;
+  link?: string;
+}
+
+export const DEFAULT_SSE_MOM_ATTENDEES: MomAttendee[] = [
+  { name: 'Dr. Hemachandra', designation: 'Principal - SSE' },
+  { name: 'Dr. S Hari Krishnan', designation: 'Vice - Principal - SSE' },
+  { name: 'Prof. Nagaraju', designation: 'HOD ECE & Dean Academics' },
+  { name: 'Dr. Srinivas Rao', designation: 'HOD - EEE' },
+  { name: 'Dr. Anil Kumar Reddy', designation: 'HOD - MECH' },
+  { name: 'Dr. Vinod Kumar', designation: 'HOD - CSE' },
+  { name: 'Dr. Sambhasivaiah', designation: 'HOD HAS' },
+  { name: 'Mr. Sivaprasad', designation: 'HOD CIVIL' },
+];
+
+export const DEFAULT_MOM_24_TEMPLATE: DeptMeetingItem = {
+  title: "HoD's Meeting with Principal",
+  meetingNo: 'MOM 24',
+  date: '16 September 2026',
+  time: '10.15 AM – 12.10 PM',
+  venue: 'Principal Chamber, SSE',
+  attendees: DEFAULT_SSE_MOM_ATTENDEES,
+  agenda: `• ERP Portal – Leave & Class Substitution
+• Assignments – Moodle Portal
+• IV Year Project Review Schedule
+• Research Paper & Patent Publication Targets
+• Teaching & Learning Practices
+• ATAL Faculty Development Programme (FDP)
+• Proper Utilization of Laboratory Facilities
+• Working Day – 19 September 2026`,
+  discussions: [
+    {
+      heading: '1. ERP Portal – Leave & Class Substitution',
+      details: `• All faculty members are instructed to use the ERP Portal properly for applying leave.
+• Whenever a class is substituted by another faculty member, the concerned substitute faculty must accept the substitution request online through the ERP Portal.
+• Leave will be considered only after the substitute faculty has accepted the substitution online.
+• Faculty members applying for leave should ensure that there is no pending substitution acceptance before proceeding on leave.`,
+      tableType: 'none'
+    },
+    {
+      heading: '2. Assignment – Moodle Portal',
+      details: `• All faculty members are instructed to assign assignments in the Moodle Portal.
+• Faculty members should discuss the assignment questions in the respective classes before the Mid-Term Examinations.
+• All three assignment questions must be discussed with the students.
+• Out of the three questions discussed, one question will be given in the question paper as Assignment.`,
+      tableType: 'none'
+    },
+    {
+      heading: '3. IV Year Project Review Schedule',
+      details: 'The IV Year project reviews are scheduled as follows:',
+      tableType: 'project_reviews',
+      reviewSchedule: [
+        { review: '1st Review', date: '21 September 2026' },
+        { review: '2nd Review', date: '09 October 2026' },
+        { review: '3rd / Final Review', date: '23 October 2026' },
+        { review: 'Final Project Report Submission', date: '24 December 2026' }
+      ],
+      postTableDetails: 'All concerned faculty members and students are instructed to adhere strictly to the above schedule.'
+    },
+    {
+      heading: '4. Paper & Patent Publication Targets',
+      details: 'As discussed in the HODs meeting, all HODs have agreed to and committed to achieving the following targets for research paper and patent publications:',
+      tableType: 'publication_targets',
+      publicationTargets: [
+        { department: 'Mechanical Engineering', researchPapers: '4', patents: '0' },
+        { department: 'EEE', researchPapers: '8', patents: '3' },
+        { department: 'CSE', researchPapers: '20', patents: '16' },
+        { department: 'Civil Engineering', researchPapers: '4', patents: '2' },
+        { department: 'ECE', researchPapers: '7', patents: '4' }
+      ],
+      postTableDetails: 'All HODs are requested to monitor the progress regularly and ensure that the committed targets are achieved.'
+    },
+    {
+      heading: '5. Teaching & Learning',
+      details: `• All faculty members are instructed to ensure effective and proper Teaching & Learning practices.
+• Faculty members should maintain quality in classroom teaching, ensure syllabus progress as per schedule, and actively engage students in the learning process.`,
+      tableType: 'none'
+    },
+    {
+      heading: '6. ATAL FDP – November 30 to December 5, 2026',
+      details: `• It is happy to share that the institution has received approval for an ATAL Faculty Development Programme (FDP).
+• The FDP is scheduled from 30 November to 05 December 2026 in offline mode.
+• Each department is required to bring 4 participants from other institutions.
+• Participation from each department is mandatory, and HODs are requested to coordinate accordingly.`,
+      tableType: 'none'
+    },
+    {
+      heading: '7. Proper Utilization of Laboratory Facilities',
+      details: `• All laboratory stools and available seating facilities should be properly utilized.
+• No student should be allowed to sit on the laboratory floor during practical sessions.
+• Faculty members and laboratory staff are instructed to ensure proper seating arrangements and maintain discipline in the laboratories.`,
+      tableType: 'none'
+    },
+    {
+      heading: '8. Working Day – 19 September 2026',
+      details: `• Saturday, 19 September 2026, will be a regular working day for all B.Tech students in view of syllabus completion.
+• The Monday timetable will be followed on Saturday.
+• All HODs and faculty members are requested to ensure the regular conduct of classes and maximum student attendance.`,
+      tableType: 'none'
+    }
+  ],
+  decisions: 'HoD review meeting held with Principal covering ERP leaves, Moodle assignments, IV year project reviews, paper and patent targets, ATAL FDP, lab facilities, and Saturday working day.',
+  policyChanges: 'Mandatory online ERP substitution acceptance before leave approval; strict adherence to 4-stage project review timelines.',
+  link: ''
+};
+
 export interface ReportSectionsData {
   journals: Array<{
     title: string;
@@ -145,12 +288,7 @@ export interface ReportSectionsData {
     keyOutcomes: string;
     link: string;
   }>;
-  deptMeetings: Array<{
-    date: string;
-    decisions: string;
-    policyChanges: string;
-    link: string;
-  }>;
+  deptMeetings: Array<DeptMeetingItem>;
   mous: Array<{
     name: string;
     purpose: string;
@@ -353,7 +491,30 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     facultyAchievements: Array.isArray(raw.facultyAchievements) ? raw.facultyAchievements : [],
     studentAchievements: Array.isArray(raw.studentAchievements) ? raw.studentAchievements : [],
     certifications: Array.isArray(raw.certifications) ? raw.certifications : [],
-    deptMeetings: Array.isArray(raw.deptMeetings) ? raw.deptMeetings : [],
+    deptMeetings: Array.isArray(raw.deptMeetings)
+      ? raw.deptMeetings.map((m: any) => ({
+          date: m.date || '',
+          time: m.time || '',
+          venue: m.venue || '',
+          title: m.title || '',
+          meetingNo: m.meetingNo || '',
+          attendees: Array.isArray(m.attendees) ? m.attendees : [],
+          agenda: m.agenda || '',
+          discussions: Array.isArray(m.discussions)
+            ? m.discussions.map((d: any) => ({
+                heading: d.heading || '',
+                details: d.details || '',
+                tableType: d.tableType || 'none',
+                reviewSchedule: Array.isArray(d.reviewSchedule) ? d.reviewSchedule : [],
+                publicationTargets: Array.isArray(d.publicationTargets) ? d.publicationTargets : [],
+                postTableDetails: d.postTableDetails || ''
+              }))
+            : [],
+          decisions: m.decisions || '',
+          policyChanges: m.policyChanges || '',
+          link: m.link || ''
+        }))
+      : [],
     mous: Array.isArray(raw.mous) ? raw.mous : [],
     additionalInitiatives: Array.isArray(raw.additionalInitiatives) ? raw.additionalInitiatives : [],
     techAssociation: Array.isArray(raw.techAssociation) ? raw.techAssociation : [],
@@ -603,8 +764,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     { key: '5a_faculty_achievements', label: '5a. Faculty Achievements', count: (safeSections.facultyAchievements || []).length },
     { key: '5b_student_achievements', label: '5b. Student Achievements', count: (safeSections.studentAchievements || []).length },
     { key: '5c_certifications', label: '5c. Certifications', count: (safeSections.certifications || []).length },
-    { key: '6a_dept_meetings', label: '6a. Meetings', count: (safeSections.deptMeetings || []).length },
-    { key: '6b_mous', label: '6b. Collaborations & MoUs', count: (safeSections.mous || []).length },
+    { key: '6a_dept_meetings', label: 'Meetings', count: (safeSections.deptMeetings || []).length },
+    { key: '6b_mous', label: '6. Collaborations & MoUs', count: (safeSections.mous || []).length },
     { key: '8_tech_association', label: '7. Technical Association Activities', count: (safeSections.techAssociation || []).length },
     { key: '10_syllabus', label: '8. Syllabus coverage Report', count: (safeSections.syllabus || []).length },
     { key: 'student_engagement', label: '9. Clubs & Student Engagement Activity', count: (safeSections.studentEngagement || []).length },
@@ -616,7 +777,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   // - Innovation & Entrepreneurship: only 1c and 1d
   // - Student Engagement & Clubs: only Student Engagement Activity
   // - NSS & Community Engagement: only NSS & Extension Activities
-  // - Minutes of the Meeting: only 6a Department Meetings
+  // - Minutes of the Meeting: only Department Meetings
+  // - Academic Departments: All categories EXCEPT Meetings (6a_dept_meetings)
   const SECTION_TABS = React.useMemo(() => {
     if (department === 'Innovation & Entrepreneurship') {
       return ALL_SECTION_TABS.filter(t => t.key === '1c_patents' || t.key === '1d_entrepreneurship');
@@ -630,7 +792,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     if (department === 'Minutes of the Meeting') {
       return ALL_SECTION_TABS.filter(t => t.key === '6a_dept_meetings');
     }
-    return ALL_SECTION_TABS;
+    return ALL_SECTION_TABS.filter(t => t.key !== '6a_dept_meetings');
   }, [department, safeSections]);
 
   // Keep activeSectionKey focused on an allowed tab when department changes
@@ -693,7 +855,22 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.certifications = [...(copy.certifications || []), { title: '', type: '', duration: '', platform: '', enrolled: '', certified: '', keyOutcomes: '', link: '' }];
           break;
         case 'deptMeetings':
-          copy.deptMeetings = [...(copy.deptMeetings || []), { date: '', decisions: '', policyChanges: '', link: '' }];
+          copy.deptMeetings = [
+            ...(copy.deptMeetings || []),
+            {
+              title: "HoD's Meeting with Principal",
+              meetingNo: `MOM ${(copy.deptMeetings || []).length + 24}`,
+              date: '',
+              time: '10.15 AM – 12.10 PM',
+              venue: 'Principal Chamber, SSE',
+              attendees: DEFAULT_SSE_MOM_ATTENDEES.map(a => ({ ...a })),
+              agenda: '',
+              discussions: [],
+              decisions: '',
+              policyChanges: '',
+              link: ''
+            }
+          ];
           break;
         case 'mous':
           copy.mous = [...(copy.mous || []), { name: '', purpose: '', datePeriod: '', facultySpoc: '', link: '' }];
@@ -747,6 +924,197 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const arr = [...(copy[sectionKey] as any[] || [])];
       arr[index] = { ...arr[index], [field]: value };
       (copy[sectionKey] as any) = arr;
+      return copy;
+    });
+  };
+
+  // Specialized MOM Helpers
+  const handleLoadMomTemplate = (meetingIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      meetings[meetingIdx] = JSON.parse(JSON.stringify(DEFAULT_MOM_24_TEMPLATE));
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+    toast.success('Loaded Word File MOM 24 Template!');
+  };
+
+  const handleAddMomAttendee = (meetingIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const attendees = [...(meetings[meetingIdx].attendees || []), { name: '', designation: '' }];
+      meetings[meetingIdx] = { ...meetings[meetingIdx], attendees };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleFillLeadershipAttendees = (meetingIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      meetings[meetingIdx] = {
+        ...meetings[meetingIdx],
+        attendees: DEFAULT_SSE_MOM_ATTENDEES.map(a => ({ ...a }))
+      };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+    toast.success('Filled SSE Leadership Attendees');
+  };
+
+  const handleUpdateMomAttendee = (meetingIdx: number, attIdx: number, field: keyof MomAttendee, value: string) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const attendees = [...(meetings[meetingIdx].attendees || [])];
+      attendees[attIdx] = { ...attendees[attIdx], [field]: value };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], attendees };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleRemoveMomAttendee = (meetingIdx: number, attIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const attendees = (meetings[meetingIdx].attendees || []).filter((_, i) => i !== attIdx);
+      meetings[meetingIdx] = { ...meetings[meetingIdx], attendees };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleAddMomDiscussion = (meetingIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const count = (meetings[meetingIdx].discussions || []).length;
+      const discussions = [
+        ...(meetings[meetingIdx].discussions || []),
+        {
+          heading: `${count + 1}. Discussion Topic`,
+          details: '',
+          tableType: 'none' as const,
+          reviewSchedule: [],
+          publicationTargets: [],
+          postTableDetails: ''
+        }
+      ];
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleUpdateMomDiscussion = (meetingIdx: number, discIdx: number, updates: Partial<MomDiscussionItem>) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      discussions[discIdx] = { ...discussions[discIdx], ...updates };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleRemoveMomDiscussion = (meetingIdx: number, discIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = (meetings[meetingIdx].discussions || []).filter((_, i) => i !== discIdx);
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleAddReviewRow = (meetingIdx: number, discIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      const target = discussions[discIdx];
+      const reviewSchedule = [...(target.reviewSchedule || []), { review: '', date: '' }];
+      discussions[discIdx] = { ...target, reviewSchedule };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleUpdateReviewRow = (meetingIdx: number, discIdx: number, rowIdx: number, field: keyof MomReviewRow, val: string) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      const target = discussions[discIdx];
+      const reviewSchedule = [...(target.reviewSchedule || [])];
+      reviewSchedule[rowIdx] = { ...reviewSchedule[rowIdx], [field]: val };
+      discussions[discIdx] = { ...target, reviewSchedule };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleRemoveReviewRow = (meetingIdx: number, discIdx: number, rowIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      const target = discussions[discIdx];
+      const reviewSchedule = (target.reviewSchedule || []).filter((_, i) => i !== rowIdx);
+      discussions[discIdx] = { ...target, reviewSchedule };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleAddTargetRow = (meetingIdx: number, discIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      const target = discussions[discIdx];
+      const publicationTargets = [...(target.publicationTargets || []), { department: '', researchPapers: '', patents: '' }];
+      discussions[discIdx] = { ...target, publicationTargets };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleUpdateTargetRow = (meetingIdx: number, discIdx: number, rowIdx: number, field: keyof MomTargetRow, val: string) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      const target = discussions[discIdx];
+      const publicationTargets = [...(target.publicationTargets || [])];
+      publicationTargets[rowIdx] = { ...publicationTargets[rowIdx], [field]: val };
+      discussions[discIdx] = { ...target, publicationTargets };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+  };
+
+  const handleRemoveTargetRow = (meetingIdx: number, discIdx: number, rowIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const discussions = [...(meetings[meetingIdx].discussions || [])];
+      const target = discussions[discIdx];
+      const publicationTargets = (target.publicationTargets || []).filter((_, i) => i !== rowIdx);
+      discussions[discIdx] = { ...target, publicationTargets };
+      meetings[meetingIdx] = { ...meetings[meetingIdx], discussions };
+      copy.deptMeetings = meetings;
       return copy;
     });
   };
@@ -1769,44 +2137,418 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               </SectionContainer>
             )}
 
-            {/* Table 10: 2b. Meetings */}
+            {/* Table 10: Meetings (Minutes of the Meeting) */}
             {activeSectionKey === '6a_dept_meetings' && (
               <SectionContainer
-                title="6a. Meetings"
-                description="Details of official meetings: key decisions, date, and supporting documents."
+                title="Minutes of the Meeting (MOM)"
+                description="Institutional Meeting Minutes: Executive Leadership, Attendees Roster, Numbered Agenda, and Discussion Records with Embedded Milestone/Target Tables."
                 count={safeSections.deptMeetings.length}
                 onAdd={() => handleAddRow('deptMeetings')}
               >
-                {safeSections.deptMeetings.map((item, idx) => (
-                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('deptMeetings', idx)}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div>
-                        <FieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('deptMeetings', idx, 'date', v)} />
+                {safeSections.deptMeetings.map((item, mIdx) => (
+                  <EntryCard key={mIdx} index={mIdx} onDelete={() => handleRemoveRow('deptMeetings', mIdx)}>
+                    <div className="space-y-6">
+
+                      {/* Top Action Bar */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-extrabold text-[11px] uppercase tracking-wider">
+                            {item.meetingNo || `Meeting #${mIdx + 1}`}
+                          </span>
+                          <span className="text-xs font-bold text-slate-700">
+                            {item.title || "HoD's Meeting with Principal"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleLoadMomTemplate(mIdx)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                          title="Pre-fill entire structured MOM from the official Word document (16 Sep MOM 24)"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>✨ Load Word File Template (MOM 24)</span>
+                        </button>
                       </div>
-                      <div>
-                        <FieldInput label="Policy Changes (if any)" value={item.policyChanges} onChange={(v) => handleUpdateField('deptMeetings', idx, 'policyChanges', v)} />
+
+                      {/* Meeting Logistics Block */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                        <div className="md:col-span-2">
+                          <FieldInput
+                            label="Meeting Title"
+                            value={item.title || ''}
+                            placeholder="e.g. HoD's Meeting with Principal"
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'title', v)}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput
+                            label="Reference / Meeting No."
+                            value={item.meetingNo || ''}
+                            placeholder="e.g. MOM 24"
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'meetingNo', v)}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput
+                            label="Date"
+                            value={item.date || ''}
+                            placeholder="e.g. 16 September 2026"
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'date', v)}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput
+                            label="Time"
+                            value={item.time || ''}
+                            placeholder="e.g. 10.15 AM – 12.10 PM"
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'time', v)}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput
+                            label="Venue"
+                            value={item.venue || ''}
+                            placeholder="e.g. Principal Chamber, SSE"
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'venue', v)}
+                          />
+                        </div>
                       </div>
-                      <div className="md:col-span-2">
+
+                      {/* Section 1: Attendees */}
+                      <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                          <div>
+                            <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                              Attendees Roster ({(item.attendees || []).length})
+                            </span>
+                            <p className="text-[11px] text-slate-500">
+                              Leadership and faculty present during the proceedings
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleFillLeadershipAttendees(mIdx)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold border border-indigo-200 transition-colors cursor-pointer"
+                            >
+                              <span>⚡ Fill SSE Leadership</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddMomAttendee(mIdx)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-bold border border-slate-300 transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Add Attendee</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {(!item.attendees || item.attendees.length === 0) ? (
+                          <div className="text-center py-4 text-xs text-slate-400">
+                            No attendees added. Click "Fill SSE Leadership" or "Add Attendee".
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {item.attendees.map((att, aIdx) => (
+                              <div key={aIdx} className="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200">
+                                <span className="w-6 text-center text-xs font-bold text-slate-400 shrink-0">
+                                  {aIdx + 1}
+                                </span>
+                                <input
+                                  type="text"
+                                  value={att.name}
+                                  placeholder="Faculty / Leader Name"
+                                  onChange={(e) => handleUpdateMomAttendee(mIdx, aIdx, 'name', e.target.value)}
+                                  className="flex-1 px-2.5 py-1.5 text-xs font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                />
+                                <input
+                                  type="text"
+                                  value={att.designation}
+                                  placeholder="Designation / Role"
+                                  onChange={(e) => handleUpdateMomAttendee(mIdx, aIdx, 'designation', e.target.value)}
+                                  className="flex-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMomAttendee(mIdx, aIdx)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                                  title="Remove attendee"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Section 2: Agenda */}
+                      <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2">
+                        <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider block">
+                          Meeting Agenda
+                        </label>
+                        <p className="text-[11px] text-slate-500">
+                          List meeting points (e.g. ERP Portal, Assignments, IV Year Project Reviews, Targets, etc.)
+                        </p>
                         <BulletTextarea
-                          label="Main Decisions/Topics Discussed"
-                          value={item.decisions}
-                          onChange={(v) => handleUpdateField('deptMeetings', idx, 'decisions', v)}
-                          placeholder="• Discussed curriculum progress&#10;• Finalized schedule for project reviews"
+                          label=""
+                          value={item.agenda || ''}
+                          onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'agenda', v)}
+                          placeholder="• ERP Portal – Leave & Class Substitution&#10;• Assignments – Moodle Portal&#10;• IV Year Project Review Schedule&#10;• Research Paper & Patent Publication Targets"
                         />
                       </div>
-                      <div className="md:col-span-2">
-                        <FieldInput label="Minutes/Proof Link" value={item.link} onChange={(v) => handleUpdateField('deptMeetings', idx, 'link', v)} />
+
+                      {/* Section 3: Detailed Discussion Topics & Minutes */}
+                      <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                          <div>
+                            <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                              Detailed Discussion Topics &amp; Minutes ({(item.discussions || []).length})
+                            </span>
+                            <p className="text-[11px] text-slate-500">
+                              Numbered minutes with optional embedded review schedules or target tables
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddMomDiscussion(mIdx)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add Discussion Topic</span>
+                          </button>
+                        </div>
+
+                        {(!item.discussions || item.discussions.length === 0) ? (
+                          <div className="text-center py-6 bg-white rounded-xl border border-dashed border-slate-300">
+                            <p className="text-xs text-slate-500 mb-2">No detailed discussion topics added yet.</p>
+                            <button
+                              type="button"
+                              onClick={() => handleLoadMomTemplate(mIdx)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-colors cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Load Standard 8 Topics from MOM 24 Word Template</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {item.discussions.map((disc, dIdx) => (
+                              <div key={dIdx} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
+                                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <span className="w-6 h-6 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0">
+                                      {dIdx + 1}
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={disc.heading}
+                                      placeholder="Topic Title (e.g. 1. ERP Portal – Leave & Class Substitution)"
+                                      onChange={(e) => handleUpdateMomDiscussion(mIdx, dIdx, { heading: e.target.value })}
+                                      className="w-full px-3 py-1.5 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveMomDiscussion(mIdx, dIdx)}
+                                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                                    title="Delete this topic"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <div>
+                                  <BulletTextarea
+                                    label="Discussion Points / Directives"
+                                    value={disc.details}
+                                    placeholder="• Enter key directives, guidelines, or points discussed..."
+                                    onChange={(v) => handleUpdateMomDiscussion(mIdx, dIdx, { details: v })}
+                                  />
+                                </div>
+
+                                {/* Embedded Table Selector */}
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <label className="text-[11px] font-bold text-slate-700">
+                                      Embedded Table Format:
+                                    </label>
+                                    <select
+                                      value={disc.tableType || 'none'}
+                                      onChange={(e) => {
+                                        const tType = e.target.value as any;
+                                        if (tType === 'project_reviews' && (!disc.reviewSchedule || disc.reviewSchedule.length === 0)) {
+                                          handleUpdateMomDiscussion(mIdx, dIdx, {
+                                            tableType: tType,
+                                            reviewSchedule: [
+                                              { review: '1st Review', date: '21 September 2026' },
+                                              { review: '2nd Review', date: '09 October 2026' },
+                                              { review: '3rd / Final Review', date: '23 October 2026' },
+                                              { review: 'Final Project Report Submission', date: '24 December 2026' }
+                                            ]
+                                          });
+                                        } else if (tType === 'publication_targets' && (!disc.publicationTargets || disc.publicationTargets.length === 0)) {
+                                          handleUpdateMomDiscussion(mIdx, dIdx, {
+                                            tableType: tType,
+                                            publicationTargets: [
+                                              { department: 'Mechanical Engineering', researchPapers: '4', patents: '0' },
+                                              { department: 'EEE', researchPapers: '8', patents: '3' },
+                                              { department: 'CSE', researchPapers: '20', patents: '16' },
+                                              { department: 'Civil Engineering', researchPapers: '4', patents: '2' },
+                                              { department: 'ECE', researchPapers: '7', patents: '4' }
+                                            ]
+                                          });
+                                        } else {
+                                          handleUpdateMomDiscussion(mIdx, dIdx, { tableType: tType });
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-800 text-xs font-semibold focus:outline-none focus:border-blue-600 cursor-pointer"
+                                    >
+                                      <option value="none">None (Text Only)</option>
+                                      <option value="project_reviews">IV Year Project Review Schedule Table</option>
+                                      <option value="publication_targets">Research Paper &amp; Patent Targets Table</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Table 1: Project Review Schedule */}
+                                  {disc.tableType === 'project_reviews' && (
+                                    <div className="space-y-2 pt-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold text-slate-700">
+                                          Review Milestone Rows ({(disc.reviewSchedule || []).length})
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAddReviewRow(mIdx, dIdx)}
+                                          className="text-[11px] text-blue-700 font-bold hover:underline cursor-pointer"
+                                        >
+                                          + Add Review Milestone
+                                        </button>
+                                      </div>
+                                      {(disc.reviewSchedule || []).map((rRow, rIdx) => (
+                                        <div key={rIdx} className="flex items-center gap-2">
+                                          <input
+                                            type="text"
+                                            value={rRow.review}
+                                            placeholder="e.g. 1st Review"
+                                            onChange={(e) => handleUpdateReviewRow(mIdx, dIdx, rIdx, 'review', e.target.value)}
+                                            className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={rRow.date}
+                                            placeholder="e.g. 21 September 2026"
+                                            onChange={(e) => handleUpdateReviewRow(mIdx, dIdx, rIdx, 'date', e.target.value)}
+                                            className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveReviewRow(mIdx, dIdx, rIdx)}
+                                            className="p-1 text-slate-400 hover:text-red-600 cursor-pointer"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Table 2: Publication Targets */}
+                                  {disc.tableType === 'publication_targets' && (
+                                    <div className="space-y-2 pt-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold text-slate-700">
+                                          Department Target Rows ({(disc.publicationTargets || []).length})
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAddTargetRow(mIdx, dIdx)}
+                                          className="text-[11px] text-blue-700 font-bold hover:underline cursor-pointer"
+                                        >
+                                          + Add Department Target
+                                        </button>
+                                      </div>
+                                      {(disc.publicationTargets || []).map((tRow, tIdx) => (
+                                        <div key={tIdx} className="flex items-center gap-2">
+                                          <input
+                                            type="text"
+                                            value={tRow.department}
+                                            placeholder="Department (e.g. CSE)"
+                                            onChange={(e) => handleUpdateTargetRow(mIdx, dIdx, tIdx, 'department', e.target.value)}
+                                            className="flex-2 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={tRow.researchPapers}
+                                            placeholder="Papers (e.g. 20)"
+                                            onChange={(e) => handleUpdateTargetRow(mIdx, dIdx, tIdx, 'researchPapers', e.target.value)}
+                                            className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={tRow.patents}
+                                            placeholder="Patents (e.g. 16)"
+                                            onChange={(e) => handleUpdateTargetRow(mIdx, dIdx, tIdx, 'patents', e.target.value)}
+                                            className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveTargetRow(mIdx, dIdx, tIdx)}
+                                            className="p-1 text-slate-400 hover:text-red-600 cursor-pointer"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {disc.tableType !== 'none' && (
+                                    <FieldInput
+                                      label="Post-Table Directive / Remarks"
+                                      value={disc.postTableDetails || ''}
+                                      placeholder="e.g. All HODs are requested to monitor the progress regularly..."
+                                      onChange={(v) => handleUpdateMomDiscussion(mIdx, dIdx, { postTableDetails: v })}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
+
+                      {/* Policy Changes and Links */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2 border-t border-slate-200">
+                        <div>
+                          <FieldInput
+                            label="Policy Changes / Key Takeaways (if any)"
+                            value={item.policyChanges || ''}
+                            placeholder="e.g. Mandatory online ERP substitution acceptance before leave approval"
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'policyChanges', v)}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput
+                            label="Signed Minutes / Digital Proof Link"
+                            value={item.link || ''}
+                            placeholder="https://..."
+                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'link', v)}
+                          />
+                        </div>
+                      </div>
+
                     </div>
                   </EntryCard>
                 ))}
               </SectionContainer>
             )}
 
-            {/* Table 11: 6b. Collaborations & MoUs */}
+            {/* Table 11: 6. Collaborations & MoUs */}
             {activeSectionKey === '6b_mous' && (
               <SectionContainer
-                title="b) Collaborations & MoUs"
+                title="6. Collaborations & MoUs"
                 description="Formal agreements/ongoing collaborations with industry, academia, or organizations."
                 count={safeSections.mous.length}
                 onAdd={() => handleAddRow('mous')}

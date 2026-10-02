@@ -338,12 +338,15 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           header: 'Key Outcomes',
           width: '14%',
           align: 'justify',
-          render: (it) => (
-            <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-              <div style={{ fontWeight: 600, color: '#047857' }}>{it.status || 'Active'}</div>
-              <div style={{ fontSize: '8px' }}>{it.keyOutcomes}</div>
-            </div>
-          )
+          render: (it) => {
+            const hasOutcomes = it.keyOutcomes && it.keyOutcomes.trim() !== '' && it.keyOutcomes.trim().toLowerCase() !== (it.status || '').trim().toLowerCase();
+            return (
+              <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+                <div style={{ fontWeight: 600, color: (it.status || '').toLowerCase() === 'completed' ? '#047857' : '#1a365d' }}>{it.status || 'Active'}</div>
+                {hasOutcomes && <div style={{ fontSize: '8px', color: '#64748b' }}>{it.keyOutcomes}</div>}
+              </div>
+            );
+          }
         }
       ]
     },
@@ -580,35 +583,76 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         }
       ]
     },
-    // 6A. Meetings
+    // Meetings (Institutional Committees / MOM only)
     {
       key: 'deptMeetings',
-      title: '6A. MEETINGS',
+      title: 'MEETINGS & MINUTES',
       tall: false,
       rowsPerPage: 10,
-      getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
+      getItems: (data, depts) => depts.filter(d => d.code === 'MOM' || (d as any).type === 'COMMITTEE').flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
-          header: 'Date & Forum',
-          width: '18%',
+          header: 'Meeting & Venue',
+          width: '20%',
           align: 'center',
           render: (it) => (
-            <div style={{ color: '#0f172a', fontWeight: 700 }}>
-              <div>{it.date}</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>Dept DAC / BOS</div>
+            <div style={{ color: '#0f172a' }}>
+              <div style={{ fontWeight: 800, fontSize: '9px' }}>{it.title || "HoD's Meeting"}</div>
+              <div style={{ fontSize: '8.5px', color: '#475569', marginTop: '1px' }}>{it.date}</div>
+              {it.venue && <div style={{ fontSize: '7.5px', color: '#64748b' }}>{it.venue}</div>}
+              {it.meetingNo && <span style={{ fontSize: '7.5px', fontWeight: 800, backgroundColor: '#e2e8f0', color: '#1e293b', padding: '1px 4px', borderRadius: '3px', marginTop: '2px', display: 'inline-block' }}>{it.meetingNo}</span>}
             </div>
           )
         },
-        { header: 'Key Decisions & Topics Discussed', width: '42%', align: 'justify', render: (it) => <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.decisions}</div> },
-        { header: 'Policy Changes & Action Plan', width: '26%', align: 'justify', render: (it) => <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.policyChanges || 'Standard operations confirmed.'}</div> }
+        {
+          header: 'Key Decisions & Topics Discussed',
+          width: '45%',
+          align: 'justify',
+          render: (it) => {
+            if (it.discussions && it.discussions.length > 0) {
+              return (
+                <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8.5px' }}>
+                  {it.attendees && it.attendees.length > 0 && (
+                    <div style={{ marginBottom: '3px', color: '#1e293b', fontWeight: 700 }}>
+                      Attendees ({it.attendees.length}): {it.attendees.map((a: any) => a.name).join(', ')}
+                    </div>
+                  )}
+                  {it.discussions.map((d: any, dIdx: number) => (
+                    <div key={dIdx} style={{ marginBottom: '2px' }}>
+                      <strong>{d.heading}</strong>: {d.details ? d.details.replace(/\n/g, '; ') : 'Discussed & recorded.'}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.decisions}</div>;
+          }
+        },
+        {
+          header: 'Policy Directives & Action Plan',
+          width: '22%',
+          align: 'justify',
+          render: (it) => (
+            <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+              {it.policyChanges || 'Standard operations and administrative resolutions confirmed.'}
+              {it.link && (
+                <div style={{ marginTop: '2px', fontSize: '8px' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
+                    Proof Link
+                  </a>
+                </div>
+              )}
+            </div>
+          )
+        }
       ]
     },
-    // 6B. Collaborations & MoUs
+    // 6. Collaborations & MoUs
     {
       key: 'mous',
-      title: '6B. COLLABORATIONS & MOUS',
+      title: '6. COLLABORATIONS & MOUS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.mous || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -828,10 +872,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   );
 
   // Helper to render reusable generic section data tables with flawless vertical text rendering
-  const renderDataTable = <T,>(columns: ColumnConfig<T>[], items: T[], startIndex: number) => (
+  const renderDataTable = <T,>(columns: ColumnConfig<T>[], items: T[], startIndex: number, headerBg?: string) => (
     <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '8.5px', border: '1px solid #cbd5e1', marginBottom: '8px' }}>
       <thead>
-        <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
+        <tr style={{ backgroundColor: headerBg || '#1e3a8a', color: '#ffffff' }}>
           {columns.map((col, cIdx) => (
             <th
               key={cIdx}
@@ -842,7 +886,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                 verticalAlign: 'middle',
                 fontWeight: 800,
                 fontSize: '8.5px',
-                borderRight: cIdx < columns.length - 1 ? '1px solid #3b82f6' : 'none',
+                borderRight: cIdx < columns.length - 1 ? '1px solid rgba(255,255,255,0.25)' : 'none',
                 lineHeight: 1.3
               }}
             >
@@ -975,31 +1019,80 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     </div>
   );
 
-  const renderSectionHeader = (title: string, count?: number, isContinued?: boolean) => (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '2px solid #1a365d',
-        paddingBottom: '3px',
-        marginBottom: '8px'
-      }}
-    >
+  const getSectionTheme = (title: string) => {
+    const t = title.toUpperCase();
+    if (t.includes('1A') || t.includes('1B') || t.includes('JOURNAL') || t.includes('CONFERENCE') || t.includes('RESEARCH')) {
+      return { primary: '#1e3a8a', badgeBg: '#eff6ff', border: '#2563eb' }; // Royal Navy Blue
+    }
+    if (t.includes('2A') || t.includes('PATENT')) {
+      return { primary: '#6b21a8', badgeBg: '#f5f3ff', border: '#7c3aed' }; // Purple
+    }
+    if (t.includes('2B') || t.includes('ACTIVITIES') || t.includes('INITIATIVES') || t.includes('ENTREPRENEURSHIP')) {
+      return { primary: '#0f766e', badgeBg: '#f0fdfa', border: '#0d9488' }; // Teal
+    }
+    if (t.includes('3A') || t.includes('3B') || t.includes('FDP')) {
+      return { primary: '#0369a1', badgeBg: '#f0f9ff', border: '#0284c7' }; // Ocean Sky
+    }
+    if (t.includes('4.') || t.includes('SDP') || t.includes('STUDENT DEVELOPMENT')) {
+      return { primary: '#047857', badgeBg: '#ecfdf5', border: '#059669' }; // Emerald Green
+    }
+    if (t.includes('5A') || t.includes('5B') || t.includes('5C') || t.includes('ACHIEVEMENT') || t.includes('CERTIFICATION') || t.includes('HONOR')) {
+      return { primary: '#b45309', badgeBg: '#fffbeb', border: '#d97706' }; // Amber Gold
+    }
+    if (t.includes('6.') || t.includes('MOU') || t.includes('COLLABORATION')) {
+      return { primary: '#4338ca', badgeBg: '#eef2ff', border: '#4f46e5' }; // Indigo
+    }
+    if (t.includes('7.') || t.includes('TECHNICAL ASSOCIATION')) {
+      return { primary: '#0e7490', badgeBg: '#ecfeff', border: '#0891b2' }; // Cyan
+    }
+    if (t.includes('8.') || t.includes('SYLLABUS')) {
+      return { primary: '#1d4ed8', badgeBg: '#eff6ff', border: '#2563eb' }; // Cobalt Blue
+    }
+    if (t.includes('9.') || t.includes('CLUB') || t.includes('STUDENT ENGAGEMENT')) {
+      return { primary: '#be123c', badgeBg: '#fff1f2', border: '#e11d48' }; // Rose Crimson
+    }
+    if (t.includes('10.') || t.includes('NSS') || t.includes('EXTENSION')) {
+      return { primary: '#15803d', badgeBg: '#f0fdf4', border: '#16a34a' }; // Forest Green
+    }
+    if (t.includes('11.') || t.includes('ADDITIONAL') || t.includes('RELEVANT')) {
+      return { primary: '#4f46e5', badgeBg: '#eef2ff', border: '#6366f1' }; // Violet
+    }
+    if (t.includes('MEETING') || t.includes('MINUTES')) {
+      return { primary: '#334155', badgeBg: '#f8fafc', border: '#475569' }; // Slate
+    }
+    return { primary: '#1a365d', badgeBg: '#f8fafc', border: '#1a365d' };
+  };
+
+  const renderSectionHeader = (title: string, count?: number, isContinued?: boolean) => {
+    const theme = getSectionTheme(title);
+    return (
       <div
         style={{
-          fontWeight: 900,
-          color: '#1a365d',
-          fontSize: '10px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: `2px solid ${theme.primary}`,
+          paddingBottom: '3.5px',
+          marginBottom: '8px'
         }}
       >
-        {title} {isContinued && <span style={{ color: '#c2410c' }}>(CONTINUED)</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '4px', height: '13px', backgroundColor: theme.primary, borderRadius: '2px' }} />
+          <div
+            style={{
+              fontWeight: 900,
+              color: theme.primary,
+              fontSize: '10.5px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em'
+            }}
+          >
+            {title} {isContinued && <span style={{ color: '#c2410c' }}>(CONTINUED)</span>}
+          </div>
+        </div>
       </div>
-
-    </div>
-  );
+    );
+  };
 
   const renderAuditAndSignOff = () => (
     <div style={{ marginTop: '12px' }}>
@@ -1169,12 +1262,15 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                 )}
 
                 <div data-body style={{ flex: 1, minHeight: 0 }}>
-                  {pageDef.sections?.map((sItem, sIdx) => (
-                    <div key={sIdx} style={{ marginBottom: '8px' }}>
-                      {renderSectionHeader(sItem.section.title, sItem.totalCount, sItem.isContinued)}
-                      {renderDataTable(sItem.section.columns, sItem.items || [], sItem.startIndex || 0)}
-                    </div>
-                  ))}
+                  {pageDef.sections?.map((sItem, sIdx) => {
+                    const theme = getSectionTheme(sItem.section.title);
+                    return (
+                      <div key={sIdx} style={{ marginBottom: '8px' }}>
+                        {renderSectionHeader(sItem.section.title, sItem.totalCount, sItem.isContinued)}
+                        {renderDataTable(sItem.section.columns, sItem.items || [], sItem.startIndex || 0, theme.primary)}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               {renderRunningFooter(pageNumber)}

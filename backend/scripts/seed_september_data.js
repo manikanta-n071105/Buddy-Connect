@@ -51,20 +51,7 @@ const SeptemberData = {
       facultyAchievements: [],
       studentAchievements: [],
       certifications: [],
-      deptMeetings: [
-        {
-          date: '06.09.2026',
-          decisions: 'Learning Teaching Methods, Final year projects, Improvement of attendance strength of students and Work shops on Reviet and tekla software',
-          policyChanges: 'Standard operations confirmed.',
-          link: ''
-        },
-        {
-          date: '21.09.2026',
-          decisions: 'Innovation teaching methods, assignments question patterns, fee updates and conduction of labs, syllabus completion for mid 2 exam.',
-          policyChanges: 'Standard operations confirmed.',
-          link: ''
-        }
-      ],
+      deptMeetings: [],
       mous: [],
       additionalInitiatives: [],
       techAssociation: [],
@@ -346,14 +333,7 @@ const SeptemberData = {
       facultyAchievements: [],
       studentAchievements: [],
       certifications: [],
-      deptMeetings: [
-        {
-          date: '19-09-2026',
-          decisions: '1. First Project Review - Final Year Academic Projects 2. Attendance for Campus Interview Training 3. FRS Attendance 4. Faculty Reporting Time 5. Leave Procedure 6. Committee Responsibilities 7. Student Assignment Uploads 8. ATAL FDP - External Faculty Participation 9. Laboratory Equipment Servicing 10. Campus Interview Preparation - ECE Core Subjects',
-          policyChanges: 'Standard operations confirmed.',
-          link: ''
-        }
-      ],
+      deptMeetings: [],
       mous: [],
       additionalInitiatives: [],
       techAssociation: [],
@@ -649,20 +629,7 @@ const SeptemberData = {
         }
       ],
       conferences: [],
-      deptMeetings: [
-        {
-          date: '16/09/2026',
-          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
-          decisions: 'Chairperson: Dr. Naarisetti Srinivasa Rao, Head of the Department, EEE Attendees: All faculty members of the EEE Department Discussion Points 1. First Project Review — Final Year Academic Projects The first review of final year academic projects is scheduled for 21/09/2026. All final year students must publish their project work in conferences, and the publications should be indexed in the Scopus database. Where applicable, students should also be guided to file patents for their project work. 2. Attendance for Campus Interview Training Several final year students have been showing low attendance in campus interview training sessions. Faculty members concerned are to issue a formal warning to these students and ensure improved attendance going forward. 3. FRS Attendance FRS Attendance is mandatory for all concerned, both in the morning and in the evening sessions. 4. Faculty Reporting Time All faculty members must report to the college by 8:35 AM, with particular attention to faculty holding the first hour class. 5. Leave Procedure Faculty members availing leave must arrange for adjustment of their class work in advance and ensure the same is updated in the ERP system without fail. 6. Committee Responsibilities Apart from regular teaching duties, all faculty members are required to actively participate in and complete their assigned committee responsibilities. 7. Student Assignment Uploads Students are to upload their assignments through the designated portal system as per schedule. 8. ATAL FDP — External Faculty For the upcoming ATAL FDP, faculty members are requested to identify and invite participation of faculty from other colleges. 9. Lab Equipment Servicing All faculty members concerned should ensure that lab equipment requiring servicing is ready and handed over for service by this Saturday. 10. Campus Interview Preparation — EEE Core Subjects Mr. K. Ramu Sir raised the point regarding upcoming campus interviews, and requested that all faculty members should know abou campus training and placements so that they can extend support in training and preparing students in EEE core subjects for the same.',
-          policyChanges: 'no'
-        },
-        {
-          date: '09/09/2026',
-          link: 'https://drive.google.com/drive/folders/1Rn2EwmUFhr2TQUAatjrtJomakO1jCbCc?usp=drive_link',
-          decisions: 'Items Approved and Suggestions Received: 1. The members approved and suggested to follow the presented course structure for the II B.Tech I Sem & II Sem (EEE)(R25). 2. The members approved and suggested to follow the presented course Syllabus for the II B.Tech I Sem & II Sem (EEE)(R25). 3. University Nominee and Members suggested For the Swapping of the course need approval in Academic Council meeting and take clarity from JNTUA, Ananthapuramu',
-          policyChanges: 'Items for Consideration and Approval: 1. Course Structure for II B. Tech I and II Semester(R25). 2. Syllabus for II B. Tech I and II Semester(R25) (EEE Courses). 3. Proposed swapping of courses between Electromagnetic Fields (I B.Tech II Semester) and Analog Circuits (II B. Tech I Semester) under the R26 (New Regulation).'
-        }
-      ],
+      deptMeetings: [],
       certifications: [],
       techAssociation: [],
       entrepreneurship: [],
@@ -711,14 +678,7 @@ const SeptemberData = {
       facultyAchievements: [],
       studentAchievements: [],
       certifications: [],
-      deptMeetings: [
-        {
-          date: '17-09-2026',
-          decisions: 'Instructed the members of faculty to Faculty must issue formal warnings to low-attendance final-year students and direct them to attend all placement activities. FRS attendance is mandatory for all faculty as well as management and convener quota students. Faculty handling first-period classes must be in their classrooms by 8:44 AM or face HR disciplinary action. Departmental meetings must be held regularly to update management-level key development instructions. Faculty should provide more guidance on assignments to improve the response ratio by Mid 2. Students and faculty must use Moodle for at least 5 hours weekly to upload catch-up and punishment assignments. Library hour classes should be used to discuss sample question papers and Problem-Based Learning (PBL) assignments. At least 4 Scopus papers are expected from the IV Year Mechanical department. Faculty must prepare teaching-learning materials, follow them in classes, and maintain proofs for NAAC. At least 4 external participants from department side must register for and attend the SSE-organized FDP on Sustainability. Mentors must counsel students who have outstanding fee dues. Final year project Review 1 is on September 21, 2026. Final year project Review 2 is on October 09, 2026. Final year project Review 3 is on October 23, 2026. Final year project report submission is due on December 24, 2026. Final year project Review 4 is on January 22, 2027 (extended date for Mechanical only). Final project review is scheduled for April 07, 2027. Guides must instruct students to use the M-Files Information Management Platform.',
-          policyChanges: 'Standard operations confirmed.',
-          link: ''
-        }
-      ],
+      deptMeetings: [],
       mous: [],
       additionalInitiatives: [],
       techAssociation: [],
@@ -770,14 +730,7 @@ const SeptemberData = {
       facultyAchievements: [],
       studentAchievements: [],
       certifications: [],
-      deptMeetings: [
-        {
-          date: '26th Sept 2026',
-          decisions: '',
-          policyChanges: 'Standard operations confirmed.',
-          link: ''
-        }
-      ],
+      deptMeetings: [],
       mous: [],
       additionalInitiatives: [
         {
@@ -999,15 +952,102 @@ const SeptemberData = {
       certifications: [],
       deptMeetings: [
         {
-          date: '04/04/2026',
-          decisions: 'Reviewed end-semester question paper standard and verified Bloom\'s taxonomy mapping across all courses. Approved procurement of high-performance GPU compute cluster for Department AI & Robotics Lab. Finalized dates and external evaluation panel for major project demonstrations and viva voce. Resolved to organize structured 10-day bridge courses in Data Structures & Algorithms before campus recruitment season.',
-          policyChanges: 'Introduced rigorous continuous evaluation rubric and mandatory peer reviews for final year projects.',
-          link: ''
-        },
-        {
-          date: '21/04/2026',
-          decisions: 'Scrutinized and approved summer internship offers received from top MNCs and Tier-1 research labs. Reviewed feedback from recent campus placement drives and approved industry-specific technical mock interview sessions. Finalized dates for upcoming Department Advisory Board (DAB) and Board of Studies (BOS) curriculum consultations. Established departmental student mentoring circles pairing high-performing seniors with junior students.',
-          policyChanges: 'Revised student industry internship monitoring policy with mandatory weekly digital log submissions.',
+          title: "HoD's Meeting with Principal",
+          meetingNo: 'MOM 24',
+          date: '16 September 2026',
+          time: '10.15 AM – 12.10 PM',
+          venue: 'Principal Chamber, SSE',
+          attendees: [
+            { name: 'Dr. Hemachandra', designation: 'Principal - SSE' },
+            { name: 'Dr. S Hari Krishnan', designation: 'Vice - Principal - SSE' },
+            { name: 'Prof. Nagaraju', designation: 'HOD ECE & Dean Academics' },
+            { name: 'Dr. Srinivas Rao', designation: 'HOD - EEE' },
+            { name: 'Dr. Anil Kumar Reddy', designation: 'HOD - MECH' },
+            { name: 'Dr. Vinod Kumar', designation: 'HOD - CSE' },
+            { name: 'Dr. Sambhasivaiah', designation: 'HOD HAS' },
+            { name: 'Mr. Sivaprasad', designation: 'HOD CIVIL' }
+          ],
+          agenda: `• ERP Portal – Leave & Class Substitution
+• Assignments – Moodle Portal
+• IV Year Project Review Schedule
+• Research Paper & Patent Publication Targets
+• Teaching & Learning Practices
+• ATAL Faculty Development Programme (FDP)
+• Proper Utilization of Laboratory Facilities
+• Working Day – 19 September 2026`,
+          discussions: [
+            {
+              heading: '1. ERP Portal – Leave & Class Substitution',
+              details: `• All faculty members are instructed to use the ERP Portal properly for applying leave.
+• Whenever a class is substituted by another faculty member, the concerned substitute faculty must accept the substitution request online through the ERP Portal.
+• Leave will be considered only after the substitute faculty has accepted the substitution online.
+• Faculty members applying for leave should ensure that there is no pending substitution acceptance before proceeding on leave.`,
+              tableType: 'none'
+            },
+            {
+              heading: '2. Assignment – Moodle Portal',
+              details: `• All faculty members are instructed to assign assignments in the Moodle Portal.
+• Faculty members should discuss the assignment questions in the respective classes before the Mid-Term Examinations.
+• All three assignment questions must be discussed with the students.
+• Out of the three questions discussed, one question will be given in the question paper as Assignment.`,
+              tableType: 'none'
+            },
+            {
+              heading: '3. IV Year Project Review Schedule',
+              details: 'The IV Year project reviews are scheduled as follows:',
+              tableType: 'project_reviews',
+              reviewSchedule: [
+                { review: '1st Review', date: '21 September 2026' },
+                { review: '2nd Review', date: '09 October 2026' },
+                { review: '3rd / Final Review', date: '23 October 2026' },
+                { review: 'Final Project Report Submission', date: '24 December 2026' }
+              ],
+              postTableDetails: 'All concerned faculty members and students are instructed to adhere strictly to the above schedule.'
+            },
+            {
+              heading: '4. Paper & Patent Publication Targets',
+              details: 'As discussed in the HODs meeting, all HODs have agreed to and committed to achieving the following targets for research paper and patent publications:',
+              tableType: 'publication_targets',
+              publicationTargets: [
+                { department: 'Mechanical Engineering', researchPapers: '4', patents: '0' },
+                { department: 'EEE', researchPapers: '8', patents: '3' },
+                { department: 'CSE', researchPapers: '20', patents: '16' },
+                { department: 'Civil Engineering', researchPapers: '4', patents: '2' },
+                { department: 'ECE', researchPapers: '7', patents: '4' }
+              ],
+              postTableDetails: 'All HODs are requested to monitor the progress regularly and ensure that the committed targets are achieved.'
+            },
+            {
+              heading: '5. Teaching & Learning',
+              details: `• All faculty members are instructed to ensure effective and proper Teaching & Learning practices.
+• Faculty members should maintain quality in classroom teaching, ensure syllabus progress as per schedule, and actively engage students in the learning process.`,
+              tableType: 'none'
+            },
+            {
+              heading: '6. ATAL FDP – November 30 to December 5, 2026',
+              details: `• It is happy to share that the institution has received approval for an ATAL Faculty Development Programme (FDP).
+• The FDP is scheduled from 30 November to 05 December 2026 in offline mode.
+• Each department is required to bring 4 participants from other institutions.
+• Participation from each department is mandatory, and HODs are requested to coordinate accordingly.`,
+              tableType: 'none'
+            },
+            {
+              heading: '7. Proper Utilization of Laboratory Facilities',
+              details: `• All laboratory stools and available seating facilities should be properly utilized.
+• No student should be allowed to sit on the laboratory floor during practical sessions.
+• Faculty members and laboratory staff are instructed to ensure proper seating arrangements and maintain discipline in the laboratories.`,
+              tableType: 'none'
+            },
+            {
+              heading: '8. Working Day – 19 September 2026',
+              details: `• Saturday, 19 September 2026, will be a regular working day for all B.Tech students in view of syllabus completion.
+• The Monday timetable will be followed on Saturday.
+• All HODs and faculty members are requested to ensure the regular conduct of classes and maximum student attendance.`,
+              tableType: 'none'
+            }
+          ],
+          decisions: 'HoD review meeting held with Principal covering ERP leaves, Moodle assignments, IV year project reviews, paper and patent targets, ATAL FDP, lab facilities, and Saturday working day.',
+          policyChanges: 'Mandatory online ERP substitution acceptance before leave approval; strict adherence to 4-stage project review timelines.',
           link: ''
         }
       ],
