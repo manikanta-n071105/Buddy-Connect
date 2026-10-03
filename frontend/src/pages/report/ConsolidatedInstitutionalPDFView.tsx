@@ -680,8 +680,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     {
       key: 'deptMeetings',
       title: 'MEETINGS & MINUTES',
-      tall: false,
-      rowsPerPage: 10,
+      tall: true,
+      rowsPerPage: 1,
       getItems: (data, depts) => depts.filter(d => d.code === 'MOM' || (d as any).type === 'COMMITTEE').flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
@@ -692,9 +692,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           align: 'center',
           render: (it) => (
             <div style={{ color: '#0f172a' }}>
-              <div style={{ fontWeight: 800, fontSize: '9px' }}>{it.title || "HoD's Meeting"}</div>
-              <div style={{ fontSize: '8.5px', color: '#475569', marginTop: '1px' }}>{it.date}</div>
-              {it.venue && <div style={{ fontSize: '7.5px', color: '#64748b' }}>{it.venue}</div>}
+              <div style={{ fontWeight: 800, fontSize: '9.5px', color: '#1a365d' }}>{it.title || "HoD's Meeting"}</div>
+              <div style={{ fontSize: '8.5px', fontWeight: 600, color: '#475569', marginTop: '2px' }}>{it.date}</div>
+              {it.time && <div style={{ fontSize: '8px', color: '#64748b' }}>{it.time}</div>}
+              {it.venue && <div style={{ fontSize: '8px', color: '#64748b' }}>Venue: {it.venue}</div>}
             </div>
           )
         },
@@ -705,21 +706,21 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           render: (it) => {
             if (it.discussions && it.discussions.length > 0) {
               return (
-                <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8.5px' }}>
+                <div style={{ color: '#334155', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8px' }}>
                   {it.attendees && it.attendees.length > 0 && (
-                    <div style={{ marginBottom: '3px', color: '#1e293b', fontWeight: 700 }}>
+                    <div style={{ marginBottom: '4px', color: '#1e293b', fontWeight: 700, fontSize: '8px', paddingBottom: '3px', borderBottom: '1px dashed #cbd5e1' }}>
                       Attendees ({it.attendees.length}): {it.attendees.map((a: any) => a.name).join(', ')}
                     </div>
                   )}
                   {it.discussions.map((d: any, dIdx: number) => (
-                    <div key={dIdx} style={{ marginBottom: '2px' }}>
-                      <strong>{d.heading}</strong>: {d.details ? d.details.replace(/\n/g, '; ') : 'Discussed & recorded.'}
+                    <div key={dIdx} style={{ marginBottom: '3px' }}>
+                      <strong style={{ color: '#0f172a' }}>{d.heading}</strong>: {d.details ? d.details.replace(/\n/g, '; ') : 'Discussed & recorded.'}
                     </div>
                   ))}
                 </div>
               );
             }
-            return <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.decisions}</div>;
+            return <div style={{ color: '#334155', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8px' }}>{it.decisions}</div>;
           }
         },
         {
@@ -727,12 +728,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           width: '22%',
           align: 'justify',
           render: (it) => (
-            <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+            <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8px' }}>
               {it.policyChanges || 'Standard operations and administrative resolutions confirmed.'}
               {it.link && (
                 <div style={{ marginTop: '2px', fontSize: '8px' }}>
                   <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
-                    Proof Link
+                    🔗 Proof Link
                   </a>
                 </div>
               )}
@@ -1036,8 +1037,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     const allItems = sec.getItems(deptDataMap, departmentList);
     if (allItems.length === 0) return; // Skip empty categories
 
-    const firstPageCapacity = sec.tall ? 7 : (sec.key === 'syllabus' ? 10 : 8);
-    const standardCapacity = sec.tall ? 8 : (sec.key === 'syllabus' ? 12 : (sec.rowsPerPage || 10));
+    const firstPageCapacity = sec.key === 'deptMeetings' ? 1 : (sec.tall ? 7 : (sec.key === 'syllabus' ? 10 : (sec.rowsPerPage || 8)));
+    const standardCapacity = sec.key === 'deptMeetings' ? 1 : (sec.tall ? 8 : (sec.key === 'syllabus' ? 12 : (sec.rowsPerPage || 10)));
 
     let remainingItems = allItems;
     let chunkStartIndex = 0;
