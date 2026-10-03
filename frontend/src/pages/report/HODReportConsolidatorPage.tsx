@@ -347,7 +347,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
       if (res.data.success) {
         toast.success(res.data.message || 'Consolidated Report successfully generated!', { id: 'consolidate' });
 
-        const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated`;
+        const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated?period=${encodeURIComponent(period)}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.docx`);
@@ -365,14 +365,14 @@ export const HODReportConsolidatorPage: React.FC = () => {
   };
 
   const handleDirectDownload = () => {
-    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated`;
+    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated?period=${encodeURIComponent(period)}`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.docx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Downloading Master Consolidated Institutional Report (.docx)');
+    toast.success(`Downloading Master Consolidated Institutional Report (${period})`);
   };
 
   // 2. Super Admin: Generate & Download Consolidated Institutional PDF
@@ -417,14 +417,14 @@ export const HODReportConsolidatorPage: React.FC = () => {
   };
 
   const handleDirectDownloadPDF = () => {
-    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated-pdf`;
+    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated-pdf?period=${encodeURIComponent(period)}`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Downloading Master Consolidated Institutional Report (.pdf)');
+    toast.success(`Downloading Master Consolidated Institutional Report (${period})`);
   };
 
   // Choice Handler when user picks format from modal:

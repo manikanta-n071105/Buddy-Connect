@@ -367,18 +367,31 @@ export const getConsolidatedReportStatus = async (_req: any, res: Response) => {
   }
 };
 
-export const downloadConsolidatedReport = async (_req: any, res: Response) => {
+export const downloadConsolidatedReport = async (req: any, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
     const projectRoot = path.resolve(process.cwd(), '..');
-    const reportPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
+    const period = (req.query.period as string) || 'September 2026';
+    const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    let reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
+    if (!fs.existsSync(reportPath)) {
+      const septPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_September_2026.docx');
+      if (fs.existsSync(septPath)) {
+        reportPath = septPath;
+      } else {
+        const aprilPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
+        if (fs.existsSync(aprilPath)) reportPath = aprilPath;
+      }
+    }
 
     if (!fs.existsSync(reportPath)) {
       return res.status(404).json({ success: false, message: 'Consolidated report has not been generated yet.' });
     }
 
-    res.setHeader('Content-Disposition', 'attachment; filename="Consolidated_Institutional_HOD_Report_April_2026.docx"');
+    const downloadFileName = `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFileName}"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     const fileStream = fs.createReadStream(reportPath);
     return fileStream.pipe(res);
@@ -387,18 +400,25 @@ export const downloadConsolidatedReport = async (_req: any, res: Response) => {
   }
 };
 
-export const downloadConsolidatedPDF = async (_req: any, res: Response) => {
+export const downloadConsolidatedPDF = async (req: any, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
     const projectRoot = path.resolve(process.cwd(), '..');
-    const pdfPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.pdf');
+    const period = (req.query.period as string) || 'September 2026';
+    const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    let pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
+    if (!fs.existsSync(pdfPath)) {
+      pdfPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.pdf');
+    }
 
     if (!fs.existsSync(pdfPath)) {
       return res.status(404).json({ success: false, message: 'Consolidated PDF report has not been generated yet.' });
     }
 
-    res.setHeader('Content-Disposition', 'attachment; filename="Consolidated_Institutional_HOD_Report_April_2026.pdf"');
+    const downloadFileName = `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`;
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFileName}"`);
     res.setHeader('Content-Type', 'application/pdf');
     const fileStream = fs.createReadStream(pdfPath);
     return fileStream.pipe(res);
@@ -854,7 +874,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     const projectRoot = path.resolve(process.cwd(), '..');
 
     const submissionsRes = await reportQuery(
-      'SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+      'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
       [period]
     );
 
@@ -865,82 +885,51 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
       });
     }
 
-    // Auto-generate docx on the fly for any submission with sections_data to guarantee the consolidated report reflects latest changes
-    const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
-    fs.mkdirSync(targetFolder, { recursive: true });
-
-    for (const sub of submissionsRes.rows) {
-      if (sub.sections_data) {
-        try {
-          const scratchFolder = path.join(projectRoot, 'scratch');
-          fs.mkdirSync(scratchFolder, { recursive: true });
-          const tempJsonPath = path.join(scratchFolder, `auto_gen_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
-          const cleanDept = sub.department.replace(/[^a-zA-Z0-9_-]/g, '_');
-          const safeFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${Date.now()}.docx`;
-          const targetFilePath = path.join(targetFolder, safeFileName);
-
-          const payload = {
-            department: sub.department,
-            period,
-            hodName: sub.hod_name || 'HOD / Convener',
-            submissionDate: sub.submission_date || new Date().toLocaleDateString('en-GB'),
-            collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
-            sections: typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : sub.sections_data
-          };
-
-          fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2), 'utf-8');
-          const genScript = path.join(projectRoot, 'scripts', 'generate_department_report.py');
-          const { execFileSync } = await import('child_process');
-          execFileSync(getPythonBin(), [genScript, tempJsonPath, targetFilePath], { timeout: 15000 });
-          try { fs.unlinkSync(tempJsonPath); } catch (_) { }
-
-          if (fs.existsSync(targetFilePath)) {
-            sub.file_path = targetFilePath;
-            await reportQuery('UPDATE departmental_monthly_reports SET file_path = $1, file_name = $2 WHERE id = $3', [targetFilePath, safeFileName, sub.id]);
-          }
-        } catch (err: any) {
-          console.warn(`Failed to auto-generate docx for ${sub.department}:`, err.message);
-        }
-      }
-    }
-
-    const validSubmissions = submissionsRes.rows.filter((r: any) => r.file_path && fs.existsSync(r.file_path));
-    const filePaths = validSubmissions.map((r: any) => r.file_path);
-
-    if (filePaths.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Submitted report files could not be found or generated on disk.'
-      });
-    }
-
-    const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
 
-    const args = [scriptPath, ...filePaths, reportPath];
+    // Build the consolidated JSON map containing all departments and committees data
+    const departmentsData: Record<string, any> = {};
+    for (const sub of submissionsRes.rows) {
+      const sec = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
+      departmentsData[sub.department] = sec;
+    }
 
-    execFile(getPythonBin(), args, async (error, stdout, stderr) => {
+    const scratchFolder = path.join(projectRoot, 'scratch');
+    fs.mkdirSync(scratchFolder, { recursive: true });
+    const tempJsonPath = path.join(scratchFolder, `consolidated_input_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
+
+    fs.writeFileSync(tempJsonPath, JSON.stringify({
+      period,
+      collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+      departmentsData
+    }, null, 2), 'utf-8');
+
+    const scriptPath = path.join(projectRoot, 'scripts', 'generate_consolidated_master_docx.py');
+
+    execFile(getPythonBin(), [scriptPath, tempJsonPath, reportPath], async (error, stdout, stderr) => {
+      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+
       if (error) {
         console.error('Consolidation script error:', error, stderr);
         return res.status(500).json({ success: false, message: 'Consolidation failed', error: stderr || error.message });
       }
 
+      // Also keep standard copy updated
       const standardOut = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
-      if (fs.existsSync(reportPath) && reportPath !== standardOut) {
-        fs.copyFileSync(reportPath, standardOut);
+      if (fs.existsSync(reportPath)) {
+        try { fs.copyFileSync(reportPath, standardOut); } catch (_) { }
       }
 
-      const departmentsCovered = validSubmissions.map((s: any) => s.department);
+      const departmentsCovered = Object.keys(departmentsData);
 
       return res.json({
         success: true,
-        message: `Successfully synthesized overall consolidated report from ${filePaths.length} departmental and committee reports!`,
+        message: `Successfully synthesized overall consolidated report from ${departmentsCovered.length} departmental and committee reports!`,
         data: {
           period,
           reportPath,
-          reportsCount: filePaths.length,
+          reportsCount: departmentsCovered.length,
           entitiesCovered: departmentsCovered,
           output: stdout
         }
