@@ -98,6 +98,47 @@ export const isMeaningfulItem = (item: any): boolean => {
   return values.some(v => v.length >= 2);
 };
 
+export const formatOutcomesIntoPoints = (text?: string): string[] => {
+  if (!text || !text.trim()) return [];
+  const raw = text.trim();
+
+  // 1. If contains newlines
+  if (raw.includes('\n')) {
+    const lines = raw.split(/\r?\n/).map(l => l.replace(/^[\s•*\-\d.)]+/, '').trim()).filter(Boolean);
+    if (lines.length > 1) return lines;
+  }
+
+  // 2. If contains PO1 / PO2 / PO3 pattern (e.g. "PO1: ... PO2: ...")
+  if (/PO\d+:|CO\d+:|Outcome\s*\d+:|Objective\s*\d+:/i.test(raw)) {
+    const parts = raw.split(/(?=(?:PO\d+:|CO\d+:|Outcome\s*\d+:|Objective\s*\d+:))/i)
+      .map(p => p.trim())
+      .filter(Boolean);
+    if (parts.length > 1) return parts;
+  }
+
+  // 3. If contains bullet symbols (•, ▪, – )
+  if (raw.includes('•') || raw.includes('▪') || raw.includes('–')) {
+    const parts = raw.split(/[•▪–]/).map(p => p.trim()).filter(Boolean);
+    if (parts.length > 1) return parts;
+  }
+
+  // 4. If contains numbered lists like "1. ... 2. ..." or "(1) ... (2) ..."
+  if (/(?:^|\s)(?:\d+\.|\(\d+\))\s+/i.test(raw)) {
+    const parts = raw.split(/(?=(?:^|\s)(?:\d+\.|\(\d+\))\s+)/i)
+      .map(p => p.replace(/^[\s•*\-\d.()]+/, '').trim())
+      .filter(Boolean);
+    if (parts.length > 1) return parts;
+  }
+
+  // 5. If contains semicolons with multiple items
+  if (raw.includes(';') && raw.split(';').filter(s => s.trim().length > 5).length > 1) {
+    return raw.split(';').map(s => s.trim()).filter(Boolean);
+  }
+
+  // 6. Return as single point
+  return [raw];
+};
+
 export const hasAnyMeaningfulData = (sec: ReportSectionsData | undefined): boolean => {
   if (!sec || typeof sec !== 'object') return false;
   return Object.values(sec).some(arr => Array.isArray(arr) && arr.some(isMeaningfulItem));
@@ -299,54 +340,60 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Program / Activity Title',
-          width: '36%',
+          width: '31%',
           align: 'justify',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
               <div>{it.title}</div>
-              <div style={{ color: '#475569', fontSize: '8px' }}>Type: {it.type}</div>
+              <div style={{ color: '#64748b', fontSize: '8px' }}>Type: {it.type} &bull; {it.mode}</div>
             </div>
           )
         },
         {
-          header: 'Date & Mode',
-          width: '18%',
-          align: 'center',
-          render: (it) => (
-            <div style={{ color: '#334155', lineHeight: 1.35 }}>
-              <div>{it.date}</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>{it.mode}</div>
-            </div>
-          )
-        },
-        {
-          header: 'Participants & Organizer',
-          width: '18%',
-          align: 'center',
-          render: (it) => (
-            <div style={{ color: '#334155', lineHeight: 1.35 }}>
-              <div><strong>{it.participantsCount}</strong> parts</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>By: {it.organizedBy}</div>
-            </div>
-          )
-        },
-        {
-          header: 'Key Outcomes',
-          width: '14%',
+          header: 'Date & Organizer',
+          width: '20%',
           align: 'justify',
-          render: (it) => {
-            const hasOutcomes = it.keyOutcomes && it.keyOutcomes.trim() !== '' && it.keyOutcomes.trim().toLowerCase() !== (it.status || '').trim().toLowerCase();
-            return (
-              <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-                <div style={{ fontWeight: 600, color: (it.status || '').toLowerCase() === 'completed' ? '#047857' : '#1a365d' }}>{it.status || 'Active'}</div>
-                {hasOutcomes && <div style={{ fontSize: '8px', color: '#64748b' }}>{it.keyOutcomes}</div>}
+          render: (it) => (
+            <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+              <div style={{ fontWeight: 600 }}>{it.date}</div>
+              <div style={{ color: '#475569', fontSize: '8px' }}>By: {it.organizedBy}</div>
+            </div>
+          )
+        },
+        {
+          header: 'Participants',
+          width: '16%',
+          align: 'center',
+          render: (it) => (
+            <div style={{ color: '#334155', lineHeight: 1.35 }}>
+              <div><strong style={{ color: '#1a365d' }}>{it.participantsCount}</strong> parts</div>
+              <div style={{ color: '#64748b', fontSize: '8px' }}>{it.participants}</div>
+            </div>
+          )
+        },
+        {
+          header: 'Coordinator, Status & Proof',
+          width: '22%',
+          align: 'justify',
+          render: (it) => (
+            <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+              <div style={{ color: '#1a365d', fontWeight: 600, fontSize: '8px' }}>Coord: {it.mentorCoordinator || '-'}</div>
+              <div style={{ fontWeight: 700, color: (it.status || '').toLowerCase() === 'completed' ? '#047857' : '#1a365d', fontSize: '8px', marginTop: '1px' }}>
+                Status: {it.status || 'Completed'}
               </div>
-            );
-          }
+              {it.link && (
+                <div style={{ wordBreak: 'break-all', fontSize: '7.5px', marginTop: '2px' }}>
+                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
+                    {it.link}
+                  </a>
+                </div>
+              )}
+            </div>
+          )
         }
       ]
     },
@@ -456,14 +503,14 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       key: 'sdp',
       title: '4. STUDENT DEVELOPMENT PROGRAMS (SDPS)',
       tall: false,
-      rowsPerPage: 10,
+      rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.sdp || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
-        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         {
           header: 'Event Title & Type',
-          width: '34%',
+          width: '26%',
           align: 'justify',
           render: (it) => (
             <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
@@ -474,18 +521,18 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         },
         {
           header: 'Date & Resource Person',
-          width: '22%',
+          width: '18%',
           align: 'justify',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-              <div>{it.date}</div>
+              <div style={{ fontWeight: 600 }}>{it.date}</div>
               <div style={{ color: '#475569', fontSize: '8px' }}>{it.resourcePerson}</div>
             </div>
           )
         },
         {
           header: 'Participants',
-          width: '12%',
+          width: '10%',
           align: 'center',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35 }}>
@@ -496,14 +543,39 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         },
         {
           header: 'Key Outcomes & Coord.',
-          width: '18%',
+          width: '35%',
           align: 'justify',
-          render: (it) => (
-            <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-              <div style={{ fontSize: '8px' }}>{it.keyOutcomes}</div>
-              <div style={{ color: '#1a365d', fontWeight: 600, fontSize: '8px' }}>Coord: {it.coordinator}</div>
-            </div>
-          )
+          render: (it) => {
+            const points = formatOutcomesIntoPoints(it.keyOutcomes);
+            return (
+              <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+                {points.length > 0 ? (
+                  <div style={{ fontSize: '8px', marginBottom: '2px' }}>
+                    {points.map((pt, pIdx) => (
+                      <div key={pIdx} style={{ display: 'flex', gap: '3px', marginBottom: '1.5px', alignItems: 'flex-start' }}>
+                        <span style={{ color: '#1d4ed8', fontWeight: 'bold', lineHeight: 1.2 }}>•</span>
+                        <span style={{ flex: 1 }}>{pt}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '8px', marginBottom: '2px' }}>{it.keyOutcomes || '-'}</div>
+                )}
+                {it.coordinator && (
+                  <div style={{ color: '#1a365d', fontWeight: 600, fontSize: '8px', marginTop: '1px' }}>
+                    Coord: {it.coordinator}
+                  </div>
+                )}
+                {it.link && (
+                  <div style={{ wordBreak: 'break-all', fontSize: '7.5px', marginTop: '2px' }}>
+                    <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
+                      {it.link}
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          }
         }
       ]
     },

@@ -916,53 +916,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
               </div>
             )}
 
-            {/* ⚡ Auto-Detect & Map Dedicated Hero Upload Card */}
-            <div className="bg-linear-to-r from-orange-50 via-amber-50 to-indigo-50 border border-orange-200/90 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-600 text-white text-[11px] font-extrabold uppercase tracking-wider shadow-xs">
-                    <Sparkles className="w-3.5 h-3.5" /> Instant Auto-Mapping Engine
-                  </div>
-                  <h3 className="text-base sm:text-lg font-black text-slate-900">
-                    Upload Any Committee or Department Report
-                  </h3>
-                  <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
-                    Drop your committee report (e.g. <strong>IIC/EDC</strong>, <strong>NSS</strong>, <strong>Student Clubs</strong>, <strong>Disciplinary Committee</strong>, <strong>Placement Cell</strong>, <strong>R&amp;D</strong>) or department document. Our engine automatically detects the issuing body, indexes all performance data, and maps it directly into the master institutional dossier.
-                  </p>
-                </div>
 
-                <div className="shrink-0 w-full md:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => autoMapFileInputRef.current?.click()}
-                    disabled={autoMapping}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-extrabold transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    <UploadCloud className={`w-4 h-4 ${autoMapping ? 'animate-bounce' : ''}`} />
-                    <span>{autoMapping ? 'Detecting & Mapping...' : 'Upload & Auto-Map Report (.docx / .pdf)'}</span>
-                  </button>
-                  <input
-                    type="file"
-                    ref={autoMapFileInputRef}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleAutoMapFileSelected(f);
-                    }}
-                    accept=".docx,.pdf"
-                    className="hidden"
-                  />
-                </div>
-              </div>
-
-              {/* Supported Bodies Quick Pill Badges */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-orange-200/60 text-[11px]">
-                <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">Auto-Supported Bodies:</span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-800 font-bold">💡 Innovation &amp; Entrepreneurship (IIC)</span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 font-bold">🤝 NSS &amp; Community</span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-pink-200 text-pink-800 font-bold">🎯 Student Clubs</span>
-                <span className="px-2.5 py-0.5 rounded-lg bg-white border border-indigo-200 text-indigo-800 font-bold">📋 Academic Committee Minutes</span>
-              </div>
-            </div>
 
             {/* Submissions Tracker */}
             <div className="space-y-4">

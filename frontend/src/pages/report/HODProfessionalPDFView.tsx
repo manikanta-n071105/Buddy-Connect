@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ReportSectionsData, normalizeSections } from './HODManualReportBuilder';
+import { formatOutcomesIntoPoints } from './ConsolidatedInstitutionalPDFView';
 
 interface HODProfessionalPDFViewProps {
   department: string;
@@ -293,13 +294,28 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                 </div>
                 <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
                   <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Date: {item.date} | Participants: {item.participantsCount}</div>
                   <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}>
-                    <strong>Status:</strong> <span style={{ color: (item.status || '').toLowerCase() === 'completed' ? '#047857' : '#1a365d', fontWeight: 'bold' }}>{item.status || 'Active'}</span>
-                    {item.keyOutcomes && item.keyOutcomes.trim() !== '' && item.keyOutcomes.trim().toLowerCase() !== (item.status || '').trim().toLowerCase() && (
-                      <span> &bull; <strong>Outcomes:</strong> {item.keyOutcomes}</span>
-                    )}
+                    <strong>Date:</strong> {item.date} &bull; <strong>Type:</strong> {item.type} &bull; <strong>Mode:</strong> {item.mode} ({item.participantsCount} participants)
                   </div>
+                  <div style={{ color: '#475569', fontSize: '10.5px', marginTop: '1px', textAlign: 'justify' }}>
+                    <strong>Organized By:</strong> {item.organizedBy} &bull; <strong>Target:</strong> {item.participants} &bull; <strong style={{ color: '#1a365d' }}>Coordinator:</strong> {item.mentorCoordinator}
+                  </div>
+                  <div style={{ color: '#334155', fontSize: '11px', marginTop: '1px', textAlign: 'justify' }}>
+                    <strong>Status:</strong> <span style={{ color: (item.status || '').toLowerCase() === 'completed' ? '#047857' : '#1a365d', fontWeight: 'bold' }}>{item.status || 'Completed'}</span>
+                  </div>
+                  {item.link && (
+                    <div style={{ fontSize: '10.5px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px', textAlign: 'justify' }}>
+                      <strong>Proof / Report Link:</strong>{' '}
+                      <a
+                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1d4ed8', textDecoration: 'none' }}
+                      >
+                        {item.link}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -397,18 +413,51 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             4. STUDENT DEVELOPMENT PROGRAMS (SDPS) ({sections.sdp.length})
           </div>
           <div>
-            {sections.sdp.map((item, idx) => (
-              <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
-                <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
-                  {String(idx + 1).padStart(2, '0')}
+            {sections.sdp.map((item, idx) => {
+              const points = formatOutcomesIntoPoints(item.keyOutcomes);
+              return (
+                <div key={idx} style={{ display: 'table', width: '100%', borderBottom: '1px solid #e2e8f0', padding: '6px 0' }}>
+                  <div style={{ display: 'table-cell', width: '28px', verticalAlign: 'top', fontWeight: 800, color: '#1a365d', fontSize: '11px' }}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </div>
+                  <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
+                    <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
+                    <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}>
+                      <strong>Date:</strong> {item.date} &bull; <strong>Type:</strong> {item.type || 'SDP'} &bull; <strong>Resource Person:</strong> {item.resourcePerson} &bull; <strong>Participants:</strong> {item.participantsCount} ({item.mode || 'Offline'})
+                    </div>
+                    {item.coordinator && (
+                      <div style={{ color: '#1a365d', fontSize: '10.5px', fontWeight: 600, marginTop: '1px' }}>
+                        Coordinator: {item.coordinator}
+                      </div>
+                    )}
+                    {points.length > 0 && (
+                      <div style={{ color: '#475569', fontSize: '10.5px', marginTop: '2px', textAlign: 'justify' }}>
+                        <div style={{ fontWeight: 600, color: '#334155', marginBottom: '1px' }}>Key Outcomes:</div>
+                        {points.map((pt, pIdx) => (
+                          <div key={pIdx} style={{ display: 'flex', gap: '4px', marginTop: '1px', alignItems: 'flex-start' }}>
+                            <span style={{ color: '#047857', fontWeight: 'bold', lineHeight: 1.2 }}>•</span>
+                            <span style={{ flex: 1 }}>{pt}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {item.link && (
+                      <div style={{ fontSize: '10px', color: '#1d4ed8', wordBreak: 'break-all', marginTop: '2px', textAlign: 'justify' }}>
+                        <strong>Proof / Report Link:</strong>{' '}
+                        <a
+                          href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#1d4ed8', textDecoration: 'none' }}
+                        >
+                          {item.link}
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div style={{ display: 'table-cell', verticalAlign: 'top', textAlign: 'justify', textJustify: 'inter-word' }}>
-                  <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '11.5px', marginBottom: '2px', textAlign: 'justify' }}>{item.title}</div>
-                  <div style={{ color: '#334155', fontSize: '11px', textAlign: 'justify' }}>Date: {item.date} &bull; Resource Person: {item.resourcePerson} &bull; Participants: {item.participantsCount}</div>
-                  <div style={{ color: '#64748b', fontSize: '10.5px', textAlign: 'justify' }}>Outcomes: {item.keyOutcomes}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

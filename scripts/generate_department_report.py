@@ -303,8 +303,8 @@ def generate_department_report(data, output_path):
         "2b) Activities and Initiatives",
         "List start-ups/spin-offs, business idea competitions, incubation activities, or innovation challenges in which the department/faculty/students participated."
     )
-    headers_3 = ['S. No.', 'Entrepreneurship Activity/Program Title', 'Date', 'Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)', 'Participants (Student/Faculty/Alumni)', 'Organized By (Department/ED Cell/Incubator)', 'Mode (Online/Offline/Hybrid)', 'Key Outcomes (Startups Launched, Funding Received, Patents Filed, etc.)', 'No. of Participants', 'Mentor/Coordinator', 'Status (Ongoing/Completed)', 'Proof/Report Link']
-    keys_3 = ['title', 'date', 'type', 'participants', 'organizedBy', 'mode', 'keyOutcomes', 'participantsCount', 'mentorCoordinator', 'status', 'link']
+    headers_3 = ['S. No.', 'Entrepreneurship Activity/Program Title', 'Date', 'Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)', 'Participants (Student/Faculty/Alumni)', 'Organized By (Department/ED Cell/Incubator)', 'Mode (Online/Offline/Hybrid)', 'No. of Participants', 'Mentor/Coordinator', 'Status (Ongoing/Completed)', 'Proof/Report Link']
+    keys_3 = ['title', 'date', 'type', 'participants', 'organizedBy', 'mode', 'participantsCount', 'mentorCoordinator', 'status', 'link']
     total_activities += add_table_data(doc, headers_3, sections_data.get('entrepreneurship', []), keys_3)
 
     # -------------------------------------------------------------

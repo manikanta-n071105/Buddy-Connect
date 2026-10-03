@@ -605,7 +605,7 @@ def parse_pdf_department_report(pdf_path):
                             elif sec_prop == 'patents':
                                 cells = [str(s_no), it.get('title',''), it.get('inventors',''), it.get('applicants',''), it.get('patentNumber',''), it.get('status',''), it.get('awardedDate',''), it.get('link','')]
                             elif sec_prop == 'entrepreneurship':
-                                cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('participants',''), it.get('organizedBy',''), it.get('mode',''), it.get('keyOutcomes',''), it.get('link','')]
+                                cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('participants',''), it.get('organizedBy',''), it.get('mode',''), it.get('participantsCount',''), it.get('mentorCoordinator',''), it.get('status',''), it.get('link','')]
                             elif sec_prop == 'nss':
                                 cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('venue',''), it.get('type',''), it.get('participantsCount',''), it.get('typeOfParticipants',''), it.get('outcomes',''), it.get('coordinator',''), it.get('link','')]
                             elif sec_prop in ('fdpAttended', 'fdp'):
@@ -775,7 +775,7 @@ def parse_pdf_department_report(pdf_path):
                             elif sec_prop == 'patents':
                                 cells = [str(s_no), it.get('title',''), it.get('inventors',''), it.get('applicants',''), it.get('patentNumber',''), it.get('status',''), it.get('awardedDate',''), it.get('link','')]
                             elif sec_prop == 'entrepreneurship':
-                                cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('participants',''), it.get('organizedBy',''), it.get('mode',''), it.get('keyOutcomes',''), it.get('link','')]
+                                cells = [str(s_no), it.get('title',''), it.get('date',''), it.get('type',''), it.get('participants',''), it.get('organizedBy',''), it.get('mode',''), it.get('participantsCount',''), it.get('mentorCoordinator',''), it.get('status',''), it.get('link','')]
                             elif sec_prop == 'nss':
                                 cells = [str(s_no), it.get('event',''), it.get('date',''), it.get('venue',''), it.get('type',''), it.get('participantsCount',''), it.get('typeOfParticipants',''), it.get('outcomes',''), it.get('coordinator',''), it.get('link','')]
                             elif sec_prop in ('fdpAttended', 'fdp'):
