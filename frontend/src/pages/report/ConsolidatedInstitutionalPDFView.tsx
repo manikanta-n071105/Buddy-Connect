@@ -605,7 +605,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                     rel="noopener noreferrer"
                     style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '8px', wordBreak: 'break-all' }}
                   >
-                    https://${it.link}
+                    {it.link.startsWith('http') ? it.link : `https://${it.link}`}
                   </a>
                 </div>
               )}
@@ -1188,50 +1188,9 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   };
 
   const renderAuditAndSignOff = () => (
-    <div style={{ marginTop: '12px' }}>
-      {/* Institutional Academic & Attendance Compliance Audit */}
-      <div style={{ marginBottom: '16px' }}>
-        {renderSectionHeader('INSTITUTIONAL ACADEMIC & ATTENDANCE AUDIT SUMMARY')}
-        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', fontSize: '9px', border: '1px solid #cbd5e1', marginBottom: '12px' }}>
-          <tbody>
-            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-              <td style={{ width: '28%', padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                Curriculum Delivery Compliance
-              </td>
-              <td style={{ width: '72%', padding: '7px 10px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
-                100% Target Met &bull; All Academic Branches Maintained Prescribed Syllabus Progression
-              </td>
-            </tr>
-            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                Biometric &amp; ERP Attendance Audit
-              </td>
-              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 700, color: '#047857' }}>
-                100% Verified Compliant &bull; No Statutory Condonation Shortages Identified
-              </td>
-            </tr>
-            <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
-              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                Dean / Academic Director Remarks
-              </td>
-              <td style={{ padding: '7px 10px', verticalAlign: 'middle', color: '#475569', fontStyle: 'italic', fontSize: '8.5px', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-                All departments maintained prescribed academic engagement. Remedial classes, technical association activities, and academic bridge initiatives organized as mandated.
-              </td>
-            </tr>
-            <tr>
-              <td style={{ padding: '7px 10px', verticalAlign: 'middle', fontWeight: 'bold', backgroundColor: '#f8fafc', borderRight: '1px solid #cbd5e1', color: '#1a365d' }}>
-                IQAC Review &amp; Quality Audit
-              </td>
-              <td style={{ padding: '7px 10px', verticalAlign: 'middle', color: '#1e3a8a', fontWeight: 600, fontSize: '8.5px', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-                All departmental reports verified and consolidated according to autonomous institutional governance framework.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
+    <div style={{ marginTop: 'auto', paddingTop: '40px' }}>
       {/* Official Institutional Governance & Sign-Off Block */}
-      <div style={{ paddingTop: '14px', borderTop: '1.5px solid #cbd5e1' }}>
+      <div style={{ paddingTop: '20px', borderTop: '1.5px solid #cbd5e1' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed' }}>
           <tbody>
             <tr style={{ border: 'none' }}>
