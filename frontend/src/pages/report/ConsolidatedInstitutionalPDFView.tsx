@@ -605,7 +605,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
                     rel="noopener noreferrer"
                     style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '8px', wordBreak: 'break-all' }}
                   >
-                    🔗 View Proof / Certificate
+                    https://${it.link}
                   </a>
                 </div>
               )}
