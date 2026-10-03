@@ -977,10 +977,26 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
 
 
-  const handleClearForm = () => {
-    if (window.confirm('Clear all fields?')) {
-      setSections({ ...INITIAL_SECTIONS });
-      toast.info('All fields cleared.');
+  const handleClearForm = async () => {
+    if (window.confirm(`Clear all fields for ${department} (${period})? This will also clear the saved draft from the database.`)) {
+      const cleared = { ...INITIAL_SECTIONS };
+      setSections(cleared);
+      try {
+        const payload = {
+          department,
+          period,
+          hodName,
+          submissionDate,
+          sections: cleared,
+          status: 'DRAFT'
+        };
+        await api.post('/reports/save-department-draft', payload);
+        setDbStatus({ saved: false });
+        if (onReportGenerated) onReportGenerated();
+        toast.success(`Cleared all fields and updated database for ${department}.`);
+      } catch (err) {
+        toast.info('All fields cleared locally.');
+      }
     }
   };
 

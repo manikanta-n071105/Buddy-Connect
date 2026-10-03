@@ -72,8 +72,15 @@ export const initReportDatabase = async () => {
     `);
     console.log('✅ Dedicated Reports Database initialized successfully on Neon PostgreSQL!');
 
-    // Always sync latest September 2026 data from septemberSeedData.ts on startup
-    await syncSeptemberSeedData();
+    // Only seed initial September 2026 data if table is completely empty
+    const checkRes = await reportQuery('SELECT COUNT(*) FROM departmental_monthly_reports');
+    const existingCount = parseInt(checkRes.rows[0]?.count || '0', 10);
+    if (existingCount === 0) {
+      console.log('🌱 No reports found in database. Seeding initial September 2026 data...');
+      await syncSeptemberSeedData();
+    } else {
+      console.log(`ℹ️ Reports database has ${existingCount} existing record(s). Preserving user data.`);
+    }
   } catch (err: any) {
     console.error('❌ Error initializing dedicated reports database:', err.message);
   }
