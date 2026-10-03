@@ -1119,13 +1119,14 @@ The Principal instructed all concerned faculty members to submit their monthly a
             {
               heading: '6. ATAL FDP – November 30 to December 5, 2026',
               details: `• It is happy to share that the institution has received approval for an ATAL Faculty Development Programme (FDP).
-• The FDP is scheduled from 30 November to 05 December 2026 in offline mode.
+• The FDP is scheduled from 30 November to 05 December 2026.
+• The programme will be conducted in offline mode.
 • Each department is required to bring 4 participants from other institutions.
 • Participation from each department is mandatory, and HODs are requested to coordinate accordingly.`,
               tableType: 'none'
             },
             {
-              heading: '7. Proper Utilization of Laboratory Facilities',
+              heading: '7. Proper Utilization of Laboratory Stools',
               details: `• All laboratory stools and available seating facilities should be properly utilized.
 • No student should be allowed to sit on the laboratory floor during practical sessions.
 • Faculty members and laboratory staff are instructed to ensure proper seating arrangements and maintain discipline in the laboratories.`,

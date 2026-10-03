@@ -142,13 +142,14 @@ export const DEFAULT_MOM_24_TEMPLATE: DeptMeetingItem = {
     {
       heading: '6. ATAL FDP – November 30 to December 5, 2026',
       details: `• It is happy to share that the institution has received approval for an ATAL Faculty Development Programme (FDP).
-• The FDP is scheduled from 30 November to 05 December 2026 in offline mode.
+• The FDP is scheduled from 30 November to 05 December 2026.
+• The programme will be conducted in offline mode.
 • Each department is required to bring 4 participants from other institutions.
 • Participation from each department is mandatory, and HODs are requested to coordinate accordingly.`,
       tableType: 'none'
     },
     {
-      heading: '7. Proper Utilization of Laboratory Facilities',
+      heading: '7. Proper Utilization of Laboratory Stools',
       details: `• All laboratory stools and available seating facilities should be properly utilized.
 • No student should be allowed to sit on the laboratory floor during practical sessions.
 • Faculty members and laboratory staff are instructed to ensure proper seating arrangements and maintain discipline in the laboratories.`,
@@ -2346,6 +2347,26 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                           <span className="text-xs font-bold text-slate-700">
                             {item.title || "HoD's Meeting with Principal"}
                           </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => handleLoadMomTemplate(mIdx, '16sep')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                            title="Pre-fill structured MOM for 16 September 2026 (ERP, Moodle, Project Reviews, Targets, FDP, Stools)"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>✨ Load 16 Sep MOM</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleLoadMomTemplate(mIdx, '21sep')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                            title="Pre-fill structured MOM for 21 September 2026 (New Roles, Lab Prep, LOP/Leaves, Parent Letters, FRS)"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>✨ Load 21 Sep MOM</span>
+                          </button>
                         </div>
                       </div>
 
