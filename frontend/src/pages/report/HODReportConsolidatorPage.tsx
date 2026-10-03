@@ -141,6 +141,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
   const [consolidatingPdf, setConsolidatingPdf] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [allDeptCustomData, setAllDeptCustomData] = useState<Record<string, any>>({});
+  const [builderSelectedDept, setBuilderSelectedDept] = useState<string>('Civil Engineering');
 
   // HOD Upload Form State
   const [selectedDept, setSelectedDept] = useState('Computer Science & Engineering');
@@ -798,6 +799,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
         {activeTab === 'manual_entry' && (
           <HODManualReportBuilder
             currentPeriod={period}
+            initialDepartment={builderSelectedDept}
             onReportGenerated={() => {
               fetchSubmissions(period);
             }}
@@ -893,9 +895,17 @@ export const HODReportConsolidatorPage: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={() => setActiveTab('manual_entry')}
+                      className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+                      title="Edit any section data in Manual Report Builder"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Edit Data in Builder</span>
+                    </button>
+                    <button
                       onClick={handleGenerateConsolidatedPDF}
                       disabled={consolidatingPdf}
-                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       <FileDown className="w-3.5 h-3.5" />
                       <span>Download PDF</span>
@@ -1037,6 +1047,18 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
                             <div className="flex items-center gap-2 pt-1">
                               <button
+                                onClick={() => {
+                                  setBuilderSelectedDept(dept.name);
+                                  setActiveTab('manual_entry');
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-bold transition-all cursor-pointer"
+                                title={`Edit ${dept.name} data in manual builder`}
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+                                Edit Data
+                              </button>
+
+                              <button
                                 onClick={() => triggerUploadForDept(dept.name, dept.hodName)}
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
                               >
@@ -1060,13 +1082,25 @@ export const HODReportConsolidatorPage: React.FC = () => {
                             <p className="text-xs text-slate-500">
                               No report submitted yet for {period}.
                             </p>
-                            <button
-                              onClick={() => triggerUploadForDept(dept.name, dept.hodName)}
-                              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-orange-600 hover:text-white text-slate-700 border border-slate-300 hover:border-orange-600 text-xs font-bold transition-all duration-150 cursor-pointer group/btn"
-                            >
-                              <UploadCloud className="w-4 h-4 text-orange-600 group-hover/btn:text-white transition-colors" />
-                              <span>Upload {dept.code} Report (.docx / .pdf)</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setBuilderSelectedDept(dept.name);
+                                  setActiveTab('manual_entry');
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Enter Data</span>
+                              </button>
+                              <button
+                                onClick={() => triggerUploadForDept(dept.name, dept.hodName)}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold transition-all cursor-pointer"
+                              >
+                                <UploadCloud className="w-3.5 h-3.5 text-slate-600" />
+                                <span>Upload Doc</span>
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>

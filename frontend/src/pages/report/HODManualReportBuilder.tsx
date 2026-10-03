@@ -697,15 +697,17 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
 
 interface HODManualReportBuilderProps {
   currentPeriod: string;
+  initialDepartment?: string;
   onReportGenerated?: () => void;
 }
 
 export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   currentPeriod,
+  initialDepartment,
   onReportGenerated
 }) => {
   // Only the 4 metadata fields present in the template header:
-  const [department, setDepartment] = useState('Civil Engineering');
+  const [department, setDepartment] = useState(initialDepartment || 'Civil Engineering');
   const [hodName, setHodName] = useState('K Siva Prasad');
   const [period, setPeriod] = useState(currentPeriod || 'September 2026');
   const [submissionDate, setSubmissionDate] = useState('30/09/2026');
@@ -717,6 +719,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       setPeriod(currentPeriod);
     }
   }, [currentPeriod]);
+
+  useEffect(() => {
+    if (initialDepartment && initialDepartment !== department) {
+      setDepartment(initialDepartment);
+      setHodName(getDefaultHod(initialDepartment));
+    }
+  }, [initialDepartment]);
 
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);

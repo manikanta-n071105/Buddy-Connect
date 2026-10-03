@@ -305,7 +305,21 @@ export const getDetailedIssuesReport = async (req: AuthenticatedRequest, res: Re
   }
 };
 
-const PYTHON_BIN = process.env.PYTHON_PATH || 'C:\\Users\\nmani\\AppData\\Local\\Programs\\Python\\Python313\\python.exe';
+const getPythonBin = (): string => {
+  const fs = require('fs');
+  if (process.env.PYTHON_PATH && fs.existsSync(process.env.PYTHON_PATH)) {
+    return process.env.PYTHON_PATH;
+  }
+  const preferred = 'C:\\Users\\nmani\\AppData\\Local\\Programs\\Python\\Python313\\python.exe';
+  if (fs.existsSync(preferred)) {
+    return preferred;
+  }
+  const alt = 'C:\\Program Files\\Python\\Python313\\python.exe';
+  if (fs.existsSync(alt)) {
+    return alt;
+  }
+  return 'python';
+};
 
 export const getConsolidatedReportStatus = async (_req: any, res: Response) => {
   try {
@@ -422,7 +436,7 @@ export const regenerateConsolidatedReport = async (_req: any, res: Response) => 
     const zipPath = path.join(projectRoot, 'Reports Zip File.zip');
     const reportPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
 
-    execFile(PYTHON_BIN, [scriptPath, zipPath, reportPath], (error, stdout, stderr) => {
+    execFile(getPythonBin(), [scriptPath, zipPath, reportPath], (error, stdout, stderr) => {
       if (error) {
         console.error('Consolidation script error:', error, stderr);
         return res.status(500).json({ success: false, message: 'Consolidation failed', error: stderr || error.message });
@@ -458,7 +472,7 @@ export const uploadAndConsolidateZip = async (req: any, res: Response) => {
     const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
     const reportPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
 
-    execFile(PYTHON_BIN, [scriptPath, targetZipPath, reportPath], (error, stdout, stderr) => {
+    execFile(getPythonBin(), [scriptPath, targetZipPath, reportPath], (error, stdout, stderr) => {
       if (error) {
         console.error('Consolidation script error:', error, stderr);
         return res.status(500).json({ success: false, message: 'Consolidation failed', error: stderr || error.message });
@@ -678,7 +692,7 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
     try {
       const { execFileSync } = await import('child_process');
       const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
-      const inspectOut = execFileSync(PYTHON_BIN, [scriptPath, '--inspect', targetFilePath], { encoding: 'utf-8', timeout: 8000 });
+      const inspectOut = execFileSync(getPythonBin(), [scriptPath, '--inspect', targetFilePath], { encoding: 'utf-8', timeout: 8000 });
       const parsed = JSON.parse(inspectOut.trim());
       if (parsed && typeof parsed.itemsCount === 'number' && parsed.itemsCount > 0) {
         itemsCount = parsed.itemsCount;
@@ -742,7 +756,7 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
     // 1. Try Python inspector on the uploaded document
     try {
       const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
-      const inspectOut = execFileSync(PYTHON_BIN, [scriptPath, '--inspect', tempFilePath], { encoding: 'utf-8', timeout: 10000 });
+      const inspectOut = execFileSync(getPythonBin(), [scriptPath, '--inspect', tempFilePath], { encoding: 'utf-8', timeout: 10000 });
       const parsed = JSON.parse(inspectOut.trim());
       if (parsed && parsed.success) {
         if (!detectedName && parsed.department && parsed.department !== 'General') {
@@ -840,7 +854,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     const projectRoot = path.resolve(process.cwd(), '..');
 
     const submissionsRes = await reportQuery(
-      'SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1)) AND status = \'SUBMITTED\'',
+      'SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
       [period]
     );
 
@@ -851,13 +865,13 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
       });
     }
 
-    // Auto-generate docx on the fly for any submission whose file_path is missing on disk but has sections_data
+    // Auto-generate docx on the fly for any submission with sections_data to guarantee the consolidated report reflects latest changes
     const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
     fs.mkdirSync(targetFolder, { recursive: true });
 
     for (const sub of submissionsRes.rows) {
-      if ((!sub.file_path || !fs.existsSync(sub.file_path)) && sub.sections_data) {
+      if (sub.sections_data) {
         try {
           const scratchFolder = path.join(projectRoot, 'scratch');
           fs.mkdirSync(scratchFolder, { recursive: true });
@@ -878,7 +892,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
           fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2), 'utf-8');
           const genScript = path.join(projectRoot, 'scripts', 'generate_department_report.py');
           const { execFileSync } = await import('child_process');
-          execFileSync(PYTHON_BIN, [genScript, tempJsonPath, targetFilePath], { timeout: 15000 });
+          execFileSync(getPythonBin(), [genScript, tempJsonPath, targetFilePath], { timeout: 15000 });
           try { fs.unlinkSync(tempJsonPath); } catch (_) { }
 
           if (fs.existsSync(targetFilePath)) {
@@ -907,7 +921,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
 
     const args = [scriptPath, ...filePaths, reportPath];
 
-    execFile(PYTHON_BIN, args, async (error, stdout, stderr) => {
+    execFile(getPythonBin(), args, async (error, stdout, stderr) => {
       if (error) {
         console.error('Consolidation script error:', error, stderr);
         return res.status(500).json({ success: false, message: 'Consolidation failed', error: stderr || error.message });
@@ -1009,7 +1023,7 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
 
     const scriptPath = path.join(projectRoot, 'scripts', 'generate_department_report.py');
 
-    execFile(PYTHON_BIN, [scriptPath, tempJsonPath, targetFilePath], async (error, stdout, stderr) => {
+    execFile(getPythonBin(), [scriptPath, tempJsonPath, targetFilePath], async (error, stdout, stderr) => {
       try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
 
       if (error) {
