@@ -139,6 +139,113 @@ export const formatOutcomesIntoPoints = (text?: string): string[] => {
   return [raw];
 };
 
+export const normalizeSyllabusYearSem = (raw?: string): string => {
+  if (!raw) return '-';
+  const clean = raw.toUpperCase().trim();
+  if (clean.includes('4-1') || clean.includes('IV/I') || clean.includes('IV-I') || clean.includes('IV EEE') || clean.includes('IV/1') || clean.includes('4/1')) {
+    return 'IV / I';
+  }
+  if (clean.includes('3-1') || clean.includes('III/I') || clean.includes('III-I') || clean.includes('III EEE') || clean.includes('III/1') || clean.includes('3/1')) {
+    return 'III / I';
+  }
+  if (clean.includes('2-1') || clean.includes('II/I') || clean.includes('II-I') || clean.includes('II EEE') || clean.includes('II/1') || clean.includes('2/1')) {
+    return 'II / I';
+  }
+  if (clean.includes('1-1') || clean.includes('I/I') || clean.includes('I-I') || clean.includes('I/1') || clean.includes('1/1')) {
+    return 'I / I';
+  }
+  return raw.trim();
+};
+
+export const normalizeSyllabusCompleted = (completed?: string, _pending?: string): string => {
+  if (!completed) return '-';
+  const c = completed.trim();
+  const cUpper = c.toUpperCase();
+
+  // Percentage checks
+  if (c.includes('100%')) return '5 Units (100%)';
+  if (c.includes('95%') || c.includes('98%')) return '4.8 Units (95%)';
+  if (c.includes('90%')) return '4.5 Units (90%)';
+  if (c.includes('84%')) return '4.2 Units (84%)';
+  if (c.includes('80%')) return '4 Units (80%)';
+  if (c.includes('75%')) return '3.8 Units (75%)';
+  if (c.includes('70%')) return '3.5 Units (70%)';
+  if (c.includes('60%')) return '3 Units (60%)';
+  if (c.includes('50%')) return '2.5 Units (50%)';
+
+  // Explicit unit strings
+  if (cUpper.includes('1,2,3,4-50%') || cUpper.includes('4-50%')) return '3.5 Units';
+  if (cUpper.includes('1,2,3,4') || cUpper.includes('I,II,III,IV')) return '4 Units';
+  if (cUpper.includes('4 UNIT') || c === '4' || cUpper.includes('4 UNITS')) return '4 Units';
+  if (cUpper.includes('3.5') || cUpper.includes('3.5 UNITS')) return '3.5 Units';
+  if (cUpper.includes('1,2,3') || cUpper.includes('I,II,III') || c === '3' || cUpper.includes('3 UNITS') || cUpper.includes('3 UNIT')) return '3 Units';
+  if (cUpper.includes('I,II') || cUpper.includes('1,2') || c === '2' || cUpper.includes('2 UNITS') || cUpper.includes('2 UNIT')) return '2 Units';
+  if (cUpper.includes('1 UNIT') || c === '1') return '1 Unit';
+
+  if (cUpper.includes('EXPERIMENT')) return c;
+  if (cUpper.includes('GENERAL TOPICS')) return '100% Completed';
+
+  return c;
+};
+
+export const normalizeSyllabusPending = (completed?: string, pending?: string): string => {
+  const p = (pending || '').trim();
+  const pUpper = p.toUpperCase();
+  const cUpper = (completed || '').toUpperCase().trim();
+
+  if (pUpper.includes('5-80%') || pUpper.includes('5-60%') || pUpper.includes('5-50%') || pUpper.includes('5 STARTED')) {
+    return 'Unit 5 (In Progress)';
+  }
+  if (pUpper.includes('5 UNIT') || p === '5' || pUpper.includes('V UNIT') || pUpper.includes('5TH UNIT')) {
+    return 'Unit 5';
+  }
+  if (pUpper.includes('4,5') || pUpper.includes('4, 5') || pUpper.includes('IV,V') || pUpper.includes('4 UNIT AND 5')) {
+    return 'Units 4 & 5';
+  }
+  if (pUpper.includes('4 UNIT RUNNING') || pUpper.includes('4 RUNNING') || pUpper.includes('IV RUNNING') || pUpper.includes('IV STARTED')) {
+    return 'Units 4 & 5';
+  }
+  if (pUpper.includes('3 UNIT RUNNING') || pUpper.includes('3 RUNNING') || pUpper.includes('III RUNNING') || pUpper.includes('III STARTED') || pUpper.includes('III UNIT 30%')) {
+    return 'Units 3, 4 & 5';
+  }
+  if (pUpper.includes('5 UNIT RUNNING')) {
+    return 'Unit 5';
+  }
+  if (pUpper.includes('IV UNIT') || p === '4') {
+    return 'Units 4 & 5';
+  }
+
+  // If pending was left blank / '-' but completed is specified:
+  if (!p || p === '-' || p === 'NIL') {
+    if (cUpper === '4' || cUpper.includes('4 UNITS') || cUpper.includes('1,2,3,4') || cUpper.includes('80%')) {
+      return 'Unit 5';
+    }
+    if (cUpper === '3.5' || cUpper.includes('3.5 UNITS') || cUpper.includes('70%')) {
+      return 'Unit 4 (50%) & Unit 5';
+    }
+    if (cUpper === '3' || cUpper.includes('3 UNITS') || cUpper.includes('1,2,3') || cUpper.includes('60%')) {
+      return 'Units 4 & 5';
+    }
+    if (cUpper === '2' || cUpper.includes('2 UNITS') || cUpper.includes('1,2') || cUpper.includes('50%')) {
+      return 'Units 3, 4 & 5';
+    }
+    if (cUpper.includes('100%') || cUpper === '5' || cUpper.includes('GENERAL TOPICS')) {
+      return 'Nil (Complete)';
+    }
+    return '-';
+  }
+
+  return p;
+};
+
+export const normalizeSyllabusRemarks = (remarks?: string, _completed?: string): string => {
+  const r = (remarks || '').trim();
+  if (!r || r === '-' || r === 'NIL') {
+    return 'On Schedule as per Lesson Plan';
+  }
+  return r;
+};
+
 export const hasAnyMeaningfulData = (sec: ReportSectionsData | undefined): boolean => {
   if (!sec || typeof sec !== 'object') return false;
   return Object.values(sec).some(arr => Array.isArray(arr) && arr.some(isMeaningfulItem));
@@ -813,12 +920,48 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Course / Subject Title', width: '21%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.subject}</div> },
-        { header: 'Year / Sem', width: '10%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.yearSem || '-'}</span> },
-        { header: 'Faculty In-Charge', width: '15%', align: 'justify', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600, textAlign: 'justify', textJustify: 'inter-word' }}>{it.faculty}</span> },
-        { header: 'Done (5 Units)', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#047857', fontSize: '8.5px' }}>{it.completed}</span> },
-        { header: 'Pending', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 700, color: '#b45309', fontSize: '8.5px' }}>{it.pending}</span> },
-        { header: 'Remarks', width: '26%', align: 'justify', render: (it) => <div style={{ color: '#475569', fontSize: '8.5px', fontStyle: 'italic', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.remarks || '-'}</div> }
+        { header: 'Course / Subject Title', width: '23%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.subject}</div> },
+        {
+          header: 'Year / Sem',
+          width: '9%',
+          align: 'center',
+          render: (it) => (
+            <span style={{ fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', padding: '1.5px 5px', borderRadius: '3px', fontSize: '8px' }}>
+              {normalizeSyllabusYearSem(it.yearSem)}
+            </span>
+          )
+        },
+        { header: 'Faculty In-Charge', width: '16%', align: 'justify', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600, textAlign: 'justify', textJustify: 'inter-word' }}>{it.faculty}</span> },
+        {
+          header: 'Done (5 Units)',
+          width: '13%',
+          align: 'center',
+          render: (it) => (
+            <span style={{ fontWeight: 800, color: '#047857', fontSize: '8px', backgroundColor: '#ecfdf5', padding: '1.5px 4px', borderRadius: '3px', border: '1px solid #a7f3d0', display: 'inline-block' }}>
+              {normalizeSyllabusCompleted(it.completed, it.pending)}
+            </span>
+          )
+        },
+        {
+          header: 'Pending / Ongoing',
+          width: '13%',
+          align: 'center',
+          render: (it) => (
+            <span style={{ fontWeight: 700, color: '#b45309', fontSize: '8px', backgroundColor: '#fffbeb', padding: '1.5px 4px', borderRadius: '3px', border: '1px solid #fde68a', display: 'inline-block' }}>
+              {normalizeSyllabusPending(it.completed, it.pending)}
+            </span>
+          )
+        },
+        {
+          header: 'Remarks / Status',
+          width: '15%',
+          align: 'center',
+          render: (it) => (
+            <div style={{ color: '#475569', fontSize: '7.5px', fontStyle: 'italic', lineHeight: 1.3 }}>
+              {normalizeSyllabusRemarks(it.remarks, it.completed)}
+            </div>
+          )
+        }
       ]
     },
     // 9. Clubs & Student Engagement Activity
