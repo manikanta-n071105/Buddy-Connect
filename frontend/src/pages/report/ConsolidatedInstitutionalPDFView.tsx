@@ -588,10 +588,31 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.facultyAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Faculty Member', width: '28%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#1a365d' }}>{it.name}</span> },
-        { header: 'Award / Recognition', width: '34%', align: 'justify', render: (it) => <span style={{ fontWeight: 600, color: '#0f172a' }}>{it.award}</span> },
-        { header: 'Conferring Body & Date', width: '24%', align: 'justify', render: (it) => <span style={{ color: '#475569' }}>{it.organization}{it.date ? ` (${it.date})` : ''}</span> }
+        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Faculty Member', width: '24%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#1a365d' }}>{it.name}</span> },
+        {
+          header: 'Award / Recognition',
+          width: '35%',
+          align: 'justify',
+          render: (it) => (
+            <div>
+              <span style={{ fontWeight: 600, color: '#0f172a' }}>{it.award}</span>
+              {it.link && (
+                <div style={{ marginTop: '2px' }}>
+                  <a
+                    href={it.link.startsWith('http') ? it.link : `https://${it.link}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '8px', wordBreak: 'break-all' }}
+                  >
+                    🔗 View Proof / Certificate
+                  </a>
+                </div>
+              )}
+            </div>
+          )
+        },
+        { header: 'Conferring Body & Date', width: '28%', align: 'justify', render: (it) => <span style={{ color: '#475569' }}>{it.organization}{it.date ? ` (${it.date})` : ''}</span> }
       ]
     },
     // 5B. Student Achievements
@@ -674,7 +695,6 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <div style={{ fontWeight: 800, fontSize: '9px' }}>{it.title || "HoD's Meeting"}</div>
               <div style={{ fontSize: '8.5px', color: '#475569', marginTop: '1px' }}>{it.date}</div>
               {it.venue && <div style={{ fontSize: '7.5px', color: '#64748b' }}>{it.venue}</div>}
-              {it.meetingNo && <span style={{ fontSize: '7.5px', fontWeight: 800, backgroundColor: '#e2e8f0', color: '#1e293b', padding: '1px 4px', borderRadius: '3px', marginTop: '2px', display: 'inline-block' }}>{it.meetingNo}</span>}
             </div>
           )
         },
@@ -732,7 +752,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Partner Entity / Industry', width: '32%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.name}</div> },
-        { header: 'Validity Period', width: '16%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.datePeriod}</span> },
+        { header: 'Date of Signing', width: '16%', align: 'center', render: (it) => <span style={{ color: '#334155' }}>{it.datePeriod}</span> },
         { header: 'Faculty SPOC', width: '16%', align: 'center', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600 }}>{it.facultySpoc || '-'}</span> },
         { header: 'Scope & Focus Area', width: '22%', align: 'justify', render: (it) => <span style={{ color: '#475569', textAlign: 'justify', textJustify: 'inter-word' }}>{it.purpose}</span> }
       ]

@@ -2341,50 +2341,22 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
                         <div className="flex items-center gap-2">
                           <span className="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-extrabold text-[11px] uppercase tracking-wider">
-                            {item.meetingNo || `Meeting #${mIdx + 1}`}
+                            {`Meeting #${mIdx + 1}`}
                           </span>
                           <span className="text-xs font-bold text-slate-700">
                             {item.title || "HoD's Meeting with Principal"}
                           </span>
                         </div>
-                        {/* <div className="flex items-center gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => handleLoadMomTemplate(mIdx, '21sep')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
-                            title="Pre-fill structured MOM for 21 September 2026 (New Roles, Monthly Reports, Lab Prep, Leave Rules)"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>✨ Load 21 Sep MOM</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleLoadMomTemplate(mIdx, '16sep')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
-                            title="Pre-fill structured MOM for 16 September 2026 (MOM 24: ERP Substitution, Project Reviews & Targets)"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>✨ Load 16 Sep MOM 24</span>
-                          </button>
-                        </div> */}
                       </div>
 
                       {/* Meeting Logistics Block */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-3">
                           <FieldInput
                             label="Meeting Title"
                             value={item.title || ''}
                             placeholder="e.g. HoD's Meeting with Principal"
                             onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'title', v)}
-                          />
-                        </div>
-                        <div>
-                          <FieldInput
-                            label="Reference / Meeting No."
-                            value={item.meetingNo || ''}
-                            placeholder="e.g. MOM 24"
-                            onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'meetingNo', v)}
                           />
                         </div>
                         <div>

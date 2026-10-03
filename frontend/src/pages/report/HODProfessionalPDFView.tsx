@@ -472,6 +472,18 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             {sections.facultyAchievements.map((item, idx) => (
               <div key={idx} style={{ fontSize: '11px', padding: '4px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'justify', textJustify: 'inter-word' }}>
                 <span style={{ fontWeight: 'bold', color: '#1a365d' }}>Faculty Honor:</span> {item.name} &mdash; {item.award} ({item.organization}, {item.date})
+                {item.link && (
+                  <span style={{ marginLeft: '6px' }}>
+                    <a
+                      href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '10px' }}
+                    >
+                      [🔗 Proof Link]
+                    </a>
+                  </span>
+                )}
               </div>
             ))}
             {sections.studentAchievements.map((item, idx) => (
@@ -554,11 +566,6 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                           {item.venue && <span> | Venue: {item.venue}</span>}
                         </div>
                       </div>
-                      {item.meetingNo && (
-                        <span style={{ fontSize: '10px', fontWeight: 800, backgroundColor: '#1e293b', color: '#ffffff', padding: '2px 8px', borderRadius: '4px' }}>
-                          {item.meetingNo}
-                        </span>
-                      )}
                     </div>
                   </div>
 
