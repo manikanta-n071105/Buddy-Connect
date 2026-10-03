@@ -1,4 +1,4 @@
-import { ReportSectionsData, INITIAL_SECTIONS, DEFAULT_MOM_24_TEMPLATE } from './HODManualReportBuilder';
+import { ReportSectionsData, INITIAL_SECTIONS, DEFAULT_MOM_24_TEMPLATE, DEFAULT_MOM_21_SEP_TEMPLATE } from './HODManualReportBuilder';
 
 export const getDepartmentSampleData = (deptName: string): ReportSectionsData => {
   const dept = deptName.toLowerCase();
@@ -190,6 +190,7 @@ export const getDepartmentSampleData = (deptName: string): ReportSectionsData =>
     return {
       ...INITIAL_SECTIONS,
       deptMeetings: [
+        JSON.parse(JSON.stringify(DEFAULT_MOM_21_SEP_TEMPLATE)),
         JSON.parse(JSON.stringify(DEFAULT_MOM_24_TEMPLATE))
       ]
     };

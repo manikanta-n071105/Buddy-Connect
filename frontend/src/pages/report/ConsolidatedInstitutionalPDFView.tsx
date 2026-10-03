@@ -821,7 +821,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             return (
               <div style={{ color: '#334155', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word' }}>
                 <div style={{ fontWeight: 600, color: '#1a365d' }}>{displayType}</div>
-                <div style={{ color: '#64748b', fontSize: '8px' }}>{displayDates} ({it.noOfDays || '1 day'})</div>
+                <div style={{ color: '#64748b', fontSize: '8px' }}>{displayDates}</div>
               </div>
             );
           }

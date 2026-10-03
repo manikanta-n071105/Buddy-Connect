@@ -167,6 +167,98 @@ export const DEFAULT_MOM_24_TEMPLATE: DeptMeetingItem = {
   link: ''
 };
 
+export const DEFAULT_MOM_21_SEP_TEMPLATE: DeptMeetingItem = {
+  title: "HoD's Meeting with Principal",
+  meetingNo: 'MOM 25',
+  date: '21 September 2026',
+  time: '3.45 PM – 05.30 PM',
+  venue: 'Principal Chamber, SSE',
+  attendees: [
+    { name: 'Dr. Hemachandra', designation: 'Principal - SSE' },
+    { name: 'Dr. S Hari Krishnan', designation: 'Vice - Principal - SSE' },
+    { name: 'Prof. Nagaraju', designation: 'HOD ECE & Dean Academics' },
+    { name: 'Dr. Srinivas Rao', designation: 'HOD - EEE' },
+    { name: 'Dr. Anil Kumar Reddy', designation: 'HOD - MECH' },
+    { name: 'Dr. Vinod Kumar', designation: 'HOD - CSE' },
+    { name: 'Dr. Sambhasivaiah', designation: 'HOD HAS' },
+    { name: 'Mr. Sivaprasad', designation: 'HOD CIVIL' }
+  ],
+  agenda: `(i) New Roles and Responsibilities
+(ii) Monthly Report Submission
+(iii) Laboratory Preparation and YouTube Videos
+(iv) Social Media Updates and Event Promotion
+(v) Environmental Science Activities
+(vi) Fee Due Follow-up
+(vii) Student Attendance and Parent Communication
+(viii) Faculty Attendance, Leave and LOP
+(ix) FRS Attendance Compliance
+(x) Event Planning and Execution`,
+  discussions: [
+    {
+      heading: '1. Introduction of New Roles and Responsibilities',
+      details: `The Principal introduced the faculty members who have been assigned new roles and responsibilities:
+• Dr. P. Shabana – Head, Teaching & Learning
+• Mr. B. Venkatesu – Coordinator, Centre for Skill Development
+• Mr. Adisheshu – NSS Programme Officer and Centre for Sustainability & Community Engagement
+• Mr. P. Dhanunjaya – Head, Innovation & Entrepreneurship
+• Ms. G. Ramya Krishna – Head, Student Life & Clubs
+
+The Principal instructed all concerned faculty members to submit their monthly activity reports on or before the 25th of every month without fail.`,
+      tableType: 'none'
+    },
+    {
+      heading: '2. Laboratory Preparation and YouTube Videos',
+      details: `• As instructed earlier, the concerned laboratory handling faculty members should share the YouTube video links related to the experiments with students before the laboratory session.
+• Students should watch the videos and come prepared before performing the experiments.`,
+      tableType: 'none'
+    },
+    {
+      heading: '3. Social Media Updates',
+      details: `• All HODs are instructed to ensure that photographs and updates of department events and activities are posted on social media platforms and that the official college social media accounts are tagged appropriately.`,
+      tableType: 'none'
+    },
+    {
+      heading: '4. Environmental Science subject -Activities',
+      details: `• For the Environmental Science course, suitable activities should be planned and conducted during class hours.
+• The concerned faculty members should ensure that the assigned activities are completed by the students.`,
+      tableType: 'none'
+    },
+    {
+      heading: '5. Fee Due Follow-up',
+      details: `• The fee due list has been shared with all HODs.
+• HODs are instructed to follow up with the concerned students and ensure timely fee payment.`,
+      tableType: 'none'
+    },
+    {
+      heading: '6. Attendance Monitoring and Letters to Parents',
+      details: `• HODs should closely monitor student attendance.
+• For students having less than 65% attendance, letters to parents should be prepared and submitted every month without fail.
+• The concerned Class Advisors should submit the required details/letters to the Examination Cell.`,
+      tableType: 'none'
+    },
+    {
+      heading: '7. Classes Without Faculty / Leave Adjustment',
+      details: `• If a scheduled class is left unattended despite the faculty member being present on campus, or if a faculty member proceeds on leave without making the required class adjustment, LOP will be imposed as per the applicable rules.
+• If a faculty member has already exhausted their CL (Casual Leave), the applicable leave/LOP rules will be followed, including double leave-day LOP and an additional one-day LOP, as applicable.`,
+      tableType: 'none'
+    },
+    {
+      heading: '8. FRS Attendance',
+      details: `• All HODs should instruct their respective department faculty members to mark FRS attendance without fail and ensure regular compliance.`,
+      tableType: 'none'
+    },
+    {
+      heading: '9. Event Planning and Execution',
+      details: `• All HODs are instructed to submit the list of planned events and initiate the activities immediately.
+• Departments should plan and conduct relevant events and activities, including programmes in collaboration with organizations such as APSSDC, Edunet, and other appropriate agencies.`,
+      tableType: 'none'
+    }
+  ],
+  decisions: 'Principal introduced new heads for functional units (Teaching & Learning, Skill Development, CSCE/NSS, I&E, Student Life & Clubs) with mandatory monthly reporting by the 25th; mandated YouTube lab preparation; parent letters for <65% attendance; strict class adjustment / LOP enforcement; mandatory FRS marking; collaboration with APSSDC/Edunet.',
+  policyChanges: 'Mandatory monthly activity report submission on or before the 25th of every month; Letters to parents every month for students with <65% attendance; Strict LOP imposition for unattended classes or leave without approved class adjustment; Mandatory daily FRS attendance compliance.',
+  link: ''
+};
+
 export interface ReportSectionsData {
   journals: Array<{
     title: string;
@@ -571,27 +663,27 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     certifications: Array.isArray(raw.certifications) ? raw.certifications : [],
     deptMeetings: Array.isArray(raw.deptMeetings)
       ? raw.deptMeetings.map((m: any) => ({
-          date: m.date || '',
-          time: m.time || '',
-          venue: m.venue || '',
-          title: m.title || '',
-          meetingNo: m.meetingNo || '',
-          attendees: Array.isArray(m.attendees) ? m.attendees : [],
-          agenda: m.agenda || '',
-          discussions: Array.isArray(m.discussions)
-            ? m.discussions.map((d: any) => ({
-                heading: d.heading || '',
-                details: d.details || '',
-                tableType: d.tableType || 'none',
-                reviewSchedule: Array.isArray(d.reviewSchedule) ? d.reviewSchedule : [],
-                publicationTargets: Array.isArray(d.publicationTargets) ? d.publicationTargets : [],
-                postTableDetails: d.postTableDetails || ''
-              }))
-            : [],
-          decisions: m.decisions || '',
-          policyChanges: m.policyChanges || '',
-          link: m.link || ''
-        }))
+        date: m.date || '',
+        time: m.time || '',
+        venue: m.venue || '',
+        title: m.title || '',
+        meetingNo: m.meetingNo || '',
+        attendees: Array.isArray(m.attendees) ? m.attendees : [],
+        agenda: m.agenda || '',
+        discussions: Array.isArray(m.discussions)
+          ? m.discussions.map((d: any) => ({
+            heading: d.heading || '',
+            details: d.details || '',
+            tableType: d.tableType || 'none',
+            reviewSchedule: Array.isArray(d.reviewSchedule) ? d.reviewSchedule : [],
+            publicationTargets: Array.isArray(d.publicationTargets) ? d.publicationTargets : [],
+            postTableDetails: d.postTableDetails || ''
+          }))
+          : [],
+        decisions: m.decisions || '',
+        policyChanges: m.policyChanges || '',
+        link: m.link || ''
+      }))
       : [],
     mous: Array.isArray(raw.mous) ? raw.mous : [],
     additionalInitiatives: Array.isArray(raw.additionalInitiatives) ? raw.additionalInitiatives : [],
@@ -1007,15 +1099,17 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   };
 
   // Specialized MOM Helpers
-  const handleLoadMomTemplate = (meetingIdx: number) => {
+  const handleLoadMomTemplate = (meetingIdx: number, version: '21sep' | '16sep' = '21sep') => {
     setSections(prev => {
       const copy = normalizeSections(prev);
       const meetings = [...(copy.deptMeetings || [])];
-      meetings[meetingIdx] = JSON.parse(JSON.stringify(DEFAULT_MOM_24_TEMPLATE));
+      meetings[meetingIdx] = JSON.parse(JSON.stringify(
+        version === '21sep' ? DEFAULT_MOM_21_SEP_TEMPLATE : DEFAULT_MOM_24_TEMPLATE
+      ));
       copy.deptMeetings = meetings;
       return copy;
     });
-    toast.success('Loaded Word File MOM 24 Template!');
+    toast.success(version === '21sep' ? 'Loaded 21 Sep MOM (Roles, Reports & Policies)!' : 'Loaded 16 Sep MOM 24 Template!');
   };
 
   const handleAddMomAttendee = (meetingIdx: number) => {
@@ -2237,15 +2331,26 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                             {item.title || "HoD's Meeting with Principal"}
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleLoadMomTemplate(mIdx)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
-                          title="Pre-fill entire structured MOM from the official Word document (16 Sep MOM 24)"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>✨ Load Word File Template (MOM 24)</span>
-                        </button>
+                        {/* <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => handleLoadMomTemplate(mIdx, '21sep')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                            title="Pre-fill structured MOM for 21 September 2026 (New Roles, Monthly Reports, Lab Prep, Leave Rules)"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>✨ Load 21 Sep MOM</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleLoadMomTemplate(mIdx, '16sep')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                            title="Pre-fill structured MOM for 16 September 2026 (MOM 24: ERP Substitution, Project Reviews & Targets)"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>✨ Load 16 Sep MOM 24</span>
+                          </button>
+                        </div> */}
                       </div>
 
                       {/* Meeting Logistics Block */}
@@ -2807,9 +2912,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         {/* Course Category Badge & Quick Status */}
                         <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-100/80 rounded-xl border border-slate-200">
                           <div className="flex items-center gap-2">
-                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1.5 ${
-                              isLab ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
-                            }`}>
+                            <span className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1.5 ${isLab ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-blue-100 text-blue-800 border border-blue-200'
+                              }`}>
                               <span>{isLab ? '🔬 Lab / Practical Course' : '📘 Theory Course (Total: 5 Units)'}</span>
                             </span>
                             <span className="text-xs font-bold text-slate-700 truncate max-w-[280px]">
@@ -2819,9 +2923,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
                           <div className="flex items-center gap-2">
                             <span className="text-[11px] font-bold text-slate-500">Progress:</span>
-                            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
-                              currentPct >= 100 ? 'bg-emerald-100 text-emerald-800' : currentPct >= 70 ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
-                            }`}>
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${currentPct >= 100 ? 'bg-emerald-100 text-emerald-800' : currentPct >= 70 ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
                               {currentPct}%
                             </span>
                           </div>
@@ -2830,9 +2933,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         {/* Visual Progress Bar */}
                         <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
                           <div
-                            className={`h-full transition-all duration-300 ${
-                              currentPct >= 100 ? 'bg-emerald-500' : currentPct >= 70 ? 'bg-blue-600' : 'bg-amber-500'
-                            }`}
+                            className={`h-full transition-all duration-300 ${currentPct >= 100 ? 'bg-emerald-500' : currentPct >= 70 ? 'bg-blue-600' : 'bg-amber-500'
+                              }`}
                             style={{ width: `${currentPct}%` }}
                           />
                         </div>
@@ -2938,11 +3040,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                                           };
                                           setSections(prev => ({ ...prev, syllabus: copy }));
                                         }}
-                                        className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer border ${
-                                          isSelected
+                                        className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer border ${isSelected
                                             ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
                                             : 'bg-white hover:bg-blue-50 text-slate-700 border-slate-200'
-                                        }`}
+                                          }`}
                                       >
                                         {opt.units} {opt.units === 1 ? 'Unit' : 'Units'}
                                       </button>
@@ -2971,11 +3072,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                                           };
                                           setSections(prev => ({ ...prev, syllabus: copy }));
                                         }}
-                                        className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer border ${
-                                          isSelected
+                                        className={`px-2 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer border ${isSelected
                                             ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
                                             : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
-                                        }`}
+                                          }`}
                                       >
                                         {opt.done} Exp
                                       </button>
@@ -3052,10 +3152,6 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 onAdd={() => handleAddRow('studentEngagement')}
               >
                 {(safeSections.studentEngagement || []).map((item, idx) => {
-                  const expectedDays = parseDaysFromOption(item.noOfDays);
-                  const isMultiDay = item.noOfDays !== '1 day';
-                  const actualDays = (item.startDate && item.endDate) ? calculateDiffDays(item.startDate, item.endDate) : null;
-                  const isInvalidDuration = Boolean(isMultiDay && actualDays !== null && actualDays !== expectedDays);
 
                   const standardTypes = [
                     'FDP',
@@ -3126,96 +3222,25 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                           </div>
                         )}
 
-                        {/* No of Days */}
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                            No of Days *
-                          </label>
-                          <select
-                            value={item.noOfDays || '1 day'}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              handleUpdateField('studentEngagement', idx, 'noOfDays', val);
-                            }}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
-                          >
-                            <option value="1 day">1 day</option>
-                            <option value="2 days">2 days</option>
-                            <option value="3 days">3 days</option>
-                            <option value="4 days">4 days</option>
-                            <option value="5 days">5 days</option>
-                            <option value="1 week">1 week (7 days)</option>
-                            <option value="2 weeks">2 weeks (14 days)</option>
-                          </select>
-                        </div>
-
-                        {/* Date Inputs based on No of Days */}
-                        {!isMultiDay ? (
-                          <div className="md:col-span-2">
-                            <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                              Date of Activity *
-                            </label>
-                            <input
-                              type="date"
-                              value={item.startDate || item.dates || ''}
-                              onChange={(e) => {
-                                const val = e.target.value;
+                        {/* Date of Activity using unified DateFieldInput */}
+                        <div className="md:col-span-3">
+                          <DateFieldInput
+                            label="Date of Activity"
+                            value={item.dates || (item.startDate && item.endDate ? `${item.startDate} to ${item.endDate}` : item.startDate || '')}
+                            onChange={(val) => {
+                              handleUpdateField('studentEngagement', idx, 'dates', val);
+                              if (val.includes(' to ')) {
+                                const [s, e] = val.split(' to ');
+                                handleUpdateField('studentEngagement', idx, 'startDate', s.trim());
+                                handleUpdateField('studentEngagement', idx, 'endDate', e.trim());
+                              } else {
                                 handleUpdateField('studentEngagement', idx, 'startDate', val);
                                 handleUpdateField('studentEngagement', idx, 'endDate', '');
-                                handleUpdateField('studentEngagement', idx, 'dates', val);
-                              }}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all"
-                            />
-                          </div>
-                        ) : (
-                          <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                                Start Date *
-                              </label>
-                              <input
-                                type="date"
-                                value={item.startDate || ''}
-                                onChange={(e) => {
-                                  const s = e.target.value;
-                                  handleUpdateField('studentEngagement', idx, 'startDate', s);
-                                  const fullSpan = s && item.endDate ? `${s} to ${item.endDate}` : s;
-                                  handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
-                                }}
-                                className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                                End Date *
-                              </label>
-                              <input
-                                type="date"
-                                value={item.endDate || ''}
-                                onChange={(e) => {
-                                  const endD = e.target.value;
-                                  handleUpdateField('studentEngagement', idx, 'endDate', endD);
-                                  const fullSpan = item.startDate && endD ? `${item.startDate} to ${endD}` : endD;
-                                  handleUpdateField('studentEngagement', idx, 'dates', fullSpan);
-                                }}
-                                className={`w-full px-3 py-2 rounded-xl bg-white border ${isInvalidDuration ? 'border-red-400 bg-red-50/30' : 'border-slate-200'} text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 transition-all`}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Date Duration Invalidation Warning */}
-                        {isInvalidDuration && (
-                          <div className="md:col-span-3 p-3 rounded-xl bg-red-50 border border-red-300 text-red-700 text-xs flex items-start gap-2.5">
-                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold">Invalid Duration Detected</div>
-                              <div>
-                                Selected duration span covers <strong>{actualDays} day{actualDays === 1 ? '' : 's'}</strong> ({item.startDate} to {item.endDate}), but "No of Days" is specified as <strong>{item.noOfDays} ({expectedDays} days)</strong>. Please correct the dates or change the number of days to match.
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                              }
+                            }}
+                            placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY"
+                          />
+                        </div>
 
                         {/* No of Participants */}
                         <div>
@@ -3549,54 +3574,197 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
     return '';
   };
 
-  const isoVal = getIso(value);
+  const parseRange = (val: string): { isMulti: boolean; start: string; end: string } => {
+    if (!val) return { isMulti: false, start: '', end: '' };
+    if (val.includes(' to ')) {
+      const [s, e] = val.split(' to ');
+      return { isMulti: true, start: formatDateToDDMMYYYY(s.trim()), end: formatDateToDDMMYYYY(e.trim()) };
+    }
+    if (val.includes(' - ')) {
+      const parts = val.split(' - ');
+      if (parts.length === 2) {
+        const s = formatDateToDDMMYYYY(parts[0].trim());
+        const e = formatDateToDDMMYYYY(parts[1].trim());
+        if (s && e) {
+          return { isMulti: true, start: s, end: e };
+        }
+      }
+    }
+    return { isMulti: false, start: formatDateToDDMMYYYY(val.trim()), end: '' };
+  };
+
+  const parsed = parseRange(value);
+  const [explicitMode, setExplicitMode] = useState<'single' | 'multi' | null>(null);
+
+  const isMulti = explicitMode !== null ? explicitMode === 'multi' : parsed.isMulti;
+
+  const calculateDaysSpan = (startStr: string, endStr: string): number | null => {
+    const startIso = getIso(startStr);
+    const endIso = getIso(endStr);
+    if (!startIso || !endIso) return null;
+    const d1 = new Date(startIso);
+    const d2 = new Date(endIso);
+    const diffTime = d2.getTime() - d1.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 3600 * 24)) + 1;
+    return diffDays > 0 ? diffDays : null;
+  };
+
+  const daysCount = isMulti && parsed.start && parsed.end ? calculateDaysSpan(parsed.start, parsed.end) : null;
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
         <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5 text-blue-600" />
           <span>{label}</span>
           {required && <span className="text-red-500">*</span>}
         </label>
-        <button
-          type="button"
-          onClick={() => {
-            const now = new Date();
-            const d = String(now.getDate()).padStart(2, '0');
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const y = now.getFullYear();
-            onChange(`${d}/${m}/${y}`);
-          }}
-          className="text-[10px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer"
-          title="Set Today's Date in DD/MM/YYYY"
-        >
-          Today
-        </button>
-      </div>
 
-      <div className="relative flex items-center">
-        <input
-          type="text"
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(handleDateInputAutoFormat(e.target.value))}
-          className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-mono tracking-wide"
-        />
-        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
-          <input
-            type="date"
-            value={isoVal}
-            onChange={(e) => {
-              if (e.target.value) {
-                onChange(formatDateToDDMMYYYY(e.target.value));
+        {/* 1 Day vs More than 1 Day Toggle */}
+        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px]">
+          <button
+            type="button"
+            onClick={() => {
+              setExplicitMode('single');
+              if (parsed.start) {
+                onChange(parsed.start);
               }
             }}
-            className="w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0 text-slate-600"
-            title="Open calendar to pick date"
-          />
+            className={`px-2 py-0.5 rounded-md font-extrabold transition-all cursor-pointer ${!isMulti ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            1 Day
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setExplicitMode('multi');
+              if (parsed.start && parsed.end) {
+                onChange(`${parsed.start} to ${parsed.end}`);
+              }
+            }}
+            className={`px-2 py-0.5 rounded-md font-extrabold transition-all cursor-pointer ${isMulti ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            More than 1 Day
+          </button>
         </div>
       </div>
+
+      {!isMulti ? (
+        <div className="relative flex items-center">
+          <input
+            type="text"
+            value={parsed.start || value}
+            placeholder={placeholder}
+            onChange={(e) => onChange(handleDateInputAutoFormat(e.target.value))}
+            className="w-full pl-3.5 pr-20 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-mono tracking-wide"
+          />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const now = new Date();
+                const d = String(now.getDate()).padStart(2, '0');
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const y = now.getFullYear();
+                onChange(`${d}/${m}/${y}`);
+              }}
+              className="text-[10px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition-colors cursor-pointer"
+              title="Set Today's Date in DD/MM/YYYY"
+            >
+              Today
+            </button>
+            <input
+              type="date"
+              value={getIso(parsed.start || value)}
+              onChange={(e) => {
+                if (e.target.value) {
+                  onChange(formatDateToDDMMYYYY(e.target.value));
+                }
+              }}
+              className="w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0 text-slate-600"
+              title="Open calendar to pick date"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <span className="text-[10px] font-bold text-slate-600 block mb-0.5">Starting Day *</span>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={parsed.start}
+                  placeholder="DD/MM/YYYY"
+                  onChange={(e) => {
+                    const s = handleDateInputAutoFormat(e.target.value);
+                    const full = parsed.end ? `${s} to ${parsed.end}` : s;
+                    onChange(full);
+                  }}
+                  className="w-full pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 font-mono"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+                  <input
+                    type="date"
+                    value={getIso(parsed.start)}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const s = formatDateToDDMMYYYY(e.target.value);
+                        const full = parsed.end ? `${s} to ${parsed.end}` : s;
+                        onChange(full);
+                      }
+                    }}
+                    className="w-4 h-4 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0"
+                    title="Pick Starting Day from Calendar"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-600 block mb-0.5">Ending Day *</span>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={parsed.end}
+                  placeholder="DD/MM/YYYY"
+                  onChange={(e) => {
+                    const endVal = handleDateInputAutoFormat(e.target.value);
+                    const full = parsed.start ? `${parsed.start} to ${endVal}` : endVal;
+                    onChange(full);
+                  }}
+                  className="w-full pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 font-mono"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
+                  <input
+                    type="date"
+                    value={getIso(parsed.end)}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const endVal = formatDateToDDMMYYYY(e.target.value);
+                        const full = parsed.start ? `${parsed.start} to ${endVal}` : endVal;
+                        onChange(full);
+                      }
+                    }}
+                    className="w-4 h-4 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0"
+                    title="Pick Ending Day from Calendar"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {parsed.start && parsed.end && (
+            <div className="flex items-center gap-1.5 text-[11px] text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 font-medium">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                Span: <strong>{daysCount ? `${daysCount} Days` : 'Multi-day Range'}</strong> ({parsed.start} to {parsed.end})
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

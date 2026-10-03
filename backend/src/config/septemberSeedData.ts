@@ -955,6 +955,97 @@ export const SEPTEMBER_REPORT_DATA: Record<string, DepartmentReportEntry> = {
       deptMeetings: [
         {
           title: "HoD's Meeting with Principal",
+          meetingNo: 'MOM 25',
+          date: '21 September 2026',
+          time: '3.45 PM – 05.30 PM',
+          venue: 'Principal Chamber, SSE',
+          attendees: [
+            { name: 'Dr. Hemachandra', designation: 'Principal - SSE' },
+            { name: 'Dr. S Hari Krishnan', designation: 'Vice - Principal - SSE' },
+            { name: 'Prof. Nagaraju', designation: 'HOD ECE & Dean Academics' },
+            { name: 'Dr. Srinivas Rao', designation: 'HOD - EEE' },
+            { name: 'Dr. Anil Kumar Reddy', designation: 'HOD - MECH' },
+            { name: 'Dr. Vinod Kumar', designation: 'HOD - CSE' },
+            { name: 'Dr. Sambhasivaiah', designation: 'HOD HAS' },
+            { name: 'Mr. Sivaprasad', designation: 'HOD CIVIL' }
+          ],
+          agenda: `(i) New Roles and Responsibilities
+(ii) Monthly Report Submission
+(iii) Laboratory Preparation and YouTube Videos
+(iv) Social Media Updates and Event Promotion
+(v) Environmental Science Activities
+(vi) Fee Due Follow-up
+(vii) Student Attendance and Parent Communication
+(viii) Faculty Attendance, Leave and LOP
+(ix) FRS Attendance Compliance
+(x) Event Planning and Execution`,
+          discussions: [
+            {
+              heading: '1. Introduction of New Roles and Responsibilities',
+              details: `The Principal introduced the faculty members who have been assigned new roles and responsibilities:
+• Dr. P. Shabana – Head, Teaching & Learning
+• Mr. B. Venkatesu – Coordinator, Centre for Skill Development
+• Mr. Adisheshu – NSS Programme Officer and Centre for Sustainability & Community Engagement
+• Mr. P. Dhanunjaya – Head, Innovation & Entrepreneurship
+• Ms. G. Ramya Krishna – Head, Student Life & Clubs
+
+The Principal instructed all concerned faculty members to submit their monthly activity reports on or before the 25th of every month without fail.`,
+              tableType: 'none'
+            },
+            {
+              heading: '2. Laboratory Preparation and YouTube Videos',
+              details: `• As instructed earlier, the concerned laboratory handling faculty members should share the YouTube video links related to the experiments with students before the laboratory session.
+• Students should watch the videos and come prepared before performing the experiments.`,
+              tableType: 'none'
+            },
+            {
+              heading: '3. Social Media Updates',
+              details: `• All HODs are instructed to ensure that photographs and updates of department events and activities are posted on social media platforms and that the official college social media accounts are tagged appropriately.`,
+              tableType: 'none'
+            },
+            {
+              heading: '4. Environmental Science subject -Activities',
+              details: `• For the Environmental Science course, suitable activities should be planned and conducted during class hours.
+• The concerned faculty members should ensure that the assigned activities are completed by the students.`,
+              tableType: 'none'
+            },
+            {
+              heading: '5. Fee Due Follow-up',
+              details: `• The fee due list has been shared with all HODs.
+• HODs are instructed to follow up with the concerned students and ensure timely fee payment.`,
+              tableType: 'none'
+            },
+            {
+              heading: '6. Attendance Monitoring and Letters to Parents',
+              details: `• HODs should closely monitor student attendance.
+• For students having less than 65% attendance, letters to parents should be prepared and submitted every month without fail.
+• The concerned Class Advisors should submit the required details/letters to the Examination Cell.`,
+              tableType: 'none'
+            },
+            {
+              heading: '7. Classes Without Faculty / Leave Adjustment',
+              details: `• If a scheduled class is left unattended despite the faculty member being present on campus, or if a faculty member proceeds on leave without making the required class adjustment, LOP will be imposed as per the applicable rules.
+• If a faculty member has already exhausted their CL (Casual Leave), the applicable leave/LOP rules will be followed, including double leave-day LOP and an additional one-day LOP, as applicable.`,
+              tableType: 'none'
+            },
+            {
+              heading: '8. FRS Attendance',
+              details: `• All HODs should instruct their respective department faculty members to mark FRS attendance without fail and ensure regular compliance.`,
+              tableType: 'none'
+            },
+            {
+              heading: '9. Event Planning and Execution',
+              details: `• All HODs are instructed to submit the list of planned events and initiate the activities immediately.
+• Departments should plan and conduct relevant events and activities, including programmes in collaboration with organizations such as APSSDC, Edunet, and other appropriate agencies.`,
+              tableType: 'none'
+            }
+          ],
+          decisions: 'Principal introduced new heads for functional units (Teaching & Learning, Skill Development, CSCE/NSS, I&E, Student Life & Clubs) with mandatory monthly reporting by the 25th; mandated YouTube lab preparation; parent letters for <65% attendance; strict class adjustment / LOP enforcement; mandatory FRS marking; collaboration with APSSDC/Edunet.',
+          policyChanges: 'Mandatory monthly activity report submission on or before the 25th of every month; Letters to parents every month for students with <65% attendance; Strict LOP imposition for unattended classes or leave without approved class adjustment; Mandatory daily FRS attendance compliance.',
+          link: ''
+        },
+        {
+          title: "HoD's Meeting with Principal",
           meetingNo: 'MOM 24',
           date: '16 September 2026',
           time: '10.15 AM – 12.10 PM',

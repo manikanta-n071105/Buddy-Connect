@@ -446,8 +446,8 @@ def generate_department_report(data, output_path):
     if student_eng or 'student engagement' in dept_name.lower():
         add_major_heading("Student Engagement Activity")
         doc.add_paragraph("Comprehensive record of student workshops, guest lectures, expert talks, industrial visits, internships, and engagement programs.")
-        headers_se = ['S.No', 'Title of the activity', 'Type of Activity', 'No of Days', 'Dates', 'No of Participants', 'Co-Ordinator', 'Remarks']
-        keys_se = ['title', 'type', 'noOfDays', 'dates', 'participantsCount', 'coordinator', 'remarks']
+        headers_se = ['S.No', 'Title of the activity', 'Type of Activity', 'Dates', 'No of Participants', 'Co-Ordinator', 'Remarks']
+        keys_se = ['title', 'type', 'dates', 'participantsCount', 'coordinator', 'remarks']
         formatted_eng = []
         for it in student_eng:
             it_copy = dict(it)

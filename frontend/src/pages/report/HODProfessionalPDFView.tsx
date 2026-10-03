@@ -800,13 +800,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                 <th style={{ width: '36px', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>S.No</th>
-                <th style={{ width: '22%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Title of Activity</th>
-                <th style={{ width: '14%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Type of Activity</th>
-                <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Days</th>
-                <th style={{ width: '16%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Dates</th>
+                <th style={{ width: '24%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Title of Activity</th>
+                <th style={{ width: '16%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Type of Activity</th>
+                <th style={{ width: '18%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Dates</th>
                 <th style={{ width: '8%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Part.</th>
-                <th style={{ width: '14%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Co-Ordinator</th>
-                <th style={{ width: '16%', padding: '6px 6px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
+                <th style={{ width: '16%', padding: '6px 6px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Co-Ordinator</th>
+                <th style={{ width: '18%', padding: '6px 6px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
               </tr>
             </thead>
             <tbody>
@@ -820,7 +819,6 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                     <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#334155' }}>{idx + 1}</td>
                     <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', fontWeight: 'bold', color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{item.title || '-'}</td>
                     <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>{displayType}</td>
-                    <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', color: '#334155' }}>{item.noOfDays || '1 day'}</td>
                     <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'center' }}>{displayDates}</td>
                     <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#047857' }}>{item.participantsCount || '-'}</td>
                     <td style={{ padding: '6px 6px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>{item.coordinator || '-'}</td>
