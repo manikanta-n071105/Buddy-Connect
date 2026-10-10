@@ -197,8 +197,8 @@ def generate_department_latex_document(data):
     tex = []
     tex.append(r'''\documentclass[a4paper,9pt]{article}
 \usepackage[margin=10mm,top=7mm,bottom=10mm,headheight=11pt,headsep=6pt,includehead,includefoot]{geometry}
-\usepackage{fontspec}
-\setmainfont{Arial}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage[table]{xcolor}
 \usepackage{longtable}
 \usepackage{booktabs}
@@ -208,6 +208,7 @@ def generate_department_latex_document(data):
 \usepackage{hyperref}
 \usepackage{colortbl}
 \usepackage{graphicx}
+
 
 \definecolor{brandnavy}{HTML}{1A365D}
 \definecolor{brandblue}{HTML}{2563EB}

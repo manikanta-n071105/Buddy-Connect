@@ -151,7 +151,7 @@ export const getTectonicExecutable = async (projectRoot: string): Promise<string
   for (const c of candidates) {
     if (path.isAbsolute(c) && fs.existsSync(c)) {
       if (!isWin) {
-        try { fs.chmodSync(c, 0o755); } catch (_) {}
+        try { fs.chmodSync(c, 0o755); } catch (_) { }
       }
       return c;
     }
@@ -162,7 +162,7 @@ export const getTectonicExecutable = async (projectRoot: string): Promise<string
     try {
       const targetPath = path.join(os.tmpdir(), 'tectonic');
       if (fs.existsSync(targetPath)) {
-        try { fs.chmodSync(targetPath, 0o755); } catch (_) {}
+        try { fs.chmodSync(targetPath, 0o755); } catch (_) { }
         return targetPath;
       }
 
@@ -170,7 +170,7 @@ export const getTectonicExecutable = async (projectRoot: string): Promise<string
       const https = await import('https');
       const zlib = await import('zlib');
       const url = 'https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic@0.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz';
-      
+
       const tarGzBuffer = await new Promise<Buffer>((resolve, reject) => {
         const fetchUrl = (currentUrl: string) => {
           https.get(currentUrl, (res) => {
@@ -791,7 +791,7 @@ export const compileMasterLatexDocument = async (
     execFile(tectonicBin, ['--outdir', tempDir, texFile], (err, _stdout, stderr) => {
       const compiledPdf = path.join(tempDir, 'report.pdf');
       if (err || !fs.existsSync(compiledPdf)) {
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
         return reject(new Error(`Tectonic compilation failed: ${stderr || err?.message || 'Unknown error'}`));
       }
 
@@ -799,10 +799,10 @@ export const compileMasterLatexDocument = async (
         const buffer = fs.readFileSync(compiledPdf);
         fs.mkdirSync(path.dirname(outputPdfPath), { recursive: true });
         fs.writeFileSync(outputPdfPath, buffer);
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
         resolve(buffer);
       } catch (readErr: any) {
-        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) { }
         reject(readErr);
       }
     });
