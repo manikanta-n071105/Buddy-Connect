@@ -571,14 +571,15 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it.get('deptCode', ''))}}}}}}}"
         fac = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it.get('name', '-'))}}}}}}}"
         awd = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{branddark}}{{{escape_latex(it.get('award', '-'))}}}}}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
+        ev = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatedark}}{{{escape_latex(it.get('event', '-'))}}}}}"
         org_dt = f" ({escape_latex(it['date'])})" if it.get('date') else ""
         org = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it.get('organization', '-'))}{org_dt}}}}}"
-        return [sno, branch, fac, awd, org]
+        return [sno, branch, fac, awd, ev, org]
 
     tex.append(render_section(
         '5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS',
-        ['0.80cm', '1.20cm', '4.20cm', '6.00cm', '5.50cm'],
-        ['#', 'Branch', 'Faculty Member', 'Award / Recognition', 'Conferring Body & Date'],
+        ['0.80cm', '1.20cm', '3.50cm', '4.50cm', '3.70cm', '4.00cm'],
+        ['#', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date'],
         gen_fa_row,
         fa_items
     ))

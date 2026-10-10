@@ -699,11 +699,11 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.facultyAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Faculty Member', width: '24%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#1a365d' }}>{it.name}</span> },
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        { header: 'Faculty Member', width: '22%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#1a365d' }}>{it.name}</span> },
         {
           header: 'Award / Recognition',
-          width: '35%',
+          width: '26%',
           align: 'justify',
           render: (it) => (
             <div>
@@ -723,7 +723,13 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         },
-        { header: 'Conferring Body & Date', width: '28%', align: 'justify', render: (it) => <span style={{ color: '#475569' }}>{it.organization}{it.date ? ` (${it.date})` : ''}</span> }
+        {
+          header: 'Event / Competition',
+          width: '20%',
+          align: 'justify',
+          render: (it) => <span style={{ color: '#334155' }}>{it.event || '-'}</span>
+        },
+        { header: 'Conferring Body & Date', width: '20%', align: 'justify', render: (it) => <span style={{ color: '#475569' }}>{it.organization}{it.date ? ` (${it.date})` : ''}</span> }
       ]
     },
     // 5B. Student Achievements

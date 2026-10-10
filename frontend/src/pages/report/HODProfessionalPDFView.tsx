@@ -552,7 +552,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
               // Full Structured Institutional MOM Layout
               return (
                 <div key={idx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#ffffff' }} className="break-inside-avoid">
-                  
+
                   {/* Meeting Header Banner */}
                   <div style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #cbd5e1', padding: '10px 14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>

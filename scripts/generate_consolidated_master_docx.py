@@ -689,7 +689,7 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     # 5. Achievements & Recognitions — a) Faculty Achievements (Exact 5 columns as PDF)
     # -------------------------------------------------------------
     add_major_heading("5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS", "Recognitions for research, teaching excellence, and leadership.")
-    fac_headers = ['S.No', 'Branch', 'Faculty Member', 'Award / Recognition', 'Conferring Body & Date']
+    fac_headers = ['S.No', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date']
     fac_table = doc.add_table(rows=1, cols=len(fac_headers))
     for i, h in enumerate(fac_headers): fac_table.rows[0].cells[i].text = h
 
@@ -704,11 +704,12 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
             a_lines = [(it.get('award', '-'), True, "0F172A")]
             if it.get('link'): a_lines.append(("", it.get('link', ''), False, "2563EB"))
             add_styled_cell_text(row[3], a_lines, font_size=8.5)
-            add_styled_cell_text(row[4], [f"{it.get('organization', '-')} ({it.get('date', '-')})"], font_size=8)
+            add_styled_cell_text(row[4], [(it.get('event', '-'), False, "334155")], font_size=8.5)
+            add_styled_cell_text(row[5], [f"{it.get('organization', '-')} ({it.get('date', '-')})"], font_size=8)
     else:
         nil = fac_table.add_row().cells
         for c in nil: c.text = "NIL"; c.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    apply_table_styling(fac_table, [Inches(0.4), Inches(0.65), Inches(1.8), Inches(2.4), Inches(1.95)])
+    apply_table_styling(fac_table, [Inches(0.4), Inches(0.65), Inches(1.5), Inches(1.8), Inches(1.5), Inches(1.85)])
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------

@@ -361,6 +361,7 @@ export interface ReportSectionsData {
   facultyAchievements: Array<{
     name: string;
     award: string;
+    event?: string;
     organization: string;
     date: string;
     link: string;
@@ -1144,7 +1145,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.sdp = [...(copy.sdp || []), { title: '', date: '', type: 'Workshop', resourcePerson: '', mode: 'Offline', keyOutcomes: '', participantsCount: '', coordinator: '', link: '' }];
           break;
         case 'facultyAchievements':
-          copy.facultyAchievements = [...(copy.facultyAchievements || []), { name: '', award: '', organization: '', date: '', link: '' }];
+          copy.facultyAchievements = [...(copy.facultyAchievements || []), { name: '', award: '', event: '', organization: '', date: '', link: '' }];
           break;
         case 'studentAchievements':
           copy.studentAchievements = [...(copy.studentAchievements || []), { nameRoll: '', award: '', event: '', organization: '', durationDate: '', link: '' }];
@@ -2486,6 +2487,9 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       </div>
                       <div>
                         <FieldInput label="Award / Recognition *" value={item.award} placeholder="e.g. Best Faculty Award / Research Excellence" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'award', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Event / Competition *" value={item.event || ''} placeholder="e.g. IEEE Global Summit / National Conference" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'event', v)} />
                       </div>
                       <div>
                         <FieldInput label="Organization / Conferring Body *" value={item.organization} placeholder="e.g. IEEE / Global Education Council" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'organization', v)} />
