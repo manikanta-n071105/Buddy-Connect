@@ -1140,23 +1140,68 @@ export const downloadDepartmentReport = async (req: any, res: Response) => {
   try {
     const { id } = req.params;
     const fs = await import('fs');
+    const path = await import('path');
+    const { execFile } = await import('child_process');
+    const projectRoot = getProjectRoot();
+
     const resDb = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE id = $1', [id]);
     if (resDb.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Report submission not found.' });
     }
 
     const sub = resDb.rows[0];
-    if (!sub.file_path || !fs.existsSync(sub.file_path)) {
-      return res.status(404).json({ success: false, message: 'Report file missing on server.' });
+    let filePath = sub.file_path;
+    const isPdf = Boolean(sub.file_name && sub.file_name.toLowerCase().endsWith('.pdf'));
+
+    if (!filePath || !fs.existsSync(filePath)) {
+      // Dynamically compile on the fly from sections_data!
+      const cleanPeriodDir = (sub.period || 'September_2026').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
+      fs.mkdirSync(targetFolder, { recursive: true });
+
+      const cleanDept = (sub.department || 'Department').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeFileName = sub.file_name || `${cleanDept}_Monthly_Report_${cleanPeriodDir}.${isPdf ? 'pdf' : 'docx'}`;
+      filePath = path.join(targetFolder, safeFileName);
+
+      const scratchFolder = path.join(projectRoot, 'scratch');
+      fs.mkdirSync(scratchFolder, { recursive: true });
+      const tempJsonPath = path.join(scratchFolder, `dept_stream_${Date.now()}.json`);
+
+      const sections = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
+      const payload = {
+        department: sub.department,
+        period: sub.period,
+        hodName: sub.hod_name || 'HOD',
+        submissionDate: sub.submission_date || new Date().toLocaleDateString('en-GB'),
+        collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+        sections
+      };
+
+      fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2), 'utf-8');
+      const scriptPath = isPdf
+        ? path.join(projectRoot, 'scripts', 'generate_department_latex.py')
+        : path.join(projectRoot, 'scripts', 'generate_department_report.py');
+
+      await new Promise<void>((resolve) => {
+        execFile(getPythonBin(), [scriptPath, tempJsonPath, filePath], () => {
+          try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+          resolve();
+        });
+      });
     }
 
-    res.setHeader('Content-Disposition', `attachment; filename="${sub.file_name}"`);
-    if (sub.file_name && sub.file_name.toLowerCase().endsWith('.pdf')) {
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'Report file could not be generated on server.' });
+    }
+
+    const downloadFileName = sub.file_name || path.basename(filePath);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFileName}"`);
+    if (downloadFileName.toLowerCase().endsWith('.pdf')) {
       res.setHeader('Content-Type', 'application/pdf');
     } else {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     }
-    const stream = fs.createReadStream(sub.file_path);
+    const stream = fs.createReadStream(filePath);
     return stream.pipe(res);
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
