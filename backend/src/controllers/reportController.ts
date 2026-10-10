@@ -371,19 +371,47 @@ export const downloadConsolidatedReport = async (req: any, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
+    const { execFile } = await import('child_process');
     const projectRoot = path.resolve(process.cwd(), '..');
     const period = (req.query.period as string) || 'September 2026';
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
 
     let reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
-    if (!fs.existsSync(reportPath)) {
-      const septPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_September_2026.docx');
-      if (fs.existsSync(septPath)) {
-        reportPath = septPath;
-      } else {
-        const aprilPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
-        if (fs.existsSync(aprilPath)) reportPath = aprilPath;
+    
+    // Always attempt to compile latest docx from submissions
+    const submissionsRes = await reportQuery(
+      'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+      [period]
+    );
+
+    if (submissionsRes.rows.length > 0) {
+      const departmentsData: Record<string, any> = {};
+      for (const sub of submissionsRes.rows) {
+        const sec = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
+        departmentsData[sub.department] = sec;
       }
+
+      const scratchFolder = path.join(projectRoot, 'scratch');
+      fs.mkdirSync(scratchFolder, { recursive: true });
+      const tempJsonPath = path.join(scratchFolder, `consolidated_docx_stream_${Date.now()}.json`);
+
+      fs.writeFileSync(tempJsonPath, JSON.stringify({
+        period,
+        collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+        departmentsData
+      }, null, 2), 'utf-8');
+
+      const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_docx.py');
+      
+      await new Promise<void>((resolve) => {
+        execFile(getPythonBin(), [pyScript, tempJsonPath, reportPath], (error, stdout, stderr) => {
+          try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+          if (error) {
+            console.error('Docx compile error on stream:', error, stderr);
+          }
+          resolve();
+        });
+      });
     }
 
     if (!fs.existsSync(reportPath)) {
@@ -489,44 +517,40 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
 
     let pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
     
-    // If the PDF doesn't exist yet, compile it dynamically via LaTeX from submissions
-    if (!fs.existsSync(pdfPath)) {
-      const submissionsRes = await reportQuery(
-        'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
-        [period]
-      );
+    // Always compile dynamically via LaTeX from submissions
+    const submissionsRes = await reportQuery(
+      'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+      [period]
+    );
 
-      if (submissionsRes.rows.length > 0) {
-        const departmentsData: Record<string, any> = {};
-        for (const sub of submissionsRes.rows) {
-          const sec = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
-          departmentsData[sub.department] = sec;
-        }
-
-        const scratchFolder = path.join(projectRoot, 'scratch');
-        fs.mkdirSync(scratchFolder, { recursive: true });
-        const tempJsonPath = path.join(scratchFolder, `consolidated_latex_stream_${Date.now()}.json`);
-
-        fs.writeFileSync(tempJsonPath, JSON.stringify({
-          period,
-          collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
-          departmentsData
-        }, null, 2), 'utf-8');
-
-        const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
-        
-        await new Promise<void>((resolve, reject) => {
-          execFile(getPythonBin(), [pyScript, tempJsonPath, pdfPath], (error, stdout, stderr) => {
-            try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
-            if (error) {
-              console.error('LaTeX PDF compile error:', error, stderr);
-              reject(error);
-            } else {
-              resolve();
-            }
-          });
-        });
+    if (submissionsRes.rows.length > 0) {
+      const departmentsData: Record<string, any> = {};
+      for (const sub of submissionsRes.rows) {
+        const sec = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
+        departmentsData[sub.department] = sec;
       }
+
+      const scratchFolder = path.join(projectRoot, 'scratch');
+      fs.mkdirSync(scratchFolder, { recursive: true });
+      const tempJsonPath = path.join(scratchFolder, `consolidated_latex_stream_${Date.now()}.json`);
+
+      fs.writeFileSync(tempJsonPath, JSON.stringify({
+        period,
+        collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+        departmentsData
+      }, null, 2), 'utf-8');
+
+      const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
+      
+      await new Promise<void>((resolve) => {
+        execFile(getPythonBin(), [pyScript, tempJsonPath, pdfPath], (error, stdout, stderr) => {
+          try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+          if (error) {
+            console.error('LaTeX PDF compile error on stream:', error, stderr);
+          }
+          resolve();
+        });
+      });
     }
 
     if (!fs.existsSync(pdfPath)) {

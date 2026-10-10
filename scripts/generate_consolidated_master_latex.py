@@ -175,6 +175,8 @@ def get_tectonic_bin():
     possible_paths = [
         os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin', 'tectonic.exe'),
         os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'tectonic.exe'),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin', 'tectonic'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'tectonic'),
         'tectonic.exe',
         'tectonic'
     ]
