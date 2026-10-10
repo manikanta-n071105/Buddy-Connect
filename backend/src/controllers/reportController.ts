@@ -464,7 +464,6 @@ export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
     const period = (req.body?.period as string) || (req.query?.period as string) || 'September 2026';
     const fs = await import('fs');
     const path = await import('path');
-    const { execFile } = await import('child_process');
     const projectRoot = getProjectRoot();
 
     let submissionsRes = await reportQuery(
@@ -497,52 +496,29 @@ export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
       departmentsData[sub.department] = sec;
     }
 
-    const scratchFolder = path.join(projectRoot, 'scratch');
-    fs.mkdirSync(scratchFolder, { recursive: true });
-    const tempJsonPath = path.join(scratchFolder, `consolidated_latex_input_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
+    const { compileMasterLatexDocument } = await import('../services/consolidatedLatexService');
+    const fileBuffer = await compileMasterLatexDocument(projectRoot, departmentsData, period, pdfPath);
+    const fileStat = fs.statSync(pdfPath);
+    const fileBase64 = fileBuffer.toString('base64');
+    const fileName = `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`;
 
-    fs.writeFileSync(tempJsonPath, JSON.stringify({
-      period,
-      collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
-      departmentsData
-    }, null, 2), 'utf-8');
-
-    const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
-
-    execFile(getPythonBin(), [pyScript, tempJsonPath, pdfPath], async (error, stdout, stderr) => {
-      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
-
-      if (error) {
-        console.error('Master LaTeX PDF generation error:', error, stderr);
-        return res.status(500).json({ success: false, message: 'LaTeX PDF generation failed', error: stderr || error.message });
+    return res.json({
+      success: true,
+      message: `Master Consolidated Institutional PDF generated via LaTeX for ${period}!`,
+      data: {
+        period,
+        fileName,
+        pdfPath,
+        fileSizeBytes: fileStat.size,
+        fileSizeFormatted: `${(fileStat.size / 1024).toFixed(1)} KB`,
+        departmentsCount: Object.keys(departmentsData).length,
+        fileBase64,
+        downloadUrl: `/reports/download-consolidated-pdf?period=${encodeURIComponent(period)}`
       }
-
-      if (!fs.existsSync(pdfPath)) {
-        return res.status(500).json({ success: false, message: 'Generated LaTeX PDF was not found on server' });
-      }
-
-      const fileStat = fs.statSync(pdfPath);
-      const fileBuffer = fs.readFileSync(pdfPath);
-      const fileBase64 = fileBuffer.toString('base64');
-      const fileName = `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`;
-
-      return res.json({
-        success: true,
-        message: `Master Consolidated Institutional PDF generated via LaTeX for ${period}!`,
-        data: {
-          period,
-          fileName,
-          pdfPath,
-          fileSizeBytes: fileStat.size,
-          fileSizeFormatted: `${(fileStat.size / 1024).toFixed(1)} KB`,
-          departmentsCount: Object.keys(departmentsData).length,
-          fileBase64,
-          downloadUrl: `/reports/download-consolidated-pdf?period=${encodeURIComponent(period)}`
-        }
-      });
     });
   } catch (err: any) {
-    return res.status(500).json({ success: false, message: err.message });
+    console.error('Master LaTeX PDF generation error:', err);
+    return res.status(500).json({ success: false, message: 'LaTeX PDF generation failed', error: err.message });
   }
 };
 
@@ -550,7 +526,6 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
-    const { execFile } = await import('child_process');
     const projectRoot = getProjectRoot();
     const period = (req.query.period as string) || 'September 2026';
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -579,27 +554,8 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
         departmentsData[sub.department] = sec;
       }
 
-      const scratchFolder = path.join(projectRoot, 'scratch');
-      fs.mkdirSync(scratchFolder, { recursive: true });
-      const tempJsonPath = path.join(scratchFolder, `consolidated_latex_stream_${Date.now()}.json`);
-
-      fs.writeFileSync(tempJsonPath, JSON.stringify({
-        period,
-        collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
-        departmentsData
-      }, null, 2), 'utf-8');
-
-      const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
-      
-      await new Promise<void>((resolve) => {
-        execFile(getPythonBin(), [pyScript, tempJsonPath, pdfPath], (error, stdout, stderr) => {
-          try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
-          if (error) {
-            console.error('LaTeX PDF compile error on stream:', error, stderr);
-          }
-          resolve();
-        });
-      });
+      const { compileMasterLatexDocument } = await import('../services/consolidatedLatexService');
+      await compileMasterLatexDocument(projectRoot, departmentsData, period, pdfPath);
     }
 
     if (!fs.existsSync(pdfPath)) {
