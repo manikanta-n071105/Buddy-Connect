@@ -346,14 +346,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
       const res = await api.post('/reports/generate-from-submissions', { period });
       if (res.data.success) {
         toast.success(res.data.message || 'Consolidated Report successfully generated!', { id: 'consolidate' });
-
-        const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated?period=${encodeURIComponent(period)}`;
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.docx`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        await handleDirectDownload();
       } else {
         toast.error(res.data.message || 'Consolidation failed', { id: 'consolidate' });
       }
@@ -364,15 +357,25 @@ export const HODReportConsolidatorPage: React.FC = () => {
     }
   };
 
-  const handleDirectDownload = () => {
-    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated?period=${encodeURIComponent(period)}`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.docx`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Downloading Master Consolidated Institutional Report (${period})`);
+  const handleDirectDownload = async () => {
+    try {
+      toast.loading(`Downloading Master Consolidated Report (${period})...`, { id: 'download-docx' });
+      const res = await api.get(`/reports/download-consolidated?period=${encodeURIComponent(period)}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      toast.success(`Downloaded Master Consolidated Institutional Report (${period})`, { id: 'download-docx' });
+    } catch (err: any) {
+      toast.error('Failed to download Word report: ' + (err.response?.data?.message || err.message), { id: 'download-docx' });
+    }
   };
 
   // 2. Super Admin: Generate & Download Consolidated Institutional PDF via LaTeX
@@ -397,20 +400,21 @@ export const HODReportConsolidatorPage: React.FC = () => {
         const blobUrl = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.setAttribute('download', fileName);
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
 
         toast.success(`Master Consolidated Institutional PDF (${res.data.data.fileSizeFormatted}) generated via LaTeX & downloaded!`, { id: 'consolidate-pdf' });
       } else {
-        handleDirectDownloadPDF();
+        await handleDirectDownloadPDF();
       }
     } catch (err: any) {
       console.warn('LaTeX PDF synthesis error, falling back to direct stream download:', err);
       try {
-        handleDirectDownloadPDF();
-      } catch (clientErr: any) {
+        await handleDirectDownloadPDF();
+      } catch (streamErr: any) {
         toast.error('PDF consolidation failed: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: 'consolidate-pdf' });
       }
     } finally {
@@ -418,15 +422,25 @@ export const HODReportConsolidatorPage: React.FC = () => {
     }
   };
 
-  const handleDirectDownloadPDF = () => {
-    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-consolidated-pdf?period=${encodeURIComponent(period)}`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.setAttribute('download', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Downloading Master Consolidated Institutional Report (${period})`);
+  const handleDirectDownloadPDF = async () => {
+    try {
+      const res = await api.get(`/reports/download-consolidated-pdf?period=${encodeURIComponent(period)}`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      toast.success(`Downloaded Master Consolidated Institutional Report (${period})`, { id: 'consolidate-pdf' });
+    } catch (err: any) {
+      toast.error('Failed to download PDF report: ' + (err.response?.data?.message || err.message), { id: 'consolidate-pdf' });
+      throw err;
+    }
   };
 
   // Choice Handler when user picks format from modal:
@@ -443,15 +457,26 @@ export const HODReportConsolidatorPage: React.FC = () => {
     }
   };
 
-  const handleDownloadDeptReport = (id: string, fileName: string) => {
-    const downloadUrl = `${api.defaults.baseURL || '/api'}/reports/download-department/${id}`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.setAttribute('download', fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Downloading ${fileName}`);
+  const handleDownloadDeptReport = async (id: string, fileName: string) => {
+    try {
+      toast.loading(`Downloading ${fileName}...`, { id: `download-dept-${id}` });
+      const res = await api.get(`/reports/download-department/${id}`, {
+        responseType: 'blob'
+      });
+      const isPdf = fileName.toLowerCase().endsWith('.pdf');
+      const blob = new Blob([res.data], { type: isPdf ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      toast.success(`Downloaded ${fileName}`, { id: `download-dept-${id}` });
+    } catch (err: any) {
+      toast.error(`Failed to download ${fileName}: ` + (err.response?.data?.message || err.message), { id: `download-dept-${id}` });
+    }
   };
 
   // 2. HOD Individual Department DOCX / PDF Upload
