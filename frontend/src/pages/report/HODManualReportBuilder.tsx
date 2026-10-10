@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import {
@@ -858,6 +858,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   const loadingDraftRef = React.useRef(loadingDraft);
   loadingDraftRef.current = loadingDraft;
   const activeFetchIdRef = React.useRef(0);
+  const submissionDateInputRef = useRef<HTMLInputElement>(null);
 
   const parseDaysFromOption = (opt: string): number => {
     if (!opt) return 1;
@@ -1797,15 +1798,28 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               </div>
             </div>
             <div className="relative flex items-center">
+              <div
+                onClick={() => {
+                  try {
+                    if (submissionDateInputRef.current && typeof submissionDateInputRef.current.showPicker === 'function') {
+                      submissionDateInputRef.current.showPicker();
+                    } else {
+                      submissionDateInputRef.current?.focus();
+                    }
+                  } catch {
+                    submissionDateInputRef.current?.focus();
+                  }
+                }}
+                className="w-full flex items-center justify-between pl-3.5 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 hover:border-blue-500 text-slate-900 text-xs sm:text-sm font-semibold cursor-pointer font-mono tracking-wide transition-all shadow-2xs group"
+                title="Click anywhere to pick submission date"
+              >
+                <span className={submissionDate ? 'text-slate-900 font-semibold' : 'text-slate-400 font-normal font-sans text-xs sm:text-sm'}>
+                  {submissionDate || 'Click to select Date (DD/MM/YYYY)'}
+                </span>
+                <Calendar className="w-4 h-4 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
+              </div>
               <input
-                type="text"
-                value={submissionDate}
-                onChange={(e) => setSubmissionDate(handleDateInputAutoFormat(e.target.value))}
-                placeholder="DD/MM/YYYY (e.g. 25/04/2026)"
-                maxLength={10}
-                className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-600 font-mono tracking-wide"
-              />
-              <input
+                ref={submissionDateInputRef}
                 type="date"
                 value={getIsoDateFromDDMMYYYY(submissionDate)}
                 onChange={(e) => {
@@ -1813,8 +1827,9 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                     setSubmissionDate(formatDateToDDMMYYYY(e.target.value));
                   }
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0"
-                title="Select date from calendar"
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
               />
             </div>
           </div>
@@ -2884,14 +2899,24 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                                             className="flex-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
                                           />
                                           <div className="flex-1 relative flex items-center">
-                                            <input
-                                              type="text"
-                                              value={rRow.date}
-                                              placeholder="DD/MM/YYYY"
-                                              onChange={(e) => handleUpdateReviewRow(mIdx, dIdx, rIdx, 'date', handleDateInputAutoFormat(e.target.value))}
-                                              className="w-full pl-2.5 pr-8 py-1 text-xs font-medium bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 font-mono"
-                                            />
-                                            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                                            <label
+                                              onClick={(e) => {
+                                                const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement | null;
+                                                if (input) {
+                                                  try {
+                                                    input.showPicker?.();
+                                                  } catch {
+                                                    input.focus();
+                                                  }
+                                                }
+                                              }}
+                                              className="w-full flex items-center justify-between pl-2.5 pr-2 py-1 text-xs font-medium bg-white border border-slate-200 hover:border-blue-500 rounded-lg cursor-pointer transition-colors font-mono shadow-2xs group"
+                                              title="Click anywhere to open calendar"
+                                            >
+                                              <span className={rRow.date ? 'text-slate-900 font-semibold' : 'text-slate-400 font-normal font-sans text-xs'}>
+                                                {rRow.date || 'Pick Date'}
+                                              </span>
+                                              <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
                                               <input
                                                 type="date"
                                                 value={getIsoDateFromDDMMYYYY(rRow.date)}
@@ -2900,13 +2925,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                                                     handleUpdateReviewRow(mIdx, dIdx, rIdx, 'date', formatDateToDDMMYYYY(e.target.value));
                                                   }
                                                 }}
-                                                className="opacity-0 absolute inset-0 w-6 h-6 cursor-pointer"
-                                                title="Pick review date"
+                                                className="sr-only"
+                                                tabIndex={-1}
                                               />
-                                              <div className="p-0.5 rounded bg-slate-50 border border-slate-200 pointer-events-none text-slate-600">
-                                                <Calendar className="w-3 h-3 text-blue-600" />
-                                              </div>
-                                            </div>
+                                            </label>
                                           </div>
                                           <button
                                             type="button"
@@ -3831,6 +3853,10 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
   placeholder = 'DD/MM/YYYY',
   required = false
 }) => {
+  const singleDateInputRef = useRef<HTMLInputElement>(null);
+  const startDateInputRef = useRef<HTMLInputElement>(null);
+  const endDateInputRef = useRef<HTMLInputElement>(null);
+
   const getIso = (val: string): string => {
     if (!val) return '';
     const ddmmyyyy = val.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
@@ -3881,6 +3907,20 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
 
   const daysCount = isMulti && parsed.start && parsed.end ? calculateDaysSpan(parsed.start, parsed.end) : null;
 
+  const triggerPicker = (ref: React.RefObject<HTMLInputElement | null>) => {
+    try {
+      if (ref.current) {
+        if (typeof ref.current.showPicker === 'function') {
+          ref.current.showPicker();
+        } else {
+          ref.current.focus();
+        }
+      }
+    } catch {
+      ref.current?.focus();
+    }
+  };
+
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -3900,8 +3940,9 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
                 onChange(parsed.start);
               }
             }}
-            className={`px-2 py-0.5 rounded-md font-extrabold transition-all cursor-pointer ${!isMulti ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+            className={`px-2 py-0.5 rounded-md font-extrabold transition-all cursor-pointer ${
+              !isMulti ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             1 Day
           </button>
@@ -3913,8 +3954,9 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
                 onChange(`${parsed.start} to ${parsed.end}`);
               }
             }}
-            className={`px-2 py-0.5 rounded-md font-extrabold transition-all cursor-pointer ${isMulti ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+            className={`px-2 py-0.5 rounded-md font-extrabold transition-all cursor-pointer ${
+              isMulti ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             More than 1 Day
           </button>
@@ -3923,17 +3965,38 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
 
       {!isMulti ? (
         <div className="relative flex items-center">
-          <input
-            type="text"
-            value={parsed.start || value}
-            placeholder={placeholder}
-            onChange={(e) => onChange(handleDateInputAutoFormat(e.target.value))}
-            className="w-full pl-3.5 pr-20 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-mono tracking-wide"
-          />
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {/* Clickable presentation container that automatically triggers the browser calendar */}
+          <div
+            onClick={() => triggerPicker(singleDateInputRef)}
+            className="w-full flex items-center justify-between pl-3.5 pr-20 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-500 text-slate-900 text-xs font-medium cursor-pointer transition-all shadow-2xs group"
+            title="Click anywhere to open calendar"
+          >
+            <span className={parsed.start || value ? 'font-mono text-slate-900 font-semibold' : 'text-slate-400 font-normal'}>
+              {parsed.start || value || placeholder}
+            </span>
+            <span className="text-[10px] text-blue-600 group-hover:underline font-semibold flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+            </span>
+          </div>
+
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10">
+            {value && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange('');
+                }}
+                className="text-[10px] text-slate-400 hover:text-red-600 px-1 py-0.5 rounded transition-colors cursor-pointer"
+                title="Clear date"
+              >
+                Clear
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 const now = new Date();
                 const d = String(now.getDate()).padStart(2, '0');
                 const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -3945,18 +4008,21 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
             >
               Today
             </button>
-            <input
-              type="date"
-              value={getIso(parsed.start || value)}
-              onChange={(e) => {
-                if (e.target.value) {
-                  onChange(formatDateToDDMMYYYY(e.target.value));
-                }
-              }}
-              className="w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0 text-slate-600"
-              title="Open calendar to pick date"
-            />
           </div>
+
+          <input
+            ref={singleDateInputRef}
+            type="date"
+            value={getIso(parsed.start || value)}
+            onChange={(e) => {
+              if (e.target.value) {
+                onChange(formatDateToDDMMYYYY(e.target.value));
+              }
+            }}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -3964,63 +4030,61 @@ const DateFieldInput: React.FC<DateFieldInputProps> = ({
             <div>
               <span className="text-[10px] font-bold text-slate-600 block mb-0.5">Starting Day *</span>
               <div className="relative flex items-center">
-                <input
-                  type="text"
-                  value={parsed.start}
-                  placeholder="DD/MM/YYYY"
-                  onChange={(e) => {
-                    const s = handleDateInputAutoFormat(e.target.value);
-                    const full = parsed.end ? `${s} to ${parsed.end}` : s;
-                    onChange(full);
-                  }}
-                  className="w-full pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 font-mono"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                  <input
-                    type="date"
-                    value={getIso(parsed.start)}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const s = formatDateToDDMMYYYY(e.target.value);
-                        const full = parsed.end ? `${s} to ${parsed.end}` : s;
-                        onChange(full);
-                      }
-                    }}
-                    className="w-4 h-4 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0"
-                    title="Pick Starting Day from Calendar"
-                  />
+                <div
+                  onClick={() => triggerPicker(startDateInputRef)}
+                  className="w-full flex items-center justify-between pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-500 text-slate-900 text-xs font-medium cursor-pointer transition-all shadow-2xs font-mono group"
+                  title="Click to open starting date calendar"
+                >
+                  <span className={parsed.start ? 'text-slate-900 font-semibold' : 'text-slate-400 font-normal font-sans text-xs'}>
+                    {parsed.start || 'Select Start Date'}
+                  </span>
+                  <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
                 </div>
+                <input
+                  ref={startDateInputRef}
+                  type="date"
+                  value={getIso(parsed.start)}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const s = formatDateToDDMMYYYY(e.target.value);
+                      const full = parsed.end ? `${s} to ${parsed.end}` : s;
+                      onChange(full);
+                    }
+                  }}
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
               </div>
             </div>
             <div>
               <span className="text-[10px] font-bold text-slate-600 block mb-0.5">Ending Day *</span>
               <div className="relative flex items-center">
-                <input
-                  type="text"
-                  value={parsed.end}
-                  placeholder="DD/MM/YYYY"
-                  onChange={(e) => {
-                    const endVal = handleDateInputAutoFormat(e.target.value);
-                    const full = parsed.start ? `${parsed.start} to ${endVal}` : endVal;
-                    onChange(full);
-                  }}
-                  className="w-full pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 font-mono"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                  <input
-                    type="date"
-                    value={getIso(parsed.end)}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const endVal = formatDateToDDMMYYYY(e.target.value);
-                        const full = parsed.start ? `${parsed.start} to ${endVal}` : endVal;
-                        onChange(full);
-                      }
-                    }}
-                    className="w-4 h-4 opacity-70 hover:opacity-100 cursor-pointer bg-transparent border-0 p-0"
-                    title="Pick Ending Day from Calendar"
-                  />
+                <div
+                  onClick={() => triggerPicker(endDateInputRef)}
+                  className="w-full flex items-center justify-between pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-500 text-slate-900 text-xs font-medium cursor-pointer transition-all shadow-2xs font-mono group"
+                  title="Click to open ending date calendar"
+                >
+                  <span className={parsed.end ? 'text-slate-900 font-semibold' : 'text-slate-400 font-normal font-sans text-xs'}>
+                    {parsed.end || 'Select End Date'}
+                  </span>
+                  <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
                 </div>
+                <input
+                  ref={endDateInputRef}
+                  type="date"
+                  value={getIso(parsed.end)}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const endVal = formatDateToDDMMYYYY(e.target.value);
+                      const full = parsed.start ? `${parsed.start} to ${endVal}` : endVal;
+                      onChange(full);
+                    }
+                  }}
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
               </div>
             </div>
           </div>
