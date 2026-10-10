@@ -465,9 +465,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 1A. Journal Publications (Exact 5 columns as PDF)
+    # 1. Research — a) Journal Publications (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("1A. JOURNAL PUBLICATIONS", "Peer-reviewed research articles published in indexed journals.")
+    add_major_heading("1. RESEARCH — a) JOURNAL PUBLICATIONS", "Peer-reviewed research articles published in indexed journals.")
     j_headers = ['S.No', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification']
     j_table = doc.add_table(rows=1, cols=len(j_headers))
     j_table.autofit = False
@@ -507,9 +507,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 1B. Conference Presentations (Exact 5 columns as PDF)
+    # 1. Research — b) Conference Presentations (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("1B. CONFERENCE PRESENTATIONS", "Papers presented at national and international conferences.")
+    add_major_heading("1. RESEARCH — b) CONFERENCE PRESENTATIONS", "Papers presented at national and international conferences.")
     c_headers = ['S.No', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing']
     c_table = doc.add_table(rows=1, cols=len(c_headers))
     for i, h in enumerate(c_headers): c_table.rows[0].cells[i].text = h
@@ -531,9 +531,12 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
                 c_lines.append(("", f"Issue: {it.get('volIssueYear', '-')} | Pages: {it.get('pageNos', '-')}", False, "64748B"))
             add_styled_cell_text(row[3], c_lines, font_size=8)
 
+            loc_str = it.get('location') or it.get('locationMode', '-')
+            if it.get('location') and it.get('mode') and it.get('mode') not in str(it.get('location')):
+                loc_str = f"{it['location']} ({it['mode']})"
             d_lines = [
                 ("Date: ", it.get('date', '-'), False, "334155"),
-                ("Venue: ", it.get('locationMode', '-'), False, "475569"),
+                ("Venue: ", loc_str, False, "475569"),
                 ("Indexed: ", it.get('indexedIn', '-'), True, "1E3A8A")
             ]
             if it.get('link'): d_lines.append(("", it.get('link', ''), False, "2563EB"))
@@ -545,10 +548,10 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 2A. Patents (Exact 5 columns as PDF)
+    # 2. Innovation & Entrepreneurship — a) Patents (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("2A. PATENTS", "Granted or published patents and official patent filings.")
-    p_headers = ['S.No', 'Branch', 'Patent / Innovation Title', 'Inventors & Registration', 'Status & Date']
+    add_major_heading("2. INNOVATION & ENTREPRENEURSHIP — a) PATENTS", "Granted or published patents and official patent filings.")
+    p_headers = ['S.No', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date']
     p_table = doc.add_table(rows=1, cols=len(p_headers))
     for i, h in enumerate(p_headers): p_table.rows[0].cells[i].text = h
 
@@ -560,7 +563,12 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
             row[1].text = it['deptCode']; row[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER; row[1].paragraphs[0].runs[0].bold = True
 
             add_styled_cell_text(row[2], [it.get('title', '')], font_size=8.5)
-            add_styled_cell_text(row[3], [("Inv: ", it.get('inventors', '-'), False, "334155"), ("Pat: ", it.get('patentNumber', '-'), False, "64748B")], font_size=8)
+            inv_lines = [("Inv: ", it.get('inventors', '-'), False, "334155")]
+            if it.get('applicants'):
+                inv_lines.append(("App: ", it.get('applicants'), False, "475569"))
+            if it.get('patentNumber'):
+                inv_lines.append(("Pat: ", it.get('patentNumber'), False, "64748B"))
+            add_styled_cell_text(row[3], inv_lines, font_size=8)
             add_styled_cell_text(row[4], [(it.get('status', 'Published'), True, "1E3A8A"), (it.get('awardedDate', '-'), False, "64748B")], font_size=8, align=WD_ALIGN_PARAGRAPH.CENTER)
     else:
         nil = p_table.add_row().cells
@@ -569,9 +577,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 2B. Activities and Initiatives (Exact 6 columns as PDF)
+    # 2. Innovation & Entrepreneurship — b) Activities and Initiatives (Exact 6 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("2B. ACTIVITIES AND INITIATIVES (ENTREPRENEURSHIP)", "Startups, incubation, business ideas, and innovation workshops.")
+    add_major_heading("2. INNOVATION & ENTREPRENEURSHIP — b) ACTIVITIES AND INITIATIVES", "Startups, incubation, business ideas, and innovation workshops.")
     e_headers = ['S.No', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof']
     e_table = doc.add_table(rows=1, cols=len(e_headers))
     for i, h in enumerate(e_headers): e_table.rows[0].cells[i].text = h
@@ -597,9 +605,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 3A. Faculty Development Programs (Attended) (Exact 5 columns as PDF)
+    # 3. Faculty Development Programs (FDPs) — a) Attended (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("3A. FACULTY DEVELOPMENT PROGRAMS (FDP) — ATTENDED", "Short-term training and workshops attended by faculty.")
+    add_major_heading("3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — a) ATTENDED", "Short-term training and workshops attended by faculty.")
     fa_headers = ['S.No', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof']
     fa_table = doc.add_table(rows=1, cols=len(fa_headers))
     for i, h in enumerate(fa_headers): fa_table.rows[0].cells[i].text = h
@@ -623,9 +631,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 3B. Faculty Development Programs (Organized) (Exact 5 columns as PDF)
+    # 3. Faculty Development Programs (FDPs) — b) Organized (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("3B. FACULTY DEVELOPMENT PROGRAMS (FDP) — ORGANIZED", "Faculty development workshops hosted by the institution.")
+    add_major_heading("3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — b) ORGANIZED", "Faculty development workshops hosted by the institution.")
     fo_headers = ['S.No', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof']
     fo_table = doc.add_table(rows=1, cols=len(fo_headers))
     for i, h in enumerate(fo_headers): fo_table.rows[0].cells[i].text = h
@@ -651,7 +659,7 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     # -------------------------------------------------------------
     # 4. Student Development Programs (SDPs) (Exact 6 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("4. STUDENT DEVELOPMENT PROGRAMS (SDPS)", "Hands-on workshops, guest lectures, internships, and student training.")
+    add_major_heading("4. STUDENT DEVELOPMENT PROGRAMS (SDPs)", "Hands-on workshops, guest lectures, internships, and student training.")
     sdp_headers = ['S.No', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants', 'Key Outcomes & Coord.']
     sdp_table = doc.add_table(rows=1, cols=len(sdp_headers))
     for i, h in enumerate(sdp_headers): sdp_table.rows[0].cells[i].text = h
@@ -678,9 +686,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 5A. Faculty Achievements (Exact 5 columns as PDF)
+    # 5. Achievements & Recognitions — a) Faculty Achievements (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("5A. FACULTY ACHIEVEMENTS", "Recognitions for research, teaching excellence, and leadership.")
+    add_major_heading("5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS", "Recognitions for research, teaching excellence, and leadership.")
     fac_headers = ['S.No', 'Branch', 'Faculty Member', 'Award / Recognition', 'Conferring Body & Date']
     fac_table = doc.add_table(rows=1, cols=len(fac_headers))
     for i, h in enumerate(fac_headers): fac_table.rows[0].cells[i].text = h
@@ -704,9 +712,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 5B. Student Achievements (Exact 5 columns as PDF)
+    # 5. Achievements & Recognitions — b) Student Achievements (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("5B. STUDENT ACHIEVEMENTS", "Prizes in competitions, hackathons, symposiums, and sports.")
+    add_major_heading("5. ACHIEVEMENTS & RECOGNITIONS — b) STUDENT ACHIEVEMENTS", "Prizes in competitions, hackathons, symposiums, and sports.")
     stu_headers = ['S.No', 'Branch', 'Student Name & ID', 'Prize / Accomplishment', 'Event & Host Institution']
     stu_table = doc.add_table(rows=1, cols=len(stu_headers))
     for i, h in enumerate(stu_headers): stu_table.rows[0].cells[i].text = h
@@ -728,9 +736,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 5C. Certifications (Exact 6 columns as PDF)
+    # 5. Achievements & Recognitions — c) Certifications (Exact 6 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("5C. CERTIFICATIONS", "NPTEL, Coursera, and professional industry certifications.")
+    add_major_heading("5. ACHIEVEMENTS & RECOGNITIONS — c) CERTIFICATIONS", "NPTEL, Coursera, and professional industry certifications.")
     cert_headers = ['S.No', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status']
     cert_table = doc.add_table(rows=1, cols=len(cert_headers))
     for i, h in enumerate(cert_headers): cert_table.rows[0].cells[i].text = h
@@ -753,9 +761,9 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # Meetings & Minutes (Exact 5 columns as PDF)
+    # 12. Minutes of the Meeting (MOM) (Exact 5 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("MEETINGS & MINUTES", "Official administrative committees, HoD meetings, and governance minutes.")
+    add_major_heading("12. MINUTES OF THE MEETING (MOM)", "Official administrative committees, HoD meetings, and governance minutes.")
     m_headers = ['S.No', 'Branch', 'Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan']
     m_table = doc.add_table(rows=1, cols=len(m_headers))
     for i, h in enumerate(m_headers): m_table.rows[0].cells[i].text = h
@@ -875,7 +883,7 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     # -------------------------------------------------------------
     # 9. Club & Student Engagement Activities (Exact 7 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("9. CLUB & STUDENT ENGAGEMENT ACTIVITIES", "Student club initiatives, campus life programs, and student affairs events.")
+    add_major_heading("9. STUDENT ENGAGEMENT & CLUBS", "Student club initiatives, campus life programs, and student affairs events.")
     clb_headers = ['S.No', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes']
     clb_table = doc.add_table(rows=1, cols=len(clb_headers))
     for i, h in enumerate(clb_headers): clb_table.rows[0].cells[i].text = h
@@ -904,7 +912,7 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     # -------------------------------------------------------------
     # 10. NSS & Other Extension Activities (Exact 6 columns as PDF)
     # -------------------------------------------------------------
-    add_major_heading("10. NSS & OTHER EXTENSION ACTIVITIES", "Social outreach camps, community service, and awareness drives.")
+    add_major_heading("10. NSS & COMMUNITY ENGAGEMENT", "Social outreach camps, community service, and awareness drives.")
     nss_headers = ['S.No', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.']
     nss_table = doc.add_table(rows=1, cols=len(nss_headers))
     for i, h in enumerate(nss_headers): nss_table.rows[0].cells[i].text = h

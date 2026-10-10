@@ -375,7 +375,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return "".join(out)
 
     # -------------------------------------------------------------
-    # 1A. Journal Publications
+    # 1. Research — a) Journal Publications
     # -------------------------------------------------------------
     j_items = gather_items('journals')
     def gen_j_row(it, idx):
@@ -402,7 +402,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, pub_details, verif_details]
 
     tex.append(render_section(
-        '1A. JOURNAL PUBLICATIONS',
+        '1. RESEARCH — a) JOURNAL PUBLICATIONS',
         ['0.80cm', '1.20cm', '6.70cm', '5.30cm', '3.70cm'],
         ['#', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification'],
         gen_j_row,
@@ -410,7 +410,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 1B. Conference Presentations
+    # 1. Research — b) Conference Presentations
     # -------------------------------------------------------------
     c_items = gather_items('conferences')
     def gen_c_row(it, idx):
@@ -430,14 +430,21 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         
         verif = []
         if it.get('date'): verif.append(f"{{\\fontsize{{7}}{{8.5}}\\selectfont Date: \\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it['date'])}}}}}}}")
-        if it.get('locationMode'): verif.append(f"{{\\fontsize{{7}}{{8.5}}\\selectfont Venue: \\textcolor{{slatelight}}{{{escape_latex(it['locationMode'])}}}}}")
+        loc_val = it.get('location') or it.get('locationMode', '')
+        mode_val = it.get('mode', '')
+        if loc_val and mode_val and mode_val not in loc_val:
+            venue_display = f"{loc_val} ({mode_val})"
+        else:
+            venue_display = loc_val or mode_val or '-'
+        if venue_display and venue_display != '-':
+            verif.append(f"{{\\fontsize{{7}}{{8.5}}\\selectfont Venue: \\textcolor{{slatelight}}{{{escape_latex(venue_display)}}}}}")
         if it.get('indexedIn'): verif.append(f"{{\\fontsize{{7}}{{8.5}}\\selectfont Indexed: \\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it['indexedIn'])}}}}}}}")
         if it.get('link'): verif.append(format_latex_link(it['link'], '[Proceedings]'))
         verif_details = r" \newline ".join(verif) if verif else r"\textcolor{slatelight}{--}"
         return [sno, branch, title, conf_details, verif_details]
 
     tex.append(render_section(
-        '1B. CONFERENCE PRESENTATIONS',
+        '1. RESEARCH — b) CONFERENCE PRESENTATIONS',
         ['0.80cm', '1.20cm', '6.00cm', '5.60cm', '4.10cm'],
         ['#', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing'],
         gen_c_row,
@@ -445,27 +452,34 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 2A. Patents
+    # 2. Innovation & Entrepreneurship — a) Patents
     # -------------------------------------------------------------
     pat_items = gather_items('patents')
     def gen_pat_row(it, idx):
         sno = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{idx + 1}}}}}"
         branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it.get('deptCode', ''))}}}}}}}"
         title = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{branddark}}{{{escape_latex(it.get('title', 'Untitled Patent'))}}}}}}}"
-        inv = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatemed}}{{Inventors:}}}} \\textcolor{{slatelight}}{{{escape_latex(it.get('inventors', '-'))}}}}}" + (f" \\newline {{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{Pat: {escape_latex(it.get('patentNumber', ''))}}}}}" if it.get('patentNumber') else "")
+        inv_lines = []
+        if it.get('inventors'):
+            inv_lines.append(f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatemed}}{{Inventor/s:}}}} \\textcolor{{slatelight}}{{{escape_latex(it['inventors'])}}}}}")
+        if it.get('applicants'):
+            inv_lines.append(f"{{\\fontsize{{6.5}}{{8}}\\selectfont\\textbf{{\\textcolor{{slatemed}}{{Applicant/s:}}}} \\textcolor{{slatelight}}{{{escape_latex(it['applicants'])}}}}}")
+        if it.get('patentNumber'):
+            inv_lines.append(f"{{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{Pat: {escape_latex(it['patentNumber'])}}}}}")
+        inv = r" \newline ".join(inv_lines) if inv_lines else r"\textcolor{slatelight}{--}"
         status = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{brandgreen}}{{{escape_latex(it.get('status', 'Published'))}}}}}}}" + (f" \\newline {{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it.get('awardedDate', ''))}}}}}" if it.get('awardedDate') else "")
         return [sno, branch, title, inv, status]
 
     tex.append(render_section(
-        '2A. PATENTS',
+        '2. INNOVATION & ENTREPRENEURSHIP — a) PATENTS',
         ['0.80cm', '1.20cm', '7.50cm', '5.00cm', '3.20cm'],
-        ['#', 'Branch', 'Patent / Innovation Title', 'Inventors & Registration', 'Status & Date'],
+        ['#', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date'],
         gen_pat_row,
         pat_items
     ))
 
     # -------------------------------------------------------------
-    # 2B. Activities and Initiatives
+    # 2. Innovation & Entrepreneurship — b) Activities and Initiatives
     # -------------------------------------------------------------
     act_items = gather_items('entrepreneurship')
     def gen_act_row(it, idx):
@@ -478,7 +492,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, meta, tgt, outc]
 
     tex.append(render_section(
-        '2B. ACTIVITIES AND INITIATIVES',
+        '2. INNOVATION & ENTREPRENEURSHIP — b) ACTIVITIES AND INITIATIVES',
         ['0.80cm', '1.20cm', '5.20cm', '3.40cm', '2.85cm', '4.00cm'],
         ['#', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof'],
         gen_act_row,
@@ -486,7 +500,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 3A. Faculty Development Programs (Attended)
+    # 3. Faculty Development Programs (FDPs) — a) Attended
     # -------------------------------------------------------------
     fdpa_items = gather_items('fdpAttended', 'fdp')
     def gen_fdpa_row(it, idx):
@@ -498,7 +512,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, org, fac]
 
     tex.append(render_section(
-        '3A. FACULTY DEVELOPMENT PROGRAMS (FDP) — ATTENDED',
+        '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — a) ATTENDED',
         ['0.80cm', '1.20cm', '6.20cm', '4.70cm', '4.80cm'],
         ['#', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof'],
         gen_fdpa_row,
@@ -506,7 +520,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 3B. Faculty Development Programs (Organized)
+    # 3. Faculty Development Programs (FDPs) — b) Organized
     # -------------------------------------------------------------
     fdpo_items = gather_items('fdpOrganized')
     def gen_fdpo_row(it, idx):
@@ -518,7 +532,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, rp, coords]
 
     tex.append(render_section(
-        '3B. FACULTY DEVELOPMENT PROGRAMS (FDP) — ORGANIZED',
+        '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — b) ORGANIZED',
         ['0.80cm', '1.20cm', '5.60cm', '5.40cm', '4.70cm'],
         ['#', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof'],
         gen_fdpo_row,
@@ -539,7 +553,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, dt_rp, parts]
 
     tex.append(render_section(
-        '4. STUDENT DEVELOPMENT PROGRAMS (SDPS)',
+        '4. STUDENT DEVELOPMENT PROGRAMS (SDPs)',
         ['0.80cm', '1.20cm', '8.00cm', '4.50cm', '3.00cm'],
         ['#', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants'],
         gen_sdp_row,
@@ -547,7 +561,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 5A. Faculty Achievements
+    # 5. Achievements & Recognitions — a) Faculty Achievements
     # -------------------------------------------------------------
     fa_items = gather_items('facultyAchievements')
     def gen_fa_row(it, idx):
@@ -560,7 +574,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, fac, awd, org]
 
     tex.append(render_section(
-        '5A. FACULTY ACHIEVEMENTS',
+        '5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS',
         ['0.80cm', '1.20cm', '4.20cm', '6.00cm', '5.50cm'],
         ['#', 'Branch', 'Faculty Member', 'Award / Recognition', 'Conferring Body & Date'],
         gen_fa_row,
@@ -568,7 +582,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 5B. Student Achievements
+    # 5. Achievements & Recognitions — b) Student Achievements
     # -------------------------------------------------------------
     sa_items = gather_items('studentAchievements')
     def gen_sa_row(it, idx):
@@ -581,7 +595,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, st, awd, ev]
 
     tex.append(render_section(
-        '5B. STUDENT ACHIEVEMENTS',
+        '5. ACHIEVEMENTS & RECOGNITIONS — b) STUDENT ACHIEVEMENTS',
         ['0.80cm', '1.20cm', '5.20cm', '5.50cm', '5.00cm'],
         ['#', 'Branch', 'Student Name & ID', 'Prize / Accomplishment', 'Event & Host Institution'],
         gen_sa_row,
@@ -589,7 +603,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 5C. Professional Certifications
+    # 5. Achievements & Recognitions — c) Certifications
     # -------------------------------------------------------------
     cert_items = gather_items('certifications')
     def gen_cert_row(it, idx):
@@ -602,81 +616,12 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, plt, enr, outc]
 
     tex.append(render_section(
-        '5C. CERTIFICATIONS',
+        '5. ACHIEVEMENTS & RECOGNITIONS — c) CERTIFICATIONS',
         ['0.80cm', '1.20cm', '5.80cm', '3.50cm', '2.65cm', '3.50cm'],
         ['#', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status'],
         gen_cert_row,
         cert_items
     ))
-
-    # -------------------------------------------------------------
-    # Meetings & Minutes (MOM / Institutional Committees)
-    # -------------------------------------------------------------
-    raw_mom = gather_items('deptMeetings')
-    seen_moms = set()
-    mom_items = []
-    for m in raw_mom:
-        m_title = str(m.get('title') or "HoD's Meeting").strip()
-        m_date = str(m.get('date', '-')).strip()
-        key = (m_title, m_date)
-        if key not in seen_moms and is_meaningful_item(m):
-            seen_moms.add(key)
-            mom_items.append(m)
-
-    def gen_mom_rows(it, idx):
-        sno = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{idx + 1}}}}}"
-        branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it.get('deptCode', 'MOM'))}}}}}}}"
-        m_title = escape_latex(it.get('title') or "HoD's Meeting")
-        m_date = escape_latex(it.get('date', '-'))
-        mtg_lines = [
-            f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{brandnavy}}{{{m_title}}}}}}}",
-            f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{m_date}}}}}}}"
-        ]
-        if it.get('time'):
-            mtg_lines.append(f"{{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it['time'])}}}}}")
-        if it.get('venue'):
-            mtg_lines.append(f"{{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{Venue: {escape_latex(it['venue'])}}}}}")
-        mtg_first = r" \newline ".join(mtg_lines)
-        
-        pol = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it.get('policyChanges', 'Standard operations and administrative resolutions confirmed.'))}}}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
-
-        discussions = it.get('discussions', [])
-        if isinstance(discussions, list) and len(discussions) > 0:
-            att_prefix = ""
-            if it.get('attendees') and isinstance(it['attendees'], list):
-                att_names = ", ".join([escape_latex(a.get('name', '')) for a in it['attendees'] if a.get('name')])
-                if att_names:
-                    att_prefix = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{Attendees ({len(it['attendees'])}):}} \\textcolor{{slatelight}}{{{att_names}}}}} \\newline\\vspace{{2pt}} "
-
-            rows = []
-            for d_idx, d in enumerate(discussions):
-                d_head = escape_latex(d.get('heading', f'Topic {d_idx+1}'))
-                raw_det = str(d.get('details', 'Discussed & recorded.')).strip()
-                d_det_lines = [l.strip().lstrip('•*-0123456789.) ') for l in raw_det.split('\n') if l.strip()]
-                if len(d_det_lines) > 1:
-                    det_formatted = r" \newline ".join([r"\textcolor{brandnavy}{\textbf{\textbullet}} {\fontsize{7}{8.5}\selectfont\textcolor{slatelight}{" + escape_latex(l) + "}}" for l in d_det_lines])
-                else:
-                    det_formatted = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(raw_det)}}}}}"
-
-                disc_cell = (att_prefix if d_idx == 0 else "") + f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{branddark}}{{{d_head}}}}}}}: \\newline {det_formatted}"
-                
-                if d_idx == 0:
-                    rows.append([sno, branch, mtg_first, disc_cell, pol])
-                else:
-                    rows.append(["", "", r"{\fontsize{6.5}{8}\selectfont\textcolor{slatelight}{(Cont.)}}", disc_cell, ""])
-            return rows
-        else:
-            disc_str = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it.get('decisions', '-'))}}}}}"
-            return [[sno, branch, mtg_first, disc_str, pol]]
-
-    if mom_items:
-        tex.append(render_section(
-            'MEETINGS & MINUTES',
-            ['0.80cm', '1.20cm', '3.60cm', '8.00cm', '4.10cm'],
-            ['#', 'Branch', 'Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'],
-            gen_mom_rows,
-            mom_items
-        ))
 
     # -------------------------------------------------------------
     # 6. Collaborations & MoUs
@@ -764,7 +709,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, title, t_span, pts, coord, rem]
 
     tex.append(render_section(
-        '9. CLUB & STUDENT ENGAGEMENT ACTIVITIES',
+        '9. STUDENT ENGAGEMENT & CLUBS',
         ['0.75cm', '1.15cm', '4.50cm', '3.20cm', '1.80cm', '2.60cm', '3.20cm'],
         ['#', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes'],
         gen_clb_row,
@@ -772,7 +717,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     ))
 
     # -------------------------------------------------------------
-    # 10. NSS & Extension Activities
+    # 10. NSS & Community Engagement
     # -------------------------------------------------------------
     nss_items = gather_items('nss')
     def gen_nss_row(it, idx):
@@ -785,7 +730,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         return [sno, branch, ev, vn, ben, outc]
 
     tex.append(render_section(
-        '10. NSS & OTHER EXTENSION ACTIVITIES',
+        '10. NSS & COMMUNITY ENGAGEMENT',
         ['0.80cm', '1.20cm', '4.40cm', '3.10cm', '3.00cm', '4.95cm'],
         ['#', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.'],
         gen_nss_row,
@@ -811,6 +756,75 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         gen_add_row,
         add_items
     ))
+
+    # -------------------------------------------------------------
+    # 12. Minutes of the Meeting (MOM / Institutional Committees)
+    # -------------------------------------------------------------
+    raw_mom = gather_items('deptMeetings')
+    seen_moms = set()
+    mom_items = []
+    for m in raw_mom:
+        m_title = str(m.get('title') or "HoD's Meeting").strip()
+        m_date = str(m.get('date', '-')).strip()
+        key = (m_title, m_date)
+        if key not in seen_moms and is_meaningful_item(m):
+            seen_moms.add(key)
+            mom_items.append(m)
+
+    def gen_mom_rows(it, idx):
+        sno = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{idx + 1}}}}}"
+        branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{escape_latex(it.get('deptCode', 'MOM'))}}}}}}}"
+        m_title = escape_latex(it.get('title') or "HoD's Meeting")
+        m_date = escape_latex(it.get('date', '-'))
+        mtg_lines = [
+            f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{brandnavy}}{{{m_title}}}}}}}",
+            f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{slatedark}}{{{m_date}}}}}}}"
+        ]
+        if it.get('time'):
+            mtg_lines.append(f"{{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it['time'])}}}}}")
+        if it.get('venue'):
+            mtg_lines.append(f"{{\\fontsize{{6.5}}{{8}}\\selectfont\\textcolor{{slatelight}}{{Venue: {escape_latex(it['venue'])}}}}}")
+        mtg_first = r" \newline ".join(mtg_lines)
+        
+        pol = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it.get('policyChanges', 'Standard operations and administrative resolutions confirmed.'))}}}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
+
+        discussions = it.get('discussions', [])
+        if isinstance(discussions, list) and len(discussions) > 0:
+            att_prefix = ""
+            if it.get('attendees') and isinstance(it['attendees'], list):
+                att_names = ", ".join([escape_latex(a.get('name', '')) for a in it['attendees'] if a.get('name')])
+                if att_names:
+                    att_prefix = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{Attendees ({len(it['attendees'])}):}} \\textcolor{{slatelight}}{{{att_names}}}}} \\newline\\vspace{{2pt}} "
+
+            rows = []
+            for d_idx, d in enumerate(discussions):
+                d_head = escape_latex(d.get('heading', f'Topic {d_idx+1}'))
+                raw_det = str(d.get('details', 'Discussed & recorded.')).strip()
+                d_det_lines = [l.strip().lstrip('•*-0123456789.) ') for l in raw_det.split('\n') if l.strip()]
+                if len(d_det_lines) > 1:
+                    det_formatted = r" \newline ".join([r"\textcolor{brandnavy}{\textbf{\textbullet}} {\fontsize{7}{8.5}\selectfont\textcolor{slatelight}{" + escape_latex(l) + "}}" for l in d_det_lines])
+                else:
+                    det_formatted = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(raw_det)}}}}}"
+
+                disc_cell = (att_prefix if d_idx == 0 else "") + f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{\\textcolor{{branddark}}{{{d_head}}}}}}}: \\newline {det_formatted}"
+                
+                if d_idx == 0:
+                    rows.append([sno, branch, mtg_first, disc_cell, pol])
+                else:
+                    rows.append(["", "", r"{\fontsize{6.5}{8}\selectfont\textcolor{slatelight}{(Cont.)}}", disc_cell, ""])
+            return rows
+        else:
+            disc_str = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textcolor{{slatelight}}{{{escape_latex(it.get('decisions', '-'))}}}}}"
+            return [[sno, branch, mtg_first, disc_str, pol]]
+
+    if mom_items:
+        tex.append(render_section(
+            '12. MINUTES OF THE MEETING (MOM)',
+            ['0.80cm', '1.20cm', '3.60cm', '8.00cm', '4.10cm'],
+            ['#', 'Branch', 'Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'],
+            gen_mom_rows,
+            mom_items
+        ))
 
     # -------------------------------------------------------------
     # Final Sign-Off Block (Last Page)

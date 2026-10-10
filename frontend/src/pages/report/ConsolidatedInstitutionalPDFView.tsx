@@ -314,7 +314,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 1A. Journal Publications
     {
       key: 'journals',
-      title: 'Research — a) Journal Publications',
+      title: '1. RESEARCH — a) JOURNAL PUBLICATIONS',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.journals || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -357,7 +357,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 1B. Conference Presentations
     {
       key: 'conferences',
-      title: 'Research — b) Conference Presentations',
+      title: '1. RESEARCH — b) CONFERENCE PRESENTATIONS',
       tall: true,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.conferences || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -387,27 +387,30 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           header: 'Date, Venue & Indexing',
           width: '23%',
           align: 'justify',
-          render: (it) => (
-            <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
-              <div>Date: <strong>{it.date}</strong></div>
-              <div style={{ color: '#475569' }}>Venue: {it.locationMode}</div>
-              <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn || '-'}</div>
-              {it.link && (
-                <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
-                  <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
-                    {it.link}
-                  </a>
-                </div>
-              )}
-            </div>
-          )
+          render: (it) => {
+            const venueDisplay = it.location ? `${it.location}${it.mode ? ` (${it.mode})` : ''}` : it.locationMode;
+            return (
+              <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+                <div>Date: <strong>{it.date}</strong></div>
+                {venueDisplay && <div style={{ color: '#475569' }}>Venue: {venueDisplay}</div>}
+                <div style={{ color: '#1a365d', fontWeight: 700 }}>Indexed: {it.indexedIn || '-'}</div>
+                {it.link && (
+                  <div style={{ wordBreak: 'break-all', fontSize: '7.5px' }}>
+                    <a href={it.link.startsWith('http') ? it.link : `https://${it.link}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1d4ed8', textDecoration: 'none' }}>
+                      {it.link}
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          }
         }
       ]
     },
     // 2A. Patents
     {
       key: 'patents',
-      title: '2A. PATENTS',
+      title: '2. INNOVATION & ENTREPRENEURSHIP — a) PATENTS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.patents || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -416,13 +419,14 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
         { header: 'Patent / Innovation Title', width: '42%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>{it.title}</div> },
         {
-          header: 'Inventors & Registration',
+          header: 'Inventor/s, Applicant/s & Registration',
           width: '28%',
           align: 'justify',
           render: (it) => (
             <div style={{ color: '#334155', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
               <div><strong>Inv:</strong> {it.inventors}</div>
-              <div style={{ color: '#64748b', fontSize: '8px' }}>Pat: {it.patentNumber}</div>
+              {it.applicants && <div style={{ color: '#475569', fontSize: '8px' }}><strong>App:</strong> {it.applicants}</div>}
+              {it.patentNumber && <div style={{ color: '#64748b', fontSize: '8px' }}>Pat: {it.patentNumber}</div>}
             </div>
           )
         },
@@ -442,7 +446,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 2B. Activities and Initiatives
     {
       key: 'entrepreneurship',
-      title: '2B. Activities and Initiatives',
+      title: '2. INNOVATION & ENTREPRENEURSHIP — b) ACTIVITIES AND INITIATIVES',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.entrepreneurship || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -507,7 +511,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 3A. Faculty Development Programs (Attended)
     {
       key: 'fdpAttended',
-      title: '3A. FACULTY DEVELOPMENT PROGRAMS (FDP) — ATTENDED',
+      title: '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — a) ATTENDED',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpAttended || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -558,7 +562,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 3B. Faculty Development Programs (Organized)
     {
       key: 'fdpOrganized',
-      title: '3B. FACULTY DEVELOPMENT PROGRAMS (FDP) — ORGANIZED',
+      title: '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — b) ORGANIZED',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.fdpOrganized || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -608,7 +612,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 4. Student Development Programs (SDPs)
     {
       key: 'sdp',
-      title: '4. STUDENT DEVELOPMENT PROGRAMS (SDPS)',
+      title: '4. STUDENT DEVELOPMENT PROGRAMS (SDPs)',
       tall: false,
       rowsPerPage: 8,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.sdp || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -689,7 +693,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 5A. Faculty Achievements
     {
       key: 'facultyAchievements',
-      title: '5A. FACULTY ACHIEVEMENTS',
+      title: '5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.facultyAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -725,7 +729,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 5B. Student Achievements
     {
       key: 'studentAchievements',
-      title: '5B. STUDENT ACHIEVEMENTS',
+      title: '5. ACHIEVEMENTS & RECOGNITIONS — b) STUDENT ACHIEVEMENTS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -740,7 +744,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 5C. Certifications
     {
       key: 'certifications',
-      title: '5C. CERTIFICATIONS',
+      title: '5. ACHIEVEMENTS & RECOGNITIONS — c) CERTIFICATIONS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.certifications || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -786,7 +790,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // Meetings (Institutional Committees / MOM only)
     {
       key: 'deptMeetings',
-      title: 'MEETINGS & MINUTES',
+      title: '12. MINUTES OF THE MEETING (MOM)',
       tall: true,
       rowsPerPage: 1,
       getItems: (data, depts) => depts.filter(d => d.code === 'MOM' || (d as any).type === 'COMMITTEE').flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -967,7 +971,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 9. Clubs & Student Engagement Activity
     {
       key: 'studentEngagement',
-      title: '9. CLUB & STUDENT ENGAGEMENT ACTIVITIES',
+      title: '9. STUDENT ENGAGEMENT & CLUBS',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentEngagement || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
@@ -998,7 +1002,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
     // 10. NSS and Other Extension Activities
     {
       key: 'nss',
-      title: '10. NSS & OTHER EXTENSION ACTIVITIES',
+      title: '10. NSS & COMMUNITY ENGAGEMENT',
       tall: false,
       rowsPerPage: 10,
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.nss || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),

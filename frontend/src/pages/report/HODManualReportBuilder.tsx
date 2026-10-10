@@ -276,7 +276,9 @@ export interface ReportSectionsData {
     authors: string;
     conferenceName: string;
     date: string;
-    locationMode: string;
+    locationMode?: string;
+    location?: string;
+    mode?: string;
     volIssueYear?: string;
     pageNos?: string;
     issnIsbn?: string;
@@ -460,7 +462,8 @@ export const STUDENT_ENGAGEMENT_ACTIVITY_TYPES = [
 export const INDEXED_IN_OPTIONS = [
   'Scopus',
   'WoS',
-  'UGC',
+  'Scopus & WoS',
+  'UGC Care',
   'Google Scholar',
   'Other'
 ];
@@ -472,6 +475,104 @@ export const PATENT_STATUS_OPTIONS = [
   'Commercialized'
 ];
 
+export const MODE_OPTIONS = [
+  'Offline',
+  'Online',
+  'Hybrid'
+];
+
+export const ORGANIZED_BY_OPTIONS = [
+  'Department',
+  'ED Cell',
+  'IIC',
+  'IQAC',
+  'Incubator',
+  'External Organization / Other'
+];
+
+export const PARTICIPANT_TYPE_OPTIONS = [
+  'Students',
+  'Faculty',
+  'Alumni',
+  'Industry Personnel',
+  'Students & Faculty',
+  'NSS Volunteers',
+  'General Public / Villagers',
+  'Mixed / All',
+  'Other'
+];
+
+export const FDP_TYPE_OPTIONS = [
+  'FDP (Faculty Development Program)',
+  'Workshop',
+  'Short Term Training Program (STTP)',
+  'Seminar',
+  'Conference',
+  'Faculty Induction Program',
+  'Pedagogy & Teaching Training',
+  'Other'
+];
+
+export const ENTREPRENEURSHIP_ACTIVITY_TYPES = [
+  'Workshop',
+  'Competition / Hackathon',
+  'Incubation Activity',
+  'Business Plan / Pitching',
+  'Mentorship Session',
+  'Training Program',
+  'Ideation / Innovation Challenge',
+  'Guest Lecture / Seminar',
+  'Exposure Visit / Boot Camp',
+  'Other'
+];
+
+export const CERTIFICATION_PLATFORM_OPTIONS = [
+  'NPTEL / SWAYAM',
+  'Coursera',
+  'edX',
+  'Udemy',
+  'Infosys Springboard',
+  'TCS iON',
+  'Oracle Academy',
+  'AWS Academy',
+  'Cisco Networking Academy',
+  'Microsoft Learn',
+  'Google Cloud',
+  'Internal / Institutional',
+  'Other'
+];
+
+export const CERTIFICATION_DURATION_OPTIONS = [
+  '4 Weeks',
+  '8 Weeks',
+  '12 Weeks',
+  '1 Month',
+  '2 Months',
+  '3 Months',
+  '6 Months',
+  '1 Year',
+  'Other'
+];
+
+export const CERTIFICATION_TYPE_OPTIONS = [
+  'Online Certification Course',
+  'Industry Certification',
+  'Value Added Course',
+  'Skill Enhancement Course',
+  'Professional Training',
+  'Other'
+];
+
+export const ACADEMIC_DEPARTMENTS_LIST = [
+  'Civil Engineering',
+  'Computer Science & Engineering',
+  'Electronics & Communication Engineering',
+  'Electrical & Electronics Engineering',
+  'Mechanical Engineering',
+  'Humanities & Sciences',
+  'Innovation & Entrepreneurship',
+  'Other'
+];
 
 export const SDP_ACTIVITY_TYPES = [
   'Workshop',
@@ -1015,31 +1116,31 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const copy = normalizeSections(prev);
       switch (sectionKey) {
         case 'journals':
-          copy.journals = [...(copy.journals || []), { title: '', authors: '', journalName: '', issnIsbn: '', volIssueYear: '', pageNos: '', indexedIn: '', link: '' }];
+          copy.journals = [...(copy.journals || []), { title: '', authors: '', journalName: '', issnIsbn: '', volIssueYear: '', pageNos: '', indexedIn: 'Scopus', link: '' }];
           break;
         case 'conferences':
-          copy.conferences = [...(copy.conferences || []), { title: '', authors: '', conferenceName: '', date: '', locationMode: '', volIssueYear: '', pageNos: '', issnIsbn: '', indexedIn: 'Scopus', link: '' }];
+          copy.conferences = [...(copy.conferences || []), { title: '', authors: '', conferenceName: '', date: '', location: '', mode: 'Offline', locationMode: '', volIssueYear: '', pageNos: '', issnIsbn: '', indexedIn: 'Scopus', link: '' }];
           break;
         case 'patents':
-          copy.patents = [...(copy.patents || []), { title: '', inventors: '', applicants: '', patentNumber: '', status: '', awardedDate: '', link: '' }];
+          copy.patents = [...(copy.patents || []), { title: '', inventors: '', applicants: '', patentNumber: '', status: 'Published', awardedDate: '', link: '' }];
           break;
         case 'entrepreneurship':
-          copy.entrepreneurship = [...(copy.entrepreneurship || []), { title: '', date: '', type: '', participants: '', organizedBy: '', mode: '', keyOutcomes: '', participantsCount: '', mentorCoordinator: '', status: '', link: '' }];
+          copy.entrepreneurship = [...(copy.entrepreneurship || []), { title: '', date: '', type: 'Workshop', participants: 'Students', organizedBy: 'Department', mode: 'Offline', keyOutcomes: '', participantsCount: '', mentorCoordinator: '', status: 'Completed', link: '' }];
           break;
         case 'nss':
-          copy.nss = [...(copy.nss || []), { event: '', date: '', venue: '', type: '', participantsCount: '', typeOfParticipants: '', outcomes: '', coordinator: '', link: '' }];
+          copy.nss = [...(copy.nss || []), { event: '', date: '', venue: '', type: 'NSS / Extension Activity', participantsCount: '', typeOfParticipants: 'Students', outcomes: '', coordinator: '', link: '' }];
           break;
         case 'fdpAttended':
-          copy.fdpAttended = [...(copy.fdpAttended || []), { title: '', type: '', dates: '', organizingBody: '', mode: '', facultyAttended: '', link: '' }];
+          copy.fdpAttended = [...(copy.fdpAttended || []), { title: '', type: 'FDP (Faculty Development Program)', dates: '', organizingBody: '', mode: 'Offline', facultyAttended: '', link: '' }];
           break;
         case 'fdpOrganized':
-          copy.fdpOrganized = [...(copy.fdpOrganized || []), { title: '', type: '', dates: '', deptOrganized: department, mode: '', resourcePersonDetails: '', facultyCoordinators: '', link: '' }];
+          copy.fdpOrganized = [...(copy.fdpOrganized || []), { title: '', type: 'FDP (Faculty Development Program)', dates: '', deptOrganized: department, mode: 'Offline', resourcePersonDetails: '', facultyCoordinators: '', link: '' }];
           break;
         case 'fdp':
-          copy.fdp = [...(copy.fdp || []), { title: '', type: '', dates: '', organizingBody: '', mode: '', role: '', keyOutcomes: '', link: '' }];
+          copy.fdp = [...(copy.fdp || []), { title: '', type: 'FDP (Faculty Development Program)', dates: '', organizingBody: '', mode: 'Offline', role: '', keyOutcomes: '', link: '' }];
           break;
         case 'sdp':
-          copy.sdp = [...(copy.sdp || []), { title: '', date: '', type: '', resourcePerson: '', mode: '', keyOutcomes: '', participantsCount: '', coordinator: '', link: '' }];
+          copy.sdp = [...(copy.sdp || []), { title: '', date: '', type: 'Workshop', resourcePerson: '', mode: 'Offline', keyOutcomes: '', participantsCount: '', coordinator: '', link: '' }];
           break;
         case 'facultyAchievements':
           copy.facultyAchievements = [...(copy.facultyAchievements || []), { name: '', award: '', organization: '', date: '', link: '' }];
@@ -1048,7 +1149,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.studentAchievements = [...(copy.studentAchievements || []), { nameRoll: '', award: '', event: '', organization: '', durationDate: '', link: '' }];
           break;
         case 'certifications':
-          copy.certifications = [...(copy.certifications || []), { title: '', type: '', duration: '', platform: '', enrolled: '', certified: '', keyOutcomes: '', link: '' }];
+          copy.certifications = [...(copy.certifications || []), { title: '', type: 'Online Certification Course', duration: '4 Weeks', platform: 'NPTEL / SWAYAM', enrolled: '', certified: '', keyOutcomes: '', link: '' }];
           break;
         case 'deptMeetings':
           copy.deptMeetings = [
@@ -1075,7 +1176,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.additionalInitiatives = [...(copy.additionalInitiatives || []), { initiative: '', date: '', description: '', outcomes: '', coordinator: '', link: '' }];
           break;
         case 'techAssociation':
-          copy.techAssociation = [...(copy.techAssociation || []), { event: '', date: '', type: '', resourcePersonCoordinator: '', participants: '', outcomes: '', link: '' }];
+          copy.techAssociation = [...(copy.techAssociation || []), { event: '', date: '', type: 'Technical Association Activity', resourcePersonCoordinator: '', participants: 'Students', outcomes: '', link: '' }];
           break;
         case 'iicCell':
           copy.iicCell = [...(copy.iicCell || []), { activity: '', date: '', description: '', partner: '', beneficiaries: '', outcomes: '', link: '' }];
@@ -1878,7 +1979,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             {activeSectionKey === '1b_conferences' && (
               <SectionContainer
                 title="1. Research — b) Conference Presentations"
-                description="Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates and attach link to presentation or conference proceedings."
+                description="Include papers presented at local/national/international conferences, symposiums, or workshops. Note presentation dates, location/mode, and attach link to presentation or conference proceedings."
                 count={safeSections.conferences.length}
                 onAdd={() => handleAddRow('conferences')}
               >
@@ -1886,19 +1987,40 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('conferences', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Title of Paper" value={item.title} onChange={(v) => handleUpdateField('conferences', idx, 'title', v)} />
+                        <FieldInput label="Title of Paper *" value={item.title} onChange={(v) => handleUpdateField('conferences', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Authors" value={item.authors} onChange={(v) => handleUpdateField('conferences', idx, 'authors', v)} />
+                        <FieldInput label="Authors *" value={item.authors} onChange={(v) => handleUpdateField('conferences', idx, 'authors', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Conference Name" value={item.conferenceName} onChange={(v) => handleUpdateField('conferences', idx, 'conferenceName', v)} />
+                        <FieldInput label="Conference Name *" value={item.conferenceName} onChange={(v) => handleUpdateField('conferences', idx, 'conferenceName', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('conferences', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Conference Date *" value={item.date} onChange={(v) => handleUpdateField('conferences', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
-                        <FieldInput label="Location/Mode" value={item.locationMode} onChange={(v) => handleUpdateField('conferences', idx, 'locationMode', v)} />
+                        <FieldInput
+                          label="Location / Venue (City / Country / Host Body) *"
+                          value={item.location !== undefined ? item.location : (item.locationMode?.replace(/\s*\((Online|Offline|Hybrid)\)/i, '') || '')}
+                          placeholder="e.g. Hyderabad, India / BITS Pilani"
+                          onChange={(v) => {
+                            handleUpdateField('conferences', idx, 'location', v);
+                            const currentMode = item.mode || 'Offline';
+                            handleUpdateField('conferences', idx, 'locationMode', v ? `${v} (${currentMode})` : currentMode);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <FieldSelect
+                          label="Mode *"
+                          value={item.mode || (item.locationMode?.toLowerCase().includes('online') ? 'Online' : item.locationMode?.toLowerCase().includes('hybrid') ? 'Hybrid' : 'Offline')}
+                          options={MODE_OPTIONS}
+                          onChange={(v) => {
+                            handleUpdateField('conferences', idx, 'mode', v);
+                            const currentLoc = item.location !== undefined ? item.location : (item.locationMode?.replace(/\s*\((Online|Offline|Hybrid)\)/i, '') || '');
+                            handleUpdateField('conferences', idx, 'locationMode', currentLoc ? `${currentLoc} (${v})` : v);
+                          }}
+                        />
                       </div>
                       <div>
                         <FieldInput label="Vol./Issue/Year" value={item.volIssueYear || ''} placeholder="e.g. Vol. 14, Issue 2, 2026" onChange={(v) => handleUpdateField('conferences', idx, 'volIssueYear', v)} />
@@ -1931,7 +2053,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                           <FieldInput
                             label="Specify Custom Indexing (if Other)"
                             value={item.indexedIn === 'Other' ? '' : item.indexedIn}
-                            placeholder="e.g. IEEE Xplore, Springer, Scopus / Under Review..."
+                            placeholder="e.g. IEEE Xplore, Springer, Scopus & WoS / Under Review..."
                             onChange={(v) => handleUpdateField('conferences', idx, 'indexedIn', v)}
                           />
                         </div>
@@ -1957,30 +2079,30 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('patents', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Patent Title" value={item.title} onChange={(v) => handleUpdateField('patents', idx, 'title', v)} />
+                        <FieldInput label="Patent / Innovation Title *" value={item.title} onChange={(v) => handleUpdateField('patents', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Inventors(as per publication order)" value={item.inventors} onChange={(v) => handleUpdateField('patents', idx, 'inventors', v)} />
+                        <FieldInput label="Inventor/s (as per publication order) *" value={item.inventors} onChange={(v) => handleUpdateField('patents', idx, 'inventors', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Applicants" value={item.applicants} onChange={(v) => handleUpdateField('patents', idx, 'applicants', v)} />
+                        <FieldInput label="Applicant/s (e.g. Sanskrithi School of Engineering / Individual)" value={item.applicants} onChange={(v) => handleUpdateField('patents', idx, 'applicants', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Patent Number" value={item.patentNumber} onChange={(v) => handleUpdateField('patents', idx, 'patentNumber', v)} />
+                        <FieldInput label="Patent / Application Number *" value={item.patentNumber} onChange={(v) => handleUpdateField('patents', idx, 'patentNumber', v)} />
                       </div>
                       <div>
                         <FieldSelect
-                          label="Patent Status"
-                          value={item.status}
+                          label="Patent Status *"
+                          value={item.status || 'Published'}
                           options={PATENT_STATUS_OPTIONS}
                           placeholder="Select Status"
                           onChange={(v) => handleUpdateField('patents', idx, 'status', v)}
                         />
                       </div>
                       <div>
-                        <DateFieldInput label="Awarded / Filing Date" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Awarded / Filing Date *" value={item.awardedDate} onChange={(v) => handleUpdateField('patents', idx, 'awardedDate', v)} placeholder="DD/MM/YYYY" />
                       </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <FieldInput label="Link to Document/Proof" value={item.link} onChange={(v) => handleUpdateField('patents', idx, 'link', v)} />
                       </div>
                     </div>
@@ -1997,42 +2119,103 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 count={safeSections.entrepreneurship.length}
                 onAdd={() => handleAddRow('entrepreneurship')}
               >
-                {safeSections.entrepreneurship.map((item, idx) => (
-                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('entrepreneurship', idx)}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div className="md:col-span-2">
-                        <FieldInput label="Entrepreneurship Activity/Program Title" value={item.title} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'title', v)} />
+                {safeSections.entrepreneurship.map((item, idx) => {
+                  const isOtherType = !ENTREPRENEURSHIP_ACTIVITY_TYPES.includes(item.type) && Boolean(item.type);
+                  const isOtherOrg = !['Department', 'ED Cell', 'IIC', 'IQAC', 'Incubator'].includes(item.organizedBy) && Boolean(item.organizedBy);
+                  const isOtherPart = !PARTICIPANT_TYPE_OPTIONS.includes(item.participants) && Boolean(item.participants);
+
+                  return (
+                    <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('entrepreneurship', idx)}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <div className="md:col-span-2">
+                          <FieldInput label="Entrepreneurship Activity/Program Title *" value={item.title} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'title', v)} />
+                        </div>
+                        <div>
+                          <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        </div>
+                        <div>
+                          <FieldSelect
+                            label="Type of Activity *"
+                            value={ENTREPRENEURSHIP_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'Workshop')}
+                            options={ENTREPRENEURSHIP_ACTIVITY_TYPES}
+                            onChange={(v) => handleUpdateField('entrepreneurship', idx, 'type', v)}
+                          />
+                        </div>
+                        {(item.type === 'Other' || isOtherType) && (
+                          <div className="md:col-span-2">
+                            <FieldInput
+                              label="Specify Custom Activity Type (if Other)"
+                              value={item.type === 'Other' ? '' : item.type}
+                              placeholder="e.g. Angel Pitching, Product Showcase, Hackathon..."
+                              onChange={(v) => handleUpdateField('entrepreneurship', idx, 'type', v)}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <FieldSelect
+                            label="Organized By *"
+                            value={['Department', 'ED Cell', 'IIC', 'IQAC', 'Incubator'].includes(item.organizedBy) ? item.organizedBy : (item.organizedBy ? 'External Organization / Other' : 'Department')}
+                            options={ORGANIZED_BY_OPTIONS}
+                            onChange={(v) => handleUpdateField('entrepreneurship', idx, 'organizedBy', v === 'External Organization / Other' ? '' : v)}
+                          />
+                        </div>
+                        {(!['Department', 'ED Cell', 'IIC', 'IQAC', 'Incubator'].includes(item.organizedBy) || isOtherOrg) && (
+                          <div>
+                            <FieldInput
+                              label="Specify External Organization / Department Details *"
+                              value={item.organizedBy === 'External Organization / Other' ? '' : item.organizedBy}
+                              placeholder="e.g. APSSDC, MSME, TiE Hyderabad..."
+                              onChange={(v) => handleUpdateField('entrepreneurship', idx, 'organizedBy', v)}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <FieldSelect
+                            label="Participants Category *"
+                            value={PARTICIPANT_TYPE_OPTIONS.includes(item.participants) ? item.participants : (item.participants ? 'Other' : 'Students')}
+                            options={PARTICIPANT_TYPE_OPTIONS}
+                            onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participants', v)}
+                          />
+                        </div>
+                        {(item.participants === 'Other' || isOtherPart) && (
+                          <div>
+                            <FieldInput
+                              label="Specify Participant Groups (if Other)"
+                              value={item.participants === 'Other' ? '' : item.participants}
+                              placeholder="e.g. Startups, Innovators, Faculty & Industry..."
+                              onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participants', v)}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <FieldSelect
+                            label="Mode *"
+                            value={MODE_OPTIONS.includes(item.mode) ? item.mode : 'Offline'}
+                            options={MODE_OPTIONS}
+                            onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mode', v)}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput label="No. of Participants *" value={item.participantsCount} placeholder="e.g. 120" onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participantsCount', v)} />
+                        </div>
+                        <div>
+                          <FieldInput label="Mentor / Coordinator *" value={item.mentorCoordinator} placeholder="e.g. Mr. P. Dhanunjaya / Dr. Vinod Kumar" onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
+                        </div>
+                        <div>
+                          <FieldSelect
+                            label="Status *"
+                            value={item.status || 'Completed'}
+                            options={['Completed', 'Ongoing', 'In Progress']}
+                            onChange={(v) => handleUpdateField('entrepreneurship', idx, 'status', v)}
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <FieldInput label="Proof/Report Link" value={item.link} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'link', v)} />
+                        </div>
                       </div>
-                      <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'date', v)} placeholder="DD/MM/YYYY" />
-                      </div>
-                      <div>
-                        <FieldInput label="Type of Activity (Workshop/Competition/Incubation/Training/Mentorship etc.)" value={item.type} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'type', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Participants (Student/Faculty/Alumni)" value={item.participants} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participants', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Organized By (Department/ED Cell/Incubator)" value={item.organizedBy} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'organizedBy', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mode', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participantsCount', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Mentor/Coordinator" value={item.mentorCoordinator} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Status (Ongoing/Completed)" value={item.status} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'status', v)} />
-                      </div>
-                      <div className="md:col-span-2">
-                        <FieldInput label="Proof/Report Link" value={item.link} onChange={(v) => handleUpdateField('entrepreneurship', idx, 'link', v)} />
-                      </div>
-                    </div>
-                  </EntryCard>
-                ))}
+                    </EntryCard>
+                  );
+                })}
               </SectionContainer>
             )}
 
@@ -2048,13 +2231,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('nss', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Event Name" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
+                        <FieldInput label="Event Name *" value={item.event} onChange={(v) => handleUpdateField('nss', idx, 'event', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('nss', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
-                        <FieldInput label="Venue" value={item.venue} onChange={(v) => handleUpdateField('nss', idx, 'venue', v)} />
+                        <FieldInput label="Venue *" value={item.venue} placeholder="e.g. Adopted Village / Campus Auditorium" onChange={(v) => handleUpdateField('nss', idx, 'venue', v)} />
                       </div>
                       <div>
                         <label className="text-[11px] font-bold text-slate-600 block mb-1">
@@ -2083,16 +2266,21 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         </div>
                       )}
                       <div>
-                        <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('nss', idx, 'participantsCount', v)} />
-                      </div>
-                      <div className="md:col-span-2">
-                        <FieldInput label="Type of Participants(Students/NSS Volunteers/Villagers/General Public/Faculty)" value={item.typeOfParticipants} onChange={(v) => handleUpdateField('nss', idx, 'typeOfParticipants', v)} />
-                      </div>
-                      <div className="md:col-span-2">
-                        <FieldInput label="Outcomes" value={item.outcomes} onChange={(v) => handleUpdateField('nss', idx, 'outcomes', v)} />
+                        <FieldInput label="No. of Participants *" value={item.participantsCount} placeholder="e.g. 85" onChange={(v) => handleUpdateField('nss', idx, 'participantsCount', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Coordinator" value={item.coordinator} onChange={(v) => handleUpdateField('nss', idx, 'coordinator', v)} />
+                        <FieldSelect
+                          label="Type of Participants *"
+                          value={PARTICIPANT_TYPE_OPTIONS.includes(item.typeOfParticipants) ? item.typeOfParticipants : (item.typeOfParticipants ? 'Other' : 'Students')}
+                          options={PARTICIPANT_TYPE_OPTIONS}
+                          onChange={(v) => handleUpdateField('nss', idx, 'typeOfParticipants', v)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <FieldInput label="Outcomes" value={item.outcomes} placeholder="e.g. Blood donation drive collected 150 units..." onChange={(v) => handleUpdateField('nss', idx, 'outcomes', v)} />
+                      </div>
+                      <div>
+                        <FieldInput label="Coordinator *" value={item.coordinator} placeholder="e.g. Mr. Adisheshu (NSS Officer)" onChange={(v) => handleUpdateField('nss', idx, 'coordinator', v)} />
                       </div>
                       <div>
                         <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('nss', idx, 'link', v)} />
@@ -2115,22 +2303,32 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpAttended', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpAttended', idx, 'title', v)} />
+                        <FieldInput label="Program Title *" value={item.title} onChange={(v) => handleUpdateField('fdpAttended', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpAttended', idx, 'type', v)} />
+                        <FieldSelect
+                          label="Program Type *"
+                          value={FDP_TYPE_OPTIONS.includes(item.type) ? item.type : (item.type ? 'Other' : 'FDP (Faculty Development Program)')}
+                          options={FDP_TYPE_OPTIONS}
+                          onChange={(v) => handleUpdateField('fdpAttended', idx, 'type', v)}
+                        />
                       </div>
                       <div>
-                        <DateFieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY" />
+                        <DateFieldInput label="Program Dates *" value={item.dates} onChange={(v) => handleUpdateField('fdpAttended', idx, 'dates', v)} placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY" />
                       </div>
                       <div>
-                        <FieldInput label="Organizing Body" value={item.organizingBody} onChange={(v) => handleUpdateField('fdpAttended', idx, 'organizingBody', v)} />
+                        <FieldInput label="Organizing Body / Institution *" value={item.organizingBody} placeholder="e.g. AICTE / IIT Madras / NIT Warangal" onChange={(v) => handleUpdateField('fdpAttended', idx, 'organizingBody', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpAttended', idx, 'mode', v)} />
+                        <FieldSelect
+                          label="Mode *"
+                          value={MODE_OPTIONS.includes(item.mode) ? item.mode : 'Offline'}
+                          options={MODE_OPTIONS}
+                          onChange={(v) => handleUpdateField('fdpAttended', idx, 'mode', v)}
+                        />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Name of the faculty attended" value={item.facultyAttended} onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
+                        <FieldInput label="Name of the Faculty Attended *" value={item.facultyAttended} placeholder="e.g. Dr. P. Shabana, Associate Professor" onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpAttended', idx, 'link', v)} />
@@ -2153,25 +2351,40 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('fdpOrganized', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'title', v)} />
+                        <FieldInput label="Program Title *" value={item.title} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Type (FDP/Workshop/Seminar/Conference)" value={item.type} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'type', v)} />
+                        <FieldSelect
+                          label="Program Type *"
+                          value={FDP_TYPE_OPTIONS.includes(item.type) ? item.type : (item.type ? 'Other' : 'FDP (Faculty Development Program)')}
+                          options={FDP_TYPE_OPTIONS}
+                          onChange={(v) => handleUpdateField('fdpOrganized', idx, 'type', v)}
+                        />
                       </div>
                       <div>
-                        <DateFieldInput label="Dates" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY" />
+                        <DateFieldInput label="Program Dates *" value={item.dates} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'dates', v)} placeholder="DD/MM/YYYY or DD/MM/YYYY to DD/MM/YYYY" />
                       </div>
                       <div>
-                        <FieldInput label="Dept. Organized" value={item.deptOrganized} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'deptOrganized', v)} />
+                        <FieldSelect
+                          label="Dept. Organized *"
+                          value={ACADEMIC_DEPARTMENTS_LIST.includes(item.deptOrganized) ? item.deptOrganized : department}
+                          options={ACADEMIC_DEPARTMENTS_LIST}
+                          onChange={(v) => handleUpdateField('fdpOrganized', idx, 'deptOrganized', v)}
+                        />
                       </div>
                       <div>
-                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'mode', v)} />
+                        <FieldSelect
+                          label="Mode *"
+                          value={MODE_OPTIONS.includes(item.mode) ? item.mode : 'Offline'}
+                          options={MODE_OPTIONS}
+                          onChange={(v) => handleUpdateField('fdpOrganized', idx, 'mode', v)}
+                        />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Resource person name, designation, co-organization and address" value={item.resourcePersonDetails} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'resourcePersonDetails', v)} />
+                        <FieldInput label="Resource Person name, designation, organization and address *" value={item.resourcePersonDetails} placeholder="e.g. Dr. Rajesh Kumar, Professor, IIT Hyderabad" onChange={(v) => handleUpdateField('fdpOrganized', idx, 'resourcePersonDetails', v)} />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Name of the faculty coordinator/s" value={item.facultyCoordinators} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
+                        <FieldInput label="Name of the Faculty Coordinator/s *" value={item.facultyCoordinators} placeholder="e.g. Dr. Vinod Kumar, HOD CSE" onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'link', v)} />
@@ -2194,30 +2407,21 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('sdp', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Event Title" value={item.title} onChange={(v) => handleUpdateField('sdp', idx, 'title', v)} />
+                        <FieldInput label="Event Title *" value={item.title} onChange={(v) => handleUpdateField('sdp', idx, 'title', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('sdp', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                          Type of Activity *
-                        </label>
-                        <select
+                        <FieldSelect
+                          label="Type of Activity *"
                           value={SDP_ACTIVITY_TYPES.includes(item.type) ? item.type : (item.type ? 'Other' : 'Workshop')}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            handleUpdateField('sdp', idx, 'type', val === 'Other' ? '' : val);
-                          }}
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 transition-all cursor-pointer"
-                        >
-                          {SDP_ACTIVITY_TYPES.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
+                          options={SDP_ACTIVITY_TYPES}
+                          onChange={(v) => handleUpdateField('sdp', idx, 'type', v)}
+                        />
                       </div>
-                      {(!SDP_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other' || item.type === '') && (
-                        <div>
+                      {(!SDP_ACTIVITY_TYPES.includes(item.type) || item.type === 'Other') && (
+                        <div className="md:col-span-2">
                           <FieldInput
                             label="Specify Custom Type (if Other)"
                             value={item.type === 'Other' ? '' : item.type}
@@ -2227,19 +2431,24 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         </div>
                       )}
                       <div className="md:col-span-2">
-                        <FieldInput label="Resource Person with designation /Organization" value={item.resourcePerson} onChange={(v) => handleUpdateField('sdp', idx, 'resourcePerson', v)} />
+                        <FieldInput label="Resource Person with designation / Organization *" value={item.resourcePerson} placeholder="e.g. Mr. S. Ramesh, Lead Architect, Infosys" onChange={(v) => handleUpdateField('sdp', idx, 'resourcePerson', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Mode (Online/Offline/Hybrid)" value={item.mode} onChange={(v) => handleUpdateField('sdp', idx, 'mode', v)} />
+                        <FieldSelect
+                          label="Mode *"
+                          value={MODE_OPTIONS.includes(item.mode) ? item.mode : 'Offline'}
+                          options={MODE_OPTIONS}
+                          onChange={(v) => handleUpdateField('sdp', idx, 'mode', v)}
+                        />
                       </div>
                       <div>
-                        <FieldInput label="No. of Participants" value={item.participantsCount} onChange={(v) => handleUpdateField('sdp', idx, 'participantsCount', v)} />
+                        <FieldInput label="No. of Participants *" value={item.participantsCount} placeholder="e.g. 150 Students" onChange={(v) => handleUpdateField('sdp', idx, 'participantsCount', v)} />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('sdp', idx, 'keyOutcomes', v)} />
+                        <FieldInput label="Key Outcomes" value={item.keyOutcomes} placeholder="e.g. Hands-on experience in cloud architectures and CI/CD pipelines" onChange={(v) => handleUpdateField('sdp', idx, 'keyOutcomes', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Coordinator" value={item.coordinator} onChange={(v) => handleUpdateField('sdp', idx, 'coordinator', v)} />
+                        <FieldInput label="Coordinator *" value={item.coordinator} placeholder="e.g. Faculty Coordinator" onChange={(v) => handleUpdateField('sdp', idx, 'coordinator', v)} />
                       </div>
                       <div>
                         <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('sdp', idx, 'link', v)} />
@@ -2253,7 +2462,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             {/* Table 7: 5a. Faculty Achievements */}
             {activeSectionKey === '5a_faculty_achievements' && (
               <SectionContainer
-                title="5. Achievements & Awards — a) Faculty Achievements"
+                title="5. Achievements & Recognitions — a) Faculty Achievements"
                 description="Recognitions for teaching, research, professional work, or leadership."
                 count={safeSections.facultyAchievements.length}
                 onAdd={() => handleAddRow('facultyAchievements')}
@@ -2262,16 +2471,16 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('facultyAchievements', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div>
-                        <FieldInput label="Name" value={item.name} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'name', v)} />
+                        <FieldInput label="Faculty Name *" value={item.name} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'name', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Award/Recognition" value={item.award} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'award', v)} />
+                        <FieldInput label="Award / Recognition *" value={item.award} placeholder="e.g. Best Faculty Award / Research Excellence" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'award', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Organization/Body" value={item.organization} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'organization', v)} />
+                        <FieldInput label="Organization / Conferring Body *" value={item.organization} placeholder="e.g. IEEE / Global Education Council" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'organization', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'link', v)} />
@@ -2285,7 +2494,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             {/* Table 8: 5b. Student Achievements */}
             {activeSectionKey === '5b_student_achievements' && (
               <SectionContainer
-                title="b) Student Achievements"
+                title="5. Achievements & Recognitions — b) Student Achievements"
                 description="Achievements in academic, co-curricular, extra-curricular, or professional events."
                 count={safeSections.studentAchievements.length}
                 onAdd={() => handleAddRow('studentAchievements')}
@@ -2294,19 +2503,19 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentAchievements', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div>
-                        <FieldInput label="Name-Roll No" value={item.nameRoll} onChange={(v) => handleUpdateField('studentAchievements', idx, 'nameRoll', v)} />
+                        <FieldInput label="Name & Roll No *" value={item.nameRoll} placeholder="e.g. K. Rahul (23SSE0501)" onChange={(v) => handleUpdateField('studentAchievements', idx, 'nameRoll', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Award/Recognition" value={item.award} onChange={(v) => handleUpdateField('studentAchievements', idx, 'award', v)} />
+                        <FieldInput label="Award / Prize / Recognition *" value={item.award} placeholder="e.g. 1st Prize in National Hackathon" onChange={(v) => handleUpdateField('studentAchievements', idx, 'award', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Event/Competition" value={item.event} onChange={(v) => handleUpdateField('studentAchievements', idx, 'event', v)} />
+                        <FieldInput label="Event / Competition *" value={item.event} placeholder="e.g. Smart India Hackathon 2026" onChange={(v) => handleUpdateField('studentAchievements', idx, 'event', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Organization" value={item.organization} onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
+                        <FieldInput label="Organization / Host Institution *" value={item.organization} placeholder="e.g. AICTE / IIT Bombay" onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Duration and Date" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} placeholder="DD/MM/YYYY or Duration & Date" />
+                        <DateFieldInput label="Duration & Date *" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('studentAchievements', idx, 'link', v)} />
@@ -2320,7 +2529,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             {/* Table 9: 5c. Certifications */}
             {activeSectionKey === '5c_certifications' && (
               <SectionContainer
-                title="c) Certifications"
+                title="5. Achievements & Recognitions — c) Certifications"
                 description="Certifications acquired by students and faculty."
                 count={safeSections.certifications.length}
                 onAdd={() => handleAddRow('certifications')}
@@ -2329,25 +2538,40 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('certifications', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Program Title" value={item.title} onChange={(v) => handleUpdateField('certifications', idx, 'title', v)} />
+                        <FieldInput label="Course / Certification Title *" value={item.title} placeholder="e.g. AWS Certified Solutions Architect / NPTEL Cloud Computing" onChange={(v) => handleUpdateField('certifications', idx, 'title', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Type" value={item.type} onChange={(v) => handleUpdateField('certifications', idx, 'type', v)} />
+                        <FieldSelect
+                          label="Certification Type *"
+                          value={CERTIFICATION_TYPE_OPTIONS.includes(item.type) ? item.type : (item.type ? 'Other' : 'Online Certification Course')}
+                          options={CERTIFICATION_TYPE_OPTIONS}
+                          onChange={(v) => handleUpdateField('certifications', idx, 'type', v)}
+                        />
                       </div>
                       <div>
-                        <FieldInput label="Duration" value={item.duration} onChange={(v) => handleUpdateField('certifications', idx, 'duration', v)} />
+                        <FieldSelect
+                          label="Duration *"
+                          value={CERTIFICATION_DURATION_OPTIONS.includes(item.duration) ? item.duration : (item.duration ? 'Other' : '4 Weeks')}
+                          options={CERTIFICATION_DURATION_OPTIONS}
+                          onChange={(v) => handleUpdateField('certifications', idx, 'duration', v)}
+                        />
                       </div>
                       <div>
-                        <FieldInput label="Resource Person/Platform" value={item.platform} onChange={(v) => handleUpdateField('certifications', idx, 'platform', v)} />
+                        <FieldSelect
+                          label="Platform / Issuing Body *"
+                          value={CERTIFICATION_PLATFORM_OPTIONS.includes(item.platform) ? item.platform : (item.platform ? 'Other' : 'NPTEL / SWAYAM')}
+                          options={CERTIFICATION_PLATFORM_OPTIONS}
+                          onChange={(v) => handleUpdateField('certifications', idx, 'platform', v)}
+                        />
                       </div>
                       <div>
-                        <FieldInput label="Students/faculty Enrolled" value={item.enrolled} onChange={(v) => handleUpdateField('certifications', idx, 'enrolled', v)} />
+                        <FieldInput label="Students/Faculty Enrolled *" value={item.enrolled} placeholder="e.g. 45 Students" onChange={(v) => handleUpdateField('certifications', idx, 'enrolled', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Students/faculty  Certified" value={item.certified} onChange={(v) => handleUpdateField('certifications', idx, 'certified', v)} />
+                        <FieldInput label="Students/Faculty Certified *" value={item.certified} placeholder="e.g. 42 Certified" onChange={(v) => handleUpdateField('certifications', idx, 'certified', v)} />
                       </div>
-                      <div>
-                        <FieldInput label="Key Outcomes" value={item.keyOutcomes} onChange={(v) => handleUpdateField('certifications', idx, 'keyOutcomes', v)} />
+                      <div className="md:col-span-2">
+                        <FieldInput label="Key Outcomes" value={item.keyOutcomes} placeholder="e.g. 93% pass rate with Elite + Gold medals" onChange={(v) => handleUpdateField('certifications', idx, 'keyOutcomes', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Evidence Link" value={item.link} onChange={(v) => handleUpdateField('certifications', idx, 'link', v)} />
@@ -2799,19 +3023,19 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('mous', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Name of Industry/Academic Body" value={item.name} onChange={(v) => handleUpdateField('mous', idx, 'name', v)} />
+                        <FieldInput label="Name of Industry / Academic Body *" value={item.name} onChange={(v) => handleUpdateField('mous', idx, 'name', v)} />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Nature & Purpose" value={item.purpose} onChange={(v) => handleUpdateField('mous', idx, 'purpose', v)} />
+                        <FieldInput label="Nature & Purpose / Scope *" value={item.purpose} placeholder="e.g. Skill Training, Faculty Internship, Joint Research..." onChange={(v) => handleUpdateField('mous', idx, 'purpose', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date of Signing/Active Period" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} placeholder="DD/MM/YYYY or Period" />
+                        <DateFieldInput label="Date of Signing / Active Period *" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} placeholder="DD/MM/YYYY or Period" />
                       </div>
                       <div>
-                        <FieldInput label="Faculty Involved(SPOC)" value={item.facultySpoc} onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
+                        <FieldInput label="Faculty Involved (SPOC) *" value={item.facultySpoc} placeholder="e.g. Dr. Kethineni Vinod Kumar" onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Supporting Documents/Link" value={item.link} onChange={(v) => handleUpdateField('mous', idx, 'link', v)} />
+                        <FieldInput label="Supporting Documents / MoU Link" value={item.link} onChange={(v) => handleUpdateField('mous', idx, 'link', v)} />
                       </div>
                     </div>
                   </EntryCard>
@@ -2831,13 +3055,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('additionalInitiatives', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Initiative/Activity" value={item.initiative} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'initiative', v)} />
+                        <FieldInput label="Initiative / Activity Title *" value={item.initiative} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'initiative', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
-                        <FieldInput label="Coordinator(s)" value={item.coordinator} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
+                        <FieldInput label="Coordinator(s) *" value={item.coordinator} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Description" value={item.description} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'description', v)} />
@@ -2846,7 +3070,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Outcomes" value={item.outcomes} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'outcomes', v)} />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Report/Link/Proof" value={item.link} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'link', v)} />
+                        <FieldInput label="Report / Link / Proof" value={item.link} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'link', v)} />
                       </div>
                     </div>
                   </EntryCard>
@@ -2866,10 +3090,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('techAssociation', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       <div className="md:col-span-2">
-                        <FieldInput label="Event / Activity" value={item.event} onChange={(v) => handleUpdateField('techAssociation', idx, 'event', v)} />
+                        <FieldInput label="Event / Activity Name *" value={item.event} onChange={(v) => handleUpdateField('techAssociation', idx, 'event', v)} />
                       </div>
                       <div>
-                        <DateFieldInput label="Date" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} placeholder="DD/MM/YYYY" />
+                        <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('techAssociation', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
                       <div>
                         <label className="text-[11px] font-bold text-slate-600 block mb-1">
@@ -2898,10 +3122,15 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         </div>
                       )}
                       <div>
-                        <FieldInput label="Resource Person / Coordinator" value={item.resourcePersonCoordinator} onChange={(v) => handleUpdateField('techAssociation', idx, 'resourcePersonCoordinator', v)} />
+                        <FieldInput label="Resource Person / Coordinator *" value={item.resourcePersonCoordinator} onChange={(v) => handleUpdateField('techAssociation', idx, 'resourcePersonCoordinator', v)} />
                       </div>
                       <div>
-                        <FieldInput label="Participants" value={item.participants} onChange={(v) => handleUpdateField('techAssociation', idx, 'participants', v)} />
+                        <FieldSelect
+                          label="Participants Category *"
+                          value={PARTICIPANT_TYPE_OPTIONS.includes(item.participants) ? item.participants : (item.participants ? 'Other' : 'Students')}
+                          options={PARTICIPANT_TYPE_OPTIONS}
+                          onChange={(v) => handleUpdateField('techAssociation', idx, 'participants', v)}
+                        />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Evidence / Proof Link" value={item.link} onChange={(v) => handleUpdateField('techAssociation', idx, 'link', v)} />
@@ -2915,7 +3144,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
             {/* Table 15: 10. Syllabus coverage Report */}
             {activeSectionKey === '10_syllabus' && (
               <SectionContainer
-                title="8. Syllabus coverage Report (Summer Vacation holidays)"
+                title="8. Syllabus Coverage Report"
                 description="Tracking syllabus completion status across all classes and faculty."
                 count={safeSections.syllabus.length}
                 onAdd={() => handleAddRow('syllabus')}
