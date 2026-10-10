@@ -134,22 +134,19 @@ export const normalizeSyllabusRemarks = (remarks?: string): string => {
   return r;
 };
 
-export const getTectonicExecutable = (projectRoot: string): string => {
+export const getTectonicExecutable = async (projectRoot: string): Promise<string> => {
   const isWin = process.platform === 'win32';
-  const candidates = isWin
-    ? [
-        path.join(projectRoot, 'bin', 'tectonic.exe'),
-        path.join(process.cwd(), 'bin', 'tectonic.exe'),
-        'tectonic.exe',
-        'tectonic'
-      ]
-    : [
-        path.join(projectRoot, 'bin', 'tectonic'),
-        path.join(process.cwd(), 'bin', 'tectonic'),
-        '/usr/local/bin/tectonic',
-        '/usr/bin/tectonic',
-        'tectonic'
-      ];
+  const binName = isWin ? 'tectonic.exe' : 'tectonic';
+
+  const candidates = [
+    path.join(process.cwd(), 'bin', binName),
+    path.join(projectRoot, 'bin', binName),
+    path.join(__dirname, '../../bin', binName),
+    path.join(__dirname, '../bin', binName),
+    path.join(os.tmpdir(), binName),
+    ...(isWin ? [] : ['/tmp/tectonic', '/usr/local/bin/tectonic', '/usr/bin/tectonic']),
+    binName
+  ];
 
   for (const c of candidates) {
     if (path.isAbsolute(c) && fs.existsSync(c)) {
@@ -159,7 +156,65 @@ export const getTectonicExecutable = (projectRoot: string): string => {
       return c;
     }
   }
-  return 'tectonic';
+
+  // If on Linux / cloud container and binary missing, auto-download standalone binary with pure Node.js
+  if (!isWin) {
+    try {
+      const targetPath = path.join(os.tmpdir(), 'tectonic');
+      if (fs.existsSync(targetPath)) {
+        try { fs.chmodSync(targetPath, 0o755); } catch (_) {}
+        return targetPath;
+      }
+
+      console.log('Tectonic binary missing on Linux. Auto-downloading standalone binary...');
+      const https = await import('https');
+      const zlib = await import('zlib');
+      const url = 'https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic@0.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz';
+      
+      const tarGzBuffer = await new Promise<Buffer>((resolve, reject) => {
+        const fetchUrl = (currentUrl: string) => {
+          https.get(currentUrl, (res) => {
+            if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+              return fetchUrl(res.headers.location);
+            }
+            if (res.statusCode !== 200) {
+              return reject(new Error(`Failed to download tectonic: HTTP ${res.statusCode}`));
+            }
+            const chunks: Buffer[] = [];
+            res.on('data', (c) => chunks.push(c));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+          }).on('error', reject);
+        };
+        fetchUrl(url);
+      });
+
+      const tarBuffer = zlib.gunzipSync(tarGzBuffer);
+      let offset = 0;
+      while (offset < tarBuffer.length - 512) {
+        const nameBuf = tarBuffer.subarray(offset, offset + 100);
+        const nullIdx = nameBuf.indexOf(0);
+        const name = nameBuf.subarray(0, nullIdx !== -1 ? nullIdx : 100).toString('utf-8').trim();
+        if (!name) break;
+
+        const sizeStr = tarBuffer.subarray(offset + 124, offset + 136).toString('utf-8').trim();
+        const size = parseInt(sizeStr, 8) || 0;
+
+        if (name === 'tectonic' || name.endsWith('/tectonic')) {
+          const fileData = tarBuffer.subarray(offset + 512, offset + 512 + size);
+          fs.writeFileSync(targetPath, fileData);
+          fs.chmodSync(targetPath, 0o755);
+          console.log('Tectonic standalone binary configured successfully at:', targetPath);
+          return targetPath;
+        }
+
+        offset += 512 + Math.ceil(size / 512) * 512;
+      }
+    } catch (e) {
+      console.warn('Auto-download of tectonic encountered notice:', e);
+    }
+  }
+
+  return binName;
 };
 
 export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>, period: string): string => {
@@ -730,7 +785,7 @@ export const compileMasterLatexDocument = async (
   const texFile = path.join(tempDir, 'report.tex');
   fs.writeFileSync(texFile, latexCode, 'utf-8');
 
-  const tectonicBin = getTectonicExecutable(projectRoot);
+  const tectonicBin = await getTectonicExecutable(projectRoot);
 
   return new Promise<Buffer>((resolve, reject) => {
     execFile(tectonicBin, ['--outdir', tempDir, texFile], (err, _stdout, stderr) => {
