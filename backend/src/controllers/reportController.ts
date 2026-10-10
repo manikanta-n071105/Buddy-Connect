@@ -327,11 +327,28 @@ const getPythonBin = (): string => {
   return 'python';
 };
 
+const getProjectRoot = (): string => {
+  const fs = require('fs');
+  const path = require('path');
+  if (fs.existsSync(path.join(process.cwd(), 'scripts'))) {
+    return process.cwd();
+  }
+  const parent = path.resolve(process.cwd(), '..');
+  if (fs.existsSync(path.join(parent, 'scripts'))) {
+    return parent;
+  }
+  const grandParent = path.resolve(process.cwd(), '../..');
+  if (fs.existsSync(path.join(grandParent, 'scripts'))) {
+    return grandParent;
+  }
+  return parent;
+};
+
 export const getConsolidatedReportStatus = async (_req: any, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
     const reportPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
     const zipPath = path.join(projectRoot, 'Reports Zip File.zip');
 
@@ -378,7 +395,7 @@ export const downloadConsolidatedReport = async (req: any, res: Response) => {
     const fs = await import('fs');
     const path = await import('path');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
     const period = (req.query.period as string) || 'September 2026';
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
 
@@ -449,7 +466,7 @@ export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
     const fs = await import('fs');
     const path = await import('path');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     let submissionsRes = await reportQuery(
       'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
@@ -535,7 +552,7 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
     const fs = await import('fs');
     const path = await import('path');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
     const period = (req.query.period as string) || 'September 2026';
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
 
@@ -608,7 +625,7 @@ export const saveConsolidatedPDF = async (req: any, res: Response) => {
     }
     const fs = await import('fs');
     const path = await import('path');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
     const cleanBase64 = fileBase64.replace(/^data:application\/pdf;base64,/, '');
     const buffer = Buffer.from(cleanBase64, 'base64');
     const outFileName = fileName || 'Consolidated_Institutional_HOD_Report_September_2026.pdf';
@@ -624,7 +641,7 @@ export const regenerateConsolidatedReport = async (_req: any, res: Response) => 
   try {
     const path = await import('path');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
     const scriptPath = path.join(projectRoot, 'scripts', 'consolidate_reports.py');
     const zipPath = path.join(projectRoot, 'Reports Zip File.zip');
     const reportPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
@@ -655,7 +672,7 @@ export const uploadAndConsolidateZip = async (req: any, res: Response) => {
     const fs = await import('fs');
     const path = await import('path');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     const targetZipPath = path.join(projectRoot, 'Reports Zip File.zip');
     const cleanBase64 = fileBase64.replace(/^data:.*,/, '');
@@ -772,7 +789,7 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
     const period = (req.query.period as string) || (req.body?.period as string) || 'September 2026';
     const fs = await import('fs');
     const path = await import('path');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     await reportQuery('DELETE FROM departmental_monthly_reports WHERE period = $1', [period]);
 
@@ -864,7 +881,7 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
 
     const fs = await import('fs');
     const path = await import('path');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
@@ -927,7 +944,7 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
     const fs = await import('fs');
     const path = await import('path');
     const { execFileSync } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     const scratchFolder = path.join(projectRoot, 'scratch');
     fs.mkdirSync(scratchFolder, { recursive: true });
@@ -1044,7 +1061,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     const path = await import('path');
     const fs = await import('fs');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     const submissionsRes = await reportQuery(
       'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
@@ -1165,7 +1182,7 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
     const fs = await import('fs');
     const path = await import('path');
     const { execFile } = await import('child_process');
-    const projectRoot = path.resolve(process.cwd(), '..');
+    const projectRoot = getProjectRoot();
 
     const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const targetFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);

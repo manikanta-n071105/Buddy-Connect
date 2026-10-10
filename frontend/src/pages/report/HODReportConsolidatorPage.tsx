@@ -404,33 +404,12 @@ export const HODReportConsolidatorPage: React.FC = () => {
 
         toast.success(`Master Consolidated Institutional PDF (${res.data.data.fileSizeFormatted}) generated via LaTeX & downloaded!`, { id: 'consolidate-pdf' });
       } else {
-        // Fallback to client-side exporter if needed
-        const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
-        const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
-
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.setAttribute('download', fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        toast.success('Master Consolidated Institutional PDF generated & downloaded!', { id: 'consolidate-pdf' });
+        handleDirectDownloadPDF();
       }
     } catch (err: any) {
-      // If backend failed, attempt client fallback
+      console.warn('LaTeX PDF synthesis error, falling back to direct stream download:', err);
       try {
-        const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
-        const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
-        const blobUrl = URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.setAttribute('download', fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('Master Consolidated Institutional PDF generated & downloaded!', { id: 'consolidate-pdf' });
+        handleDirectDownloadPDF();
       } catch (clientErr: any) {
         toast.error('PDF consolidation failed: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: 'consolidate-pdf' });
       }
