@@ -82,17 +82,28 @@ def is_meaningful(item):
     return any(len(str(v).strip()) >= 2 for k, v in item.items() if k not in ['status', 'mode', 'deptCode', 'noOfDays', 'link'])
 
 def get_tectonic_bin():
-    possible_paths = [
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin', 'tectonic.exe'),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'tectonic.exe'),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin', 'tectonic'),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'tectonic'),
-        'tectonic.exe',
-        'tectonic'
-    ]
-    for p in possible_paths:
+    is_win = sys.platform.startswith('win')
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    if is_win:
+        candidates = [
+            os.path.join(root_dir, 'bin', 'tectonic.exe'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'tectonic.exe'),
+            'tectonic.exe',
+            'tectonic'
+        ]
+    else:
+        candidates = [
+            os.path.join(root_dir, 'bin', 'tectonic'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bin', 'tectonic'),
+            '/usr/local/bin/tectonic',
+            '/usr/bin/tectonic',
+            'tectonic'
+        ]
+        
+    for p in candidates:
         if os.path.isabs(p) and os.path.exists(p):
-            if not sys.platform.startswith('win'):
+            if not is_win:
                 try:
                     os.chmod(p, 0o755)
                 except Exception:
@@ -102,24 +113,24 @@ def get_tectonic_bin():
             return p
 
     # If on Linux / cloud container and tectonic is missing, download standalone static binary
-    if not sys.platform.startswith('win'):
+    if not is_win:
         try:
-            bin_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin')
+            bin_dir = os.path.join(root_dir, 'bin')
             os.makedirs(bin_dir, exist_ok=True)
             target_bin = os.path.join(bin_dir, 'tectonic')
-            
-            import urllib.request
-            import tarfile
-            url = "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic@0.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz"
-            print("Tectonic binary not found on Linux. Downloading standalone binary...", file=sys.stderr)
-            tar_path = os.path.join(tempfile.gettempdir(), "tectonic_x86_64_linux.tar.gz")
-            urllib.request.urlretrieve(url, tar_path)
-            with tarfile.open(tar_path, "r:gz") as tar:
-                for member in tar.getmembers():
-                    if member.name == 'tectonic' or member.name.endswith('/tectonic'):
-                        member.name = 'tectonic'
-                        tar.extract(member, bin_dir)
-                        break
+            if not os.path.exists(target_bin):
+                import urllib.request
+                import tarfile
+                url = "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic@0.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz"
+                print("Tectonic binary not found on Linux. Downloading standalone binary...", file=sys.stderr)
+                tar_path = os.path.join(tempfile.gettempdir(), "tectonic_x86_64_linux.tar.gz")
+                urllib.request.urlretrieve(url, tar_path)
+                with tarfile.open(tar_path, "r:gz") as tar:
+                    for member in tar.getmembers():
+                        if member.name == 'tectonic' or member.name.endswith('/tectonic'):
+                            member.name = 'tectonic'
+                            tar.extract(member, bin_dir)
+                            break
             if os.path.exists(target_bin):
                 os.chmod(target_bin, 0o755)
                 print("Tectonic binary downloaded and configured successfully.", file=sys.stderr)
