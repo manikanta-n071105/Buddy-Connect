@@ -1372,8 +1372,47 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
   const handleDownloadPDF = async () => {
     try {
       setGeneratingPdf(true);
-      const toastId = toast.loading('Crafting professional executive PDF...');
+      const toastId = toast.loading('Generating official Department PDF via LaTeX...');
 
+      const reportPayload = {
+        department,
+        hodName,
+        period,
+        submissionDate,
+        sections,
+        format: 'pdf',
+        autoSubmit: true
+      };
+
+      try {
+        const res = await api.post('/reports/generate-manual-report', reportPayload);
+        if (res.data.success && (res.data.data?.pdfBase64 || res.data.data?.fileBase64)) {
+          const rawBase64 = res.data.data.pdfBase64 || res.data.data.fileBase64;
+          const byteCharacters = atob(rawBase64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+          const fileName = res.data.data.pdfFileName || `${department.replace(/\s+/g, '_')}_Monthly_Report_${period.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+          const downloadLink = document.createElement('a');
+          downloadLink.href = URL.createObjectURL(blob);
+          downloadLink.download = fileName;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          toast.dismiss(toastId);
+          toast.success(`Department Report PDF (${res.data.data.fileSizeFormatted || ''}) generated via LaTeX & downloaded!`);
+          return;
+        }
+      } catch (backendErr) {
+        console.warn('Backend LaTeX PDF generation fallback triggered:', backendErr);
+      }
+
+      // Fallback to client html2pdf if needed
       const element = document.getElementById('hod-pdf-document');
       if (!element) {
         toast.dismiss(toastId);
@@ -1400,22 +1439,6 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         pagebreak: { mode: ['css', 'legacy'], avoid: ['.break-inside-avoid', 'tr', 'table'] }
       };
 
-      const reportPayload = {
-        department,
-        hodName,
-        period,
-        submissionDate,
-        sections
-      };
-
-      // 1. Asynchronously cache structured JSON on the server
-      try {
-        await api.post('/reports/save-department-json', reportPayload);
-      } catch (_) {
-        // Non-blocking
-      }
-
-      // 2. Generate PDF with embedded metadata & trigger download
       await (html2pdf as any)()
         .set(opt)
         .from(element)

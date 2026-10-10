@@ -5,6 +5,7 @@ import {
   getConsolidatedReportStatus,
   downloadConsolidatedReport,
   downloadConsolidatedPDF,
+  generateConsolidatedLatexPDF,
   saveConsolidatedPDF,
   regenerateConsolidatedReport,
   uploadAndConsolidateZip,
@@ -29,6 +30,7 @@ const router = Router();
 router.get('/consolidated-status', getConsolidatedReportStatus);
 router.get('/download-consolidated', downloadConsolidatedReport);
 router.get('/download-consolidated-pdf', downloadConsolidatedPDF);
+router.post('/generate-consolidated-pdf', generateConsolidatedLatexPDF);
 router.post('/save-consolidated-pdf', saveConsolidatedPDF);
 router.post('/regenerate-consolidated', regenerateConsolidatedReport);
 router.post('/upload-and-consolidate', uploadAndConsolidateZip);

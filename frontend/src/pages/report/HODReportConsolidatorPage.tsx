@@ -375,42 +375,65 @@ export const HODReportConsolidatorPage: React.FC = () => {
     toast.success(`Downloading Master Consolidated Institutional Report (${period})`);
   };
 
-  // 2. Super Admin: Generate & Download Consolidated Institutional PDF
+  // 2. Super Admin: Generate & Download Consolidated Institutional PDF via LaTeX
   const handleGenerateConsolidatedPDF = async () => {
     try {
       setConsolidatingPdf(true);
-      toast.loading('Synthesizing official Consolidated Institutional PDF...', { id: 'consolidate-pdf' });
+      toast.loading('Synthesizing official Consolidated Institutional PDF via LaTeX...', { id: 'consolidate-pdf' });
 
-      const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
-      const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
+      // Call dedicated Backend LaTeX Engine
+      const res = await api.post('/reports/generate-consolidated-pdf', { period });
 
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Save to server asynchronously
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          if (typeof reader.result === 'string') {
-            await api.post('/reports/save-consolidated-pdf', {
-              fileBase64: reader.result,
-              fileName: `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`
-            });
-          }
-        } catch (e) {
-          // non-blocking
+      if (res.data.success && res.data.data?.fileBase64) {
+        const byteCharacters = atob(res.data.data.fileBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
-      };
-      reader.readAsDataURL(pdfBlob);
+        const byteArray = new Uint8Array(byteNumbers);
+        const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
-      toast.success('Master Consolidated Institutional PDF generated & downloaded!', { id: 'consolidate-pdf' });
+        const fileName = res.data.data.fileName || `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success(`Master Consolidated Institutional PDF (${res.data.data.fileSizeFormatted}) generated via LaTeX & downloaded!`, { id: 'consolidate-pdf' });
+      } else {
+        // Fallback to client-side exporter if needed
+        const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+        const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
+
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success('Master Consolidated Institutional PDF generated & downloaded!', { id: 'consolidate-pdf' });
+      }
     } catch (err: any) {
-      toast.error('PDF consolidation failed: ' + (err.message || 'Unknown error'), { id: 'consolidate-pdf' });
+      // If backend failed, attempt client fallback
+      try {
+        const fileName = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+        const pdfBlob = await exportPagesToPdf('consolidated-pdf-document', fileName);
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Master Consolidated Institutional PDF generated & downloaded!', { id: 'consolidate-pdf' });
+      } catch (clientErr: any) {
+        toast.error('PDF consolidation failed: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: 'consolidate-pdf' });
+      }
     } finally {
       setConsolidatingPdf(false);
     }

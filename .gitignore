@@ -38,4 +38,11 @@ __pycache__/
 scratch
 uploads/
 
+# Binaries & local testing artifacts
+bin/
+*.exe
+test_*.pdf
+test_*.tex
+* (*).pdf
+
 

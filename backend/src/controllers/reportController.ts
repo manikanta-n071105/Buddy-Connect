@@ -400,17 +400,133 @@ export const downloadConsolidatedReport = async (req: any, res: Response) => {
   }
 };
 
+export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
+  try {
+    const period = (req.body?.period as string) || (req.query?.period as string) || 'September 2026';
+    const fs = await import('fs');
+    const path = await import('path');
+    const { execFile } = await import('child_process');
+    const projectRoot = path.resolve(process.cwd(), '..');
+
+    const submissionsRes = await reportQuery(
+      'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+      [period]
+    );
+
+    if (submissionsRes.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `No departmental or committee reports have been submitted for ${period} yet.`
+      });
+    }
+
+    const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
+
+    const departmentsData: Record<string, any> = {};
+    for (const sub of submissionsRes.rows) {
+      const sec = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
+      departmentsData[sub.department] = sec;
+    }
+
+    const scratchFolder = path.join(projectRoot, 'scratch');
+    fs.mkdirSync(scratchFolder, { recursive: true });
+    const tempJsonPath = path.join(scratchFolder, `consolidated_latex_input_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
+
+    fs.writeFileSync(tempJsonPath, JSON.stringify({
+      period,
+      collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+      departmentsData
+    }, null, 2), 'utf-8');
+
+    const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
+
+    execFile(getPythonBin(), [pyScript, tempJsonPath, pdfPath], async (error, stdout, stderr) => {
+      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+
+      if (error) {
+        console.error('Master LaTeX PDF generation error:', error, stderr);
+        return res.status(500).json({ success: false, message: 'LaTeX PDF generation failed', error: stderr || error.message });
+      }
+
+      if (!fs.existsSync(pdfPath)) {
+        return res.status(500).json({ success: false, message: 'Generated LaTeX PDF was not found on server' });
+      }
+
+      const fileStat = fs.statSync(pdfPath);
+      const fileBuffer = fs.readFileSync(pdfPath);
+      const fileBase64 = fileBuffer.toString('base64');
+      const fileName = `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`;
+
+      return res.json({
+        success: true,
+        message: `Master Consolidated Institutional PDF generated via LaTeX for ${period}!`,
+        data: {
+          period,
+          fileName,
+          pdfPath,
+          fileSizeBytes: fileStat.size,
+          fileSizeFormatted: `${(fileStat.size / 1024).toFixed(1)} KB`,
+          departmentsCount: Object.keys(departmentsData).length,
+          fileBase64,
+          downloadUrl: `/reports/download-consolidated-pdf?period=${encodeURIComponent(period)}`
+        }
+      });
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 export const downloadConsolidatedPDF = async (req: any, res: Response) => {
   try {
     const fs = await import('fs');
     const path = await import('path');
+    const { execFile } = await import('child_process');
     const projectRoot = path.resolve(process.cwd(), '..');
     const period = (req.query.period as string) || 'September 2026';
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
 
     let pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
+    
+    // If the PDF doesn't exist yet, compile it dynamically via LaTeX from submissions
     if (!fs.existsSync(pdfPath)) {
-      pdfPath = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.pdf');
+      const submissionsRes = await reportQuery(
+        'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+        [period]
+      );
+
+      if (submissionsRes.rows.length > 0) {
+        const departmentsData: Record<string, any> = {};
+        for (const sub of submissionsRes.rows) {
+          const sec = typeof sub.sections_data === 'string' ? JSON.parse(sub.sections_data) : (sub.sections_data || {});
+          departmentsData[sub.department] = sec;
+        }
+
+        const scratchFolder = path.join(projectRoot, 'scratch');
+        fs.mkdirSync(scratchFolder, { recursive: true });
+        const tempJsonPath = path.join(scratchFolder, `consolidated_latex_stream_${Date.now()}.json`);
+
+        fs.writeFileSync(tempJsonPath, JSON.stringify({
+          period,
+          collegeName: 'SANSKRITHI SCHOOL OF ENGINEERING',
+          departmentsData
+        }, null, 2), 'utf-8');
+
+        const pyScript = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
+        
+        await new Promise<void>((resolve, reject) => {
+          execFile(getPythonBin(), [pyScript, tempJsonPath, pdfPath], (error, stdout, stderr) => {
+            try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+            if (error) {
+              console.error('LaTeX PDF compile error:', error, stderr);
+              reject(error);
+            } else {
+              resolve();
+            }
+          });
+        });
+      }
     }
 
     if (!fs.existsSync(pdfPath)) {
@@ -438,7 +554,7 @@ export const saveConsolidatedPDF = async (req: any, res: Response) => {
     const projectRoot = path.resolve(process.cwd(), '..');
     const cleanBase64 = fileBase64.replace(/^data:application\/pdf;base64,/, '');
     const buffer = Buffer.from(cleanBase64, 'base64');
-    const outFileName = fileName || 'Consolidated_Institutional_HOD_Report_April_2026.pdf';
+    const outFileName = fileName || 'Consolidated_Institutional_HOD_Report_September_2026.pdf';
     const pdfPath = path.join(projectRoot, outFileName);
     fs.writeFileSync(pdfPath, buffer);
     return res.json({ success: true, message: 'Consolidated PDF saved on server', path: pdfPath });
@@ -887,6 +1003,7 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
 
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
+    const pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
 
     // Build the consolidated JSON map containing all departments and committees data
     const departmentsData: Record<string, any> = {};
@@ -906,33 +1023,38 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     }, null, 2), 'utf-8');
 
     const scriptPath = path.join(projectRoot, 'scripts', 'generate_consolidated_master_docx.py');
+    const latexScriptPath = path.join(projectRoot, 'scripts', 'generate_consolidated_master_latex.py');
 
     execFile(getPythonBin(), [scriptPath, tempJsonPath, reportPath], async (error, stdout, stderr) => {
-      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
-
       if (error) {
         console.error('Consolidation script error:', error, stderr);
+        try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
         return res.status(500).json({ success: false, message: 'Consolidation failed', error: stderr || error.message });
       }
 
-      // Also keep standard copy updated
-      const standardOut = path.join(projectRoot, 'Consolidated_Institutional_HOD_Report_April_2026.docx');
-      if (fs.existsSync(reportPath)) {
-        try { fs.copyFileSync(reportPath, standardOut); } catch (_) { }
-      }
+      // Also compile master LaTeX PDF
+      execFile(getPythonBin(), [latexScriptPath, tempJsonPath, pdfPath], async (pdfErr, pdfOut, pdfStderr) => {
+        try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
 
-      const departmentsCovered = Object.keys(departmentsData);
-
-      return res.json({
-        success: true,
-        message: `Successfully synthesized overall consolidated report from ${departmentsCovered.length} departmental and committee reports!`,
-        data: {
-          period,
-          reportPath,
-          reportsCount: departmentsCovered.length,
-          entitiesCovered: departmentsCovered,
-          output: stdout
+        if (pdfErr) {
+          console.warn('LaTeX PDF generation warning:', pdfErr, pdfStderr);
         }
+
+        const departmentsCovered = Object.keys(departmentsData);
+
+        return res.json({
+          success: true,
+          message: `Successfully synthesized overall consolidated report from ${departmentsCovered.length} departmental and committee reports (DOCX & LaTeX PDF)!`,
+          data: {
+            period,
+            reportPath,
+            pdfPath: fs.existsSync(pdfPath) ? pdfPath : null,
+            reportsCount: departmentsCovered.length,
+            entitiesCovered: departmentsCovered,
+            output: stdout,
+            pdfOutput: pdfOut
+          }
+        });
       });
     });
   } catch (err: any) {
@@ -975,7 +1097,8 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
       hodName,
       submissionDate,
       sections = {},
-      autoSubmit = true
+      autoSubmit = true,
+      format = 'both' // 'docx' | 'pdf' | 'both'
     } = req.body;
 
     if (!department) {
@@ -992,12 +1115,15 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
     fs.mkdirSync(targetFolder, { recursive: true });
 
     const cleanDept = department.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${Date.now()}.docx`;
-    const targetFilePath = path.join(targetFolder, safeFileName);
+    const timestamp = Date.now();
+    const safeDocxFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${timestamp}.docx`;
+    const safePdfFileName = `${cleanDept}_Monthly_Report_${cleanPeriodDir}_${timestamp}.pdf`;
+    const targetDocxPath = path.join(targetFolder, safeDocxFileName);
+    const targetPdfPath = path.join(targetFolder, safePdfFileName);
 
     const scratchFolder = path.join(projectRoot, 'scratch');
     fs.mkdirSync(scratchFolder, { recursive: true });
-    const tempJsonPath = path.join(scratchFolder, `dept_report_${Date.now()}_${Math.random().toString(36).substring(7)}.json`);
+    const tempJsonPath = path.join(scratchFolder, `dept_report_${timestamp}_${Math.random().toString(36).substring(7)}.json`);
 
     const payload = {
       department,
@@ -1010,13 +1136,14 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
 
     fs.writeFileSync(tempJsonPath, JSON.stringify(payload, null, 2), 'utf-8');
 
-    const scriptPath = path.join(projectRoot, 'scripts', 'generate_department_report.py');
+    const docxScriptPath = path.join(projectRoot, 'scripts', 'generate_department_report.py');
+    const latexScriptPath = path.join(projectRoot, 'scripts', 'generate_department_latex.py');
 
-    execFile(getPythonBin(), [scriptPath, tempJsonPath, targetFilePath], async (error, stdout, stderr) => {
-      try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
-
+    // Run DOCX generator
+    execFile(getPythonBin(), [docxScriptPath, tempJsonPath, targetDocxPath], async (error, stdout, stderr) => {
       if (error) {
-        console.error('Department report generation error:', error, stderr);
+        try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
+        console.error('Department DOCX report generation error:', error, stderr);
         return res.status(500).json({
           success: false,
           message: 'Failed to generate department Word document',
@@ -1024,74 +1151,90 @@ export const generateManualDepartmentReport = async (req: any, res: Response) =>
         });
       }
 
-      if (!fs.existsSync(targetFilePath)) {
-        return res.status(500).json({
-          success: false,
-          message: 'Generated report file was not created on disk'
-        });
-      }
+      // Run LaTeX PDF generator
+      execFile(getPythonBin(), [latexScriptPath, tempJsonPath, targetPdfPath], async (pdfErr, pdfStdout, pdfStderr) => {
+        try { if (fs.existsSync(tempJsonPath)) fs.unlinkSync(tempJsonPath); } catch (_) { }
 
-      const fileStat = fs.statSync(targetFilePath);
-      const fileSizeBytes = fileStat.size;
-
-      let totalActivities = 0;
-      try {
-        const parsed = JSON.parse(stdout.trim());
-        totalActivities = parsed.total_activities || 0;
-      } catch (_) {
-        totalActivities = Object.values(sections || {}).reduce((sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-      }
-
-      let recordId: string | null = null;
-      if (autoSubmit) {
-        const upsertRes = await reportQuery(`
-          INSERT INTO departmental_monthly_reports 
-          (department, period, hod_name, submission_date, sections_data, file_name, file_path, file_size_bytes, items_count, status, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'SUBMITTED', CURRENT_TIMESTAMP)
-          ON CONFLICT (department, period) DO UPDATE 
-          SET hod_name = EXCLUDED.hod_name,
-              submission_date = EXCLUDED.submission_date,
-              sections_data = EXCLUDED.sections_data,
-              file_name = EXCLUDED.file_name, 
-              file_path = EXCLUDED.file_path, 
-              file_size_bytes = EXCLUDED.file_size_bytes, 
-              items_count = EXCLUDED.items_count, 
-              status = 'SUBMITTED',
-              updated_at = CURRENT_TIMESTAMP
-          RETURNING *
-        `, [
-          department,
-          period,
-          hodName || 'HOD',
-          submissionDate || '',
-          JSON.stringify(sections || {}),
-          safeFileName,
-          targetFilePath,
-          fileSizeBytes,
-          totalActivities
-        ]);
-
-        recordId = upsertRes.rows[0]?.id || null;
-      }
-
-      const fileBuffer = fs.readFileSync(targetFilePath);
-      const fileBase64 = fileBuffer.toString('base64');
-
-      return res.json({
-        success: true,
-        message: `Successfully generated ${department} report with ${totalActivities} activities! Saved to dedicated database.`,
-        data: {
-          id: recordId,
-          department,
-          period,
-          hodName,
-          fileName: safeFileName,
-          fileSizeBytes,
-          fileSizeFormatted: `${(fileSizeBytes / 1024).toFixed(1)} KB`,
-          totalActivities,
-          fileBase64,
-          downloadUrl: recordId ? `/reports/download-department/${recordId}` : null
+        if (pdfErr) {
+          console.warn('Department LaTeX PDF generation error:', pdfErr, pdfStderr);
         }
+
+        const primaryFilePath = (format === 'pdf' && fs.existsSync(targetPdfPath)) ? targetPdfPath : targetDocxPath;
+        const primaryFileName = (format === 'pdf' && fs.existsSync(targetPdfPath)) ? safePdfFileName : safeDocxFileName;
+
+        const fileStat = fs.existsSync(primaryFilePath) ? fs.statSync(primaryFilePath) : { size: 0 };
+        const fileSizeBytes = fileStat.size;
+
+        let totalActivities = 0;
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          totalActivities = parsed.total_activities || 0;
+        } catch (_) {
+          totalActivities = Object.values(sections || {}).reduce((sum: number, arr: any) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+        }
+
+        let recordId: string | null = null;
+        if (autoSubmit) {
+          const upsertRes = await reportQuery(`
+            INSERT INTO departmental_monthly_reports 
+            (department, period, hod_name, submission_date, sections_data, file_name, file_path, file_size_bytes, items_count, status, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'SUBMITTED', CURRENT_TIMESTAMP)
+            ON CONFLICT (department, period) DO UPDATE 
+            SET hod_name = EXCLUDED.hod_name,
+                submission_date = EXCLUDED.submission_date,
+                sections_data = EXCLUDED.sections_data,
+                file_name = EXCLUDED.file_name, 
+                file_path = EXCLUDED.file_path, 
+                file_size_bytes = EXCLUDED.file_size_bytes, 
+                items_count = EXCLUDED.items_count, 
+                status = 'SUBMITTED',
+                updated_at = CURRENT_TIMESTAMP
+            RETURNING *
+          `, [
+            department,
+            period,
+            hodName || 'HOD',
+            submissionDate || '',
+            JSON.stringify(sections || {}),
+            primaryFileName,
+            primaryFilePath,
+            fileSizeBytes,
+            totalActivities
+          ]);
+
+          recordId = upsertRes.rows[0]?.id || null;
+        }
+
+        let docxBase64: string | null = null;
+        if (fs.existsSync(targetDocxPath)) {
+          docxBase64 = fs.readFileSync(targetDocxPath).toString('base64');
+        }
+
+        let pdfBase64: string | null = null;
+        if (fs.existsSync(targetPdfPath)) {
+          pdfBase64 = fs.readFileSync(targetPdfPath).toString('base64');
+        }
+
+        return res.json({
+          success: true,
+          message: `Successfully generated ${department} report with ${totalActivities} activities (DOCX & LaTeX PDF)!`,
+          data: {
+            id: recordId,
+            department,
+            period,
+            hodName,
+            fileName: primaryFileName,
+            fileSizeBytes,
+            fileSizeFormatted: `${(fileSizeBytes / 1024).toFixed(1)} KB`,
+            totalActivities,
+            fileBase64: format === 'pdf' ? pdfBase64 : docxBase64,
+            docxBase64,
+            pdfBase64,
+            docxFileName: safeDocxFileName,
+            pdfFileName: safePdfFileName,
+            downloadUrl: recordId ? `/reports/download-department/${recordId}` : null
+          }
+        });
       });
     });
   } catch (err: any) {
