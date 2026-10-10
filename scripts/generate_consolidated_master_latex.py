@@ -182,9 +182,41 @@ def get_tectonic_bin():
     ]
     for p in possible_paths:
         if os.path.isabs(p) and os.path.exists(p):
+            if not sys.platform.startswith('win'):
+                try:
+                    os.chmod(p, 0o755)
+                except Exception:
+                    pass
             return p
         if shutil.which(p):
             return p
+
+    # If on Linux / cloud container and tectonic is missing, download standalone static binary
+    if not sys.platform.startswith('win'):
+        try:
+            bin_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin')
+            os.makedirs(bin_dir, exist_ok=True)
+            target_bin = os.path.join(bin_dir, 'tectonic')
+            
+            import urllib.request
+            import tarfile
+            url = "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic@0.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz"
+            print("Tectonic binary not found on Linux. Downloading standalone binary...", file=sys.stderr)
+            tar_path = os.path.join(tempfile.gettempdir(), "tectonic_x86_64_linux.tar.gz")
+            urllib.request.urlretrieve(url, tar_path)
+            with tarfile.open(tar_path, "r:gz") as tar:
+                for member in tar.getmembers():
+                    if member.name == 'tectonic' or member.name.endswith('/tectonic'):
+                        member.name = 'tectonic'
+                        tar.extract(member, bin_dir)
+                        break
+            if os.path.exists(target_bin):
+                os.chmod(target_bin, 0o755)
+                print("Tectonic binary downloaded and configured successfully.", file=sys.stderr)
+                return target_bin
+        except Exception as e:
+            print(f"Notice: Auto-download of tectonic encountered: {e}", file=sys.stderr)
+
     return 'tectonic'
 
 def get_logo_path():
@@ -894,10 +926,20 @@ def compile_master_latex_pdf(json_input_path, output_pdf_path):
         else:
             print("Error: Compiled PDF not found in temp directory.", file=sys.stderr)
             return False
-    except subprocess.CalledProcessError as e:
-        print(f"Tectonic compilation failed with return code {e.returncode}", file=sys.stderr)
-        print(f"STDOUT: {e.stdout}", file=sys.stderr)
-        print(f"STDERR: {e.stderr}", file=sys.stderr)
+    except Exception as e:
+        print(f"Tectonic compilation failed ({e}), attempting pdflatex/xelatex fallback...", file=sys.stderr)
+        latex_cmd = shutil.which('xelatex') or shutil.which('pdflatex')
+        if latex_cmd:
+            try:
+                subprocess.run([latex_cmd, "-interaction=nonstopmode", f"-output-directory={temp_dir}", tex_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+                compiled_pdf = os.path.join(temp_dir, "report.pdf")
+                if os.path.exists(compiled_pdf):
+                    os.makedirs(os.path.dirname(os.path.abspath(output_pdf_path)), exist_ok=True)
+                    shutil.copyfile(compiled_pdf, output_pdf_path)
+                    print(f"Master Consolidated PDF compiled via {latex_cmd} to {output_pdf_path}")
+                    return True
+            except Exception as le:
+                print(f"Fallback {latex_cmd} failed: {le}", file=sys.stderr)
         return False
     finally:
         try:

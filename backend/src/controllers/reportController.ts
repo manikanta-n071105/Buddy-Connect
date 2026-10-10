@@ -310,6 +310,12 @@ const getPythonBin = (): string => {
   if (process.env.PYTHON_PATH && fs.existsSync(process.env.PYTHON_PATH)) {
     return process.env.PYTHON_PATH;
   }
+  if (process.platform !== 'win32') {
+    if (fs.existsSync('/usr/bin/python3')) return '/usr/bin/python3';
+    if (fs.existsSync('/usr/local/bin/python3')) return '/usr/local/bin/python3';
+    if (fs.existsSync('/usr/bin/python')) return '/usr/bin/python';
+    return 'python3';
+  }
   const preferred = 'C:\\Users\\nmani\\AppData\\Local\\Programs\\Python\\Python313\\python.exe';
   if (fs.existsSync(preferred)) {
     return preferred;
@@ -379,10 +385,19 @@ export const downloadConsolidatedReport = async (req: any, res: Response) => {
     let reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
     
     // Always attempt to compile latest docx from submissions
-    const submissionsRes = await reportQuery(
+    let submissionsRes = await reportQuery(
       'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
       [period]
     );
+
+    if (submissionsRes.rows.length === 0 && period.toLowerCase().includes('september')) {
+      const { syncSeptemberSeedData } = await import('../config/reportDb');
+      await syncSeptemberSeedData();
+      submissionsRes = await reportQuery(
+        'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+        [period]
+      );
+    }
 
     if (submissionsRes.rows.length > 0) {
       const departmentsData: Record<string, any> = {};
@@ -436,10 +451,19 @@ export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
     const { execFile } = await import('child_process');
     const projectRoot = path.resolve(process.cwd(), '..');
 
-    const submissionsRes = await reportQuery(
+    let submissionsRes = await reportQuery(
       'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
       [period]
     );
+
+    if (submissionsRes.rows.length === 0 && period.toLowerCase().includes('september')) {
+      const { syncSeptemberSeedData } = await import('../config/reportDb');
+      await syncSeptemberSeedData();
+      submissionsRes = await reportQuery(
+        'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+        [period]
+      );
+    }
 
     if (submissionsRes.rows.length === 0) {
       return res.status(400).json({
@@ -518,10 +542,19 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
     let pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
     
     // Always compile dynamically via LaTeX from submissions
-    const submissionsRes = await reportQuery(
+    let submissionsRes = await reportQuery(
       'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
       [period]
     );
+
+    if (submissionsRes.rows.length === 0 && period.toLowerCase().includes('september')) {
+      const { syncSeptemberSeedData } = await import('../config/reportDb');
+      await syncSeptemberSeedData();
+      submissionsRes = await reportQuery(
+        'SELECT department, sections_data, hod_name, status, file_path, file_name FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+        [period]
+      );
+    }
 
     if (submissionsRes.rows.length > 0) {
       const departmentsData: Record<string, any> = {};
