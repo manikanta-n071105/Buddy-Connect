@@ -330,18 +330,17 @@ const getPythonBin = (): string => {
 const getProjectRoot = (): string => {
   const fs = require('fs');
   const path = require('path');
-  if (fs.existsSync(path.join(process.cwd(), 'scripts'))) {
-    return process.cwd();
+  const checkDirs = [
+    process.cwd(),
+    path.resolve(process.cwd(), '..'),
+    path.resolve(process.cwd(), '../..')
+  ];
+  for (const dir of checkDirs) {
+    if (fs.existsSync(path.join(dir, 'scripts', 'generate_consolidated_master_latex.py'))) {
+      return dir;
+    }
   }
-  const parent = path.resolve(process.cwd(), '..');
-  if (fs.existsSync(path.join(parent, 'scripts'))) {
-    return parent;
-  }
-  const grandParent = path.resolve(process.cwd(), '../..');
-  if (fs.existsSync(path.join(grandParent, 'scripts'))) {
-    return grandParent;
-  }
-  return parent;
+  return path.resolve(process.cwd(), '..');
 };
 
 export const getConsolidatedReportStatus = async (_req: any, res: Response) => {
