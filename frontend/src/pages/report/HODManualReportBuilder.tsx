@@ -1760,15 +1760,11 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <GraduationCap className="w-3.5 h-3.5 text-slate-500" /> HOD Name:
-            </label>
-            <input
-              type="text"
+            <FacultyNameInput
+              label="HOD Name *"
               value={hodName}
-              onChange={(e) => setHodName(e.target.value)}
-              placeholder="e.g. C Anil Kumar Reddy"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-600"
+              onChange={(v) => setHodName(v)}
+              placeholder="e.g. Anil Kumar Reddy"
             />
           </div>
 
@@ -1939,8 +1935,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div className="md:col-span-2">
                         <FieldInput label="Title of Publication" value={item.title} onChange={(v) => handleUpdateField('journals', idx, 'title', v)} />
                       </div>
-                      <div>
-                        <FieldInput label="Authors(as mentioned in order)" value={item.authors} onChange={(v) => handleUpdateField('journals', idx, 'authors', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyAuthorsInput label="Authors (as mentioned in order) *" value={item.authors} onChange={(v) => handleUpdateField('journals', idx, 'authors', v)} placeholder="e.g. Prof. M. Hari, Dr. P. Shabana" />
                       </div>
                       <div>
                         <FieldInput label="Journal Name" value={item.journalName} onChange={(v) => handleUpdateField('journals', idx, 'journalName', v)} />
@@ -2004,8 +2000,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div className="md:col-span-2">
                         <FieldInput label="Title of Paper *" value={item.title} onChange={(v) => handleUpdateField('conferences', idx, 'title', v)} />
                       </div>
-                      <div>
-                        <FieldInput label="Authors *" value={item.authors} onChange={(v) => handleUpdateField('conferences', idx, 'authors', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyAuthorsInput label="Authors *" value={item.authors} onChange={(v) => handleUpdateField('conferences', idx, 'authors', v)} placeholder="e.g. Prof. M. Hari, Dr. P. Shabana" />
                       </div>
                       <div>
                         <FieldInput label="Conference Name *" value={item.conferenceName} onChange={(v) => handleUpdateField('conferences', idx, 'conferenceName', v)} />
@@ -2096,8 +2092,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div className="md:col-span-2">
                         <FieldInput label="Patent / Innovation Title *" value={item.title} onChange={(v) => handleUpdateField('patents', idx, 'title', v)} />
                       </div>
-                      <div>
-                        <FieldInput label="Inventor/s (as per publication order) *" value={item.inventors} onChange={(v) => handleUpdateField('patents', idx, 'inventors', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyAuthorsInput label="Inventor/s (as per publication order) *" value={item.inventors} onChange={(v) => handleUpdateField('patents', idx, 'inventors', v)} placeholder="e.g. Prof. M. Hari, Dr. P. Shabana" />
                       </div>
                       <div>
                         <FieldInput label="Applicant/s (e.g. Sanskrithi School of Engineering / Individual)" value={item.applicants} onChange={(v) => handleUpdateField('patents', idx, 'applicants', v)} />
@@ -2214,7 +2210,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                           <FieldInput label="No. of Participants *" value={item.participantsCount} placeholder="e.g. 120" onChange={(v) => handleUpdateField('entrepreneurship', idx, 'participantsCount', v)} />
                         </div>
                         <div>
-                          <FieldInput label="Mentor / Coordinator *" value={item.mentorCoordinator} placeholder="e.g. Mr. P. Dhanunjaya / Dr. Vinod Kumar" onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
+                          <FacultyNameInput label="Mentor / Coordinator *" value={item.mentorCoordinator} placeholder="e.g. Dhanunjaya" onChange={(v) => handleUpdateField('entrepreneurship', idx, 'mentorCoordinator', v)} />
                         </div>
                         <div>
                           <FieldSelect
@@ -2294,8 +2290,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div className="md:col-span-2">
                         <FieldInput label="Outcomes" value={item.outcomes} placeholder="e.g. Blood donation drive collected 150 units..." onChange={(v) => handleUpdateField('nss', idx, 'outcomes', v)} />
                       </div>
-                      <div>
-                        <FieldInput label="Coordinator *" value={item.coordinator} placeholder="e.g. Mr. Adisheshu (NSS Officer)" onChange={(v) => handleUpdateField('nss', idx, 'coordinator', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyNameInput label="Coordinator *" value={item.coordinator} placeholder="e.g. Adisheshu" onChange={(v) => handleUpdateField('nss', idx, 'coordinator', v)} />
                       </div>
                       <div>
                         <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('nss', idx, 'link', v)} />
@@ -2343,7 +2339,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Name of the Faculty Attended *" value={item.facultyAttended} placeholder="e.g. Dr. P. Shabana, Associate Professor" onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
+                        <FacultyNameInput label="Name of the Faculty Attended *" value={item.facultyAttended} placeholder="e.g. Shabana" onChange={(v) => handleUpdateField('fdpAttended', idx, 'facultyAttended', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpAttended', idx, 'link', v)} />
@@ -2399,7 +2395,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <FieldInput label="Resource Person name, designation, organization and address *" value={item.resourcePersonDetails} placeholder="e.g. Dr. Rajesh Kumar, Professor, IIT Hyderabad" onChange={(v) => handleUpdateField('fdpOrganized', idx, 'resourcePersonDetails', v)} />
                       </div>
                       <div className="md:col-span-2">
-                        <FieldInput label="Name of the Faculty Coordinator/s *" value={item.facultyCoordinators} placeholder="e.g. Dr. Vinod Kumar, HOD CSE" onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
+                        <FacultyAuthorsInput label="Name of the Faculty Coordinator/s *" value={item.facultyCoordinators} placeholder="e.g. Prof. M. Hari, Dr. P. Vinod Kumar" onChange={(v) => handleUpdateField('fdpOrganized', idx, 'facultyCoordinators', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('fdpOrganized', idx, 'link', v)} />
@@ -2462,10 +2458,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div className="md:col-span-2">
                         <FieldInput label="Key Outcomes" value={item.keyOutcomes} placeholder="e.g. Hands-on experience in cloud architectures and CI/CD pipelines" onChange={(v) => handleUpdateField('sdp', idx, 'keyOutcomes', v)} />
                       </div>
-                      <div>
-                        <FieldInput label="Coordinator *" value={item.coordinator} placeholder="e.g. Faculty Coordinator" onChange={(v) => handleUpdateField('sdp', idx, 'coordinator', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyNameInput label="Coordinator *" value={item.coordinator} placeholder="e.g. Ramesh" onChange={(v) => handleUpdateField('sdp', idx, 'coordinator', v)} />
                       </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <FieldInput label="Report/Photo Link" value={item.link} onChange={(v) => handleUpdateField('sdp', idx, 'link', v)} />
                       </div>
                     </div>
@@ -2485,8 +2481,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 {safeSections.facultyAchievements.map((item, idx) => (
                   <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('facultyAchievements', idx)}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div>
-                        <FieldInput label="Faculty Name *" value={item.name} onChange={(v) => handleUpdateField('facultyAchievements', idx, 'name', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyNameInput label="Faculty Name *" value={item.name} placeholder="e.g. Ramesh" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'name', v)} />
                       </div>
                       <div>
                         <FieldInput label="Award / Recognition *" value={item.award} placeholder="e.g. Best Faculty Award / Research Excellence" onChange={(v) => handleUpdateField('facultyAchievements', idx, 'award', v)} />
@@ -2718,13 +2714,14 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                                 <span className="w-6 text-center text-xs font-bold text-slate-400 shrink-0">
                                   {aIdx + 1}
                                 </span>
-                                <input
-                                  type="text"
-                                  value={att.name}
-                                  placeholder="Faculty / Leader Name"
-                                  onChange={(e) => handleUpdateMomAttendee(mIdx, aIdx, 'name', e.target.value)}
-                                  className="flex-1 px-2.5 py-1.5 text-xs font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600"
-                                />
+                                <div className="flex-1">
+                                  <FacultyNameInput
+                                    value={att.name}
+                                    placeholder="Faculty Name"
+                                    onChange={(v) => handleUpdateMomAttendee(mIdx, aIdx, 'name', v)}
+                                    compact
+                                  />
+                                </div>
                                 <input
                                   type="text"
                                   value={att.designation}
@@ -3053,8 +3050,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div>
                         <DateFieldInput label="Date of Signing / Active Period *" value={item.datePeriod} onChange={(v) => handleUpdateField('mous', idx, 'datePeriod', v)} placeholder="DD/MM/YYYY or Period" />
                       </div>
-                      <div>
-                        <FieldInput label="Faculty Involved (SPOC) *" value={item.facultySpoc} placeholder="e.g. Dr. Kethineni Vinod Kumar" onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyNameInput label="Faculty Involved (SPOC) *" value={item.facultySpoc} placeholder="e.g. Vinod Kumar" onChange={(v) => handleUpdateField('mous', idx, 'facultySpoc', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Supporting Documents / MoU Link" value={item.link} onChange={(v) => handleUpdateField('mous', idx, 'link', v)} />
@@ -3082,8 +3079,8 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                       <div>
                         <DateFieldInput label="Date *" value={item.date} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'date', v)} placeholder="DD/MM/YYYY" />
                       </div>
-                      <div>
-                        <FieldInput label="Coordinator(s) *" value={item.coordinator} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
+                      <div className="md:col-span-2">
+                        <FacultyAuthorsInput label="Coordinator(s) *" value={item.coordinator} placeholder="e.g. Prof. M. Hari, Dr. P. Shabana" onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'coordinator', v)} />
                       </div>
                       <div className="md:col-span-2">
                         <FieldInput label="Description" value={item.description} onChange={(v) => handleUpdateField('additionalInitiatives', idx, 'description', v)} />
@@ -3837,6 +3834,252 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeho
     />
   </div>
 );
+
+export const FACULTY_TITLE_OPTIONS = ['Prof.', 'Dr.', 'Mr.', 'Mrs.', 'Ms.'];
+
+export const formatInitialWithDot = (input: string): string => {
+  if (!input) return '';
+  const cleaned = input.trim();
+  if (!cleaned) return '';
+
+  // Already formatted like "M." or "K.V." or "P. V."
+  if (/^[A-Za-z](\.[A-Za-z])*(\.)?$/.test(cleaned.replace(/\s+/g, ''))) {
+    const letters = cleaned.replace(/[^A-Za-z]/g, '').toUpperCase().split('');
+    return letters.map(l => `${l}.`).join('');
+  }
+
+  // Letters string like "KV" -> "K.V."
+  if (/^[A-Za-z]+$/.test(cleaned)) {
+    return cleaned.toUpperCase().split('').map(l => `${l}.`).join('');
+  }
+
+  return cleaned.endsWith('.') ? cleaned : `${cleaned}.`;
+};
+
+export const parseFacultyNameParts = (fullName: string): { title: string; initial: string; name: string } => {
+  if (!fullName) return { title: 'Prof.', initial: '', name: '' };
+
+  let str = fullName.trim();
+  let title = 'Prof.';
+
+  for (const t of FACULTY_TITLE_OPTIONS) {
+    if (str.startsWith(t)) {
+      title = t;
+      str = str.substring(t.length).trim();
+      break;
+    }
+  }
+
+  // Check if starts with initial(s) with dot like "M." or "K.V." or "P."
+  const initialMatch = str.match(/^([A-Za-z](?:\.[A-Za-z])*\.?)\s+(.*)$/);
+  if (initialMatch) {
+    const init = formatInitialWithDot(initialMatch[1]);
+    return { title, initial: init, name: initialMatch[2].trim() };
+  }
+
+  // Check single letter without dot like "M Hari"
+  const singleLetterMatch = str.match(/^([A-Za-z])\s+(.+)$/);
+  if (singleLetterMatch) {
+    return { title, initial: `${singleLetterMatch[1].toUpperCase()}.`, name: singleLetterMatch[2].trim() };
+  }
+
+  return { title, initial: '', name: str };
+};
+
+interface FacultyNameInputProps {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  compact?: boolean;
+}
+
+const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder = 'e.g. Hari / Ramesh',
+  required = false,
+  compact = false
+}) => {
+  const parts = parseFacultyNameParts(value);
+  const [title, setTitle] = useState(parts.title);
+  const [initial, setInitial] = useState(parts.initial);
+  const [name, setName] = useState(parts.name);
+
+  useEffect(() => {
+    const updated = parseFacultyNameParts(value);
+    setTitle(updated.title);
+    setInitial(updated.initial);
+    setName(updated.name);
+  }, [value]);
+
+  const updateCombined = (newTitle: string, newInit: string, newName: string) => {
+    setTitle(newTitle);
+    setInitial(newInit);
+    setName(newName);
+    const formattedInit = formatInitialWithDot(newInit);
+    const combined = [newTitle, formattedInit, newName].filter(Boolean).join(' ').trim();
+    onChange(combined);
+  };
+
+  const isComplete = Boolean(name.trim() && initial.trim() && initial.includes('.'));
+
+  return (
+    <div className={compact ? 'space-y-1' : 'space-y-1.5'}>
+      {label && (
+        <label className="text-[11px] font-bold text-slate-700 block">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+      )}
+
+      <div className="flex items-center gap-1.5">
+        {/* Title dropdown */}
+        <select
+          value={FACULTY_TITLE_OPTIONS.includes(title) ? title : 'Prof.'}
+          onChange={(e) => updateCombined(e.target.value, initial, name)}
+          className="w-24 px-2 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:border-blue-600 cursor-pointer shadow-2xs shrink-0"
+        >
+          {FACULTY_TITLE_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+
+        {/* Initial input with dot */}
+        <div className="relative w-28 shrink-0">
+          <input
+            type="text"
+            value={initial}
+            placeholder="Init. (M.)"
+            maxLength={8}
+            onChange={(e) => {
+              const val = e.target.value;
+              setInitial(val);
+              const formatted = formatInitialWithDot(val);
+              const combined = [title, formatted, name].filter(Boolean).join(' ').trim();
+              onChange(combined);
+            }}
+            onBlur={() => {
+              if (initial) {
+                const formatted = formatInitialWithDot(initial);
+                updateCombined(title, formatted, name);
+              }
+            }}
+            className="w-full px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:border-blue-600 font-mono placeholder:text-slate-400 placeholder:font-sans shadow-2xs text-center"
+            title="Enter initial with dot (e.g. M. or P.V.)"
+          />
+        </div>
+
+        {/* Faculty Name input */}
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={name}
+            placeholder={placeholder}
+            onChange={(e) => updateCombined(title, initial, e.target.value)}
+            className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 placeholder:text-slate-400 shadow-2xs"
+          />
+        </div>
+      </div>
+
+      {/* Live standard preview & validation reminder */}
+      {(name || initial) && (
+        <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-50 text-[10px] text-slate-600 border border-slate-200/80">
+          <span className="flex items-center gap-1 font-mono">
+            Preview: <strong className="text-blue-700 font-bold">{title} {formatInitialWithDot(initial) || '[Initial.]'} {name || '[Name]'}</strong>
+          </span>
+          {!isComplete && (
+            <span className="text-amber-600 font-bold flex items-center gap-1">
+              ⚠️ Initial with dot required (e.g. M. Hari)
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface FacultyAuthorsInputProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}
+
+const FacultyAuthorsInput: React.FC<FacultyAuthorsInputProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder = 'e.g. Prof. M. Hari, Dr. P. Shabana',
+  required = false
+}) => {
+  const rawAuthors = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const authors = rawAuthors.length > 0 ? rawAuthors : ['Prof. M. Name'];
+
+  const handleUpdateAuthor = (index: number, newAuthorVal: string) => {
+    const copy = [...authors];
+    copy[index] = newAuthorVal;
+    onChange(copy.filter(Boolean).join(', '));
+  };
+
+  const handleAddAuthor = () => {
+    const copy = [...authors, 'Dr. P. Faculty'];
+    onChange(copy.join(', '));
+  };
+
+  const handleRemoveAuthor = (index: number) => {
+    const copy = authors.filter((_, i) => i !== index);
+    onChange(copy.join(', '));
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-bold text-slate-700 block">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <button
+          type="button"
+          onClick={handleAddAuthor}
+          className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-200 transition-colors cursor-pointer"
+        >
+          <Plus className="w-3 h-3" />
+          <span>Add Faculty/Author</span>
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {authors.map((authStr, aIdx) => (
+          <div key={aIdx} className="flex items-center gap-1.5 bg-slate-50/50 p-2 rounded-xl border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 w-5 text-center">#{aIdx + 1}</span>
+            <div className="flex-1">
+              <FacultyNameInput
+                value={authStr}
+                onChange={(v) => handleUpdateAuthor(aIdx, v)}
+                placeholder={`Author #${aIdx + 1} Name`}
+                compact
+              />
+            </div>
+            {authors.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleRemoveAuthor(aIdx)}
+                className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                title="Remove Author"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 interface DateFieldInputProps {
   label: string;
