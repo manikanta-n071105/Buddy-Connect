@@ -415,7 +415,14 @@ export const HODReportConsolidatorPage: React.FC = () => {
       try {
         await handleDirectDownloadPDF();
       } catch (streamErr: any) {
-        toast.error('PDF consolidation failed: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: 'consolidate-pdf' });
+        console.warn('Backend stream failed, falling back to high-resolution client-side PDF export:', streamErr);
+        try {
+          toast.loading('Generating Master Institutional PDF...', { id: 'consolidate-pdf' });
+          await exportPagesToPdf('consolidated-pdf-document', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
+          toast.success(`Master Consolidated Institutional PDF downloaded!`, { id: 'consolidate-pdf' });
+        } catch (clientErr: any) {
+          toast.error('PDF consolidation failed: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: 'consolidate-pdf' });
+        }
       }
     } finally {
       setConsolidatingPdf(false);
