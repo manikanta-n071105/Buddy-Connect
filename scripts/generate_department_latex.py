@@ -241,17 +241,17 @@ def generate_department_latex_document(data):
 ''')
 
     # 1. Official Header matching HODProfessionalPDFView.tsx without wasted top margin
-    logo_element = r'\includegraphics[height=1.05cm]{' + logo_path + r'}' if logo_path else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
+    logo_element = r'\includegraphics[height=1.2cm]{' + logo_path + r'}' if logo_path else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
     
     tex.append(r'''
 \thispagestyle{empty}
 \vspace*{-20pt}
 \noindent
 \begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}r@{}}
-  \parbox{8cm}{
+  \parbox{8.5cm}{
     ''' + logo_element + r'''
   } &
-  \parbox{9cm}{\raggedleft
+  \parbox{8.5cm}{\raggedleft
     {\fontsize{10.5}{12}\selectfont \textbf{\textcolor{branddark}{DEPARTMENT OF ''' + escaped_dept.upper() + r'''}}}\\[2pt]
     {\fontsize{8.5}{10}\selectfont \textbf{\textcolor{brandamber}{AUTONOMOUS}}}
   }
@@ -264,8 +264,8 @@ def generate_department_latex_document(data):
 {\centering
   {\fontsize{14}{16}\selectfont \textbf{\textcolor{brandnavy}{MONTHLY DEPARTMENTAL PROGRESS REPORT}}}\\[2pt]
   {\fontsize{11}{13}\selectfont \textbf{\textcolor{branddark}{Department of ''' + escaped_dept + r'''}}}\\[2pt]
-  {\fontsize{9}{10.5}\selectfont \textcolor{slatedark}{Reporting Period: ''' + escaped_period + r''' \quad\textbullet\quad Date of Submission: ''' + escaped_sub_date + r'''}}\par
-}
+  {\fontsize{9}{10.5}\selectfont \textcolor{slatedark}{Reporting Period: ''' + escaped_period + r''' \quad\textbullet\quad Date of Submission: ''' + escaped_sub_date + r'''}}\\[4pt]
+\par}
 \vspace{6pt}
 
 % Department Profile Overview Table

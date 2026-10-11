@@ -194,6 +194,7 @@ def get_tectonic_bin():
 def get_logo_path():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     candidates = [
+        os.path.join(root, 'backend', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'frontend', 'public', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'public', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'assets', 'sse-header-logo.png'),
@@ -306,19 +307,19 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 ''')
 
     # 1. Page Header (Top)
-    logo_element = r'\includegraphics[height=1.05cm]{' + logo_path + r'}' if logo_path else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
+    logo_element = r'\includegraphics[height=1.2cm]{' + logo_path + r'}' if logo_path else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
     
     tex.append(r'''
 \thispagestyle{empty}
 \vspace*{-20pt}
 \noindent
 \begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}r@{}}
-  \parbox{8cm}{
+  \parbox{8.5cm}{
     ''' + logo_element + r'''
   } &
-  \parbox{9cm}{\raggedleft
-    {\fontsize{9}{11}\selectfont \textbf{\textcolor{headerdark}{SANSKRITHI SCHOOL OF ENGINEERING}}}\\[2pt]
-    {\fontsize{7}{9}\selectfont \textbf{\textcolor{brandamber}{AUTONOMOUS}}}
+  \parbox{8.5cm}{\raggedleft
+    {\fontsize{9.5}{11.5}\selectfont \textbf{\textcolor{headerdark}{SANSKRITHI SCHOOL OF ENGINEERING}}}\\[2pt]
+    {\fontsize{7.5}{9.5}\selectfont \textbf{\textcolor{brandamber}{AUTONOMOUS}}}
   }
 \end{tabular*}
 \vspace{2pt}
@@ -328,8 +329,8 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 {\centering
   {\fontsize{14}{16}\selectfont \textbf{\textcolor{brandnavy}{INSTITUTIONAL HOD PROGRESS REPORT}}}\\[3pt]
   {\fontsize{9}{11}\selectfont \textbf{\textcolor{slatemed}{Comprehensive Performance Dossier \& Departmental Analytics}}}\\[2pt]
-  {\fontsize{8}{10}\selectfont \textcolor{slatelight}{Reporting Period: \textbf{\textcolor{branddark}{''' + escaped_period + r'''}}}}\par
-}
+  {\fontsize{8}{10}\selectfont \textcolor{slatelight}{Reporting Period: \textbf{\textcolor{branddark}{''' + escaped_period + r'''}}}}\\[6pt]
+\par}
 \vspace{4pt}
 ''')
 

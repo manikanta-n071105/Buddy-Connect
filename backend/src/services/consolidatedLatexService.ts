@@ -155,7 +155,7 @@ export const getTectonicExecutable = (projectRoot: string): string => {
   return binName;
 };
 
-export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>, period: string): string => {
+export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>, period: string, hasLogo = false): string => {
   const escapedPeriod = escapeLatex(period);
   const gatherItems = (secKey: string, altKey?: string): any[] => {
     const res: any[] = [];
@@ -288,12 +288,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 \\vspace*{-20pt}
 \\noindent
 \\begin{tabular*}{\\textwidth}{@{}l@{\\extracolsep{\\fill}}r@{}}
-  \\parbox{8cm}{
-    {\\Large\\textbf{\\textcolor{brandnavy}{SSE}}}
+  \\parbox{8.5cm}{
+    ${hasLogo ? '\\includegraphics[height=1.2cm]{sse-header-logo.png}' : '{\\Large\\textbf{\\textcolor{brandnavy}{SSE}}}'}
   } &
-  \\parbox{9cm}{\\raggedleft
-    {\\fontsize{9}{11}\\selectfont \\textbf{\\textcolor{headerdark}{SANSKRITHI SCHOOL OF ENGINEERING}}}\\\\[2pt]
-    {\\fontsize{7}{9}\\selectfont \\textbf{\\textcolor{brandamber}{AUTONOMOUS}}}
+  \\parbox{8.5cm}{\\raggedleft
+    {\\fontsize{9.5}{11.5}\\selectfont \\textbf{\\textcolor{headerdark}{SANSKRITHI SCHOOL OF ENGINEERING}}}\\\\[2pt]
+    {\\fontsize{7.5}{9.5}\\selectfont \\textbf{\\textcolor{brandamber}{AUTONOMOUS}}}
   }
 \\end{tabular*}
 \\vspace{2pt}
@@ -303,8 +303,8 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 {\\centering
   {\\fontsize{14}{16}\\selectfont \\textbf{\\textcolor{brandnavy}{INSTITUTIONAL HOD PROGRESS REPORT}}}\\\\[3pt]
   {\\fontsize{9}{11}\\selectfont \\textbf{\\textcolor{slatemed}{Comprehensive Performance Dossier \\& Departmental Analytics}}}\\\\[2pt]
-  {\\fontsize{8}{10}\\selectfont \\textcolor{slatelight}{Reporting Period: \\textbf{\\textcolor{branddark}{${escapedPeriod}}}}}\\\\par
-}
+  {\\fontsize{8}{10}\\selectfont \\textcolor{slatelight}{Reporting Period: \\textbf{\\textcolor{branddark}{${escapedPeriod}}}}}\\\\[6pt]
+\\par}
 \\vspace{4pt}
 `);
 
@@ -718,8 +718,30 @@ export const compileMasterLatexDocument = async (
   period: string,
   outputPdfPath: string
 ): Promise<Buffer> => {
-  const latexCode = buildConsolidatedLatexCode(departmentsData, period);
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'master_latex_'));
+
+  const logoCandidates = [
+    path.join(projectRoot, 'backend', 'assets', 'sse-header-logo.png'),
+    path.join(projectRoot, 'assets', 'sse-header-logo.png'),
+    path.join(__dirname, '../../assets/sse-header-logo.png'),
+    path.join(__dirname, '../assets/sse-header-logo.png'),
+    path.join(process.cwd(), 'assets', 'sse-header-logo.png'),
+    path.join(projectRoot, 'frontend', 'public', 'assets', 'sse-header-logo.png'),
+    path.join(projectRoot, 'public', 'assets', 'sse-header-logo.png')
+  ];
+
+  let hasLogo = false;
+  for (const c of logoCandidates) {
+    if (fs.existsSync(c)) {
+      try {
+        fs.copyFileSync(c, path.join(tempDir, 'sse-header-logo.png'));
+        hasLogo = true;
+        break;
+      } catch (_) { }
+    }
+  }
+
+  const latexCode = buildConsolidatedLatexCode(departmentsData, period, hasLogo);
   const texFile = path.join(tempDir, 'report.tex');
   fs.writeFileSync(texFile, latexCode, 'utf-8');
 
