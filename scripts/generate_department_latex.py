@@ -158,8 +158,7 @@ def generate_department_latex_document(data):
     tex = []
     tex.append(r'''\documentclass[a4paper,9pt]{article}
 \usepackage[margin=10mm,top=7mm,bottom=10mm,headheight=11pt,headsep=6pt,includehead,includefoot]{geometry}
-\usepackage[scaled=0.92]{helvet}
-\renewcommand{\familydefault}{\sfdefault}
+\usepackage{tgtermes}
 \usepackage[table]{xcolor}
 \usepackage{longtable}
 \usepackage{booktabs}

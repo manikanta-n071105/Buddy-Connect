@@ -222,8 +222,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 
   tex.push(`\\documentclass[a4paper,8pt]{article}
 \\usepackage[margin=10mm,top=8mm,bottom=10mm,headheight=18pt,headsep=6pt,includehead,includefoot]{geometry}
-\\usepackage[scaled=0.92]{helvet}
-\\renewcommand{\\familydefault}{\\sfdefault}
+\\usepackage{tgtermes}
 \\usepackage[table]{xcolor}
 \\usepackage{colortbl}
 \\usepackage{longtable}
