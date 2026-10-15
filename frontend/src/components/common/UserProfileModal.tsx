@@ -189,11 +189,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!superAdminPasswordVal.trim()) {
-      toast.error('Super Administrator authorization password is required.');
+      toast.error('Please enter your administrator authorization password.');
       return;
     }
     try {
-      await api.post(`/users/${userId}/reset-password`, { newPassword: newPasswordVal, adminPassword: superAdminPasswordVal });
+      await api.post(`/users/${userId}/reset-password`, { newPassword: newPasswordVal, adminPassword: superAdminPasswordVal.trim() });
       toast.success(`Password for @${profile.username} reset to "${newPasswordVal}"`);
       setShowResetForm(false);
       setSuperAdminPasswordVal('');
@@ -210,10 +210,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
   const handleSavePermissions = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!superAdminPasswordVal.trim()) {
-      toast.error('Super Administrator authorization password is required.');
-      return;
-    }
     setIsSavingPermissions(true);
     try {
       await api.patch(`/users/${userId}/permissions`, {
@@ -221,7 +217,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
         superAdminPassword: superAdminPasswordVal.trim(),
         totpCode: totpCodeVal.trim()
       });
-      toast.success(`Permissions for @${profile.username} updated successfully with 2FA authorization!`);
+      toast.success(`Permissions for @${profile.username} updated successfully!`);
       setShowPermissionsForm(false);
       setSuperAdminPasswordVal('');
       setTotpCodeVal('');
@@ -999,6 +995,39 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
                     </label>
                   ))}
                 </div>
+                <div className="bg-white p-3 rounded-xl border border-purple-200 space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-purple-950 mb-1">
+                        Super Admin Password (Optional)
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="Enter Super Admin Password"
+                        value={superAdminPasswordVal}
+                        onChange={(e) => setSuperAdminPasswordVal(e.target.value)}
+                        className="w-full p-2 bg-slate-50 border border-purple-200 rounded-lg text-xs font-mono outline-hidden focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-purple-950 mb-1">
+                        2FA Code (If Enabled)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="6-digit Authenticator code"
+                        value={totpCodeVal}
+                        onChange={(e) => setTotpCodeVal(e.target.value)}
+                        className="w-full p-2 bg-slate-50 border border-purple-200 rounded-lg text-xs font-mono outline-hidden focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-purple-700 font-medium">
+                    As an authenticated Super Administrator, permissions will be saved directly to @{profile.username}.
+                  </p>
+                </div>
+
                 <div className="pt-2 border-t border-purple-200/80 flex items-center justify-end gap-2">
                   <button
                     type="button"
@@ -1020,17 +1049,35 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
             {/* Reset Password Form */}
             {showResetForm && (
-              <form onSubmit={handleResetPassword} className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-                <label className="block font-bold text-amber-900">Set New Password for @{profile.username}</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    value={newPasswordVal}
-                    onChange={(e) => setNewPasswordVal(e.target.value)}
-                    className="flex-1 p-2 bg-white border border-amber-300 rounded-lg font-mono outline-hidden"
-                  />
-                  <button type="submit" className="px-3.5 py-2 bg-amber-600 text-white font-bold rounded-lg cursor-pointer">Save</button>
+              <form onSubmit={handleResetPassword} className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2.5">
+                <label className="block font-bold text-amber-900 text-xs">Set New Password for @{profile.username}</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-amber-950 mb-1">New User Password *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newPasswordVal}
+                      onChange={(e) => setNewPasswordVal(e.target.value)}
+                      placeholder="e.g. Password123!"
+                      className="w-full p-2 bg-white border border-amber-300 rounded-lg font-mono text-xs outline-hidden focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-amber-950 mb-1">Your Admin Password *</label>
+                    <input
+                      type="password"
+                      required
+                      value={superAdminPasswordVal}
+                      onChange={(e) => setSuperAdminPasswordVal(e.target.value)}
+                      placeholder="Enter your login password"
+                      className="w-full p-2 bg-white border border-amber-300 rounded-lg font-mono text-xs outline-hidden focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-1 border-t border-amber-200/60">
+                  <button type="button" onClick={() => setShowResetForm(false)} className="px-3 py-1.5 border border-amber-200 rounded-lg text-xs font-bold text-amber-900 bg-white hover:bg-amber-100/50">Cancel</button>
+                  <button type="submit" className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg cursor-pointer text-xs shadow-xs">Save Password</button>
                 </div>
               </form>
             )}
