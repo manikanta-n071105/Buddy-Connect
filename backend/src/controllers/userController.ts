@@ -29,27 +29,27 @@ export const clearUsersDirectoryCache = async () => {
   }
 };
 
-// Migrate all existing user codes to DIR-??, SRS-??, and JRS-?? sequence format
+// Migrate missing user codes only
 const migrateExistingUserCodes = async () => {
   try {
-    // 1. Update existing mentors
-    const dirs = await query(`SELECT id FROM mentors ORDER BY id ASC`);
+    // 1. Update existing mentors missing mentor_code
+    const dirs = await query(`SELECT id FROM mentors WHERE mentor_code IS NULL OR mentor_code = '' ORDER BY created_at ASC`);
     for (let i = 0; i < dirs.rows.length; i++) {
-      const code = `DIR-${(i + 1).toString().padStart(2, '0')}`;
+      const code = `DIR-${Date.now().toString().slice(-4)}${i + 1}`;
       await query(`UPDATE mentors SET mentor_code = $1 WHERE id = $2`, [code, dirs.rows[i].id]);
     }
 
-    // 2. Update existing Seniors
-    const sens = await query(`SELECT id FROM seniors ORDER BY id ASC`);
+    // 2. Update existing Seniors missing senior_code
+    const sens = await query(`SELECT id FROM seniors WHERE senior_code IS NULL OR senior_code = '' ORDER BY created_at ASC`);
     for (let i = 0; i < sens.rows.length; i++) {
-      const code = `SRS-${(i + 1).toString().padStart(2, '0')}`;
+      const code = `SRS-${Date.now().toString().slice(-4)}${i + 1}`;
       await query(`UPDATE seniors SET senior_code = $1 WHERE id = $2`, [code, sens.rows[i].id]);
     }
 
-    // 3. Update existing Juniors
-    const juns = await query(`SELECT id FROM juniors ORDER BY id ASC`);
+    // 3. Update existing Juniors missing register_number
+    const juns = await query(`SELECT id FROM juniors WHERE register_number IS NULL OR register_number = '' ORDER BY created_at ASC`);
     for (let i = 0; i < juns.rows.length; i++) {
-      const code = `JRS-${(i + 1).toString().padStart(2, '0')}`;
+      const code = `JRS-${Date.now().toString().slice(-4)}${i + 1}`;
       await query(`UPDATE juniors SET register_number = $1 WHERE id = $2`, [code, juns.rows[i].id]);
     }
   } catch (err) {
@@ -628,12 +628,32 @@ export const createSenior = async (req: AuthenticatedRequest, res: Response) => 
   const targetmentorId = req.user!.role === 'MENTOR' ? req.user!.mentorId : reqmentorId;
 
   if (!name || !email || !username || !password || !department || !targetmentorId || !gender || !['MALE', 'FEMALE'].includes(gender)) {
-    return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Director, Gender)', code: 'INVALID_INPUT' });
+    return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Director/Mentor, Gender)', code: 'INVALID_INPUT' });
   }
 
   try {
     await ensureUserColumns();
-    await migrateExistingUserCodes();
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // Check duplicate email or username
+    const dupCheck = await query(
+      `SELECT email, username FROM users WHERE LOWER(email) = $1 OR LOWER(username) = $2`,
+      [cleanEmail, cleanUsername.toLowerCase()]
+    );
+    if (dupCheck.rowCount! > 0) {
+      const existing = dupCheck.rows[0];
+      const isEmail = existing.email.toLowerCase() === cleanEmail;
+      return res.status(400).json({
+        success: false,
+        message: isEmail 
+          ? `A user with email "${cleanEmail}" is already registered. Please use a unique email address.`
+          : `Username "${cleanUsername}" is already taken. Please choose a different username.`,
+        code: 'DUPLICATE_USER'
+      });
+    }
 
     const targetResidenceStatus = residenceStatus && ['DAY_SCHOLAR', 'HOSTELLER'].includes(residenceStatus) ? residenceStatus : 'DAY_SCHOLAR';
     const targetGender = gender;
@@ -649,27 +669,33 @@ export const createSenior = async (req: AuthenticatedRequest, res: Response) => 
       await verifySuperAdminAuth(req.user!.id, superAdminPassword);
     }
 
-    // Check Director Senior Capacity
+    // Check Director/Mentor Senior Capacity (allow override if SUPER_ADMIN or not explicitly picked)
     const maxSeniors = await getSettingValue('MAX_SENIORS_PER_MENTOR', 8);
     const countRes = await query(`SELECT COUNT(*) FROM seniors WHERE mentor_id = $1`, [targetmentorId]);
     const currentCount = parseInt(countRes.rows[0].count);
 
-    if (currentCount >= maxSeniors) {
+    if (currentCount >= maxSeniors && req.user!.role !== 'SUPER_ADMIN' && req.body.isExplicitMentor) {
       return res.status(400).json({
         success: false,
-        message: `Director has reached maximum capacity of ${maxSeniors} seniors. Cannot assign more.`,
+        message: `Director/Mentor has reached maximum capacity of ${maxSeniors} seniors (${currentCount}/${maxSeniors}). Please select a different Mentor.`,
         code: 'CAPACITY_EXCEEDED'
       });
     }
 
-    const cleanUsername = username.trim();
-    const cleanEmail = email.trim();
-    const cleanPassword = password.trim();
     const passwordHash = await bcrypt.hash(cleanPassword, 10);
 
+    // Collision-free unique senior code generation
     const totalSeniorsRes = await query(`SELECT COUNT(*) FROM seniors`);
-    const nextSeq = (parseInt(totalSeniorsRes.rows[0].count) + 1).toString().padStart(2, '0');
-    const finalSeniorCode = `SRS-${nextSeq}`;
+    let seqNum = parseInt(totalSeniorsRes.rows[0].count) + 1;
+    let finalSeniorCode = `SRS-${seqNum.toString().padStart(2, '0')}`;
+    let attempts = 0;
+    while (attempts < 100) {
+      const check = await query(`SELECT 1 FROM seniors WHERE senior_code = $1`, [finalSeniorCode]);
+      if (check.rowCount === 0) break;
+      seqNum++;
+      finalSeniorCode = `SRS-${seqNum.toString().padStart(2, '0')}`;
+      attempts++;
+    }
 
     const result = await executeTransaction(async (client) => {
       const uRes = await client.query(
@@ -708,30 +734,82 @@ export const createSenior = async (req: AuthenticatedRequest, res: Response) => 
 export const createJunior = async (req: AuthenticatedRequest, res: Response) => {
   const { name, email, username, password, phone, department, batch, year, joiningDate, seniorId: reqSeniorId, facultyId: reqFacultyId, residenceStatus, gender, isCr, superAdminPassword } = req.body;
 
-  const targetSeniorId = req.user!.role === 'SENIOR' ? req.user!.seniorId : reqSeniorId;
+  let targetSeniorId = req.user!.role === 'SENIOR' ? req.user!.seniorId : reqSeniorId;
   let finalFacultyId = req.user!.role === 'FACULTY' ? req.user!.facultyId : reqFacultyId;
 
-  if (!name || !email || !username || !password || !department || !batch || !year || !gender || !['MALE', 'FEMALE'].includes(gender)) {
-    return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Batch, Year, Gender)', code: 'INVALID_INPUT' });
+  // Normalize batch: default to valid academic cycle if missing
+  let finalBatch = batch ? String(batch).trim() : '';
+  if (!finalBatch) {
+    const curYear = new Date().getFullYear();
+    let startYear = curYear;
+    const yStr = String(year || '').toLowerCase();
+    if (yStr.includes('2nd') || yStr.includes('2')) startYear = curYear - 1;
+    else if (yStr.includes('3rd') || yStr.includes('3')) startYear = curYear - 2;
+    else if (yStr.includes('4th') || yStr.includes('4')) startYear = curYear - 3;
+    finalBatch = `${startYear}-${startYear + 4}`;
+  }
+
+  if (!name || !email || !username || !password || !department || !year || !gender || !['MALE', 'FEMALE'].includes(gender)) {
+    return res.status(400).json({ success: false, message: 'Missing required fields (Name, Email, Username, Password, Department, Academic Year, Gender)', code: 'INVALID_INPUT' });
   }
 
   try {
     await ensureUserColumns();
     await ensureFacultyTables();
-    await migrateExistingUserCodes();
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    // Check duplicate email or username
+    const dupCheck = await query(
+      `SELECT email, username FROM users WHERE LOWER(email) = $1 OR LOWER(username) = $2`,
+      [cleanEmail, cleanUsername.toLowerCase()]
+    );
+    if (dupCheck.rowCount! > 0) {
+      const existing = dupCheck.rows[0];
+      const isEmail = existing.email.toLowerCase() === cleanEmail;
+      return res.status(400).json({
+        success: false,
+        message: isEmail 
+          ? `A student with email "${cleanEmail}" is already registered. Please use a unique email address.`
+          : `Username "${cleanUsername}" is already taken. Please choose a different username.`,
+        code: 'DUPLICATE_USER'
+      });
+    }
+
+    // Validate target senior if provided
+    if (targetSeniorId && typeof targetSeniorId === 'string' && targetSeniorId.trim()) {
+      targetSeniorId = targetSeniorId.trim();
+      const sCheck = await query(`SELECT id FROM seniors WHERE id = $1`, [targetSeniorId]);
+      if (sCheck.rowCount === 0) {
+        targetSeniorId = null;
+      }
+    } else {
+      targetSeniorId = null;
+    }
 
     // Auto-map matching Faculty for this student's department & year if not explicitly passed
     if (!finalFacultyId && department) {
-      let facQuery = `SELECT id FROM faculty WHERE department = $1`;
-      const facParams: any[] = [department.trim()];
-      if (year && year.trim()) {
-        facQuery += ` AND (year = $2 OR year IS NULL OR year = '' OR year = 'All Years' OR year ILIKE $3)`;
-        facParams.push(year.trim(), `%${year.trim()}%`);
-      }
-      facQuery += ` ORDER BY created_at ASC LIMIT 1`;
-      const facRes = await query(facQuery, facParams);
-      if (facRes.rowCount! > 0) {
-        finalFacultyId = facRes.rows[0].id;
+      try {
+        let facQuery = `
+          SELECT f.id, f.max_juniors, COUNT(j.id) as assigned_count
+          FROM faculty f
+          LEFT JOIN juniors j ON f.id = j.faculty_id
+          WHERE (f.department = $1 OR f.department ILIKE $2)
+        `;
+        const facParams: any[] = [department.trim(), `%${department.trim()}%`];
+        if (year && String(year).trim()) {
+          facQuery += ` AND (f.year = $3 OR f.year IS NULL OR f.year = '' OR f.year = 'All Years' OR f.year ILIKE $4)`;
+          facParams.push(String(year).trim(), `%${String(year).trim()}%`);
+        }
+        facQuery += ` GROUP BY f.id, f.max_juniors HAVING COUNT(j.id) < f.max_juniors ORDER BY COUNT(j.id) ASC LIMIT 1`;
+        const facRes = await query(facQuery, facParams);
+        if (facRes.rowCount! > 0) {
+          finalFacultyId = facRes.rows[0].id;
+        }
+      } catch (facErr) {
+        console.warn('Faculty auto-mapping notice:', facErr);
       }
     }
 
@@ -752,14 +830,14 @@ export const createJunior = async (req: AuthenticatedRequest, res: Response) => 
       if (currentCount >= maxJuniors) {
         return res.status(400).json({
           success: false,
-          message: `Senior has reached maximum capacity of ${maxJuniors} juniors. Cannot assign more.`,
+          message: `The selected Senior Mentor has reached maximum capacity (${currentCount}/${maxJuniors} juniors). Please select a different Senior Mentor or leave it unassigned.`,
           code: 'CAPACITY_EXCEEDED'
         });
       }
     }
 
-    // Check Faculty Capacity if faculty assignment requested
-    if (finalFacultyId) {
+    // Check Faculty Capacity ONLY if faculty assignment was explicitly passed
+    if (reqFacultyId && finalFacultyId) {
       const fRes = await query(`SELECT max_juniors FROM faculty WHERE id = $1`, [finalFacultyId]);
       if (fRes.rowCount! > 0) {
         const facMax = fRes.rows[0].max_juniors;
@@ -768,21 +846,32 @@ export const createJunior = async (req: AuthenticatedRequest, res: Response) => 
         if (facCurrentCount >= facMax) {
           return res.status(400).json({
             success: false,
-            message: `Faculty member has reached maximum capacity of ${facMax} juniors. Cannot assign more.`,
+            message: `Selected Faculty Mentor has reached maximum capacity (${facCurrentCount}/${facMax} students). Please select another Faculty member.`,
             code: 'CAPACITY_EXCEEDED'
           });
         }
       }
     }
 
-    const cleanUsername = username.trim();
-    const cleanEmail = email.trim();
-    const cleanPassword = password.trim();
     const passwordHash = await bcrypt.hash(cleanPassword, 10);
 
-    const totalJuniorsRes = await query(`SELECT COUNT(*) FROM juniors`);
-    const nextSeq = (parseInt(totalJuniorsRes.rows[0].count) + 1).toString().padStart(2, '0');
-    const finalRegisterNumber = `JRS-${nextSeq}`;
+    // Collision-free unique register number generation
+    let finalRegisterNumber: string;
+    if (req.body.registerNumber && req.body.registerNumber !== 'AUTO') {
+      finalRegisterNumber = req.body.registerNumber.trim();
+    } else {
+      const totalJuniorsRes = await query(`SELECT COUNT(*) FROM juniors`);
+      let nextNum = parseInt(totalJuniorsRes.rows[0].count) + 1;
+      finalRegisterNumber = `JRS-${nextNum.toString().padStart(2, '0')}`;
+      let attempts = 0;
+      while (attempts < 100) {
+        const check = await query(`SELECT 1 FROM juniors WHERE register_number = $1`, [finalRegisterNumber]);
+        if (check.rowCount === 0) break;
+        nextNum++;
+        finalRegisterNumber = `JRS-${nextNum.toString().padStart(2, '0')}`;
+        attempts++;
+      }
+    }
 
     const result = await executeTransaction(async (client) => {
       const uRes = await client.query(
@@ -795,7 +884,7 @@ export const createJunior = async (req: AuthenticatedRequest, res: Response) => 
       const jRes = await client.query(
         `INSERT INTO juniors (user_id, register_number, senior_id, faculty_id, department, batch, year, joining_date, residence_status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, register_number, senior_id, faculty_id, department, batch, year, residence_status`,
-        [user.id, finalRegisterNumber, targetSeniorId || null, finalFacultyId || null, department.trim(), batch.trim(), year.trim(), joiningDate || new Date().toISOString().split('T')[0], targetResidenceStatus]
+        [user.id, finalRegisterNumber, targetSeniorId || null, finalFacultyId || null, department.trim(), finalBatch, year.trim(), joiningDate || new Date().toISOString().split('T')[0], targetResidenceStatus]
       );
       const junior = jRes.rows[0];
 
@@ -833,21 +922,54 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
     });
   }
 
+  // Auto-calculate or default batch based on year if missing
+  if (!req.body.batch || !String(req.body.batch).trim()) {
+    const curYear = new Date().getFullYear();
+    let startYear = curYear;
+    const yStr = String(year).toLowerCase();
+    if (yStr.includes('2nd') || yStr.includes('2')) startYear = curYear - 1;
+    else if (yStr.includes('3rd') || yStr.includes('3')) startYear = curYear - 2;
+    else if (yStr.includes('4th') || yStr.includes('4')) startYear = curYear - 3;
+    req.body.batch = `${startYear}-${startYear + 4}`;
+  }
+
   const is4thYear = String(year).trim().toLowerCase().includes('4th');
 
   if (is4thYear) {
     let targetmentorId = req.user!.role === 'MENTOR' ? req.user!.mentorId : req.body.mentorId;
-    if (!targetmentorId) {
-      const mRes = await query(
-        `SELECT id FROM mentors WHERE department = $1 OR department ILIKE $2 ORDER BY created_at ASC LIMIT 1`,
-        [department.trim(), `%${department.trim()}%`]
-      );
+    let isExplicitMentor = Boolean(req.body.mentorId);
+
+    if (!targetmentorId || !String(targetmentorId).trim()) {
+      isExplicitMentor = false;
+      const maxSeniors = await getSettingValue('MAX_SENIORS_PER_MENTOR', 8);
+      // Try to find a mentor in this department with capacity
+      const mRes = await query(`
+        SELECT m.id, COUNT(s.id) as sen_count
+        FROM mentors m
+        LEFT JOIN seniors s ON m.id = s.mentor_id
+        WHERE m.department = $1 OR m.department ILIKE $2
+        GROUP BY m.id
+        HAVING COUNT(s.id) < $3
+        ORDER BY sen_count ASC
+        LIMIT 1
+      `, [department.trim(), `%${department.trim()}%`, maxSeniors]);
+
       if (mRes.rowCount! > 0) {
         targetmentorId = mRes.rows[0].id;
       } else {
-        const anyDir = await query(`SELECT id FROM mentors ORDER BY created_at ASC LIMIT 1`);
-        if (anyDir.rowCount! > 0) {
-          targetmentorId = anyDir.rows[0].id;
+        // Fallback: any department mentor
+        const anyDeptDir = await query(
+          `SELECT id FROM mentors WHERE department = $1 OR department ILIKE $2 ORDER BY created_at ASC LIMIT 1`,
+          [department.trim(), `%${department.trim()}%`]
+        );
+        if (anyDeptDir.rowCount! > 0) {
+          targetmentorId = anyDeptDir.rows[0].id;
+        } else {
+          // Fallback: any mentor in system
+          const anyDir = await query(`SELECT id FROM mentors ORDER BY created_at ASC LIMIT 1`);
+          if (anyDir.rowCount! > 0) {
+            targetmentorId = anyDir.rows[0].id;
+          }
         }
       }
     }
@@ -855,16 +977,17 @@ export const createStudent = async (req: AuthenticatedRequest, res: Response) =>
     if (!targetmentorId) {
       return res.status(400).json({
         success: false,
-        message: 'No Director found in the system to assign 4th Year Senior Mentor. Please select or create a Mentor Account first.',
+        message: 'No Director/Mentor found in the system to assign 4th Year Senior Mentor. Please select or create a Mentor Account first.',
         code: 'NO_MENTOR'
       });
     }
 
     req.body.mentorId = targetmentorId;
+    req.body.isExplicitMentor = isExplicitMentor;
     return createSenior(req, res);
   } else {
     const is1stYear = String(year).trim().toLowerCase().includes('1st');
-    if (!is1stYear) {
+    if (!is1stYear || !req.body.seniorId || !String(req.body.seniorId).trim()) {
       req.body.seniorId = null;
     }
     return createJunior(req, res);

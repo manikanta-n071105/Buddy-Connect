@@ -217,9 +217,7 @@ export const UsersListPage: React.FC = () => {
 
       const senRes = await api.get('/users/seniors');
       setSeniorsList(senRes.data.data);
-      if (senRes.data.data.length > 0) {
-        setSelectedSeniorId(senRes.data.data[0].senior_id);
-      }
+      // Keep selectedSeniorId empty by default so senior mentor assignment is truly optional
     } catch (err) {
       console.error(err);
     }
@@ -486,7 +484,7 @@ export const UsersListPage: React.FC = () => {
   // Create Student Submit (Unified 1st, 2nd, 3rd, 4th Year Student Creation)
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!junName || !junEmail || !junUsername || !junPassword || !junDepartment || !junBatch || !junYear || !junGender) {
+    if (!junName || !junEmail || !junUsername || !junPassword || !junDepartment || !junYear || !junGender) {
       toast.error('Please fill in all required student fields including Gender and Academic Year');
       return;
     }
@@ -505,13 +503,13 @@ export const UsersListPage: React.FC = () => {
         phone: junPhone.trim(),
         gender: junGender,
         department: junDepartment.trim(),
-        batch: junBatch,
+        batch: junBatch.trim() || '2025-2029',
         year: junYear,
         residenceStatus: junResidenceStatus,
         isCr: junIsCr,
         superAdminPassword: junSuperAdminPassword.trim(),
-        seniorId: junYear.includes('1st') ? selectedSeniorId : undefined,
-        mentorId: junYear.includes('4th') ? selectedmentorId : undefined
+        seniorId: (junYear.includes('1st') && selectedSeniorId.trim()) ? selectedSeniorId.trim() : undefined,
+        mentorId: (junYear.includes('4th') && selectedmentorId.trim()) ? selectedmentorId.trim() : undefined
       });
 
       setCreatedCredential({
@@ -522,9 +520,10 @@ export const UsersListPage: React.FC = () => {
       });
       setShowStudentModal(false);
       setShowJuniorModal(false);
-      setJunName(''); setJunEmail(''); setJunUsername(''); setJunPhone(''); setJunDepartment('CSE-A'); setJunYear('1st Year'); setJunResidenceStatus('DAY_SCHOLAR'); setJunIsCr(false); setJunSuperAdminPassword('');
+      setJunName(''); setJunEmail(''); setJunUsername(''); setJunPhone(''); setJunDepartment('CSE-A'); setJunYear('1st Year'); setJunBatch('2025-2029'); setJunResidenceStatus('DAY_SCHOLAR'); setJunIsCr(false); setJunSuperAdminPassword(''); setSelectedSeniorId('');
       fetchUsers(true);
     } catch (err: any) {
+      console.error('Failed to create student account:', err.response?.data || err);
       toast.error(err.response?.data?.message || 'Failed to create student account');
     }
   };
@@ -637,7 +636,7 @@ export const UsersListPage: React.FC = () => {
 
               {['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'SENIOR', 'FACULTY'].includes(user?.role || '') && (
                 <button
-                  onClick={() => { fetchMentorsAndSeniors(); setShowStudentModal(true); }}
+                  onClick={() => { setSelectedSeniorId(''); fetchMentorsAndSeniors(); setShowStudentModal(true); }}
                   className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-lg shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
                 >
                   <GraduationCap className="w-3.5 h-3.5" /> Student
@@ -1762,13 +1761,20 @@ export const UsersListPage: React.FC = () => {
                   <input type="text" required value={junPhone} onChange={(e) => setJunPhone(e.target.value)} placeholder="e.g. +91 9876543210" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold outline-hidden" />
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Academic Year *</label>
                   <select
                     required
                     value={junYear}
-                    onChange={(e) => setJunYear(e.target.value)}
+                    onChange={(e) => {
+                      const yr = e.target.value;
+                      setJunYear(yr);
+                      if (yr.includes('1st')) setJunBatch('2025-2029');
+                      else if (yr.includes('2nd')) setJunBatch('2024-2028');
+                      else if (yr.includes('3rd')) setJunBatch('2023-2027');
+                      else if (yr.includes('4th')) setJunBatch('2022-2026');
+                    }}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-extrabold text-slate-900 outline-hidden cursor-pointer"
                   >
                     <option value="1st Year">1st Year (Junior Student)</option>
@@ -1776,6 +1782,17 @@ export const UsersListPage: React.FC = () => {
                     <option value="3rd Year">3rd Year (Junior Student)</option>
                     <option value="4th Year">4th Year (Senior Mentor)</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Academic Batch *</label>
+                  <input
+                    type="text"
+                    required
+                    value={junBatch}
+                    onChange={(e) => setJunBatch(e.target.value)}
+                    placeholder="2025-2029"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-hidden"
+                  />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Department *</label>
