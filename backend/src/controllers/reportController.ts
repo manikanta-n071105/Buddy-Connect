@@ -779,22 +779,31 @@ export const getDepartmentSubmissions = async (req: any, res: Response) => {
     const mapStatus = (entity: StandardEntityConfig) => {
       const sub = submittedMap.get(entity.name.toLowerCase().trim()) ||
         submittedMap.get(entity.code.toLowerCase().trim());
+
+      const hasBuilderData = !!sub && (
+        (sub.items_count > 0) ||
+        (sub.sections_data && (typeof sub.sections_data === 'object' ? Object.keys(sub.sections_data).length > 0 : String(sub.sections_data).length > 2))
+      );
+      const isSubmitted = !!sub && (sub.status === 'SUBMITTED' || hasBuilderData);
+
       return {
         code: entity.code,
         name: entity.name,
         type: entity.type,
-        isSubmitted: !!sub && sub.status === 'SUBMITTED',
-        hasDraft: !!sub && sub.status === 'DRAFT',
+        isSubmitted,
+        hasDraft: !!sub && sub.status === 'DRAFT' && !hasBuilderData,
         id: sub?.id || null,
         hodName: sub?.hod_name || entity.defaultHod,
         submissionDate: sub?.submission_date || null,
-        fileName: sub?.file_name || null,
+        fileName: sub?.file_name || `${entity.code}_Manual_Report.docx`,
         fileSizeBytes: sub?.file_size_bytes ? parseInt(sub.file_size_bytes) : 0,
-        fileSizeFormatted: sub?.file_size_bytes ? `${(parseInt(sub.file_size_bytes) / 1024).toFixed(1)} KB` : null,
+        fileSizeFormatted: (sub?.file_size_bytes && parseInt(sub.file_size_bytes) > 0)
+          ? `${(parseInt(sub.file_size_bytes) / 1024).toFixed(1)} KB`
+          : (hasBuilderData ? 'Live Builder Sync' : null),
         itemsCount: sub?.items_count || 0,
-        uploadedAt: sub?.uploaded_at || null,
+        uploadedAt: sub?.uploaded_at || sub?.updated_at || null,
         updatedAt: sub?.updated_at || null,
-        status: sub?.status || 'PENDING'
+        status: isSubmitted ? 'SUBMITTED' : (sub?.status || 'PENDING')
       };
     };
 
@@ -1327,7 +1336,7 @@ export const saveDepartmentDraft = async (req: any, res: Response) => {
       hodName,
       submissionDate,
       sections = {},
-      status = 'DRAFT'
+      status = 'SUBMITTED'
     } = req.body;
 
     if (!department) {
@@ -1339,16 +1348,20 @@ export const saveDepartmentDraft = async (req: any, res: Response) => {
       0
     );
 
+    const cleanDept = department.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const defaultDocxName = `${cleanDept}_Manual_Report.docx`;
+
     const upsertRes = await reportQuery(`
       INSERT INTO departmental_monthly_reports 
-      (department, period, hod_name, submission_date, sections_data, items_count, status, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      (department, period, hod_name, submission_date, sections_data, items_count, status, file_name, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, 'SUBMITTED', $7, CURRENT_TIMESTAMP)
       ON CONFLICT (department, period) DO UPDATE 
       SET hod_name = COALESCE(EXCLUDED.hod_name, departmental_monthly_reports.hod_name),
           submission_date = COALESCE(EXCLUDED.submission_date, departmental_monthly_reports.submission_date),
           sections_data = EXCLUDED.sections_data,
           items_count = EXCLUDED.items_count,
-          status = CASE WHEN departmental_monthly_reports.status = 'SUBMITTED' THEN 'SUBMITTED' ELSE EXCLUDED.status END,
+          status = 'SUBMITTED',
+          file_name = COALESCE(departmental_monthly_reports.file_name, EXCLUDED.file_name),
           updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `, [
@@ -1358,17 +1371,18 @@ export const saveDepartmentDraft = async (req: any, res: Response) => {
       submissionDate || '',
       JSON.stringify(sections || {}),
       totalItems,
-      status
+      defaultDocxName
     ]);
 
     return res.json({
       success: true,
-      message: `Progress saved to dedicated database for ${department} (${period})!`,
+      message: `Changes for ${department} synced directly to Master Consolidator (${period})!`,
       data: {
         id: upsertRes.rows[0].id,
         department,
         period,
-        status: upsertRes.rows[0].status,
+        status: 'SUBMITTED',
+        fileName: upsertRes.rows[0].file_name || defaultDocxName,
         updatedAt: upsertRes.rows[0].updated_at,
         totalActivities: totalItems
       }

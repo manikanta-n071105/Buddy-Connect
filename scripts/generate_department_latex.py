@@ -158,7 +158,8 @@ def generate_department_latex_document(data):
     tex = []
     tex.append(r'''\documentclass[a4paper,9pt]{article}
 \usepackage[margin=10mm,top=7mm,bottom=10mm,headheight=11pt,headsep=6pt,includehead,includefoot]{geometry}
-\usepackage{tgtermes}
+\usepackage{tgheros}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage[table]{xcolor}
 \usepackage{longtable}
 \usepackage{booktabs}

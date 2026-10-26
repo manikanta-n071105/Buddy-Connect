@@ -231,7 +231,8 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     # Document Preamble using geometric sans-serif (Arial / Poppins fallback)
     tex.append(r'''\documentclass[a4paper,8pt]{article}
 \usepackage[margin=10mm,top=8mm,bottom=10mm,headheight=18pt,headsep=6pt,includehead,includefoot]{geometry}
-\usepackage{tgtermes}
+\usepackage{tgheros}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage[table]{xcolor}
 \usepackage{colortbl}
 \usepackage{longtable}

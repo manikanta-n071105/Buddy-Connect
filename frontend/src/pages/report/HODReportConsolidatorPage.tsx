@@ -785,7 +785,10 @@ export const HODReportConsolidatorPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('superadmin')}
+            onClick={() => {
+              fetchSubmissions(period);
+              setActiveTab('superadmin');
+            }}
             className={`flex-1 min-w-[180px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'superadmin'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -1060,16 +1063,19 @@ export const HODReportConsolidatorPage: React.FC = () => {
                           <div className="space-y-3">
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
                               <div className="flex items-center justify-between text-slate-800 font-semibold truncate">
-                                <span className="truncate max-w-[200px]" title={dept.fileName || ''}>
-                                  {dept.fileName}
+                                <span className="truncate max-w-[190px]" title={dept.fileName || ''}>
+                                  {dept.fileName || `${dept.code}_Manual_Report.docx`}
                                 </span>
-                                <span className="text-slate-500 text-[11px] ml-2 shrink-0">
-                                  {dept.fileSizeFormatted}
+                                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ml-2 shrink-0 ${dept.fileSizeFormatted === 'Live Builder Sync'
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : 'text-slate-600 bg-slate-200'
+                                  }`}>
+                                  {dept.fileSizeFormatted || 'Live Builder Sync'}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200">
                                 <span className="text-indigo-600 font-bold">
-                                  {dept.itemsCount} Activities Extracted
+                                  {dept.itemsCount} Activities in Consolidator
                                 </span>
                                 {dept.uploadedAt && (
                                   <span className="text-slate-400">
@@ -1089,7 +1095,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                                 title={`Edit ${dept.name} data in manual builder`}
                               >
                                 <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-                                Edit Data
+                                Edit in Builder
                               </button>
 
                               <button
@@ -1114,7 +1120,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                         ) : (
                           <div className="space-y-2.5">
                             <p className="text-xs text-slate-500">
-                              No report submitted yet for {period}.
+                              No data submitted yet for {period}. Enter details in Builder or upload document.
                             </p>
                             <div className="flex items-center gap-2">
                               <button
@@ -1125,7 +1131,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
                                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all cursor-pointer shadow-sm"
                               >
                                 <Sparkles className="w-3.5 h-3.5" />
-                                <span>Enter Data</span>
+                                <span>Enter in Builder</span>
                               </button>
                               <button
                                 onClick={() => triggerUploadForDept(dept.name, dept.hodName)}

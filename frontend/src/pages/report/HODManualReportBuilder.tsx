@@ -945,91 +945,113 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     }
   }, [department, period]);
 
-  // 30-Second Automatic Silent Background Save
-  useEffect(() => {
-    const timer = setInterval(async () => {
-      // Do not auto-save while fetching or loading draft
-      if (loadingDraftRef.current) return;
+  // Dedicated helper to sync manual builder changes directly into the Master Consolidator
+  const syncToConsolidator = async (silent = false) => {
+    if (loadingDraftRef.current) return;
 
-      const currentSections = sectionsRef.current;
-      const currentDept = deptRef.current;
-      const currentPeriod = periodRef.current;
-      const currentHod = hodNameRef.current;
-      const currentSubDate = submissionDateRef.current;
+    const currentSections = sectionsRef.current;
+    const currentDept = deptRef.current;
+    const currentPeriod = periodRef.current;
+    const currentHod = hodNameRef.current;
+    const currentSubDate = submissionDateRef.current;
 
-      // Only save if user has entered data in at least one section
-      const hasAnyData = Object.values(currentSections).some(
-        arr => Array.isArray(arr) && arr.length > 0
-      );
-      if (!hasAnyData) return;
+    const hasAnyData = Object.values(currentSections).some(
+      arr => Array.isArray(arr) && arr.length > 0
+    );
+    if (!hasAnyData && silent) return;
 
-      try {
-        setAutoSaving(true);
-        const payload = {
-          department: currentDept,
-          period: currentPeriod,
-          hodName: currentHod,
-          submissionDate: currentSubDate,
-          sections: currentSections,
-          status: 'DRAFT'
-        };
-        const res = await api.post('/reports/save-department-draft', payload);
-        if (res.data?.success) {
-          setDbStatus({
-            saved: true,
-            lastSavedAt: res.data.data?.updatedAt || new Date().toISOString(),
-            status: res.data.data?.status || 'DRAFT'
-          });
-          setLastAutoSavedAt(new Date().toLocaleTimeString());
-        }
-      } catch (err) {
-        console.warn('30s auto-save silent attempt failed:', err);
-      } finally {
-        setAutoSaving(false);
+    try {
+      if (silent) setAutoSaving(true);
+      else setSavingDraft(true);
+
+      const payload = {
+        department: currentDept,
+        period: currentPeriod,
+        hodName: currentHod,
+        submissionDate: currentSubDate,
+        sections: currentSections,
+        status: 'SUBMITTED'
+      };
+
+      const res = await api.post('/reports/save-department-draft', payload);
+      if (res.data?.success) {
+        setDbStatus({
+          saved: true,
+          lastSavedAt: res.data.data?.updatedAt || new Date().toISOString(),
+          status: 'SUBMITTED'
+        });
+        setLastAutoSavedAt(new Date().toLocaleTimeString());
+        if (onReportGenerated) onReportGenerated();
       }
-    }, 30000); // exactly every 30 seconds
+      return res.data;
+    } catch (err) {
+      if (!silent) throw err;
+      console.warn('Silent sync to consolidator database failed:', err);
+    } finally {
+      if (silent) setAutoSaving(false);
+      else setSavingDraft(false);
+    }
+  };
+
+  // Live Debounced Auto-Sync (1.5 seconds) whenever HOD changes any field
+  const isInitialLoadRef = useRef(true);
+  useEffect(() => {
+    if (loadingDraft) {
+      isInitialLoadRef.current = true;
+      return;
+    }
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      syncToConsolidator(true);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [sections, hodName, submissionDate]);
+
+  // Fallback periodic sync every 20 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      syncToConsolidator(true);
+    }, 20000);
 
     return () => clearInterval(timer);
+  }, []);
+
+  // Flush pending changes when unmounting or leaving the builder
+  useEffect(() => {
+    return () => {
+      syncToConsolidator(true);
+    };
   }, []);
 
   const handleSaveDraft = async () => {
     try {
       setSavingDraft(true);
-      const toastId = toast.loading(`Saving ${department} report to dedicated Neon database...`);
-      const payload = {
-        department,
-        period,
-        hodName,
-        submissionDate,
-        sections,
-        status: 'DRAFT'
-      };
-      const res = await api.post('/reports/save-department-draft', payload);
-      if (res.data.success) {
+      const toastId = toast.loading(`Syncing ${department} changes directly to Master Consolidator...`);
+      const res = await syncToConsolidator(false);
+      if (res?.success) {
         toast.dismiss(toastId);
-        toast.success(`Progress saved to dedicated reports database!`, { id: 'save-draft' });
-        setDbStatus({
-          saved: true,
-          lastSavedAt: res.data.data?.updatedAt || new Date().toISOString(),
-          status: res.data.data?.status || 'DRAFT'
-        });
-        setLastAutoSavedAt(new Date().toLocaleTimeString());
-        if (onReportGenerated) onReportGenerated();
+        toast.success(`✓ Changes for ${department} synced directly to Master Consolidator!`, { id: 'save-draft' });
       } else {
         toast.dismiss(toastId);
-        toast.error(res.data.message || 'Save failed');
+        toast.error(res?.message || 'Sync failed');
       }
     } catch (err: any) {
-      toast.error('Save error: ' + (err.response?.data?.message || err.message));
+      toast.error('Sync error: ' + (err.response?.data?.message || err.message));
     } finally {
       setSavingDraft(false);
     }
   };
 
-  const handleDepartmentChange = (dept: string) => {
+  const handleDepartmentChange = async (dept: string) => {
+    // Flush current department edits before loading new department
+    await syncToConsolidator(true);
     setDepartment(dept);
     setHodName(getDefaultHod(dept));
-    // loadSavedReportFromDb runs automatically via useEffect, loading existing draft or fresh blank fields
   };
 
   // Exact tables matching the template format:
@@ -1625,10 +1647,10 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               onClick={handleSaveDraft}
               disabled={savingDraft}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 cursor-pointer"
-              title="Save changes directly to dedicated reports database so you can resume or edit anytime"
+              title="Save changes directly to Master Consolidator so they immediately help consolidate the monthly report without uploading files"
             >
-              <Database className={`w-3.5 h-3.5 ${savingDraft ? 'animate-spin' : ''}`} />
-              <span>{savingDraft ? 'Saving to DB...' : 'Save to Database'}</span>
+              <CheckCircle2 className={`w-3.5 h-3.5 ${savingDraft ? 'animate-spin' : ''}`} />
+              <span>{savingDraft ? 'Syncing to Consolidator...' : 'Save & Sync to Consolidator'}</span>
             </button>
 
             <button
@@ -1665,42 +1687,42 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           </div>
         </div>
 
-        {/* Dedicated Database Status Indicator */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="relative flex h-2 w-2">
+        {/* Dedicated Database & Master Consolidator Live Sync Banner */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200 text-xs shadow-2xs">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            <span className="font-bold text-slate-700">Reports DB:</span>
-            <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px] flex items-center gap-1">
-              <Database className="w-3 h-3 text-emerald-600" />
-              Neon PostgreSQL Connected
+            <span className="font-extrabold text-slate-800">Master Consolidator Live Sync:</span>
+            <span className="text-emerald-800 font-bold bg-white/80 px-2.5 py-1 rounded-lg border border-emerald-300 text-[11px] flex items-center gap-1.5 shadow-2xs">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Direct Feed Active (No File Upload Needed)
             </span>
-            <span className="text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 text-[11px] flex items-center gap-1">
-              <Clock className="w-3 h-3 text-blue-600" />
+            <span className="text-blue-700 font-semibold bg-white/80 px-2.5 py-1 rounded-lg border border-blue-200 text-[11px] flex items-center gap-1.5 shadow-2xs">
+              <Clock className="w-3.5 h-3.5 text-blue-600" />
               {autoSaving ? (
-                <span className="animate-pulse font-bold text-blue-600">Auto-saving...</span>
+                <span className="animate-pulse font-bold text-blue-600">Auto-syncing changes...</span>
               ) : lastAutoSavedAt ? (
-                <span>Auto-saved {lastAutoSavedAt} (every 30s)</span>
+                <span>Auto-synced at {lastAutoSavedAt}</span>
               ) : (
-                <span>Auto-save active (every 30s)</span>
+                <span>Live auto-sync active on edit</span>
               )}
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-slate-500 text-[11px]">
+          <div className="flex items-center gap-3 text-slate-600 text-[11px]">
             {loadingDraft ? (
               <span className="text-blue-600 font-bold">Checking saved database entries...</span>
             ) : dbStatus.saved ? (
-              <span className="text-slate-600">
-                Last saved in DB: <strong className="text-slate-900">{dbStatus.lastSavedAt ? new Date(dbStatus.lastSavedAt).toLocaleTimeString() : 'Recently'}</strong>
-                <span className={`ml-2 px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${dbStatus.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-800'}`}>
-                  {dbStatus.status || 'DRAFT'}
+              <span className="text-slate-700 font-medium">
+                Last synced to Consolidator: <strong className="text-slate-900">{dbStatus.lastSavedAt ? new Date(dbStatus.lastSavedAt).toLocaleTimeString() : 'Recently'}</strong>
+                <span className="ml-2 px-2.5 py-0.5 rounded-full font-extrabold uppercase text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Ready for Consolidation
                 </span>
               </span>
             ) : (
-              <span className="text-slate-400 italic">No saved data for {period} (Blank fields ready). Auto-saves every 30s.</span>
+              <span className="text-slate-500 italic">Editing will auto-sync directly into the institutional consolidated report.</span>
             )}
           </div>
         </div>
