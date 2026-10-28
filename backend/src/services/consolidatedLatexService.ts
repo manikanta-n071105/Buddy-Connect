@@ -29,6 +29,21 @@ export const escapeLatex = (text?: any): string => {
   let str = String(text);
   if (!str.trim()) return '';
 
+  // Clean errant patterns in source data
+  str = str
+    .replace(/\u2014/g, '---') // em dash
+    .replace(/\u2013/g, '--')  // en dash
+    .replace(/\u2212/g, '-')   // minus
+    .replace(/\u207B/g, '$^{-}$') // superscript minus
+    .replace(/\u2022/g, '\\textbullet\\ ') // bullet
+    .replace(/[\u2018\u2019]/g, "'") // single curly quotes
+    .replace(/[\u201C\u201D]/g, '"') // double curly quotes
+    .replace(/\u00A0/g, ' ')   // non-breaking space
+    .replace(/\u200B/g, '')    // zero-width space
+    .replace(/\/{2,}/g, '/ ')  // replace double slash // with /
+    .replace(/\s+\.\s*([A-Za-z])/g, ' $1') // fix " .Vinitha" -> " Vinitha"
+    .replace(/\)(\d+\.)/g, ') $1'); // fix ")6." -> ") 6." in student achievements
+
   str = str.replace(/\\/g, '\\textbackslash{}');
   const replacements: Array<[string, string]> = [
     ['&', '\\&'],
@@ -189,7 +204,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   ): string => {
     if (!items || items.length === 0) return '';
     const out: string[] = [];
-    out.push(`\\needspace{2.8cm}\n`);
+    out.push(`\\Needspace*{3.8cm}\n`);
     out.push(`\\rendersectionheader{${escapeLatex(titleText)}}\n`);
     const specs = colWidths.map((w, i) => (i < 2 ? `>{\\centering\\arraybackslash}p{${w}}` : `>{\\raggedright\\arraybackslash}p{${w}}`));
     const colSpec = `|${specs.join('|')}|`;
@@ -222,8 +237,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 
   tex.push(`\\documentclass[a4paper,8pt]{article}
 \\usepackage[margin=10mm,top=8mm,bottom=10mm,headheight=18pt,headsep=6pt,includehead,includefoot]{geometry}
-\\usepackage{tgheros}
-\\renewcommand{\\familydefault}{\\sfdefault}
+\\usepackage{libertinus}
 \\usepackage[table]{xcolor}
 \\usepackage{colortbl}
 \\usepackage{longtable}
@@ -238,15 +252,15 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 \\usepackage{graphicx}
 
 \\definecolor{brandnavy}{HTML}{1E3A8A}
-\\definecolor{branddark}{HTML}{0F172A}
-\\definecolor{headerdark}{HTML}{1F2937}
+\\definecolor{branddark}{HTML}{000000}
+\\definecolor{headerdark}{HTML}{000000}
 \\definecolor{brandamber}{HTML}{C2410C}
 \\definecolor{brandgreen}{HTML}{15803D}
 \\definecolor{brandborder}{HTML}{E2E8F0}
 \\definecolor{rowalt}{HTML}{F8FAFC}
-\\definecolor{slatedark}{HTML}{1E293B}
-\\definecolor{slatemed}{HTML}{334155}
-\\definecolor{slatelight}{HTML}{475569}
+\\definecolor{slatedark}{HTML}{000000}
+\\definecolor{slatemed}{HTML}{000000}
+\\definecolor{slatelight}{HTML}{000000}
 \\definecolor{linkblue}{HTML}{1D4ED8}
 
 \\hypersetup{
@@ -314,20 +328,27 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '6.70cm', '5.30cm', '3.70cm'],
     ['#', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled')}}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled')}}}`;
       const details: string[] = [];
-      if (it.authors) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatemed}{Authors:}} \\textcolor{slatelight}{${escapeLatex(it.authors)}}}`);
-      if (it.journalName) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatemed}{Journal:}} \\textcolor{slatelight}{${escapeLatex(it.journalName)}} (${escapeLatex(it.volIssueYear || '')})}`);
-      if (it.pageNos) details.push(`{\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Pages: ${escapeLatex(it.pageNos)}}}`);
-      const pubDetails = details.length ? details.join(' \\newline ') : '\\textcolor{slatelight}{--}';
+      if (it.authors) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Authors:} ${escapeLatex(it.authors)}}`);
+      if (it.journalName) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Journal:} ${escapeLatex(it.journalName)} (${escapeLatex(it.volIssueYear || '')})}`);
+      if (it.pageNos) details.push(`{\\fontsize{6.5}{8}\\selectfont\\textbf{Pages:} ${escapeLatex(it.pageNos)}}`);
+      const pubDetails = details.length ? details.join(' \\newline ') : '--';
 
       const verif: string[] = [];
-      if (it.issnIsbn) verif.push(`{\\fontsize{7}{8.5}\\selectfont ISSN: \\textbf{\\textcolor{slatedark}{${escapeLatex(it.issnIsbn)}}}}`);
-      if (it.indexedIn) verif.push(`{\\fontsize{7}{8.5}\\selectfont Indexed: \\textbf{\\textcolor{slatedark}{${escapeLatex(it.indexedIn)}}}}`);
+      if (it.issnIsbn) verif.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{ISSN:} ${escapeLatex(it.issnIsbn)}}`);
+      if (it.indexedIn) {
+        const idxIn = escapeLatex(it.indexedIn);
+        if (idxIn.toLowerCase().includes('proof')) {
+          verif.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Indexed:} \\textcolor{linkblue}{${idxIn}}}`);
+        } else {
+          verif.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Indexed:} ${idxIn}}`);
+        }
+      }
       if (it.link) verif.push(formatLatexLink(it.link, '[Paper Link]'));
-      const verifDetails = verif.length ? verif.join(' \\newline ') : '\\textcolor{slatelight}{--}';
+      const verifDetails = verif.length ? verif.join(' \\newline ') : '--';
       return [sno, branch, title, pubDetails, verifDetails];
     },
     gatherItems('journals')
@@ -339,23 +360,28 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '6.00cm', '5.60cm', '4.10cm'],
     ['#', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled Presentation')}}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled Presentation')}}}`;
       const details: string[] = [];
-      if (it.authors) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatemed}{Authors:}} \\textcolor{slatelight}{${escapeLatex(it.authors)}}}`);
-      if (it.conferenceName) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatemed}{Conference:}} \\textcolor{slatelight}{${escapeLatex(it.conferenceName)}}}`);
-      const confDetails = details.length ? details.join(' \\newline ') : '\\textcolor{slatelight}{--}';
+      if (it.authors) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Authors:} ${escapeLatex(it.authors)}}`);
+      if (it.conferenceName) details.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Conference:} ${escapeLatex(it.conferenceName)}}`);
+      const sub: string[] = [];
+      if (it.volIssueYear) sub.push(`\\textbf{Issue:} ${escapeLatex(it.volIssueYear)}`);
+      if (it.pageNos) sub.push(`\\textbf{Pages:} ${escapeLatex(it.pageNos)}`);
+      if (it.issnIsbn) sub.push(`\\textbf{ISBN:} ${escapeLatex(it.issnIsbn)}`);
+      if (sub.length) details.push(`{\\fontsize{6.5}{8}\\selectfont ${sub.join(' ')}}`);
+      const confDetails = details.length ? details.join(' \\newline ') : '--';
 
       const verif: string[] = [];
-      if (it.date) verif.push(`{\\fontsize{7}{8.5}\\selectfont Date: \\textbf{\\textcolor{slatedark}{${escapeLatex(it.date)}}}}`);
+      if (it.date) verif.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.date)}}`);
       const locVal = it.location || it.locationMode || '';
       const modeVal = it.mode || '';
       const venueDisplay = locVal && modeVal && !locVal.includes(modeVal) ? `${locVal} (${modeVal})` : (locVal || modeVal || '-');
-      if (venueDisplay && venueDisplay !== '-') verif.push(`{\\fontsize{7}{8.5}\\selectfont Venue: \\textcolor{slatelight}{${escapeLatex(venueDisplay)}}}`);
-      if (it.indexedIn) verif.push(`{\\fontsize{7}{8.5}\\selectfont Indexed: \\textbf{\\textcolor{slatedark}{${escapeLatex(it.indexedIn)}}}}`);
+      if (venueDisplay && venueDisplay !== '-') verif.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Venue:} ${escapeLatex(venueDisplay)}}`);
+      if (it.indexedIn) verif.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Indexed:} ${escapeLatex(it.indexedIn)}}`);
       if (it.link) verif.push(formatLatexLink(it.link, '[Proceedings]'));
-      const verifDetails = verif.length ? verif.join(' \\newline ') : '\\textcolor{slatelight}{--}';
+      const verifDetails = verif.length ? verif.join(' \\newline ') : '--';
       return [sno, branch, title, confDetails, verifDetails];
     },
     gatherItems('conferences')
@@ -367,16 +393,16 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '7.50cm', '5.00cm', '3.20cm'],
     ['#', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled Patent')}}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled Patent')}}}`;
       const invLines: string[] = [];
-      if (it.inventors) invLines.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatemed}{Inventor/s:}} \\textcolor{slatelight}{${escapeLatex(it.inventors)}}}`);
-      if (it.applicants) invLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textbf{\\textcolor{slatemed}{Applicant/s:}} \\textcolor{slatelight}{${escapeLatex(it.applicants)}}}`);
-      if (it.patentNumber) invLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Pat: ${escapeLatex(it.patentNumber)}}}`);
-      const inv = invLines.length ? invLines.join(' \\newline ') : '\\textcolor{slatelight}{--}';
+      if (it.inventors) invLines.push(`{\\fontsize{7}{8.5}\\selectfont\\textbf{Inventor/s:} ${escapeLatex(it.inventors)}}`);
+      if (it.applicants) invLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textbf{Applicant/s:} ${escapeLatex(it.applicants)}}`);
+      if (it.patentNumber) invLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textbf{Pat No:} ${escapeLatex(it.patentNumber)}}`);
+      const inv = invLines.length ? invLines.join(' \\newline ') : '--';
       const status = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{${escapeLatex(it.status || 'Published')}}}}` +
-        (it.awardedDate ? ` \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.awardedDate)}}}` : '');
+        (it.awardedDate ? ` \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Date:} ${escapeLatex(it.awardedDate)}}` : '');
       return [sno, branch, title, inv, status];
     },
     gatherItems('patents')
@@ -388,12 +414,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.20cm', '3.40cm', '2.85cm', '4.00cm'],
     ['#', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled Activity')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || '-')} \\textbullet\\ ${escapeLatex(it.mode || 'Offline')}}}`;
-      const meta = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.date || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{By: ${escapeLatex(it.organizedBy || '-')}}}`;
-      const tgt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.participantsCount || '-')} parts}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.participants || '-')}}}`;
-      const outc = `{\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{Coord: ${escapeLatex(it.mentorCoordinator || '-')}}} \\newline {\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{Status: ${escapeLatex(it.status || 'Completed')}}}}` +
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled Activity')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || '-')} \\textbullet\\ \\textbf{Mode:} ${escapeLatex(it.mode || 'Offline')}}`;
+      const meta = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.date || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{By:} ${escapeLatex(it.organizedBy || '-')}}`;
+      const tgt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Participants:} ${escapeLatex(it.participantsCount || '-')} parts} \\newline {\\fontsize{6.5}{8}\\selectfont ${escapeLatex(it.participants || '-')}}`;
+      const outc = `{\\fontsize{6.5}{8}\\selectfont\\textbf{Coord:} ${escapeLatex(it.mentorCoordinator || '-')}} \\newline {\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{Status: ${escapeLatex(it.status || 'Completed')}}}}` +
         (it.link ? ` \\newline ${formatLatexLink(it.link, '[Report Link]')}` : '');
       return [sno, branch, title, meta, tgt, outc];
     },
@@ -406,11 +432,11 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '6.20cm', '4.70cm', '4.80cm'],
     ['#', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled FDP')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || 'FDP')}}}`;
-      const org = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.organizingBody || '-')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{Dates: ${escapeLatex(it.dates || '-')} (${escapeLatex(it.mode || 'Offline')})}}`;
-      const fac = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.facultyAttended || it.role || '-')}}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Certificate]')}` : '');
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled FDP')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || 'FDP')}}`;
+      const org = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Org:} ${escapeLatex(it.organizingBody || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Dates:} ${escapeLatex(it.dates || '-')} (${escapeLatex(it.mode || 'Offline')})}`;
+      const fac = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.facultyAttended || it.role || '-')}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Certificate]')}` : '');
       return [sno, branch, title, org, fac];
     },
     gatherItems('fdpAttended', 'fdp')
@@ -422,11 +448,11 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.60cm', '5.40cm', '4.70cm'],
     ['#', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled FDP Organized')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || 'FDP')} \\textbullet\\ ${escapeLatex(it.dates || '-')} (${escapeLatex(it.mode || 'Offline')})}}`;
-      const rp = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.resourcePersonDetails || '-')}}}`;
-      const coords = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.facultyCoordinators || '-')}}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled FDP Organized')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || 'FDP')} \\textbullet\\ \\textbf{Dates:} ${escapeLatex(it.dates || '-')} (${escapeLatex(it.mode || 'Offline')})}`;
+      const rp = `{\\fontsize{7}{8.5}\\selectfont\\textbf{RP:} ${escapeLatex(it.resourcePersonDetails || '-')}}`;
+      const coords = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Coord:} ${escapeLatex(it.facultyCoordinators || '-')}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
       return [sno, branch, title, rp, coords];
     },
     gatherItems('fdpOrganized')
@@ -438,12 +464,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '8.00cm', '4.50cm', '3.00cm'],
     ['#', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled SDP')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || 'Workshop')}}}`;
-      const dtRp = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.date || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{${escapeLatex(it.resourcePerson || '-')}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled SDP')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || 'Workshop')}}`;
+      const dtRp = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.date || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{RP:} ${escapeLatex(it.resourcePerson || '-')}}`;
       const modeStr = it.mode ? ` (${escapeLatex(it.mode)})` : '';
-      const parts = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.participantsCount || '-')} participants${modeStr}}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Report Link]')}` : '');
+      const parts = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Participants:} ${escapeLatex(it.participantsCount || '-')} participants${modeStr}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Report Link]')}` : '');
       return [sno, branch, title, dtRp, parts];
     },
     gatherItems('sdp')
@@ -455,13 +481,13 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '3.50cm', '4.50cm', '3.70cm', '4.00cm'],
     ['#', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const fac = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.name || '-')}}}}`;
-      const awd = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.award || '-')}}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
-      const ev = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatedark}{${escapeLatex(it.event || '-')}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const fac = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.name || '-')}}}`;
+      const awd = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.award || '-')}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
+      const ev = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.event || '-')}}`;
       const orgDt = it.date ? ` (${escapeLatex(it.date)})` : '';
-      const org = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.organization || '-')}${orgDt}}}`;
+      const org = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.organization || '-')}${orgDt}}`;
       return [sno, branch, fac, awd, ev, org];
     },
     gatherItems('facultyAchievements')
@@ -473,12 +499,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.20cm', '5.50cm', '5.00cm'],
     ['#', 'Branch', 'Student Name & ID', 'Prize / Accomplishment', 'Event & Host Institution'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const st = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.nameRoll || '-')}}}}`;
-      const awd = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.award || '-')}}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const st = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.nameRoll || '-')}}}`;
+      const awd = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.award || '-')}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
       const evOrg = it.organization ? ` (${escapeLatex(it.organization)})` : '';
-      const ev = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.event || '-')}${evOrg}}}`;
+      const ev = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.event || '-')}${evOrg}}`;
       return [sno, branch, st, awd, ev];
     },
     gatherItems('studentAchievements')
@@ -490,12 +516,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.80cm', '3.50cm', '2.65cm', '3.50cm'],
     ['#', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled Certification')}}}}`;
-      const plt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.platform || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || '-')}}}`;
-      const enr = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.duration || '-')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Enrolled: ${escapeLatex(it.enrolled || '-')}}}`;
-      const outc = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{${escapeLatex(it.certified || '-')} Certified}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.keyOutcomes || '')}}}` +
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled Certification')}}}`;
+      const plt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Platform:} ${escapeLatex(it.platform || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || '-')}}`;
+      const enr = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Duration:} ${escapeLatex(it.duration || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Enrolled:} ${escapeLatex(it.enrolled || '-')}}`;
+      const outc = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{${escapeLatex(it.certified || '-')} Certified}}} \\newline {\\fontsize{6.5}{8}\\selectfont ${escapeLatex(it.keyOutcomes || '')}}` +
         (it.link ? ` \\newline ${formatLatexLink(it.link, '[Certificate]')}` : '');
       return [sno, branch, title, plt, enr, outc];
     },
@@ -508,12 +534,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.40cm', '2.80cm', '2.80cm', '4.45cm'],
     ['#', 'Branch', 'Partner Entity / Industry', 'Date of Signing', 'Faculty SPOC', 'Scope & Focus Area'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const ptn = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.name || '-')}}}}`;
-      const dt = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatedark}{${escapeLatex(it.datePeriod || '-')}}}`;
-      const spoc = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.facultySpoc || '-')}}}}`;
-      const purp = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.purpose || '-')}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[MoU Copy]')}` : '');
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const ptn = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.name || '-')}}}`;
+      const dt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.datePeriod || '-')}}`;
+      const spoc = `{\\fontsize{7}{8.5}\\selectfont\\textbf{SPOC:} ${escapeLatex(it.facultySpoc || '-')}}`;
+      const purp = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.purpose || '-')}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[MoU Copy]')}` : '');
       return [sno, branch, ptn, dt, spoc, purp];
     },
     gatherItems('mous')
@@ -525,11 +551,11 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.70cm', '3.50cm', '6.50cm'],
     ['#', 'Branch', 'Association Event & Type', 'Date & Coordinator', 'Participants & Outcomes'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const ev = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.event || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || '-')}}}`;
-      const dt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.date || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{${escapeLatex(it.resourcePersonCoordinator || '-')}}}`;
-      const outc = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.participants || '-')}}} \\textcolor{slatelight}{participants}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.outcomes || '-')}}}` +
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const ev = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.event || '-')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || '-')}}`;
+      const dt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.date || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Coord:} ${escapeLatex(it.resourcePersonCoordinator || '-')}}`;
+      const outc = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Participants:} ${escapeLatex(it.participants || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont ${escapeLatex(it.outcomes || '-')}}` +
         (it.link ? ` \\newline ${formatLatexLink(it.link, '[Event Report]')}` : '');
       return [sno, branch, ev, dt, outc];
     },
@@ -542,14 +568,14 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.70cm', '1.05cm', '4.40cm', '1.15cm', '2.60cm', '2.15cm', '2.15cm', '2.30cm'],
     ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing', 'Remarks / Status'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const sub = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.subject || 'Untitled Course')}}}}`;
-      const yr = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(normalizeSyllabusYearSem(it.yearSem))}}}}`;
-      const fac = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.faculty || '-')}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const sub = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.subject || 'Untitled Course')}}}`;
+      const yr = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(normalizeSyllabusYearSem(it.yearSem))}}}`;
+      const fac = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.faculty || '-')}}`;
       const comp = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{${escapeLatex(normalizeSyllabusCompleted(it.completed))}}}}`;
       const pend = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandamber}{${escapeLatex(normalizeSyllabusPending(it.completed, it.pending))}}}}`;
-      const rem = `{\\fontsize{7}{8.5}\\selectfont\\textit{\\textcolor{slatelight}{${escapeLatex(normalizeSyllabusRemarks(it.remarks))}}}}`;
+      const rem = `{\\fontsize{7}{8.5}\\selectfont\\textit{${escapeLatex(normalizeSyllabusRemarks(it.remarks))}}}`;
       return [sno, branch, sub, yr, fac, comp, pend, rem];
     },
     gatherItems('syllabus')
@@ -561,13 +587,13 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.75cm', '1.15cm', '4.50cm', '3.20cm', '1.80cm', '2.60cm', '3.20cm'],
     ['#', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.title || 'Untitled Activity')}}}}`;
-      const tSpan = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.type || 'Workshop')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.dates || it.noOfDays || '1 day')}}}`;
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const title = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.title || 'Untitled Activity')}}}`;
+      const tSpan = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || 'Workshop')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Dates:} ${escapeLatex(it.dates || it.noOfDays || '1 day')}}`;
       const pts = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{${escapeLatex(it.participantsCount || '-')}}}}`;
-      const coord = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.coordinator || '-')}}}}`;
-      const rem = `{\\fontsize{6.5}{8}\\selectfont\\textit{\\textcolor{slatelight}{${escapeLatex(it.remarks || '-')}}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Club Report]')}` : '');
+      const coord = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Coord:} ${escapeLatex(it.coordinator || '-')}}`;
+      const rem = `{\\fontsize{6.5}{8}\\selectfont\\textit{${escapeLatex(it.remarks || '-')}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Club Report]')}` : '');
       return [sno, branch, title, tSpan, pts, coord, rem];
     },
     gatherItems('studentEngagement')
@@ -579,12 +605,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '4.40cm', '3.10cm', '3.00cm', '4.95cm'],
     ['#', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const ev = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.event || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Type: ${escapeLatex(it.type || '-')}}}`;
-      const vn = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.date || '-')}}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{Venue: ${escapeLatex(it.venue || '-')}}}`;
-      const ben = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.participantsCount || '-')} participants}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.typeOfParticipants || '-')}}}`;
-      const outc = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.outcomes || '-')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{\\textcolor{slatemed}{Coord: ${escapeLatex(it.coordinator || '-')}}}}` +
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const ev = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.event || '-')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Type:} ${escapeLatex(it.type || '-')}}`;
+      const vn = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.date || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Venue:} ${escapeLatex(it.venue || '-')}}`;
+      const ben = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Participants:} ${escapeLatex(it.participantsCount || '-')} participants} \\newline {\\fontsize{6.5}{8}\\selectfont ${escapeLatex(it.typeOfParticipants || '-')}}`;
+      const outc = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.outcomes || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Coord:} ${escapeLatex(it.coordinator || '-')}}` +
         (it.link ? ` \\newline ${formatLatexLink(it.link, '[NSS Report]')}` : '');
       return [sno, branch, ev, vn, ben, outc];
     },
@@ -597,11 +623,11 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     ['0.80cm', '1.20cm', '5.50cm', '3.20cm', '7.00cm'],
     ['#', 'Branch', 'Initiative / Activity', 'Date & Coordinator', 'Description & Key Outcomes'],
     (it, idx) => {
-      const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode)}}}}`;
-      const init = `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${escapeLatex(it.initiative || '-')}}}}`;
-      const dt = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatedark}{${escapeLatex(it.date || '-')}}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textcolor{slatemed}{Coord: ${escapeLatex(it.coordinator || '-')}}}`;
-      const desc = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.description || '-')}}}` +
+      const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+      const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
+      const init = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.initiative || '-')}}}`;
+      const dt = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${escapeLatex(it.date || '-')}} \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{Coord:} ${escapeLatex(it.coordinator || '-')}}`;
+      const desc = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.description || '-')}}` +
         (it.outcomes ? ` \\newline {\\fontsize{6.5}{8}\\selectfont\\textbf{\\textcolor{brandgreen}{Outcome: ${escapeLatex(it.outcomes)}}}}` : '') +
         (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
       return [sno, branch, init, dt, desc];
@@ -629,18 +655,18 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
       ['0.80cm', '1.20cm', '3.60cm', '8.00cm', '4.10cm'],
       ['#', 'Branch', 'Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'],
       (it, idx) => {
-        const sno = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${idx + 1}}}`;
-        const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${escapeLatex(it.deptCode || 'MOM')}}}}`;
+        const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
+        const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode || 'MOM')}}}`;
         const mTitle = escapeLatex(it.title || "HoD's Meeting");
         const mDate = escapeLatex(it.date || '-');
         const mtgLines = [
           `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{brandnavy}{${mTitle}}}}`,
-          `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatedark}{${mDate}}}}`
+          `{\\fontsize{7}{8.5}\\selectfont\\textbf{Date:} ${mDate}}`
         ];
-        if (it.time) mtgLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.time)}}}`);
-        if (it.venue) mtgLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{Venue: ${escapeLatex(it.venue)}}}`);
+        if (it.time) mtgLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textbf{Time:} ${escapeLatex(it.time)}}`);
+        if (it.venue) mtgLines.push(`{\\fontsize{6.5}{8}\\selectfont\\textbf{Venue:} ${escapeLatex(it.venue)}}`);
         const mtgFirst = mtgLines.join(' \\newline ');
-        const pol = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.policyChanges || 'Standard operations and administrative resolutions confirmed.')}}}` +
+        const pol = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.policyChanges || 'Standard operations and administrative resolutions confirmed.')}}` +
           (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
 
         const discussions = it.discussions;
@@ -649,7 +675,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
           if (Array.isArray(it.attendees) && it.attendees.length > 0) {
             const attNames = it.attendees.map((a: any) => escapeLatex(a.name || '')).filter(Boolean).join(', ');
             if (attNames) {
-              attPrefix = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Attendees (${it.attendees.length}):} \\textcolor{slatelight}{${attNames}}} \\newline\\vspace{2pt} `;
+              attPrefix = `{\\fontsize{7}{8.5}\\selectfont\\textbf{Attendees (${it.attendees.length}):} ${attNames}} \\newline\\vspace{2pt} `;
             }
           }
 
@@ -657,21 +683,28 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
           discussions.forEach((d: any, dIdx: number) => {
             const dHead = escapeLatex(d.heading || `Topic ${dIdx + 1}`);
             const rawDet = String(d.details || 'Discussed & recorded.').trim();
-            const dDetLines = rawDet.split('\n').map(l => l.replace(/^[•*\-0-9.)\s]+/, '').trim()).filter(Boolean);
-            let detFormatted = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(rawDet)}}}`;
-            if (dDetLines.length > 1) {
-              detFormatted = dDetLines.map(l => `\\textcolor{brandnavy}{\\textbf{\\textbullet}} {\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(l)}}}`).join(' \\newline ');
+            const normHead = String(d.heading || '').replace(/^[0-9.)\s]+/, '').trim().toLowerCase();
+            const dDetLines = rawDet
+              .split('\n')
+              .map(l => l.replace(/^[•*\-0-9.)\s]+/, '').trim())
+              .filter(l => {
+                const normL = l.toLowerCase();
+                return normL.length > 0 && normL !== normHead;
+              });
+            let detFormatted = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(rawDet)}}`;
+            if (dDetLines.length > 0) {
+              detFormatted = dDetLines.map(l => `\\textcolor{brandnavy}{\\textbf{\\textbullet}} {\\fontsize{7}{8.5}\\selectfont ${escapeLatex(l)}}`).join(' \\newline ');
             }
-            const discCell = (dIdx === 0 ? attPrefix : '') + `{\\fontsize{7.5}{9}\\selectfont\\textbf{\\textcolor{branddark}{${dHead}}}}: \\newline ${detFormatted}`;
+            const discCell = (dIdx === 0 ? attPrefix : '') + `{\\fontsize{7.5}{9}\\selectfont\\textbf{${dHead}}}: \\newline ${detFormatted}`;
             if (dIdx === 0) {
               rows.push([sno, branch, mtgFirst, discCell, pol]);
             } else {
-              rows.push(['', '', '{\\fontsize{6.5}{8}\\selectfont\\textcolor{slatelight}{(Cont.)}}', discCell, '']);
+              rows.push(['', '', '{\\fontsize{6.5}{8}\\selectfont (Cont.)}', discCell, '']);
             }
           });
           return rows;
         } else {
-          const discStr = `{\\fontsize{7}{8.5}\\selectfont\\textcolor{slatelight}{${escapeLatex(it.decisions || '-')}}}`;
+          const discStr = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.decisions || '-')}}`;
           return [[sno, branch, mtgFirst, discStr, pol]];
         }
       },

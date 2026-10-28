@@ -13,6 +13,23 @@ def escape_latex(text):
     text = str(text)
     if not text.strip():
         return ""
+
+    text = (text
+        .replace('\u2014', '---')
+        .replace('\u2013', '--')
+        .replace('\u2212', '-')
+        .replace('\u207B', r'$^{-}$')
+        .replace('\u2022', r'\textbullet\ ')
+        .replace('\u2018', "'")
+        .replace('\u2019', "'")
+        .replace('\u201C', '"')
+        .replace('\u201D', '"')
+        .replace('\u00A0', ' ')
+        .replace('\u200B', '')
+    )
+    text = re.sub(r'/{2,}', '/ ', text)
+    text = re.sub(r'\s+\.\s*([A-Za-z])', r' \1', text)
+    text = re.sub(r'\)(\d+\.)', r') \1', text)
     
     text = text.replace('\\', r'\textbackslash{}')
     replacements = [
@@ -158,8 +175,7 @@ def generate_department_latex_document(data):
     tex = []
     tex.append(r'''\documentclass[a4paper,9pt]{article}
 \usepackage[margin=10mm,top=7mm,bottom=10mm,headheight=11pt,headsep=6pt,includehead,includefoot]{geometry}
-\usepackage{tgheros}
-\renewcommand{\familydefault}{\sfdefault}
+\usepackage{libertinus}
 \usepackage[table]{xcolor}
 \usepackage{longtable}
 \usepackage{booktabs}
@@ -173,13 +189,13 @@ def generate_department_latex_document(data):
 
 \definecolor{brandnavy}{HTML}{1A365D}
 \definecolor{brandblue}{HTML}{2563EB}
-\definecolor{branddark}{HTML}{0F172A}
+\definecolor{branddark}{HTML}{000000}
 \definecolor{brandamber}{HTML}{C2410C}
 \definecolor{brandgreen}{HTML}{047857}
 \definecolor{brandborder}{HTML}{CBD5E1}
 \definecolor{rowalt}{HTML}{F8FAFC}
-\definecolor{slatedark}{HTML}{334155}
-\definecolor{slatelight}{HTML}{64748B}
+\definecolor{slatedark}{HTML}{000000}
+\definecolor{slatelight}{HTML}{000000}
 \definecolor{linkblue}{HTML}{1D4ED8}
 \definecolor{badgebg}{HTML}{EFF6FF}
 
@@ -340,7 +356,7 @@ def generate_department_latex_document(data):
         def render_pat(it, idx):
             t = f"\\textbf{{\\fontsize{9.5}{11}\\selectfont \\textcolor{{branddark}}{{{escape_latex(it.get('title', 'Untitled Patent'))}}}}}\\\\"
             inv = f"\\textcolor{{slatedark}}{{\\textbf{{Inventors:}} {escape_latex(it.get('inventors', '-'))} \\quad\\textbullet\\quad \\textbf{{Applicants:}} {escape_latex(it.get('applicants', '-'))}}}\\\\"
-            meta = f"\\textcolor{{slatelight}}{{Patent No: {escape_latex(it.get('patentNumber', '-'))} \\quad|\\quad Status: \\textbf{{{escape_latex(it.get('status', 'Published'))}}} \\quad|\\quad Date: {escape_latex(it.get('awardedDate', '-'))}}}"
+            meta = f"\\textcolor{{slatelight}}{{\\textbf{{Patent No:}} {escape_latex(it.get('patentNumber', '-'))} \\quad|\\quad \\textbf{{Status:}} \\textbf{{{escape_latex(it.get('status', 'Published'))}}} \\quad|\\quad \\textbf{{Date:}} {escape_latex(it.get('awardedDate', '-'))}}}"
             return t + inv + meta
         tex.append(render_items_list(patents_list, render_pat))
 
