@@ -733,8 +733,8 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   } &
   \\parbox{5.2cm}{\\centering
     \\rule{4.0cm}{1.0pt}\\\\[3pt]
-    \\textbf{\\fontsize{9}{11}\\selectfont \\textcolor{branddark}{Principal}}\\\\[1pt]
-    {\\fontsize{7.5}{9.5}\\selectfont \\textbf{\\textcolor{slatemed}{Institutional Endorsement}}}\\\\[1pt]
+    \\textbf{\\fontsize{9}{11}\\selectfont \\textcolor{branddark}{S. Hemachandra}}\\\\[1pt]
+    {\\fontsize{7.5}{9.5}\\selectfont \\textbf{\\textcolor{slatemed}{Principal}}}\\\\[1pt]
     {\\fontsize{6.5}{8}\\selectfont \\textcolor{slatelight}{Sanskrithi School of Engineering}}
   }
 \\end{tabular*}

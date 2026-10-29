@@ -525,8 +525,8 @@ def generate_department_latex_document(data):
   } &
   \parbox{6.5cm}{\centering
     \rule{5.0cm}{1.2pt}\\[4pt]
-    \textbf{\fontsize{10}{12}\selectfont \textcolor{branddark}{Principal / Academic Governance}}\\[2pt]
-    {\fontsize{8.5}{10.5}\selectfont \textbf{\textcolor{slatedark}{Institutional Endorsement}}}\\[1pt]
+    \textbf{\fontsize{10}{12}\selectfont \textcolor{branddark}{S. Hemachandra}}\\[2pt]
+    {\fontsize{8.5}{10.5}\selectfont \textbf{\textcolor{slatedark}{Principal}}}\\[1pt]
     {\fontsize{7.5}{9.5}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
   }
 \end{tabular*}

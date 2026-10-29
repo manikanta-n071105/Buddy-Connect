@@ -884,8 +884,8 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
 
               <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
                 <div style={{ width: '75%', margin: '0 auto 8px auto', borderTop: '2px solid #0f172a' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#0f172a' }}>Principal</div>
-                <div style={{ fontSize: '10px', color: '#475569', fontWeight: 600 }}>Institutional Endorsement</div>
+                <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#0f172a' }}>S. Hemachandra</div>
+                <div style={{ fontSize: '10px', color: '#475569', fontWeight: 600 }}>Principal</div>
                 <div style={{ fontSize: '9px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
               </td>
             </tr>

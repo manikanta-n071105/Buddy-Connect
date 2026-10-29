@@ -1366,8 +1366,8 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
                 <div style={{ height: '32px' }}></div>
                 <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>Principal</div>
-                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>Institutional Endorsement</div>
+                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>S. Hemachandra</div>
+                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>Principal</div>
                 <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
               </td>
             </tr>
