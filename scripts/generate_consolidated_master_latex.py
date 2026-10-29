@@ -360,7 +360,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         if not items:
             return ""
         out = []
-        out.append(f"\\Needspace*{{4.8cm}}\n")
+        out.append(f"\\Needspace*{{6.5cm}}\n")
         out.append(f"\\rendersectionheader{{{escape_latex(title_text)}}}\n")
         specs = []
         for i, w in enumerate(col_widths):

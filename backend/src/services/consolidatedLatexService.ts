@@ -204,7 +204,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   ): string => {
     if (!items || items.length === 0) return '';
     const out: string[] = [];
-    out.push(`\\Needspace*{4.8cm}\n`);
+    out.push(`\\Needspace*{6.5cm}\n`);
     out.push(`\\rendersectionheader{${escapeLatex(titleText)}}\n`);
     const specs = colWidths.map((w, i) => (i < 2 ? `>{\\centering\\arraybackslash}p{${w}}` : `>{\\raggedright\\arraybackslash}p{${w}}`));
     const colSpec = `|${specs.join('|')}|`;
