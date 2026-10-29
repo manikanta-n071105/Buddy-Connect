@@ -39,9 +39,6 @@ def escape_latex(text):
         .replace('\u2013', '--')   # en dash
         .replace('\u2212', '-')    # minus
         .replace('\u207B', r'$^{-}$') # superscript minus
-        .replace('\u2022', r'\textbullet\ ') # bullet
-        .replace('\uf0b7', r'\textbullet\ ') # Word bullet
-        .replace('', r'\textbullet\ ')      # Word bullet
         .replace('\u2018', "'")    # single quotes
         .replace('\u2019', "'")
         .replace('\u201C', '"')    # double quotes
@@ -71,6 +68,8 @@ def escape_latex(text):
     for char, rep in replacements:
         text = text.replace(char, rep)
     
+    # Convert bullet characters to LaTeX \textbullet AFTER backslash/brace escaping
+    text = re.sub(r'[\u2022\uf0b7\uf000-\uf0ff]', r'\\textbullet\ ', text)
     text = re.sub(r'[\r\n]+', r' \\newline ', text)
     return text
 
@@ -137,53 +136,81 @@ def normalize_syllabus_completed(completed, pending=None):
     if not completed: return '--'
     c = str(completed).strip()
     cUpper = c.upper()
-    if '100%' in c: return '5 Units (100%)'
-    if '95%' in c or '98%' in c: return '4.8 Units (95%)'
-    if '90%' in c: return '4.5 Units (90%)'
-    if '84%' in c: return '4.2 Units (84%)'
-    if '80%' in c: return '4 Units (80%)'
-    if '75%' in c: return '3.8 Units (75%)'
-    if '70%' in c: return '3.5 Units (70%)'
-    if '60%' in c: return '3 Units (60%)'
-    if '50%' in c: return '2.5 Units (50%)'
-    if '1,2,3,4-50%' in cUpper or '4-50%' in cUpper: return '3.5 Units'
-    if '1,2,3,4' in cUpper or 'I,II,III,IV' in cUpper: return '4 Units'
-    if '4 UNIT' in cUpper or c == '4' or '4 UNITS' in cUpper: return '4 Units'
-    if '3.5' in cUpper or '3.5 UNITS' in cUpper: return '3.5 Units'
-    if '1,2,3' in cUpper or 'I,II,III' in cUpper or c == '3' or '3 UNITS' in cUpper or '3 UNIT' in cUpper: return '3 Units'
-    if 'I,II' in cUpper or '1,2' in cUpper or c == '2' or '2 UNITS' in cUpper or '2 UNIT' in cUpper: return '2 Units'
-    if '1 UNIT' in cUpper or c == '1': return '1 Unit'
     if 'EXPERIMENT' in cUpper: return c
     if 'GENERAL TOPICS' in cUpper: return '100% Completed'
+
+    unit_match = re.search(r'(\d+(?:\.\d+)?)\s*Unit', c, re.I)
+    pct_match = re.search(r'(\d+)%', c)
+    if unit_match:
+        u = float(unit_match.group(1))
+        pct = round((u / 5.0) * 100)
+        u_label = "Unit" if u == 1.0 else "Units"
+        return f"{u:g} {u_label} ({pct}%)"
+    elif pct_match:
+        pct = int(pct_match.group(1))
+        u = round((pct / 20.0) * 10) / 10
+        u_label = "Unit" if u == 1.0 else "Units"
+        return f"{u:g} {u_label} ({pct}%)"
+    elif re.match(r'^\d+(?:\.\d+)?$', c):
+        u = float(c)
+        pct = round((u / 5.0) * 100)
+        u_label = "Unit" if u == 1.0 else "Units"
+        return f"{u:g} {u_label} ({pct}%)"
+    elif '1,2,3,4' in cUpper or 'I,II,III,IV' in cUpper:
+        return '4 Units (80%)'
+    elif '1,2,3' in cUpper or 'I,II,III' in cUpper:
+        return '3 Units (60%)'
+    elif '1,2' in cUpper or 'I,II' in cUpper:
+        return '2 Units (40%)'
     return c
 
 def normalize_syllabus_pending(completed, pending):
     p = str(pending or '').strip()
+    c = str(completed or '').strip()
     pUpper = p.upper()
-    cUpper = str(completed or '').upper().strip()
-    if '5-80%' in pUpper or '5-60%' in pUpper or '5-50%' in pUpper or '5 STARTED' in pUpper:
-        return 'Unit 5 (In Progress)'
-    if '5 UNIT' in pUpper or p == '5' or 'V UNIT' in pUpper or '5TH UNIT' in pUpper or '5 UNIT RUNNING' in pUpper:
-        return 'Unit 5'
-    if '4,5' in pUpper or '4, 5' in pUpper or 'IV,V' in pUpper or '4 UNIT AND 5' in pUpper or '4 UNIT RUNNING' in pUpper or '4 RUNNING' in pUpper or 'IV RUNNING' in pUpper or 'IV STARTED' in pUpper:
-        return 'Units 4 & 5'
-    if '3 UNIT RUNNING' in pUpper or '3 RUNNING' in pUpper or 'III RUNNING' in pUpper or 'III STARTED' in pUpper or 'III UNIT 30%' in pUpper:
-        return 'Units 3, 4 & 5'
-    if 'IV UNIT' in pUpper or p == '4':
-        return 'Units 4 & 5'
-    if not p or p == '-' or p == 'NIL' or p == '--':
-        if cUpper == '4' or '4 UNITS' in cUpper or '1,2,3,4' in cUpper or '80%' in cUpper:
+
+    # Determine done units
+    done_units = None
+    unit_match = re.search(r'(\d+(?:\.\d+)?)\s*Unit', c, re.I)
+    pct_match = re.search(r'(\d+)%', c)
+    if unit_match:
+        done_units = float(unit_match.group(1))
+    elif pct_match:
+        done_units = round((float(pct_match.group(1)) / 20.0) * 10) / 10
+    elif re.match(r'^\d+(?:\.\d+)?$', c):
+        done_units = float(c)
+
+    # 1. If pending is already a formatted string like '3.5 Units (70%)' or '5 Exp Pending (50%)', keep it!
+    if p and p not in ['-', '--', 'NIL']:
+        if re.search(r'^\d+(?:\.\d+)?\s*(?:Units?|Exp\s*Pending|\s*Exp(?:eriments?)?)(?:\s*\(\d+%\))?$', p, re.I):
+            return p
+        if '5-80%' in pUpper or '5-60%' in pUpper or '5-50%' in pUpper or '5 STARTED' in pUpper:
+            return 'Unit 5 (In Progress)'
+        # If ~4 units are done and user wrote Unit 5:
+        if done_units is not None and done_units >= 3.8 and re.search(r'\b(?:5\s*UNIT|V\s*UNIT|5TH\s*UNIT|UNIT\s*5)\b', pUpper):
             return 'Unit 5'
-        if cUpper == '3.5' or '3.5 UNITS' in cUpper or '70%' in cUpper:
-            return 'Unit 4 (50%) & Unit 5'
-        if cUpper == '3' or '3 UNITS' in cUpper or '1,2,3' in cUpper or '60%' in cUpper:
+        # If ~3 units are done and user wrote Units 4 & 5:
+        if done_units is not None and 2.5 <= done_units <= 3.5 and ('4,5' in pUpper or '4, 5' in pUpper or 'IV,V' in pUpper or '4 UNIT AND 5' in pUpper):
             return 'Units 4 & 5'
-        if cUpper == '2' or '2 UNITS' in cUpper or '1,2' in cUpper or '50%' in cUpper:
-            return 'Units 3, 4 & 5'
-        if '100%' in cUpper or cUpper == '5' or 'GENERAL TOPICS' in cUpper:
+
+    # 2. Auto-calculate from done_units if known
+    if done_units is not None:
+        rem_units = round((5.0 - done_units) * 10) / 10
+        if rem_units <= 0:
             return 'Nil (Complete)'
-        return '--'
-    return p
+        rem_pct = round((rem_units / 5.0) * 100)
+        unit_str = 'Unit' if rem_units == 1.0 else 'Units'
+        return f'{rem_units:g} {unit_str} ({rem_pct}%)'
+
+    # 3. Fallbacks
+    if re.search(r'\b(?:5\s*UNIT|V\s*UNIT|5TH\s*UNIT|UNIT\s*5)\b', pUpper) or p == '5':
+        return 'Unit 5'
+    if '4,5' in pUpper or '4, 5' in pUpper or 'IV,V' in pUpper:
+        return 'Units 4 & 5'
+    if '3 UNIT RUNNING' in pUpper or '3 RUNNING' in pUpper or 'III RUNNING' in pUpper:
+        return 'Units 3, 4 & 5'
+
+    return 'On Schedule' if not p or p in ['-', 'NIL', '--'] else p
 
 def normalize_syllabus_remarks(remarks, completed=None):
     r = str(remarks or '').strip()
@@ -825,13 +852,17 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 
             rows = []
             for d_idx, d in enumerate(discussions):
-                d_head = escape_latex(d.get('heading', f'Topic {d_idx+1}'))
+                raw_head = str(d.get('heading', f'Topic {d_idx+1}')).strip()
+                # Topic headings are titles, not bullet points. Strip any leading bullet markers or symbols
+                clean_head = re.sub(r'^[•*\-\uf000-\uf0ff\s]+', '', raw_head).strip()
+                d_head = escape_latex(clean_head or f'Topic {d_idx+1}')
+
                 raw_det = str(d.get('details', 'Discussed & recorded.')).strip()
-                norm_head = re.sub(r'^[0-9.)\s]+', '', str(d.get('heading', ''))).strip().lower()
+                norm_head = re.sub(r'^[•*\-0-9.)\s\uf000-\uf0ff]+', '', raw_head).strip().lower()
                 d_det_lines = [
                     re.sub(r'^[•*\-0-9.)\s\uf000-\uf0ff]+', '', l).strip()
                     for l in raw_det.split('\n')
-                    if l.strip() and re.sub(r'^[0-9.)\s]+', '', l).strip().lower() != norm_head
+                    if l.strip() and re.sub(r'^[•*\-0-9.)\s\uf000-\uf0ff]+', '', l).strip().lower() != norm_head
                 ]
                 if d_det_lines:
                     det_formatted = r" \newline ".join([r"\textcolor{brandnavy}{\textbf{\textbullet}} {\fontsize{7}{8.5}\selectfont " + escape_latex(l) + "}" for l in d_det_lines])

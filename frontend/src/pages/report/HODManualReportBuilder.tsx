@@ -797,7 +797,25 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     additionalInitiatives: Array.isArray(raw.additionalInitiatives) ? raw.additionalInitiatives : [],
     techAssociation: Array.isArray(raw.techAssociation) ? raw.techAssociation : [],
     iicCell: Array.isArray(raw.iicCell) ? raw.iicCell : [],
-    syllabus: Array.isArray(raw.syllabus) ? raw.syllabus : [],
+    syllabus: Array.isArray(raw.syllabus)
+      ? raw.syllabus.map((s: any) => {
+        const completed = s.completed || '';
+        let pending = s.pending || '';
+        const isLab = /lab/i.test(s.subject || '');
+        const calculatedPending = calculatePendingFromCompleted(completed, isLab);
+        if (!pending || pending === '-' || pending === '--' || (calculatedPending && pending.trim() === 'Unit 5' && /^[0-2]\.?\d*\s*Unit/i.test(completed))) {
+          pending = calculatedPending || pending;
+        }
+        return {
+          subject: s.subject || '',
+          yearSem: s.yearSem || '',
+          faculty: s.faculty || '',
+          completed,
+          pending,
+          remarks: s.remarks || ''
+        };
+      })
+      : [],
     studentEngagement: Array.isArray(raw.studentEngagement) ? raw.studentEngagement : [],
   };
 };

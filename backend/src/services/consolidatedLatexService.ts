@@ -35,8 +35,6 @@ export const escapeLatex = (text?: any): string => {
     .replace(/\u2013/g, '--')  // en dash
     .replace(/\u2212/g, '-')   // minus
     .replace(/\u207B/g, '$^{-}$') // superscript minus
-    .replace(/\u2022/g, '\\textbullet\\ ') // bullet
-    .replace(/[\uF000-\uF0FF]/g, '\\textbullet\\ ') // Word bullet / Symbol
     .replace(/[\u2018\u2019]/g, "'") // single curly quotes
     .replace(/[\u201C\u201D]/g, '"') // double curly quotes
     .replace(/\u00A0/g, ' ')   // non-breaking space
@@ -63,6 +61,8 @@ export const escapeLatex = (text?: any): string => {
   for (const [char, rep] of replacements) {
     str = str.split(char).join(rep);
   }
+  // Convert bullet characters to LaTeX \textbullet AFTER backslash/brace escaping
+  str = str.replace(/[\u2022\uF0B7\uF000-\uF0FF]/g, '\\textbullet\\ ');
   return str.replace(/[\r\n]+/g, ' \\newline ');
 };
 
@@ -104,44 +104,89 @@ export const normalizeSyllabusCompleted = (completed?: string): string => {
   if (!completed) return '--';
   const c = String(completed).trim();
   const cUpper = c.toUpperCase();
-  if (c.includes('100%')) return '5 Units (100%)';
-  if (c.includes('95%') || c.includes('98%')) return '4.8 Units (95%)';
-  if (c.includes('90%')) return '4.5 Units (90%)';
-  if (c.includes('84%')) return '4.2 Units (84%)';
-  if (c.includes('80%')) return '4 Units (80%)';
-  if (c.includes('75%')) return '3.8 Units (75%)';
-  if (c.includes('70%')) return '3.5 Units (70%)';
-  if (c.includes('60%')) return '3 Units (60%)';
-  if (c.includes('50%')) return '2.5 Units (50%)';
-  if (cUpper.includes('1,2,3,4-50%') || cUpper.includes('4-50%')) return '3.5 Units';
-  if (cUpper.includes('1,2,3,4') || cUpper.includes('I,II,III,IV')) return '4 Units';
-  if (cUpper.includes('4 UNIT') || c === '4' || cUpper.includes('4 UNITS')) return '4 Units';
-  if (cUpper.includes('3.5') || cUpper.includes('3.5 UNITS')) return '3.5 Units';
-  if (cUpper.includes('1,2,3') || cUpper.includes('I,II,III') || c === '3' || cUpper.includes('3 UNITS') || cUpper.includes('3 UNIT')) return '3 Units';
-  if (cUpper.includes('I,II') || cUpper.includes('1,2') || c === '2' || cUpper.includes('2 UNITS') || cUpper.includes('2 UNIT')) return '2 Units';
-  if (cUpper.includes('1 UNIT') || c === '1') return '1 Unit';
   if (cUpper.includes('EXPERIMENT')) return c;
   if (cUpper.includes('GENERAL TOPICS')) return '100% Completed';
+
+  const unitMatch = c.match(/(\d+(?:\.\d+)?)\s*Unit/i);
+  const pctMatch = c.match(/(\d+)%/);
+  if (unitMatch) {
+    const u = parseFloat(unitMatch[1]);
+    const pct = Math.round((u / 5.0) * 100);
+    return `${u} ${u === 1 ? 'Unit' : 'Units'} (${pct}%)`;
+  } else if (pctMatch) {
+    const pct = parseInt(pctMatch[1], 10);
+    const u = Math.round((pct / 20.0) * 10) / 10;
+    return `${u} ${u === 1 ? 'Unit' : 'Units'} (${pct}%)`;
+  } else if (/^\d+(?:\.\d+)?$/.test(c)) {
+    const u = parseFloat(c);
+    const pct = Math.round((u / 5.0) * 100);
+    return `${u} ${u === 1 ? 'Unit' : 'Units'} (${pct}%)`;
+  } else if (cUpper.includes('1,2,3,4') || cUpper.includes('I,II,III,IV')) {
+    return '4 Units (80%)';
+  } else if (cUpper.includes('1,2,3') || cUpper.includes('I,II,III')) {
+    return '3 Units (60%)';
+  } else if (cUpper.includes('1,2') || cUpper.includes('I,II')) {
+    return '2 Units (40%)';
+  }
   return c;
 };
 
 export const normalizeSyllabusPending = (completed?: string, pending?: string): string => {
   const p = String(pending || '').trim();
+  const c = String(completed || '').trim();
   const pUpper = p.toUpperCase();
-  const cUpper = String(completed || '').toUpperCase().trim();
-  if (pUpper.includes('5-80%') || pUpper.includes('5-60%') || pUpper.includes('5-50%') || pUpper.includes('5 STARTED')) return 'Unit 5 (In Progress)';
-  if (pUpper.includes('5 UNIT') || p === '5' || pUpper.includes('V UNIT') || pUpper.includes('5TH UNIT') || pUpper.includes('5 UNIT RUNNING')) return 'Unit 5';
-  if (pUpper.includes('4,5') || pUpper.includes('4, 5') || pUpper.includes('IV,V') || pUpper.includes('4 UNIT AND 5') || pUpper.includes('4 UNIT RUNNING') || pUpper.includes('4 RUNNING') || pUpper.includes('IV RUNNING') || pUpper.includes('IV STARTED')) return 'Units 4 & 5';
-  if (pUpper.includes('3 UNIT RUNNING') || pUpper.includes('3 RUNNING') || pUpper.includes('III RUNNING') || pUpper.includes('III STARTED') || pUpper.includes('III UNIT 30%')) return 'Units 3, 4 & 5';
-  if (!p || p === '-' || p === 'NIL') {
-    if (cUpper === '4' || cUpper.includes('4 UNITS') || cUpper.includes('1,2,3,4') || cUpper.includes('80%')) return 'Unit 5';
-    if (cUpper === '3.5' || cUpper.includes('3.5 UNITS') || cUpper.includes('70%')) return 'Unit 4 (50%) & Unit 5';
-    if (cUpper === '3' || cUpper.includes('3 UNITS') || cUpper.includes('1,2,3') || cUpper.includes('60%')) return 'Units 4 & 5';
-    if (cUpper === '2' || cUpper.includes('2 UNITS') || cUpper.includes('1,2') || cUpper.includes('50%')) return 'Units 3, 4 & 5';
-    if (cUpper.includes('100%') || cUpper === '5' || cUpper.includes('GENERAL TOPICS')) return 'Nil (Complete)';
-    return '--';
+
+  // Determine done units
+  let doneUnits: number | null = null;
+  const unitMatch = c.match(/(\d+(?:\.\d+)?)\s*Unit/i);
+  const pctMatch = c.match(/(\d+)%/);
+  if (unitMatch) {
+    doneUnits = parseFloat(unitMatch[1]);
+  } else if (pctMatch) {
+    doneUnits = Math.round((parseFloat(pctMatch[1]) / 20.0) * 10) / 10;
+  } else if (/^\d+(?:\.\d+)?$/.test(c)) {
+    doneUnits = parseFloat(c);
   }
-  return p;
+
+  // 1. If pending is already a formatted string like '3.5 Units (70%)' or '5 Exp Pending (50%)', keep it!
+  if (p && !['-', '--', 'NIL'].includes(p.toUpperCase())) {
+    if (/^\d+(?:\.\d+)?\s*(?:Units?|Exp\s*Pending|\s*Exp(?:eriments?)?)(?:\s*\(\d+%\))?$/i.test(p)) {
+      return p;
+    }
+    if (pUpper.includes('5-80%') || pUpper.includes('5-60%') || pUpper.includes('5-50%') || pUpper.includes('5 STARTED')) {
+      return 'Unit 5 (In Progress)';
+    }
+    if (doneUnits !== null && doneUnits >= 3.8 && /\b(?:5\s*UNIT|V\s*UNIT|5TH\s*UNIT|UNIT\s*5)\b/i.test(pUpper)) {
+      return 'Unit 5';
+    }
+    if (doneUnits !== null && doneUnits >= 2.5 && doneUnits <= 3.5 && (pUpper.includes('4,5') || pUpper.includes('4, 5') || pUpper.includes('IV,V') || pUpper.includes('4 UNIT AND 5'))) {
+      return 'Units 4 & 5';
+    }
+  }
+
+  // 2. Auto-calculate from doneUnits if known
+  if (doneUnits !== null) {
+    const remUnits = Math.round((5.0 - doneUnits) * 10) / 10;
+    if (remUnits <= 0) {
+      return 'Nil (Complete)';
+    }
+    const remPct = Math.round((remUnits / 5.0) * 100);
+    const unitStr = remUnits === 1.0 ? 'Unit' : 'Units';
+    return `${remUnits} ${unitStr} (${remPct}%)`;
+  }
+
+  // 3. Fallbacks
+  if (/\b(?:5\s*UNIT|V\s*UNIT|5TH\s*UNIT|UNIT\s*5)\b/i.test(pUpper) || p === '5') {
+    return 'Unit 5';
+  }
+  if (pUpper.includes('4,5') || pUpper.includes('4, 5') || pUpper.includes('IV,V')) {
+    return 'Units 4 & 5';
+  }
+  if (pUpper.includes('3 UNIT RUNNING') || pUpper.includes('3 RUNNING') || pUpper.includes('III RUNNING')) {
+    return 'Units 3, 4 & 5';
+  }
+
+  return (!p || ['-', 'NIL', '--'].includes(p.toUpperCase())) ? 'On Schedule' : p;
 };
 
 export const normalizeSyllabusRemarks = (remarks?: string): string => {
@@ -682,9 +727,12 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 
           const rows: string[][] = [];
           discussions.forEach((d: any, dIdx: number) => {
-            const dHead = escapeLatex(d.heading || `Topic ${dIdx + 1}`);
+            const rawHead = String(d.heading || `Topic ${dIdx + 1}`).trim();
+            const cleanHead = rawHead.replace(/^[•*\-\uF000-\uF0FF\s]+/, '').trim();
+            const dHead = escapeLatex(cleanHead || `Topic ${dIdx + 1}`);
+
             const rawDet = String(d.details || 'Discussed & recorded.').trim();
-            const normHead = String(d.heading || '').replace(/^[0-9.)\s]+/, '').trim().toLowerCase();
+            const normHead = rawHead.replace(/^[•*\-0-9.)\s\uF000-\uF0FF]+/, '').trim().toLowerCase();
             const dDetLines = rawDet
               .split('\n')
               .map(l => l.replace(/^[•*\-0-9.)\s\uF000-\uF0FF]+/, '').trim())
