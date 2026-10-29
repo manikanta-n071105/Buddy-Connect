@@ -895,68 +895,157 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
   }
 
   // 4. Identify indices for Agenda and Discussions
-  let discStartIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
-    if (/^(?:1[\.\)]|Topic\s*1[:\.]?|Item\s*1[:\.]?)\s+[A-Za-z]/i.test(l)) {
-      discStartIdx = i;
-      break;
-    }
-  }
-
-  // Extract Agenda
+  // Check if explicit Agenda section exists
+  let explicitAgendaItems: string[] = [];
   if (agendaStart !== -1) {
-    const endIdx = discStartIdx !== -1 ? discStartIdx : lines.length;
-    const startLine = lines[agendaStart];
-    const actualStart = /^agenda\b/i.test(startLine) ? agendaStart + 1 : agendaStart;
-    const agendaLines: string[] = [];
+    const afterAgendaLines = lines.slice(agendaStart);
+    const startLine = afterAgendaLines[0];
+    const actualStartIdx = /^agenda\b/i.test(startLine) ? 1 : 0;
 
-    for (let j = actualStart; j < endIdx; j++) {
-      const l = lines[j];
+    for (let j = actualStartIdx; j < afterAgendaLines.length; j++) {
+      const l = afterAgendaLines[j];
       if (!l) continue;
-      agendaLines.push(l);
-    }
-    result.agenda = agendaLines.join('\n');
-  }
-
-  // Extract Discussions
-  let discText = '';
-  if (discStartIdx !== -1) {
-    discText = lines.slice(discStartIdx).join('\n');
-  } else if (agendaStart === -1) {
-    discText = raw;
-  }
-
-  if (discText) {
-    const splitRegex = /(?:^|\n)(?=(?:\d{1,2}[\.\)]|Topic\s*\d{1,2}[:\.]?|Item\s*\d{1,2}[:\.]?)\s+[A-Za-z])/m;
-    const chunks = discText.split(splitRegex).map(c => c.trim()).filter(Boolean);
-
-    for (const chunk of chunks) {
-      const chunkLines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
-      if (chunkLines.length === 0) continue;
-
-      const heading = chunkLines[0];
-      const bodyLines = chunkLines.slice(1);
-
-      // Normalize bullets: convert 'o ', '- ', '* ' to '• '
-      const formattedBody: string[] = [];
-      for (const bl of bodyLines) {
-        if (/^[o\-\*]\s+/.test(bl)) {
-          formattedBody.push(bl.replace(/^[o\-\*]\s+/, '• '));
-        } else {
-          formattedBody.push(bl);
-        }
+      // Stop if we hit numbered discussion topics (e.g. "1. Introduction" or "1. ERP")
+      if (/^(?:1[\.\)]|Topic\s*1[:\.]?|Item\s*1[:\.]?)\s+[A-Za-z]/i.test(l)) {
+        break;
       }
-
-      result.discussions.push({
-        heading,
-        details: formattedBody.join('\n'),
-        tableType: 'none',
-        reviewSchedule: [],
-        publicationTargets: [],
-        postTableDetails: ''
-      });
+      // If starts with (i), (ii), •, -, *, or numbered
+      if (/^(\([ivx]+\)|[•\-\*]|\d+[\.\)])/i.test(l)) {
+        explicitAgendaItems.push(l);
+      } else if (explicitAgendaItems.length > 0) {
+        // Continuation of previous agenda item
+        explicitAgendaItems[explicitAgendaItems.length - 1] += ` ${l}`;
+      } else {
+        explicitAgendaItems.push(l);
+      }
     }
+  }
+
+  // 5. Extract all numbered chunks (1. Topic, 2. Topic, etc.)
+  const splitRegex = /(?:^|\n)(?=(?:[0-9]{1,2}[\.\)]|Topic\s*[0-9]{1,2}[:\.]?|Item\s*[0-9]{1,2}[:\.]?)\s+[A-Za-z])/m;
+  const rawChunks = raw.split(splitRegex).map(c => c.trim()).filter(Boolean);
+
+  const parsedChunks: Array<{ heading: string; bodyLines: string[] }> = [];
+  for (const c of rawChunks) {
+    const chunkLines = c.split('\n').map(l => l.trim()).filter(Boolean);
+    if (chunkLines.length === 0) continue;
+    // Discard any chunk that was just metadata before the first topic
+    if (!/^(?:[0-9]{1,2}[\.\)]|Topic\s*[0-9]{1,2}[:\.]?|Item\s*[0-9]{1,2}[:\.]?)\s+[A-Za-z]/i.test(chunkLines[0])) {
+      continue;
+    }
+    parsedChunks.push({
+      heading: chunkLines[0],
+      bodyLines: chunkLines.slice(1)
+    });
+  }
+
+  // Check if initial chunks are empty agenda list items followed by content chunks
+  const hasContent = parsedChunks.map(c => c.bodyLines.length > 0);
+  let topicChunks = parsedChunks;
+
+  if (hasContent.includes(true)) {
+    const firstContentIdx = hasContent.indexOf(true);
+    if (firstContentIdx > 0) {
+      // Chunks before firstContentIdx are agenda items!
+      const agendaFromChunks: string[] = [];
+      for (let k = 0; k < firstContentIdx; k++) {
+        const cleanH = parsedChunks[k].heading.replace(/^[0-9]+[\.\)]\s*/, '').trim();
+        agendaFromChunks.push(`• ${cleanH}`);
+      }
+      if (explicitAgendaItems.length === 0) {
+        result.agenda = agendaFromChunks.join('\n');
+      }
+      topicChunks = parsedChunks.slice(firstContentIdx);
+    }
+  }
+
+  // If explicit agenda was found and agenda not yet set
+  if (!result.agenda && explicitAgendaItems.length > 0) {
+    result.agenda = explicitAgendaItems.map(item => {
+      let it = item.trim();
+      if (!it.startsWith('•') && !it.startsWith('(')) {
+        it = `• ${it.replace(/^[0-9]+[\.\)]\s*/, '')}`;
+      }
+      return it;
+    }).join('\n');
+  }
+
+  // Filter out any duplicate chunks that have empty bodies when a chunk with content exists
+  const uniqueTopics = topicChunks.filter(c => {
+    if (c.bodyLines.length > 0) return true;
+    const normHead = c.heading.replace(/^[0-9]+[\.\)]\s*/, '').toLowerCase();
+    const hasDuplicateWithContent = topicChunks.some(
+      other => other !== c && other.bodyLines.length > 0 && other.heading.replace(/^[0-9]+[\.\)]\s*/, '').toLowerCase() === normHead
+    );
+    return !hasDuplicateWithContent;
+  });
+
+  // Process discussion topics with table and bullet detection
+  for (const chunk of uniqueTopics) {
+    const bodyStr = chunk.bodyLines.join('\n');
+    let tableType: 'none' | 'project_reviews' | 'publication_targets' = 'none';
+    let reviewSchedule: MomReviewRow[] = [];
+    let publicationTargets: MomTargetRow[] = [];
+    let details = '';
+    let postTableDetails = '';
+
+    // A) Detect Project Review Schedule Table
+    const revMatches = Array.from(bodyStr.matchAll(/(1st Review|2nd Review|3rd\s*(?:\/\s*Final)?\s*Review|Final Project Report Submission)\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})/gi));
+    if (revMatches.length >= 2) {
+      tableType = 'project_reviews';
+      reviewSchedule = revMatches.map(m => ({ review: m[1].trim(), date: m[2].trim() }));
+
+      const firstMatchIdx = bodyStr.indexOf(revMatches[0][0]);
+      const lastMatch = revMatches[revMatches.length - 1];
+      const lastMatchEndIdx = bodyStr.indexOf(lastMatch[0]) + lastMatch[0].length;
+
+      details = bodyStr.substring(0, firstMatchIdx).replace(/Review\s+Date/i, '').trim();
+      postTableDetails = bodyStr.substring(lastMatchEndIdx).trim();
+    }
+    // B) Detect Publication Targets Table
+    else {
+      const targetMatches = Array.from(bodyStr.matchAll(/(Mechanical Engineering|EEE|CSE|Civil Engineering|ECE|HAS|MECH|CIVIL)\s+(\d+)\s+(\d+)/gi));
+      if (targetMatches.length >= 2) {
+        tableType = 'publication_targets';
+        publicationTargets = targetMatches.map(m => ({
+          department: m[1].trim(),
+          researchPapers: m[2].trim(),
+          patents: m[3].trim()
+        }));
+
+        const firstMatchIdx = bodyStr.indexOf(targetMatches[0][0]);
+        const lastMatch = targetMatches[targetMatches.length - 1];
+        const lastMatchEndIdx = bodyStr.indexOf(lastMatch[0]) + lastMatch[0].length;
+
+        details = bodyStr.substring(0, firstMatchIdx).replace(/Department\s+Research\s+Papers\s+Patents/i, '').trim();
+        postTableDetails = bodyStr.substring(lastMatchEndIdx).trim();
+      }
+      // C) Standard Text - Format Bullets
+      else {
+        const formattedLines: string[] = [];
+        for (const bl of chunk.bodyLines) {
+          let line = bl.trim();
+          if (!line) continue;
+          if (/^[o\-\*•]\s*/.test(line)) {
+            formattedLines.push(line.replace(/^[o\-\*•]\s*/, '• '));
+          } else if (/^[a-zA-Z0-9]/.test(line)) {
+            formattedLines.push(`• ${line}`);
+          } else {
+            formattedLines.push(line);
+          }
+        }
+        details = formattedLines.join('\n');
+      }
+    }
+
+    result.discussions.push({
+      heading: chunk.heading,
+      details,
+      tableType,
+      reviewSchedule,
+      publicationTargets,
+      postTableDetails
+    });
   }
 
   return result;
@@ -1526,6 +1615,23 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       copy.deptMeetings = meetings;
       return copy;
     });
+  };
+
+  const handleRemoveEmptyMomDiscussions = (meetingIdx: number) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const current = meetings[meetingIdx] || {};
+      const discussions = (current.discussions || []).filter(
+        d => Boolean(d.details && d.details.trim() && d.details.trim() !== '•') ||
+             (d.reviewSchedule && d.reviewSchedule.length > 0) ||
+             (d.publicationTargets && d.publicationTargets.length > 0)
+      );
+      meetings[meetingIdx] = { ...current, discussions };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+    toast.success('🧹 Removed empty discussion topic cards!');
   };
 
   const handleAddReviewRow = (meetingIdx: number, discIdx: number) => {
@@ -3072,7 +3178,18 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                               Numbered minutes with optional embedded review schedules or target tables
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {(item.discussions || []).some(d => (!d.details || !d.details.trim() || d.details.trim() === '•') && (!d.reviewSchedule || d.reviewSchedule.length === 0) && (!d.publicationTargets || d.publicationTargets.length === 0)) && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveEmptyMomDiscussions(mIdx)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300 transition-all cursor-pointer shadow-2xs animate-pulse"
+                                title="Remove all empty topic cards with no discussion points"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-amber-600" />
+                                <span>🧹 Remove Empty Topics</span>
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleOpenSmartPaste(mIdx)}
@@ -4377,22 +4494,26 @@ export const parseFacultyNameParts = (fullName: string): { title: string; initia
   let str = fullName.trim();
   let title = 'Prof.';
 
-  for (const t of FACULTY_TITLE_OPTIONS) {
-    if (str.startsWith(t)) {
-      title = t;
-      str = str.substring(t.length).trim();
-      break;
-    }
+  // Match titles with optional dot and flexible spacing (e.g., "Dr.", "Dr.Hemachandra", "Prof .Nagaraju", "Mr Sivaprasad")
+  const titleMatch = str.match(/^(Dr|Prof|Mr|Mrs|Ms)\b\s*\.?\s*/i);
+  if (titleMatch) {
+    const rawT = titleMatch[1].toLowerCase();
+    if (rawT === 'dr') title = 'Dr.';
+    else if (rawT === 'prof') title = 'Prof.';
+    else if (rawT === 'mr') title = 'Mr.';
+    else if (rawT === 'mrs') title = 'Mrs.';
+    else if (rawT === 'ms') title = 'Ms.';
+    str = str.substring(titleMatch[0].length).trim();
   }
 
-  // Check if starts with initial(s) with dot like "M." or "K.V." or "P."
+  // Check if starts with initial(s) with dot like "M." or "K.V." or "P." or "S."
   const initialMatch = str.match(/^([A-Za-z](?:\.[A-Za-z])*\.?)\s+(.*)$/);
   if (initialMatch) {
     const init = formatInitialWithDot(initialMatch[1]);
     return { title, initial: init, name: initialMatch[2].trim() };
   }
 
-  // Check single letter without dot like "M Hari"
+  // Check single letter with space like "S Hari Krishnan" -> initial: "S.", name: "Hari Krishnan"
   const singleLetterMatch = str.match(/^([A-Za-z])\s+(.+)$/);
   if (singleLetterMatch) {
     return { title, initial: `${singleLetterMatch[1].toUpperCase()}.`, name: singleLetterMatch[2].trim() };
@@ -4434,12 +4555,12 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
     setTitle(newTitle);
     setInitial(newInit);
     setName(newName);
-    const formattedInit = formatInitialWithDot(newInit);
+    const formattedInit = newInit ? formatInitialWithDot(newInit) : '';
     const combined = [newTitle, formattedInit, newName].filter(Boolean).join(' ').trim();
     onChange(combined);
   };
 
-  const isComplete = Boolean(name.trim() && initial.trim() && initial.includes('.'));
+  const isComplete = Boolean(name.trim() && (!required || (initial.trim() && initial.includes('.'))));
 
   return (
     <div className={compact ? 'space-y-1' : 'space-y-1.5'}>
@@ -4463,7 +4584,7 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
           ))}
         </select>
 
-        {/* Initial input with dot */}
+        {/* Initial input with dot (optional unless required) */}
         <div className="relative w-28 shrink-0">
           <input
             type="text"
@@ -4473,7 +4594,7 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
             onChange={(e) => {
               const val = e.target.value;
               setInitial(val);
-              const formatted = formatInitialWithDot(val);
+              const formatted = val ? formatInitialWithDot(val) : '';
               const combined = [title, formatted, name].filter(Boolean).join(' ').trim();
               onChange(combined);
             }}
@@ -4484,7 +4605,7 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
               }
             }}
             className="w-full px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-bold focus:outline-none focus:border-blue-600 font-mono placeholder:text-slate-400 placeholder:font-sans shadow-2xs text-center"
-            title="Enter initial with dot (e.g. M. or P.V.)"
+            title="Enter initial with dot (e.g. M. or P.V. - optional)"
           />
         </div>
 
@@ -4504,9 +4625,9 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
       {(name || initial) && (
         <div className="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-50 text-[10px] text-slate-600 border border-slate-200/80">
           <span className="flex items-center gap-1 font-mono">
-            Preview: <strong className="text-blue-700 font-bold">{title} {formatInitialWithDot(initial) || '[Initial.]'} {name || '[Name]'}</strong>
+            Preview: <strong className="text-blue-700 font-bold">{title} {initial ? `${formatInitialWithDot(initial)} ` : ''}{name || '[Name]'}</strong>
           </span>
-          {!isComplete && (
+          {required && !isComplete && (
             <span className="text-amber-600 font-bold flex items-center gap-1">
               ⚠️ Initial with dot required (e.g. M. Hari)
             </span>
