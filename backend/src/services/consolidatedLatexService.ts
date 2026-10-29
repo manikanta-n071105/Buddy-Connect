@@ -204,7 +204,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   ): string => {
     if (!items || items.length === 0) return '';
     const out: string[] = [];
-    out.push(`\\Needspace*{3.8cm}\n`);
+    out.push(`\\Needspace*{4.8cm}\n`);
     out.push(`\\rendersectionheader{${escapeLatex(titleText)}}\n`);
     const specs = colWidths.map((w, i) => (i < 2 ? `>{\\centering\\arraybackslash}p{${w}}` : `>{\\raggedright\\arraybackslash}p{${w}}`));
     const colSpec = `|${specs.join('|')}|`;
@@ -721,7 +721,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 \\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}ccc@{}}
   \\parbox{5.2cm}{\\centering
     \\rule{4.0cm}{1.0pt}\\\\[3pt]
-    \\textbf{\\fontsize{9}{11}\\selectfont \\textcolor{branddark}{Dr. Sreenivas Prasad}}\\\\[1pt]
+    \\textbf{\\fontsize{9}{11}\\selectfont \\textcolor{branddark}{S. Harikrishnan}}\\\\[1pt]
     {\\fontsize{7.5}{9.5}\\selectfont \\textbf{\\textcolor{slatemed}{IQAC Coordinator}}}\\\\[1pt]
     {\\fontsize{6.5}{8}\\selectfont \\textcolor{slatelight}{Sanskrithi School of Engineering}}
   } &

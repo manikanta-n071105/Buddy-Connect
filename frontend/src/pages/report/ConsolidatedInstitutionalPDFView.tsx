@@ -1350,7 +1350,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
               <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
                 <div style={{ height: '32px' }}></div>
                 <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>Dr. Sreenivas Prasad</div>
+                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>S. HariKrishna</div>
                 <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>IQAC Coordinator</div>
                 <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
               </td>

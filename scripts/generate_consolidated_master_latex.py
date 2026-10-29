@@ -360,7 +360,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         if not items:
             return ""
         out = []
-        out.append(f"\\Needspace*{{3.8cm}}\n")
+        out.append(f"\\Needspace*{{4.8cm}}\n")
         out.append(f"\\rendersectionheader{{{escape_latex(title_text)}}}\n")
         specs = []
         for i, w in enumerate(col_widths):
@@ -868,7 +868,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccc@{}}
   \parbox{5.2cm}{\centering
     \rule{4.0cm}{1.0pt}\\[3pt]
-    \textbf{\fontsize{9}{11}\selectfont \textcolor{branddark}{Dr. Sreenivas Prasad}}\\[1pt]
+    \textbf{\fontsize{9}{11}\selectfont \textcolor{branddark}{Dr. S. HariKrishnan}}\\[1pt]
     {\fontsize{7.5}{9.5}\selectfont \textbf{\textcolor{slatemed}{IQAC Coordinator}}}\\[1pt]
     {\fontsize{6.5}{8}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
   } &
