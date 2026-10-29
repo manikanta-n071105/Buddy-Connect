@@ -34,7 +34,6 @@ export const escapeLatex = (text?: any): string => {
     .replace(/\u2014/g, '---') // em dash
     .replace(/\u2013/g, '--')  // en dash
     .replace(/\u2212/g, '-')   // minus
-    .replace(/\u207B/g, '$^{-}$') // superscript minus
     .replace(/[\u2018\u2019]/g, "'") // single curly quotes
     .replace(/[\u201C\u201D]/g, '"') // double curly quotes
     .replace(/\u00A0/g, ' ')   // non-breaking space
@@ -42,6 +41,93 @@ export const escapeLatex = (text?: any): string => {
     .replace(/\/{2,}/g, '/ ')  // replace double slash // with /
     .replace(/\s+\.\s*([A-Za-z])/g, ' $1') // fix " .Vinitha" -> " Vinitha"
     .replace(/\)(\d+\.)/g, ') $1'); // fix ")6." -> ") 6." in student achievements
+
+  const tokens: Record<string, string> = {};
+  let tokenIdx = 0;
+
+  const addToken = (latexStr: string): string => {
+    const key = `ZZZLATEXTOKEN${tokenIdx}ZZZ`;
+    tokenIdx++;
+    tokens[key] = latexStr;
+    return key;
+  };
+
+  // 1. User LaTeX math superscript attempts: $^{...}$, $^{-}$, $^{5}$, $ ^{-} $, $ {-}$, $ - $, $ + $
+  str = str.replace(/\$\s*\^\s*\{([^}]+)\}\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
+  str = str.replace(/\$\s*\^\s*([^\s\$]+)\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
+  str = str.replace(/\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
+  str = str.replace(/\$\s*([-+])\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
+
+  // 2. User LaTeX math subscript attempts: $_{...}$, $_2$, $ _2 $
+  str = str.replace(/\$\s*_\s*\{([^}]+)\}\s*\$/g, (_, val) => addToken(`\\textsubscript{${val.trim()}}`));
+  str = str.replace(/\$\s*_\s*([^\s\$]+)\s*\$/g, (_, val) => addToken(`\\textsubscript{${val.trim()}}`));
+
+  // 3. General inline math: $10^{-5}$, $10^5$, $CO^{-}$, $CO_2$, etc.
+  str = str.replace(/\$([^\$]+)\$/g, (_, content) => {
+    const trimmed = content.trim();
+    const mPow = trimmed.match(/^([A-Za-z0-9]+)\s*\^\s*\{?([^}]+)\}?$/);
+    if (mPow) {
+      return mPow[1] + addToken(`\\textsuperscript{${mPow[2]}}`);
+    }
+    const mSub = trimmed.match(/^([A-Za-z0-9]+)\s*_\s*\{?([^}]+)\}?$/);
+    if (mSub) {
+      return mSub[1] + addToken(`\\textsubscript{${mSub[2]}}`);
+    }
+    return addToken(`\\ensuremath{${trimmed}}`);
+  });
+
+  // 4. HTML tags <sup> and <sub>
+  str = str.replace(/<sup>(.*?)<\/sup>/gi, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
+  str = str.replace(/<sub>(.*?)<\/sub>/gi, (_, val) => addToken(`\\textsubscript{${val.trim()}}`));
+
+  // 5. Unicode superscripts: ⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱ
+  const supMap: Record<string, string> = {
+    '\u2070': '0', '\u00B9': '1', '\u00B2': '2', '\u00B3': '3', '\u2074': '4',
+    '\u2075': '5', '\u2076': '6', '\u2077': '7', '\u2078': '8', '\u2079': '9',
+    '\u207A': '+', '\u207B': '-', '\u207C': '=', '\u207D': '(', '\u207E': ')',
+    '\u207F': 'n', '\u2071': 'i'
+  };
+  str = str.replace(/[\u2070\u00B9\u00B2\u00B3\u2074-\u2079\u207A-\u207E\u207F\u2071]+/g, (match) => {
+    const converted = Array.from(match).map(c => supMap[c] || c).join('');
+    return addToken(`\\textsuperscript{${converted}}`);
+  });
+
+  // 6. Unicode subscripts: ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₒₓᵤ
+  const subMap: Record<string, string> = {
+    '\u2080': '0', '\u2081': '1', '\u2082': '2', '\u2083': '3', '\u2084': '4',
+    '\u2085': '5', '\u2086': '6', '\u2087': '7', '\u2088': '8', '\u2089': '9',
+    '\u208A': '+', '\u208B': '-', '\u208C': '=', '\u208D': '(', '\u208E': ')',
+    '\u2090': 'a', '\u2091': 'e', '\u2092': 'o', '\u2093': 'x', '\u2095': 'h',
+    '\u2096': 'k', '\u2097': 'l', '\u2098': 'm', '\u2099': 'n', '\u209A': 'p',
+    '\u209B': 's', '\u209C': 't'
+  };
+  str = str.replace(/[\u2080-\u208E\u2090-\u2093\u2095-\u209C]+/g, (match) => {
+    const converted = Array.from(match).map(c => subMap[c] || c).join('');
+    return addToken(`\\textsubscript{${converted}}`);
+  });
+
+  // 7. Shorthand "10 power 5" or "10 power -5"
+  str = str.replace(/\b(\d+)\s+power\s+([-+]?\d+)\b/gi, (_, base, pow) => {
+    return base + addToken(`\\textsuperscript{${pow}}`);
+  });
+
+  // 8. Caret power notation: e.g. 10^5, 10^-5, 10^{-5}, CO^-, CO^+, CO^{2+}, x^2, m^3, km^2
+  str = str.replace(/([A-Za-z0-9]+)\s*\^\s*(\{([^}]+)\}|[-+]?[0-9a-zA-Z]+|[-+])/g, (_, base, _all, braced) => {
+    const val = braced !== undefined ? braced : _all;
+    return base + addToken(`\\textsuperscript{${val.trim()}}`);
+  });
+
+  // 9. Subscript notation: CO_{2}, N_2, H_2O, etc.
+  str = str.replace(/([A-Za-z0-9]+)\s*_\s*\{([^}]+)\}/g, (_, base, val) => {
+    return base + addToken(`\\textsubscript{${val.trim()}}`);
+  });
+  str = str.replace(/([A-Z][a-z]?)\s*_\s*([0-9]+)/g, (_, base, val) => {
+    return base + addToken(`\\textsubscript{${val.trim()}}`);
+  });
+  // Chemical molecule names with explicit suffix e.g. N2 Molecule, O2 Gas
+  str = str.replace(/\b([A-Z][a-z]?)([0-9]+)\s+(Molecule|Gas|Ion|Atom)\b/gi, (_, base, num, suf) => {
+    return base + addToken(`\\textsubscript{${num.trim()}}`) + ` ${suf}`;
+  });
 
   str = str.replace(/\\/g, '\\textbackslash{}');
   const replacements: Array<[string, string]> = [
@@ -61,6 +147,12 @@ export const escapeLatex = (text?: any): string => {
   for (const [char, rep] of replacements) {
     str = str.split(char).join(rep);
   }
+
+  // Restore protected tokens
+  for (const [k, v] of Object.entries(tokens)) {
+    str = str.split(k).join(v);
+  }
+
   // Convert bullet characters to LaTeX \textbullet AFTER backslash/brace escaping
   str = str.replace(/[\u2022\uF0B7\uF000-\uF0FF]/g, '\\textbullet\\ ');
   return str.replace(/[\r\n]+/g, ' \\newline ');

@@ -7,30 +7,113 @@ import shutil
 import tempfile
 
 def escape_latex(text):
-    """Escapes special LaTeX characters in strings."""
+    """Escapes special LaTeX characters and handles superscripts, subscripts, power values, and math expressions."""
     if text is None:
         return ""
     text = str(text)
     if not text.strip():
         return ""
 
+    # Clean errant patterns and unicode characters
     text = (text
-        .replace('\u2014', '---')
-        .replace('\u2013', '--')
-        .replace('\u2212', '-')
-        .replace('\u207B', r'$^{-}$')
-        .replace('\u2022', r'\textbullet\ ')
-        .replace('\u2018', "'")
+        .replace('\u2014', '---')  # em dash
+        .replace('\u2013', '--')   # en dash
+        .replace('\u2212', '-')    # minus
+        .replace('\u2018', "'")    # single quotes
         .replace('\u2019', "'")
-        .replace('\u201C', '"')
+        .replace('\u201C', '"')    # double quotes
         .replace('\u201D', '"')
-        .replace('\u00A0', ' ')
-        .replace('\u200B', '')
+        .replace('\u00A0', ' ')    # non-breaking space
+        .replace('\u200B', '')     # zero-width space
     )
-    text = re.sub(r'/{2,}', '/ ', text)
-    text = re.sub(r'\s+\.\s*([A-Za-z])', r' \1', text)
-    text = re.sub(r'\)(\d+\.)', r') \1', text)
-    
+    text = re.sub(r'/{2,}', '/ ', text)              # double slashes // -> /
+    text = re.sub(r'\s+\.\s*([A-Za-z])', r' \1', text) # " .Vinitha" -> " Vinitha"
+    text = re.sub(r'\)(\d+\.)', r') \1', text)        # ")6." -> ") 6."
+
+    tokens = {}
+    token_idx = 0
+
+    def add_token(latex_str):
+        nonlocal token_idx
+        key = f'ZZZLATEXTOKEN{token_idx}ZZZ'
+        token_idx += 1
+        tokens[key] = latex_str
+        return key
+
+    # 1. User LaTeX math superscript attempts: $^{...}$, $^{-}$, $^{5}$, $ ^{-} $, $ {-}$, $ - $, $ + $
+    text = re.sub(r'\$\s*\^\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'\$\s*\^\s*([^\s\$]+)\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'\$\s*([-+])\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+
+    # 2. User LaTeX math subscript attempts: $_{...}$, $_2$, $ _2 $
+    text = re.sub(r'\$\s*_\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsubscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'\$\s*_\s*([^\s\$]+)\s*\$', lambda m: add_token(r'\textsubscript{' + m.group(1).strip() + r'}'), text)
+
+    # 3. General inline math: $10^{-5}$, $10^5$, $CO^{-}$, $CO_2$, etc.
+    def math_sub(m):
+        content = m.group(1).strip()
+        m_pow = re.fullmatch(r'([A-Za-z0-9]+)\s*\^\s*\{?([^}]+)\}?', content)
+        if m_pow:
+            return m_pow.group(1) + add_token(r'\textsuperscript{' + m_pow.group(2) + r'}')
+        m_sub = re.fullmatch(r'([A-Za-z0-9]+)\s*_\s*\{?([^}]+)\}?', content)
+        if m_sub:
+            return m_sub.group(1) + add_token(r'\textsubscript{' + m_sub.group(2) + r'}')
+        return add_token(r'\ensuremath{' + content + r'}')
+    text = re.sub(r'\$([^\$]+)\$', math_sub, text)
+
+    # 4. HTML tags <sup> and <sub>
+    text = re.sub(r'(?i)<sup>(.*?)</sup>', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'(?i)<sub>(.*?)</sub>', lambda m: add_token(r'\textsubscript{' + m.group(1).strip() + r'}'), text)
+
+    # 5. Unicode superscripts: ⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿⁱ
+    sup_map = {
+        '\u2070': '0', '\u00B9': '1', '\u00B2': '2', '\u00B3': '3', '\u2074': '4',
+        '\u2075': '5', '\u2076': '6', '\u2077': '7', '\u2078': '8', '\u2079': '9',
+        '\u207A': '+', '\u207B': '-', '\u207C': '=', '\u207D': '(', '\u207E': ')',
+        '\u207F': 'n', '\u2071': 'i'
+    }
+    sup_chars = ''.join(sup_map.keys())
+    def sup_replace(m):
+        chars = m.group(0)
+        converted = ''.join(sup_map.get(c, c) for c in chars)
+        return add_token(r'\textsuperscript{' + converted + r'}')
+    text = re.sub(f'[{re.escape(sup_chars)}]+', sup_replace, text)
+
+    # 6. Unicode subscripts: ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₒₓᵤ
+    sub_map = {
+        '\u2080': '0', '\u2081': '1', '\u2082': '2', '\u2083': '3', '\u2084': '4',
+        '\u2085': '5', '\u2086': '6', '\u2087': '7', '\u2088': '8', '\u2089': '9',
+        '\u208A': '+', '\u208B': '-', '\u208C': '=', '\u208D': '(', '\u208E': ')',
+        '\u2090': 'a', '\u2091': 'e', '\u2092': 'o', '\u2093': 'x', '\u2095': 'h',
+        '\u2096': 'k', '\u2097': 'l', '\u2098': 'm', '\u2099': 'n', '\u209A': 'p',
+        '\u209B': 's', '\u209C': 't'
+    }
+    sub_chars = ''.join(sub_map.keys())
+    def sub_replace(m):
+        chars = m.group(0)
+        converted = ''.join(sub_map.get(c, c) for c in chars)
+        return add_token(r'\textsubscript{' + converted + r'}')
+    text = re.sub(f'[{re.escape(sub_chars)}]+', sub_replace, text)
+
+    # 7. Shorthand "10 power 5" or "10 power -5"
+    text = re.sub(r'\b(\d+)\s+power\s+([-+]?\d+)\b', lambda m: m.group(1) + add_token(r'\textsuperscript{' + m.group(2) + r'}'), text, flags=re.I)
+
+    # 8. Caret power notation: e.g. 10^5, 10^-5, 10^{-5}, CO^-, CO^+, CO^{2+}, x^2, m^3, km^2
+    def caret_replace(m):
+        base = m.group(1)
+        braced = m.group(3)
+        val = braced if braced is not None else m.group(2)
+        return base + add_token(r'\textsuperscript{' + val.strip() + r'}')
+    text = re.sub(r'([A-Za-z0-9]+)\s*\^\s*(\{([^}]+)\}|[-+]?[0-9a-zA-Z]+|[-+])', caret_replace, text)
+
+    # 9. Subscript notation: CO_{2}, N_2, H_2O, etc.
+    text = re.sub(r'([A-Za-z0-9]+)\s*_\s*\{([^}]+)\}', lambda m: m.group(1) + add_token(r'\textsubscript{' + m.group(2).strip() + r'}'), text)
+    text = re.sub(r'([A-Z][a-z]?)\s*_\s*([0-9]+)', lambda m: m.group(1) + add_token(r'\textsubscript{' + m.group(2).strip() + r'}'), text)
+    # Chemical molecule names with explicit suffix e.g. N2 Molecule, O2 Gas
+    text = re.sub(r'\b([A-Z][a-z]?)([0-9]+)\s+(Molecule|Gas|Ion|Atom)\b', lambda m: m.group(1) + add_token(r'\textsubscript{' + m.group(2) + r'}') + f' {m.group(3)}', text, flags=re.I)
+
+    # Standard LaTeX escaping
     text = text.replace('\\', r'\textbackslash{}')
     replacements = [
         ('&', r'\&'),
@@ -48,7 +131,13 @@ def escape_latex(text):
     ]
     for char, rep in replacements:
         text = text.replace(char, rep)
-    
+
+    # Restore protected tokens
+    for k, v in tokens.items():
+        text = text.replace(k, v)
+
+    # Convert bullet characters to LaTeX \textbullet AFTER backslash/brace escaping
+    text = re.sub(r'[\u2022\uf0b7\uf000-\uf0ff]', r'\\textbullet\ ', text)
     text = re.sub(r'[\r\n]+', r' \\newline ', text)
     return text
 
