@@ -1347,28 +1347,18 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         <table style={{ width: '100%', borderCollapse: 'collapse', border: 'none', tableLayout: 'fixed' }}>
           <tbody>
             <tr style={{ border: 'none' }}>
-              <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
-                <div style={{ height: '32px' }}></div>
-                <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>S. HariKrishna</div>
-                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>IQAC Coordinator</div>
-                <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
+              <td style={{ width: '50%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 24px' }}>
+                <div style={{ height: '36px' }}></div>
+                <div style={{ width: '60%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
+                <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#0f172a' }}>IQAC Coordinator</div>
+                <div style={{ fontSize: '8px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
               </td>
 
-              <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
-                <div style={{ height: '32px' }}></div>
-                <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>Dean of Academics</div>
-                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>Academic Governance</div>
-                <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
-              </td>
-
-              <td style={{ width: '33.33%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 8px' }}>
-                <div style={{ height: '32px' }}></div>
-                <div style={{ width: '75%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
-                <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#0f172a' }}>S. Hemachandra</div>
-                <div style={{ fontSize: '8.5px', color: '#475569', fontWeight: 600 }}>Principal</div>
-                <div style={{ fontSize: '7.5px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
+              <td style={{ width: '50%', border: 'none', textAlign: 'center', verticalAlign: 'bottom', padding: '0 24px' }}>
+                <div style={{ height: '36px' }}></div>
+                <div style={{ width: '60%', margin: '0 auto 6px auto', borderTop: '1.5px solid #0f172a' }}></div>
+                <div style={{ fontWeight: 'bold', fontSize: '11px', color: '#0f172a' }}>Principal</div>
+                <div style={{ fontSize: '8px', color: '#64748b' }}>Sanskrithi School of Engineering</div>
               </td>
             </tr>
           </tbody>

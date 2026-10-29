@@ -865,24 +865,16 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 \noindent{\color{brandborder}\rule{\textwidth}{1.0pt}}\vspace{18pt}
 
 \noindent
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccc@{}}
-  \parbox{5.2cm}{\centering
-    \rule{4.0cm}{1.0pt}\\[3pt]
-    \textbf{\fontsize{9}{11}\selectfont \textcolor{branddark}{Dr. S. HariKrishnan}}\\[1pt]
-    {\fontsize{7.5}{9.5}\selectfont \textbf{\textcolor{slatemed}{IQAC Coordinator}}}\\[1pt]
-    {\fontsize{6.5}{8}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr@{}}
+  \parbox{6.5cm}{\centering
+    \rule{5.0cm}{1.0pt}\\[4pt]
+    \textbf{\fontsize{9.5}{11.5}\selectfont \textcolor{branddark}{IQAC Coordinator}}\\[2pt]
+    {\fontsize{7}{8.5}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
   } &
-  \parbox{5.2cm}{\centering
-    \rule{4.0cm}{1.0pt}\\[3pt]
-    \textbf{\fontsize{9}{11}\selectfont \textcolor{branddark}{Dean of Academics}}\\[1pt]
-    {\fontsize{7.5}{9.5}\selectfont \textbf{\textcolor{slatemed}{Academic Governance}}}\\[1pt]
-    {\fontsize{6.5}{8}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
-  } &
-  \parbox{5.2cm}{\centering
-    \rule{4.0cm}{1.0pt}\\[3pt]
-    \textbf{\fontsize{9}{11}\selectfont \textcolor{branddark}{S. Hemachandra}}\\[1pt]
-    {\fontsize{7.5}{9.5}\selectfont \textbf{\textcolor{slatemed}{Principal}}}\\[1pt]
-    {\fontsize{6.5}{8}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
+  \parbox{6.5cm}{\centering
+    \rule{5.0cm}{1.0pt}\\[4pt]
+    \textbf{\fontsize{9.5}{11.5}\selectfont \textcolor{branddark}{Principal}}\\[2pt]
+    {\fontsize{7}{8.5}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
   }
 \end{tabular*}
 
