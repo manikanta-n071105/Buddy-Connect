@@ -605,11 +605,16 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                           Agenda
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#334155', lineHeight: 1.5, textAlign: 'justify' }}>
-                          {item.agenda.split('\n').map((line, lIdx) => (
-                            <div key={lIdx} style={{ padding: '1px 0' }}>
-                              {line.trim().startsWith('•') || /^\d+\./.test(line.trim()) ? line : `• ${line}`}
-                            </div>
-                          ))}
+                          {item.agenda.split('\n').map((line, lIdx) => {
+                            const cleanLine = line.replace(/[\uF000-\uF0FF]/g, '•').trim();
+                            if (!cleanLine) return null;
+                            const isBullet = cleanLine.startsWith('•') || /^\d+\./.test(cleanLine);
+                            return (
+                              <div key={lIdx} style={{ padding: '1px 0' }}>
+                                {isBullet ? cleanLine : `• ${cleanLine}`}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -626,11 +631,12 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                             {disc.details && (
                               <div style={{ color: '#334155', textAlign: 'justify', textJustify: 'inter-word', marginBottom: '6px' }}>
                                 {disc.details.split('\n').map((para, pIdx) => {
-                                  const trimmed = para.trim();
-                                  if (!trimmed) return null;
+                                  const cleanPara = para.replace(/[\uF000-\uF0FF]/g, '•').trim();
+                                  if (!cleanPara) return null;
+                                  const isBullet = cleanPara.startsWith('•') || /^\d+\./.test(cleanPara);
                                   return (
                                     <div key={pIdx} style={{ marginBottom: '2px' }}>
-                                      {trimmed.startsWith('•') ? trimmed : `• ${trimmed}`}
+                                      {isBullet ? cleanPara : `• ${cleanPara}`}
                                     </div>
                                   );
                                 })}

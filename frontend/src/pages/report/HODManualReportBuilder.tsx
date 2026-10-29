@@ -777,19 +777,19 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
         title: m.title || '',
         meetingNo: m.meetingNo || '',
         attendees: Array.isArray(m.attendees) ? m.attendees : [],
-        agenda: m.agenda || '',
+        agenda: (m.agenda || '').replace(/[\uF000-\uF0FF]/g, '•'),
         discussions: Array.isArray(m.discussions)
           ? m.discussions.map((d: any) => ({
-            heading: d.heading || '',
-            details: d.details || '',
+            heading: (d.heading || '').replace(/[\uF000-\uF0FF]/g, '•'),
+            details: (d.details || '').replace(/[\uF000-\uF0FF]/g, '•'),
             tableType: d.tableType || 'none',
             reviewSchedule: Array.isArray(d.reviewSchedule) ? d.reviewSchedule : [],
             publicationTargets: Array.isArray(d.publicationTargets) ? d.publicationTargets : [],
-            postTableDetails: d.postTableDetails || ''
+            postTableDetails: (d.postTableDetails || '').replace(/[\uF000-\uF0FF]/g, '•')
           }))
           : [],
-        decisions: m.decisions || '',
-        policyChanges: m.policyChanges || '',
+        decisions: (m.decisions || '').replace(/[\uF000-\uF0FF]/g, '•'),
+        policyChanges: (m.policyChanges || '').replace(/[\uF000-\uF0FF]/g, '•'),
         link: m.link || ''
       }))
       : [],
@@ -801,6 +801,50 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
     studentEngagement: Array.isArray(raw.studentEngagement) ? raw.studentEngagement : [],
   };
 };
+
+export function formatBulletText(input: string): string {
+  if (!input) return '';
+
+  // 1. Normalize line endings and convert Word bullets (PUA \uF000-\uF0FF, \uF0B7, etc.) and other bullet symbols to standard •
+  const normalized = input
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/[\uF000-\uF0FF]/g, '•')
+    .replace(/[•‣⁃∙◦▪▫■□●○✦✧❖➔➢]/g, '•')
+    .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ');
+
+  const rawLines = normalized.split('\n');
+  const bullets: string[] = [];
+
+  for (const rawLine of rawLines) {
+    if (!rawLine.trim()) continue;
+
+    const trimmed = rawLine.trim();
+    const hasLeadingIndent = /^[\s\t]/.test(rawLine);
+    const hasBulletMarker = /^[•\-\*o]\s+/i.test(trimmed) || /^[•\-\*o]$/.test(trimmed);
+    const hasNumberedMarker = /^(\([ivx0-9]+\)|\d+[\.\)])\s+/i.test(trimmed);
+
+    if (hasLeadingIndent || hasBulletMarker || hasNumberedMarker) {
+      // Strip leading bullet / list markers and leading whitespace
+      const clean = trimmed
+        .replace(/^[•\-\*o]\s*/i, '')
+        .replace(/^(\([ivx0-9]+\)|\d+[\.\)])\s*/i, '')
+        .trim();
+      if (clean) {
+        bullets.push(`• ${clean}`);
+      }
+    } else {
+      // Continuation line of previous bullet, or first line without marker
+      if (bullets.length > 0) {
+        bullets[bullets.length - 1] += ` ${trimmed}`;
+      } else {
+        bullets.push(`• ${trimmed}`);
+      }
+    }
+  }
+
+  return bullets.join('\n');
+}
 
 export interface ParsedMomResult {
   title?: string;
@@ -817,10 +861,12 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
     return { agenda: '', discussions: [] };
   }
 
-  // Normalize Unicode spaces and line endings
+  // Normalize Unicode spaces, line endings, and replace Word bullets (\uF0B7, \uF000-\uF0FF, ) with standard •
   const raw = rawText
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
+    .replace(/[\uF000-\uF0FF]/g, '•')
+    .replace(/[•‣⁃∙◦▪▫■□●○✦✧❖➔➢]/g, '•')
     .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
     .trim();
 
@@ -927,15 +973,15 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
 
   const parsedChunks: Array<{ heading: string; bodyLines: string[] }> = [];
   for (const c of rawChunks) {
-    const chunkLines = c.split('\n').map(l => l.trim()).filter(Boolean);
-    if (chunkLines.length === 0) continue;
+    const rawChunkLines = c.split('\n').filter(l => l.trim().length > 0);
+    if (rawChunkLines.length === 0) continue;
     // Discard any chunk that was just metadata before the first topic
-    if (!/^(?:[0-9]{1,2}[\.\)]|Topic\s*[0-9]{1,2}[:\.]?|Item\s*[0-9]{1,2}[:\.]?)\s+[A-Za-z]/i.test(chunkLines[0])) {
+    if (!/^(?:[0-9]{1,2}[\.\)]|Topic\s*[0-9]{1,2}[:\.]?|Item\s*[0-9]{1,2}[:\.]?)\s+[A-Za-z]/i.test(rawChunkLines[0].trim())) {
       continue;
     }
     parsedChunks.push({
-      heading: chunkLines[0],
-      bodyLines: chunkLines.slice(1)
+      heading: rawChunkLines[0].trim(),
+      bodyLines: rawChunkLines.slice(1)
     });
   }
 
@@ -964,7 +1010,7 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
     result.agenda = explicitAgendaItems.map(item => {
       let it = item.trim();
       if (!it.startsWith('•') && !it.startsWith('(')) {
-        it = `• ${it.replace(/^[0-9]+[\.\)]\s*/, '')}`;
+        it = `• ${it.replace(/^[\uF000-\uF0FF•o\-\*0-9\.\)]+\s*/, '')}`;
       }
       return it;
     }).join('\n');
@@ -982,7 +1028,7 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
 
   // Process discussion topics with table and bullet detection
   for (const chunk of uniqueTopics) {
-    const bodyStr = chunk.bodyLines.join('\n');
+    const bodyStr = chunk.bodyLines.map(l => l.trim()).join('\n');
     let tableType: 'none' | 'project_reviews' | 'publication_targets' = 'none';
     let reviewSchedule: MomReviewRow[] = [];
     let publicationTargets: MomTargetRow[] = [];
@@ -999,8 +1045,8 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
       const lastMatch = revMatches[revMatches.length - 1];
       const lastMatchEndIdx = bodyStr.indexOf(lastMatch[0]) + lastMatch[0].length;
 
-      details = bodyStr.substring(0, firstMatchIdx).replace(/Review\s+Date/i, '').trim();
-      postTableDetails = bodyStr.substring(lastMatchEndIdx).trim();
+      details = formatBulletText(bodyStr.substring(0, firstMatchIdx).replace(/Review\s+Date/i, '').trim());
+      postTableDetails = formatBulletText(bodyStr.substring(lastMatchEndIdx).trim());
     }
     // B) Detect Publication Targets Table
     else {
@@ -1017,24 +1063,12 @@ export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
         const lastMatch = targetMatches[targetMatches.length - 1];
         const lastMatchEndIdx = bodyStr.indexOf(lastMatch[0]) + lastMatch[0].length;
 
-        details = bodyStr.substring(0, firstMatchIdx).replace(/Department\s+Research\s+Papers\s+Patents/i, '').trim();
-        postTableDetails = bodyStr.substring(lastMatchEndIdx).trim();
+        details = formatBulletText(bodyStr.substring(0, firstMatchIdx).replace(/Department\s+Research\s+Papers\s+Patents/i, '').trim());
+        postTableDetails = formatBulletText(bodyStr.substring(lastMatchEndIdx).trim());
       }
-      // C) Standard Text - Format Bullets
+      // C) Standard Text - Format Bullets: In place of leading space, bullet markers, or , add bullet point •
       else {
-        const formattedLines: string[] = [];
-        for (const bl of chunk.bodyLines) {
-          let line = bl.trim();
-          if (!line) continue;
-          if (/^[o\-\*•]\s*/.test(line)) {
-            formattedLines.push(line.replace(/^[o\-\*•]\s*/, '• '));
-          } else if (/^[a-zA-Z0-9]/.test(line)) {
-            formattedLines.push(`• ${line}`);
-          } else {
-            formattedLines.push(line);
-          }
-        }
-        details = formattedLines.join('\n');
+        details = formatBulletText(chunk.bodyLines.join('\n'));
       }
     }
 
@@ -5069,10 +5103,55 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (onPaste) {
+      onPaste(e);
+      if (e.defaultPrevented) return;
+    }
+
+    const pasted = e.clipboardData.getData('text');
+    if (!pasted) return;
+
+    // Check if the pasted text has Word bullets (like , \uF0B7), bullet characters, or multiple lines
+    const hasWordBullet = /[\uF000-\uF0FF]/.test(pasted);
+    const hasMultiLineOrMarkers = pasted.includes('\n') || /^[•\-\*o\s]/m.test(pasted);
+
+    if (hasWordBullet || hasMultiLineOrMarkers) {
+      e.preventDefault();
+      const formatted = formatBulletText(pasted);
+
+      const target = e.currentTarget;
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const currentVal = value || '';
+      const before = currentVal.substring(0, start);
+      const after = currentVal.substring(end);
+
+      // If before ends with empty bullet "• ", replace trailing "• " so we don't end up with "• • "
+      let prefix = before;
+      if (prefix.trim() === '•' || prefix.endsWith('\n• ') || prefix === '• ') {
+        prefix = prefix.replace(/(^|\n)•\s*$/, '$1');
+      }
+
+      const newContent = prefix
+        ? `${prefix}${prefix.endsWith('\n') ? '' : '\n'}${formatted}${after}`
+        : `${formatted}${after}`;
+
+      onChange(newContent);
+    }
+  };
+
   const handleFocus = () => {
     if (!value || value.trim() === '') {
       onChange('• ');
     }
+  };
+
+  const handleChange = (newVal: string) => {
+    // In place of  or Word bullets, replace with bullet point •
+    let sanitized = newVal.replace(/[\uF000-\uF0FF]/g, '•');
+    sanitized = sanitized.replace(/(^|\n)•\s*•\s*/g, '$1• ');
+    onChange(sanitized);
   };
 
   return (
@@ -5088,8 +5167,8 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
         value={value}
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
-        onPaste={onPaste}
-        onChange={(e) => onChange(e.target.value)}
+        onPaste={handlePaste}
+        onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
         className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-sans"
       />

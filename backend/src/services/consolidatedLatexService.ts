@@ -36,6 +36,7 @@ export const escapeLatex = (text?: any): string => {
     .replace(/\u2212/g, '-')   // minus
     .replace(/\u207B/g, '$^{-}$') // superscript minus
     .replace(/\u2022/g, '\\textbullet\\ ') // bullet
+    .replace(/[\uF000-\uF0FF]/g, '\\textbullet\\ ') // Word bullet / Symbol
     .replace(/[\u2018\u2019]/g, "'") // single curly quotes
     .replace(/[\u201C\u201D]/g, '"') // double curly quotes
     .replace(/\u00A0/g, ' ')   // non-breaking space
@@ -686,7 +687,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
             const normHead = String(d.heading || '').replace(/^[0-9.)\s]+/, '').trim().toLowerCase();
             const dDetLines = rawDet
               .split('\n')
-              .map(l => l.replace(/^[•*\-0-9.)\s]+/, '').trim())
+              .map(l => l.replace(/^[•*\-0-9.)\s\uF000-\uF0FF]+/, '').trim())
               .filter(l => {
                 const normL = l.toLowerCase();
                 return normL.length > 0 && normL !== normHead;

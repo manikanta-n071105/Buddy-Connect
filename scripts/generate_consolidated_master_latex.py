@@ -40,6 +40,8 @@ def escape_latex(text):
         .replace('\u2212', '-')    # minus
         .replace('\u207B', r'$^{-}$') # superscript minus
         .replace('\u2022', r'\textbullet\ ') # bullet
+        .replace('\uf0b7', r'\textbullet\ ') # Word bullet
+        .replace('', r'\textbullet\ ')      # Word bullet
         .replace('\u2018', "'")    # single quotes
         .replace('\u2019', "'")
         .replace('\u201C', '"')    # double quotes
@@ -827,7 +829,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
                 raw_det = str(d.get('details', 'Discussed & recorded.')).strip()
                 norm_head = re.sub(r'^[0-9.)\s]+', '', str(d.get('heading', ''))).strip().lower()
                 d_det_lines = [
-                    l.strip().lstrip('•*-0123456789.) ')
+                    re.sub(r'^[•*\-0-9.)\s\uf000-\uf0ff]+', '', l).strip()
                     for l in raw_det.split('\n')
                     if l.strip() and re.sub(r'^[0-9.)\s]+', '', l).strip().lower() != norm_head
                 ]
