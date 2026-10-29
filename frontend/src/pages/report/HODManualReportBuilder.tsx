@@ -18,7 +18,12 @@ import {
   Edit3,
   Database,
   Save,
-  AlertCircle
+  AlertCircle,
+  ClipboardPaste,
+  Wand2,
+  X,
+  Copy,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -797,6 +802,166 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
   };
 };
 
+export interface ParsedMomResult {
+  title?: string;
+  date?: string;
+  time?: string;
+  venue?: string;
+  attendees?: MomAttendee[];
+  agenda: string;
+  discussions: MomDiscussionItem[];
+}
+
+export function parseAndClassifyMomText(rawText: string): ParsedMomResult {
+  if (!rawText || !rawText.trim()) {
+    return { agenda: '', discussions: [] };
+  }
+
+  // Normalize Unicode spaces and line endings
+  const raw = rawText
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
+    .trim();
+
+  const lines = raw.split('\n').map(l => l.trim());
+
+  const result: ParsedMomResult = {
+    agenda: '',
+    discussions: []
+  };
+
+  // 1. Detect Meeting Title
+  for (let i = 0; i < Math.min(6, lines.length); i++) {
+    const l = lines[i];
+    if (/HoD['’]s\s+Meeting/i.test(l) || /Meeting\s+with\s+Principal/i.test(l)) {
+      result.title = l;
+      break;
+    }
+  }
+
+  // 2. Detect Date, Time, Venue
+  for (let i = 0; i < Math.min(10, lines.length); i++) {
+    const l = lines[i];
+    if (/TIME:/i.test(l) || /VENUE:/i.test(l) || (/\|/.test(l) && /\d{4}/.test(l))) {
+      const mDate = l.match(/(\d{1,2}\s+[A-Za-z]+\s+\d{4})/);
+      if (mDate) result.date = mDate[1].trim();
+
+      const mTime = l.match(/TIME\s*:\s*([^,|]+)/i);
+      if (mTime) result.time = mTime[1].trim();
+
+      const mVenue = l.match(/VENUE\s*:\s*([^,|]+)/i);
+      if (mVenue) {
+        let v = mVenue[1].trim();
+        if (i + 1 < lines.length && /chamber/i.test(lines[i + 1])) {
+          v = `${v} ${lines[i + 1]}`.trim();
+        }
+        result.venue = v;
+      }
+    }
+  }
+
+  // 3. Detect Attendees (if present)
+  let attStart = -1;
+  let agendaStart = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^attendees\b/i.test(l)) {
+      attStart = i;
+    } else if (/^agenda\b/i.test(l) || (/^\([ivx]+\)/i.test(l) && agendaStart === -1)) {
+      agendaStart = i;
+      if (attStart !== -1) break;
+    }
+  }
+
+  if (attStart !== -1 && agendaStart !== -1 && agendaStart > attStart) {
+    const attendees: MomAttendee[] = [];
+    for (let j = attStart + 1; j < agendaStart; j++) {
+      const l = lines[j];
+      if (!l || /faculty\s+designation/i.test(l)) continue;
+      const mRole = l.match(/(Principal.*|HOD.*|Dean.*|Vice\s*-\s*Principal.*|Head.*|Coordinator.*)$/i);
+      if (mRole) {
+        const designation = mRole[1].trim();
+        const name = l.substring(0, mRole.index).trim();
+        if (name && designation) {
+          attendees.push({ name, designation });
+        }
+      }
+    }
+    if (attendees.length > 0) {
+      result.attendees = attendees;
+    }
+  }
+
+  // 4. Identify indices for Agenda and Discussions
+  let discStartIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^(?:1[\.\)]|Topic\s*1[:\.]?|Item\s*1[:\.]?)\s+[A-Za-z]/i.test(l)) {
+      discStartIdx = i;
+      break;
+    }
+  }
+
+  // Extract Agenda
+  if (agendaStart !== -1) {
+    const endIdx = discStartIdx !== -1 ? discStartIdx : lines.length;
+    const startLine = lines[agendaStart];
+    const actualStart = /^agenda\b/i.test(startLine) ? agendaStart + 1 : agendaStart;
+    const agendaLines: string[] = [];
+
+    for (let j = actualStart; j < endIdx; j++) {
+      const l = lines[j];
+      if (!l) continue;
+      agendaLines.push(l);
+    }
+    result.agenda = agendaLines.join('\n');
+  }
+
+  // Extract Discussions
+  let discText = '';
+  if (discStartIdx !== -1) {
+    discText = lines.slice(discStartIdx).join('\n');
+  } else if (agendaStart === -1) {
+    discText = raw;
+  }
+
+  if (discText) {
+    const splitRegex = /(?:^|\n)(?=(?:\d{1,2}[\.\)]|Topic\s*\d{1,2}[:\.]?|Item\s*\d{1,2}[:\.]?)\s+[A-Za-z])/m;
+    const chunks = discText.split(splitRegex).map(c => c.trim()).filter(Boolean);
+
+    for (const chunk of chunks) {
+      const chunkLines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+      if (chunkLines.length === 0) continue;
+
+      const heading = chunkLines[0];
+      const bodyLines = chunkLines.slice(1);
+
+      // Normalize bullets: convert 'o ', '- ', '* ' to '• '
+      const formattedBody: string[] = [];
+      for (const bl of bodyLines) {
+        if (/^[o\-\*]\s+/.test(bl)) {
+          formattedBody.push(bl.replace(/^[o\-\*]\s+/, '• '));
+        } else {
+          formattedBody.push(bl);
+        }
+      }
+
+      result.discussions.push({
+        heading,
+        details: formattedBody.join('\n'),
+        tableType: 'none',
+        reviewSchedule: [],
+        publicationTargets: [],
+        postTableDetails: ''
+      });
+    }
+  }
+
+  return result;
+}
+
 interface HODManualReportBuilderProps {
   currentPeriod: string;
   initialDepartment?: string;
@@ -844,6 +1009,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
     lastSavedAt?: string;
     status?: string;
   }>({ saved: false });
+
+  // Smart Paste / Auto-Classify MOM State
+  const [smartPasteModalOpen, setSmartPasteModalOpen] = useState(false);
+  const [smartPasteMeetingIdx, setSmartPasteMeetingIdx] = useState(0);
+  const [smartPasteRawText, setSmartPasteRawText] = useState('');
+  const [smartPasteParsed, setSmartPasteParsed] = useState<ParsedMomResult | null>(null);
+  const [smartPasteActiveTab, setSmartPasteActiveTab] = useState<'preview' | 'raw'>('preview');
 
   // Refs for tracking state inside the 30-second auto-save interval and race-free fetches
   const sectionsRef = React.useRef(sections);
@@ -1440,6 +1612,89 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       copy.deptMeetings = meetings;
       return copy;
     });
+  };
+
+  const handleOpenSmartPaste = (mIdx: number) => {
+    setSmartPasteMeetingIdx(mIdx);
+    setSmartPasteRawText('');
+    setSmartPasteParsed(null);
+    setSmartPasteActiveTab('preview');
+    setSmartPasteModalOpen(true);
+  };
+
+  const handleSmartPasteChange = (val: string) => {
+    setSmartPasteRawText(val);
+    if (!val.trim()) {
+      setSmartPasteParsed(null);
+      return;
+    }
+    const parsed = parseAndClassifyMomText(val);
+    setSmartPasteParsed(parsed);
+  };
+
+  const handleApplySmartPaste = () => {
+    if (!smartPasteParsed) return;
+    const mIdx = smartPasteMeetingIdx;
+
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const meetings = [...(copy.deptMeetings || [])];
+      const current = meetings[mIdx] || {};
+
+      meetings[mIdx] = {
+        ...current,
+        agenda: smartPasteParsed.agenda || current.agenda || '',
+        discussions: smartPasteParsed.discussions.length > 0 ? smartPasteParsed.discussions : (current.discussions || []),
+        ...(smartPasteParsed.title ? { title: smartPasteParsed.title } : {}),
+        ...(smartPasteParsed.date ? { date: smartPasteParsed.date } : {}),
+        ...(smartPasteParsed.time ? { time: smartPasteParsed.time } : {}),
+        ...(smartPasteParsed.venue ? { venue: smartPasteParsed.venue } : {}),
+        ...(smartPasteParsed.attendees && smartPasteParsed.attendees.length > 0 ? { attendees: smartPasteParsed.attendees } : {})
+      };
+      copy.deptMeetings = meetings;
+      return copy;
+    });
+
+    const agendaCount = (smartPasteParsed.agenda || '').split('\n').filter(Boolean).length;
+    toast.success(
+      `✨ Auto-classified: Populated ${agendaCount} Agenda items & ${smartPasteParsed.discussions.length} Discussion Topics! You can edit them below.`
+    );
+    setSmartPasteModalOpen(false);
+  };
+
+  const handleAgendaPaste = (mIdx: number, e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const text = e.clipboardData.getData('text');
+    if (!text) return;
+
+    // Check if the pasted text has numbered discussion topics (e.g. 1. Introduction, 2. Lab)
+    if (/(?:^|\n)(?:1[\.\)]|Topic\s*1[:\.]?|Item\s*1[:\.]?)\s+[A-Za-z]/m.test(text)) {
+      e.preventDefault();
+      const parsed = parseAndClassifyMomText(text);
+
+      setSections(prev => {
+        const copy = normalizeSections(prev);
+        const meetings = [...(copy.deptMeetings || [])];
+        const current = meetings[mIdx] || {};
+
+        meetings[mIdx] = {
+          ...current,
+          agenda: parsed.agenda || current.agenda || '',
+          discussions: parsed.discussions.length > 0 ? parsed.discussions : (current.discussions || []),
+          ...(parsed.title && !current.title ? { title: parsed.title } : {}),
+          ...(parsed.date && !current.date ? { date: parsed.date } : {}),
+          ...(parsed.time && !current.time ? { time: parsed.time } : {}),
+          ...(parsed.venue && !current.venue ? { venue: parsed.venue } : {}),
+          ...(parsed.attendees && parsed.attendees.length > 0 && (!current.attendees || current.attendees.length === 0) ? { attendees: parsed.attendees } : {})
+        };
+        copy.deptMeetings = meetings;
+        return copy;
+      });
+
+      const agendaCount = (parsed.agenda || '').split('\n').filter(Boolean).length;
+      toast.success(
+        `✨ Auto-classified from paste: Populated ${agendaCount} Agenda items & ${parsed.discussions.length} Discussion Topics! You can edit them below.`
+      );
+    }
   };
 
   const handleGenerateAndDownload = async () => {
@@ -2644,6 +2899,15 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <button
                             type="button"
+                            onClick={() => handleOpenSmartPaste(mIdx)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-black shadow-md shadow-violet-600/20 transition-all cursor-pointer active:scale-95"
+                            title="Paste copied text from Word or PDF (from Agenda to the end, or full document) to automatically classify Agenda & Discussion Topics"
+                          >
+                            <ClipboardPaste className="w-3.5 h-3.5" />
+                            <span>📋 Smart Paste / Auto-Classify MOM</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleLoadMomTemplate(mIdx, '16sep')}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
                             title="Pre-fill structured MOM for 16 September 2026 (ERP, Moodle, Project Reviews, Targets, FDP, Stools)"
@@ -2771,15 +3035,27 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
                       {/* Section 2: Agenda */}
                       <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2">
-                        <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider block">
-                          Meeting Agenda
-                        </label>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <label className="text-xs font-extrabold text-slate-900 uppercase tracking-wider block">
+                            Meeting Agenda
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenSmartPaste(mIdx)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-50 hover:bg-violet-100 text-violet-700 text-[11px] font-extrabold border border-violet-200 transition-all cursor-pointer shadow-2xs"
+                            title="Paste full text or agenda to automatically split agenda items and discussion topics"
+                          >
+                            <Wand2 className="w-3 h-3 text-violet-600" />
+                            <span>✨ Smart Paste & Auto-Split</span>
+                          </button>
+                        </div>
                         <p className="text-[11px] text-slate-500">
-                          List meeting points (e.g. ERP Portal, Assignments, IV Year Project Reviews, Targets, etc.)
+                          List meeting points (e.g. ERP Portal, Assignments, IV Year Project Reviews, Targets, etc.). <span className="text-violet-700 font-semibold">Tip: If you paste text containing discussion topics here, it will automatically classify both!</span>
                         </p>
                         <BulletTextarea
                           label=""
                           value={item.agenda || ''}
+                          onPaste={(e) => handleAgendaPaste(mIdx, e)}
                           onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'agenda', v)}
                           placeholder="• ERP Portal – Leave & Class Substitution&#10;• Assignments – Moodle Portal&#10;• IV Year Project Review Schedule&#10;• Research Paper & Patent Publication Targets"
                         />
@@ -2796,14 +3072,25 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                               Numbered minutes with optional embedded review schedules or target tables
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleAddMomDiscussion(mIdx)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Add Discussion Topic</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenSmartPaste(mIdx)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-bold border border-violet-200 transition-all cursor-pointer"
+                              title="Paste MOM text to auto-generate all discussion topic cards"
+                            >
+                              <ClipboardPaste className="w-3.5 h-3.5 text-violet-600" />
+                              <span>📋 Smart Paste Topics</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddMomDiscussion(mIdx)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add Discussion Topic</span>
+                            </button>
+                          </div>
                         </div>
 
                         {(!item.discussions || item.discussions.length === 0) ? (
@@ -3722,6 +4009,208 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
         </button>
       </div>
 
+      {/* Smart MOM Paste & Auto-Classifier Modal */}
+      {smartPasteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-violet-50 via-indigo-50/50 to-white flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-violet-600/30 shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                      Smart MOM Paste & Auto-Classifier
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 text-[10px] font-black uppercase tracking-wider">
+                      Auto-Split
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Paste from "Agenda" to the last topic (or full minutes) from Word / PDF. Content is classified automatically into Agenda and Discussion Topics!
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSmartPasteModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+              {/* Textarea container */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span>Paste Meeting Minutes Text:</span>
+                    <span className="text-[11px] font-normal text-slate-400">(Agenda through to Discussion Topics)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {smartPasteRawText && (
+                      <button
+                        type="button"
+                        onClick={() => handleSmartPasteChange('')}
+                        className="text-[11px] text-slate-500 hover:text-red-600 font-semibold transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const clipboardText = await navigator.clipboard.readText();
+                          if (clipboardText) handleSmartPasteChange(clipboardText);
+                        } catch (_) {
+                          toast.error('Could not access clipboard directly. Please press Ctrl+V into the box.');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition-all cursor-pointer"
+                    >
+                      <ClipboardPaste className="w-3 h-3 text-slate-600" />
+                      <span>Paste from Clipboard</span>
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  rows={8}
+                  value={smartPasteRawText}
+                  onChange={(e) => handleSmartPasteChange(e.target.value)}
+                  placeholder={`Paste text here... for example:
+
+Agenda
+(i) New Roles and Responsibilities
+(ii) Monthly Report Submission
+(iii) Laboratory Preparation and YouTube Videos
+...
+1. Introduction of New Roles and Responsibilities
+The Principal introduced the faculty members who have been assigned new roles...
+o Dr. P. Shabana – Head, Teaching & Learning
+o Mr. B. Venkatesu – Coordinator, Centre for Skill Development
+
+2. Laboratory Preparation and YouTube Videos
+As instructed earlier, the concerned laboratory handling faculty members should share...`}
+                  className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:outline-none focus:border-violet-600 focus:bg-white focus:ring-2 focus:ring-violet-600/15 transition-all placeholder:text-slate-400 leading-relaxed"
+                />
+              </div>
+
+              {/* Classification Results */}
+              {smartPasteParsed && (
+                <div className="space-y-3 pt-2 border-t border-slate-200">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                      Auto-Classification Breakdown
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${smartPasteParsed.agenda ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}`}>
+                        📝 Agenda: {smartPasteParsed.agenda ? smartPasteParsed.agenda.split('\n').filter(Boolean).length : 0} items
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${smartPasteParsed.discussions.length > 0 ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-slate-100 text-slate-500'}`}>
+                        💬 Topics: {smartPasteParsed.discussions.length} topics
+                      </span>
+                      {(smartPasteParsed.date || smartPasteParsed.time) && (
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          📅 {smartPasteParsed.date || ''} {smartPasteParsed.time || ''}
+                        </span>
+                      )}
+                      {(smartPasteParsed.attendees && smartPasteParsed.attendees.length > 0) && (
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          👥 {smartPasteParsed.attendees.length} Attendees
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Visual Preview Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Agenda Card */}
+                    <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-emerald-950 flex items-center gap-1.5">
+                          <span>📝 Classified Agenda</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                          {smartPasteParsed.agenda ? smartPasteParsed.agenda.split('\n').filter(Boolean).length : 0} Points
+                        </span>
+                      </div>
+                      {smartPasteParsed.agenda ? (
+                        <pre className="text-xs font-sans text-emerald-900 bg-white/80 p-2.5 rounded-xl border border-emerald-200/60 max-h-48 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                          {smartPasteParsed.agenda}
+                        </pre>
+                      ) : (
+                        <div className="text-center py-4 text-xs text-slate-400 italic bg-white/60 rounded-xl">
+                          No agenda items detected in pasted text.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Discussions Card */}
+                    <div className="p-3.5 bg-violet-50/60 border border-violet-200 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-violet-950 flex items-center gap-1.5">
+                          <span>💬 Classified Discussion Topics</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-violet-700 bg-violet-100/80 px-2 py-0.5 rounded-md">
+                          {smartPasteParsed.discussions.length} Cards
+                        </span>
+                      </div>
+                      {smartPasteParsed.discussions.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {smartPasteParsed.discussions.map((d, dIdx) => (
+                            <div key={dIdx} className="p-2.5 bg-white/90 rounded-xl border border-violet-200/70 text-xs">
+                              <div className="font-bold text-slate-900 mb-1">{d.heading}</div>
+                              <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
+                                {d.details}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-xs text-slate-400 italic bg-white/60 rounded-xl">
+                          No numbered topics (1., 2., etc.) detected.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50/90 flex items-center justify-between gap-3">
+              <span className="text-xs text-slate-500 hidden sm:inline">
+                Everything can be fully edited and modified after auto-populating!
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setSmartPasteModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-300 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplySmartPaste}
+                  disabled={!smartPasteParsed || (!smartPasteParsed.agenda && smartPasteParsed.discussions.length === 0)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-black shadow-lg shadow-violet-600/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-95"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Classify & Populate Meeting Form</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
@@ -4413,6 +4902,7 @@ interface BulletTextareaProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   rows?: number;
 }
@@ -4421,6 +4911,7 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
   label,
   value,
   onChange,
+  onPaste,
   placeholder = '• Enter key decisions...',
   rows = 4
 }) => {
@@ -4476,6 +4967,7 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
         value={value}
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
+        onPaste={onPaste}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-sans"
