@@ -927,7 +927,7 @@ def consolidate_reports(report_paths, output_path, college_name="SANSKRITHI SCHO
             if p.runs:
                 p.runs[0].bold = True
         elif 'HOD Name:' in p.text:
-            p.text = "Authority: Principal / Academic Director & All Department HODs"
+            p.text = "Authority: Principal / IQAC Coordinator & All Department HODs"
         elif 'Date of Submission:' in p.text:
             p.text = ""
 

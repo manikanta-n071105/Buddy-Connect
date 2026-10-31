@@ -246,6 +246,44 @@ export const normalizeSyllabusRemarks = (remarks?: string, _completed?: string):
   return r;
 };
 
+export const PRESERVED_ACRONYMS = new Set([
+  'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
+  'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+  'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
+  'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
+  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+  'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
+]);
+
+export const formatFixedCaps = (text: any): string => {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  if (!str.trim()) return str;
+
+  return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
+    const upperToken = token.toUpperCase();
+    if (PRESERVED_ACRONYMS.has(upperToken)) {
+      return upperToken;
+    }
+
+    if (/^[A-Za-z]\.?$/.test(token)) {
+      return token.toUpperCase();
+    }
+
+    if (/^DR\.?$/i.test(token)) return 'Dr.';
+    if (/^MR\.?$/i.test(token)) return 'Mr.';
+    if (/^MS\.?$/i.test(token)) return 'Ms.';
+    if (/^MRS\.?$/i.test(token)) return 'Mrs.';
+    if (/^PROF\.?$/i.test(token)) return 'Prof.';
+
+    if (token === token.toUpperCase() && /[A-Z]/.test(token) && token.length > 1) {
+      return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+    }
+
+    return token;
+  });
+};
+
 export const hasAnyMeaningfulData = (sec: ReportSectionsData | undefined): boolean => {
   if (!sec || typeof sec !== 'object') return false;
   return Object.values(sec).some(arr => Array.isArray(arr) && arr.some(isMeaningfulItem));
@@ -794,20 +832,40 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       ]
     },
     // Meetings (Institutional Committees / MOM only)
-    {
-      key: 'deptMeetings',
-      title: '12. MINUTES OF THE MEETING (MOM)',
-      tall: true,
-      rowsPerPage: 1,
-      getItems: (data, depts) => depts.filter(d => d.code === 'MOM' || (d as any).type === 'COMMITTEE').flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
-      columns: [
-        { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '8%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+    (() => {
+      const getMomItems = (data: any, depts: any[]) =>
+        depts.filter(d => d.code === 'MOM' || (d as any).type === 'COMMITTEE')
+          .flatMap(d => (data[d.code]?.deptMeetings || []).filter(isMeaningfulItem).map((it: any) => ({ ...it, deptCode: d.code })));
+
+      const momItems = getMomItems(deptDataMap, departmentList);
+      const hasAtr = momItems.some((it: any) => Boolean(it.actionTaken?.trim() || it.actionTakenReport?.trim()));
+      const hasAp = momItems.some((it: any) => Boolean(it.actionPoints?.trim()));
+
+      const cols: any[] = [
+        { header: 'S.No', width: '4%', align: 'center', render: (_it: any, idx: number) => idx + 1 },
+        { header: 'Branch', width: '7%', align: 'center', render: (it: any) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+      ];
+
+      if (hasAtr) {
+        cols.push({
+          header: 'Action Taken Report',
+          width: '16%',
+          align: 'justify',
+          render: (it: any) => (
+            <div style={{ color: '#0369a1', fontSize: '8px', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word' }}>
+              <div style={{ fontWeight: 700, color: '#0c4a6e', marginBottom: '2px' }}>ATR / Review:</div>
+              {it.actionTaken || it.actionTakenReport || '-'}
+            </div>
+          )
+        });
+      }
+
+      cols.push(
         {
           header: 'Meeting & Venue',
-          width: '20%',
+          width: hasAtr && hasAp ? '15%' : (hasAtr || hasAp ? '17%' : '20%'),
           align: 'center',
-          render: (it) => (
+          render: (it: any) => (
             <div style={{ color: '#0f172a' }}>
               <div style={{ fontWeight: 800, fontSize: '9.5px', color: '#1a365d' }}>{it.title || "HoD's Meeting"}</div>
               <div style={{ fontSize: '8.5px', fontWeight: 600, color: '#475569', marginTop: '2px' }}>{it.date}</div>
@@ -818,9 +876,9 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         },
         {
           header: 'Key Decisions & Topics Discussed',
-          width: '45%',
+          width: hasAtr && hasAp ? '32%' : (hasAtr || hasAp ? '37%' : '45%'),
           align: 'justify',
-          render: (it) => {
+          render: (it: any) => {
             if (it.discussions && it.discussions.length > 0) {
               return (
                 <div style={{ color: '#334155', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8px' }}>
@@ -842,9 +900,9 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         },
         {
           header: 'Policy Directives & Action Plan',
-          width: '22%',
+          width: hasAtr && hasAp ? '13%' : (hasAtr || hasAp ? '17%' : '22%'),
           align: 'justify',
-          render: (it) => (
+          render: (it: any) => (
             <div style={{ color: '#475569', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word', fontSize: '8px' }}>
               {it.policyChanges || 'Standard operations and administrative resolutions confirmed.'}
               {it.link && (
@@ -857,8 +915,31 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </div>
           )
         }
-      ]
-    },
+      );
+
+      if (hasAp) {
+        cols.push({
+          header: 'Action Points',
+          width: hasAtr ? '13%' : '16%',
+          align: 'justify',
+          render: (it: any) => (
+            <div style={{ color: '#b45309', fontSize: '8px', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word' }}>
+              <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '2px' }}>Next Targets:</div>
+              {it.actionPoints || '-'}
+            </div>
+          )
+        });
+      }
+
+      return {
+        key: 'deptMeetings',
+        title: '12. MINUTES OF THE MEETING (MOM)',
+        tall: true,
+        rowsPerPage: 1,
+        getItems: getMomItems,
+        columns: cols
+      };
+    })(),
     // 6. Collaborations & MoUs
     {
       key: 'mous',
@@ -930,10 +1011,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       columns: [
         { header: 'S.No', width: '4%', align: 'center', render: (_it, idx) => idx + 1 },
         { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Course / Subject Title', width: '23%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.subject}</div> },
+        { header: 'Course / Subject Title', width: '32%', align: 'justify', render: (it) => <div style={{ fontWeight: 700, color: '#0f172a', textAlign: 'justify', textJustify: 'inter-word' }}>{it.subject}</div> },
         {
           header: 'Year / Sem',
-          width: '9%',
+          width: '10%',
           align: 'center',
           render: (it) => (
             <span style={{ fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', padding: '1.5px 5px', borderRadius: '3px', fontSize: '8px' }}>
@@ -941,10 +1022,10 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
             </span>
           )
         },
-        { header: 'Faculty In-Charge', width: '16%', align: 'justify', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600, textAlign: 'justify', textJustify: 'inter-word' }}>{it.faculty}</span> },
+        { header: 'Faculty In-Charge', width: '19%', align: 'justify', render: (it) => <span style={{ color: '#1a365d', fontWeight: 600, textAlign: 'justify', textJustify: 'inter-word' }}>{it.faculty}</span> },
         {
           header: 'Done (5 Units)',
-          width: '13%',
+          width: '14%',
           align: 'center',
           render: (it) => (
             <span style={{ fontWeight: 800, color: '#047857', fontSize: '8px', backgroundColor: '#ecfdf5', padding: '1.5px 4px', borderRadius: '3px', border: '1px solid #a7f3d0', display: 'inline-block' }}>
@@ -954,22 +1035,12 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         },
         {
           header: 'Pending / Ongoing',
-          width: '13%',
+          width: '14%',
           align: 'center',
           render: (it) => (
             <span style={{ fontWeight: 700, color: '#b45309', fontSize: '8px', backgroundColor: '#fffbeb', padding: '1.5px 4px', borderRadius: '3px', border: '1px solid #fde68a', display: 'inline-block' }}>
               {normalizeSyllabusPending(it.completed, it.pending)}
             </span>
-          )
-        },
-        {
-          header: 'Remarks / Status',
-          width: '15%',
-          align: 'center',
-          render: (it) => (
-            <div style={{ color: '#475569', fontSize: '7.5px', fontStyle: 'italic', lineHeight: 1.3 }}>
-              {normalizeSyllabusRemarks(it.remarks, it.completed)}
-            </div>
           )
         }
       ]

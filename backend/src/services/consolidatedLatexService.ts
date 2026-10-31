@@ -24,10 +24,49 @@ export const getDeptCode = (deptName?: string): string => {
   return DEPARTMENT_CODE_MAP[deptName] || (deptName.length >= 6 ? deptName.substring(0, 6).toUpperCase() : deptName.toUpperCase());
 };
 
+export const PRESERVED_ACRONYMS = new Set([
+  'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
+  'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+  'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
+  'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
+  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+  'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
+]);
+
+export const formatFixedCaps = (text: any): string => {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  if (!str.trim()) return str;
+
+  return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
+    const upperToken = token.toUpperCase();
+    if (PRESERVED_ACRONYMS.has(upperToken)) {
+      return upperToken;
+    }
+
+    if (/^[A-Za-z]\.?$/.test(token)) {
+      return token.toUpperCase();
+    }
+
+    if (/^DR\.?$/i.test(token)) return 'Dr.';
+    if (/^MR\.?$/i.test(token)) return 'Mr.';
+    if (/^MS\.?$/i.test(token)) return 'Ms.';
+    if (/^MRS\.?$/i.test(token)) return 'Mrs.';
+    if (/^PROF\.?$/i.test(token)) return 'Prof.';
+
+    if (token === token.toUpperCase() && /[A-Z]/.test(token) && token.length > 1) {
+      return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+    }
+
+    return token;
+  });
+};
+
 export const escapeLatex = (text?: any): string => {
   if (text === null || text === undefined) return '';
   let str = String(text);
   if (!str.trim()) return '';
+  str = formatFixedCaps(str);
 
   // Clean errant patterns in source data
   str = str
@@ -406,7 +445,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     linkcolor=brandnavy,
     filecolor=brandnavy,
     urlcolor=linkblue,
-    pdftitle={Institutional HOD Progress Report - ${escapedPeriod}},
+    pdftitle={Institutional Progress Report - ${escapedPeriod}},
     pdfauthor={Sanskrithi School of Engineering}
 }
 
@@ -422,7 +461,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 \\pagestyle{fancy}
 \\fancyhf{}
 \\fancyhead[L]{\\fontsize{6.5}{8}\\selectfont\\textbf{\\textcolor{slatemed}{SANSKRITHI SCHOOL OF ENGINEERING (AUTONOMOUS)}}}
-\\fancyhead[R]{\\fontsize{6.5}{8}\\selectfont\\textbf{\\textcolor{slatemed}{INSTITUTIONAL HOD PROGRESS REPORT \\textbullet\\ ${escapedPeriod.toUpperCase()}}}}
+\\fancyhead[R]{\\fontsize{6.5}{8}\\selectfont\\textbf{\\textcolor{slatemed}{INSTITUTIONAL PROGRESS REPORT \\textbullet\\ ${escapedPeriod.toUpperCase()}}}}
 \\fancyfoot[R]{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{slatemed}{Page \\thepage\\ of \\pageref{LastPage}}}}
 \\renewcommand{\\headrulewidth}{0.6pt}
 \\renewcommand{\\footrulewidth}{0pt}
@@ -453,7 +492,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
 \\vspace{6pt}
 
 {\\centering
-  {\\fontsize{14}{16}\\selectfont \\textbf{\\textcolor{brandnavy}{INSTITUTIONAL HOD PROGRESS REPORT}}}\\\\[3pt]
+  {\\fontsize{14}{16}\\selectfont \\textbf{\\textcolor{brandnavy}{INSTITUTIONAL PROGRESS REPORT}}}\\\\[3pt]
   {\\fontsize{9}{11}\\selectfont \\textbf{\\textcolor{slatemed}{Comprehensive Performance Dossier \\& Departmental Analytics}}}\\\\[2pt]
   {\\fontsize{8}{10}\\selectfont \\textcolor{slatelight}{Reporting Period: \\textbf{\\textcolor{branddark}{${escapedPeriod}}}}}\\\\[6pt]
 \\par}
@@ -703,8 +742,8 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   // 8. Syllabus
   tex.push(renderSection(
     '8. SYLLABUS COVERAGE REPORT',
-    ['0.70cm', '1.05cm', '4.40cm', '1.15cm', '2.60cm', '2.15cm', '2.15cm', '2.30cm'],
-    ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing', 'Remarks / Status'],
+    ['0.75cm', '1.20cm', '5.50cm', '1.60cm', '3.65cm', '2.50cm', '2.50cm'],
+    ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -713,8 +752,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
       const fac = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.faculty || '-')}}`;
       const comp = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandgreen}{${escapeLatex(normalizeSyllabusCompleted(it.completed))}}}}`;
       const pend = `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandamber}{${escapeLatex(normalizeSyllabusPending(it.completed, it.pending))}}}}`;
-      const rem = `{\\fontsize{7}{8.5}\\selectfont\\textit{${escapeLatex(normalizeSyllabusRemarks(it.remarks))}}}`;
-      return [sno, branch, sub, yr, fac, comp, pend, rem];
+      return [sno, branch, sub, yr, fac, comp, pend];
     },
     gatherItems('syllabus')
   ));
@@ -788,13 +826,39 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   }
 
   if (momItems.length > 0) {
+    const hasAtr = momItems.some(it => Boolean((it.actionTaken || it.actionTakenReport || '').trim()));
+    const hasAp = momItems.some(it => Boolean((it.actionPoints || '').trim()));
+
+    const momCols = ['0.80cm', '1.20cm'];
+    const momHeaders = ['#', 'Branch'];
+    if (hasAtr) {
+      momHeaders.push('Action Taken Report');
+      momCols.push('2.80cm');
+    }
+    if (hasAtr && hasAp) {
+      momCols.push('2.80cm', '5.20cm', '2.50cm');
+    } else if (hasAtr || hasAp) {
+      momCols.push('3.10cm', '6.30cm', '3.10cm');
+    } else {
+      momCols.push('3.60cm', '8.00cm', '4.10cm');
+    }
+    momHeaders.push('Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan');
+    if (hasAp) {
+      momHeaders.push('Action Points');
+      momCols.push(hasAtr ? '2.50cm' : '3.10cm');
+    }
+
     tex.push(renderSection(
       '12. MINUTES OF THE MEETING (MOM)',
-      ['0.80cm', '1.20cm', '3.60cm', '8.00cm', '4.10cm'],
-      ['#', 'Branch', 'Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'],
+      momCols,
+      momHeaders,
       (it, idx) => {
         const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
         const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode || 'MOM')}}}`;
+        
+        const atrText = (it.actionTaken || it.actionTakenReport || '').trim();
+        const atrCell = atrText ? `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(atrText)}}` : '{\\fontsize{6.5}{8}\\selectfont --}';
+
         const mTitle = escapeLatex(it.title || "HoD's Meeting");
         const mDate = escapeLatex(it.date || '-');
         const mtgLines = [
@@ -806,6 +870,9 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
         const mtgFirst = mtgLines.join(' \\newline ');
         const pol = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.policyChanges || 'Standard operations and administrative resolutions confirmed.')}}` +
           (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
+
+        const apText = (it.actionPoints || '').trim();
+        const apCell = apText ? `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandamber}{${escapeLatex(apText)}}}}` : '{\\fontsize{6.5}{8}\\selectfont --}';
 
         const discussions = it.discussions;
         if (Array.isArray(discussions) && discussions.length > 0) {
@@ -837,16 +904,27 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
               detFormatted = dDetLines.map(l => `\\textcolor{brandnavy}{\\textbf{\\textbullet}} {\\fontsize{7}{8.5}\\selectfont ${escapeLatex(l)}}`).join(' \\newline ');
             }
             const discCell = (dIdx === 0 ? attPrefix : '') + `{\\fontsize{7.5}{9}\\selectfont\\textbf{${dHead}}}: \\newline ${detFormatted}`;
-            if (dIdx === 0) {
-              rows.push([sno, branch, mtgFirst, discCell, pol]);
-            } else {
-              rows.push(['', '', '{\\fontsize{6.5}{8}\\selectfont (Cont.)}', discCell, '']);
+            
+            const rowItems = [dIdx === 0 ? sno : '', dIdx === 0 ? branch : ''];
+            if (hasAtr) {
+              rowItems.push(dIdx === 0 ? atrCell : '');
             }
+            rowItems.push(dIdx === 0 ? mtgFirst : '{\\fontsize{6.5}{8}\\selectfont (Cont.)}');
+            rowItems.push(discCell);
+            rowItems.push(dIdx === 0 ? pol : '');
+            if (hasAp) {
+              rowItems.push(dIdx === 0 ? apCell : '');
+            }
+            rows.push(rowItems);
           });
           return rows;
         } else {
           const discStr = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.decisions || '-')}}`;
-          return [[sno, branch, mtgFirst, discStr, pol]];
+          const rowItems = [sno, branch];
+          if (hasAtr) rowItems.push(atrCell);
+          rowItems.push(mtgFirst, discStr, pol);
+          if (hasAp) rowItems.push(apCell);
+          return [rowItems];
         }
       },
       momItems
@@ -891,6 +969,7 @@ export const compileMasterLatexDocument = async (
     path.join(projectRoot, 'assets', 'sse-header-logo.png'),
     path.join(__dirname, '../../assets/sse-header-logo.png'),
     path.join(__dirname, '../assets/sse-header-logo.png'),
+    path.join(process.cwd(), 'backend', 'assets', 'sse-header-logo.png'),
     path.join(process.cwd(), 'assets', 'sse-header-logo.png'),
     path.join(projectRoot, 'frontend', 'public', 'assets', 'sse-header-logo.png'),
     path.join(projectRoot, 'public', 'assets', 'sse-header-logo.png')

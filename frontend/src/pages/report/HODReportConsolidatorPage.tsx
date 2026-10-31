@@ -367,7 +367,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.docx`;
+      link.download = `Consolidated_Institutional_Report_${period.replace(/\s+/g, '_')}.docx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -396,7 +396,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
         const byteArray = new Uint8Array(byteNumbers);
         const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
-        const fileName = res.data.data.fileName || `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+        const fileName = res.data.data.fileName || `Consolidated_Institutional_Report_${period.replace(/\s+/g, '_')}.pdf`;
         const blobUrl = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.href = blobUrl;
@@ -418,7 +418,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
         console.warn('Backend stream failed, falling back to high-resolution client-side PDF export:', streamErr);
         try {
           toast.loading('Generating Master Institutional PDF...', { id: 'consolidate-pdf' });
-          await exportPagesToPdf('consolidated-pdf-document', `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`);
+          await exportPagesToPdf('consolidated-pdf-document', `Consolidated_Institutional_Report_${period.replace(/\s+/g, '_')}.pdf`);
           toast.success(`Master Consolidated Institutional PDF downloaded!`, { id: 'consolidate-pdf' });
         } catch (clientErr: any) {
           toast.error('PDF consolidation failed: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: 'consolidate-pdf' });
@@ -438,7 +438,7 @@ export const HODReportConsolidatorPage: React.FC = () => {
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `Consolidated_Institutional_HOD_Report_${period.replace(/\s+/g, '_')}.pdf`;
+      link.download = `Consolidated_Institutional_Report_${period.replace(/\s+/g, '_')}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

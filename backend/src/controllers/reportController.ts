@@ -1040,8 +1040,8 @@ export const generateConsolidatedReportFromSubmissions = async (req: any, res: R
     }
 
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const reportPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.docx`);
-    const pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
+    const reportPath = path.join(projectRoot, `Consolidated_Institutional_Report_${cleanPeriod}.docx`);
+    const pdfPath = path.join(projectRoot, `Consolidated_Institutional_Report_${cleanPeriod}.pdf`);
 
     // Build the consolidated JSON map containing all departments and committees data
     const departmentsData: Record<string, any> = {};

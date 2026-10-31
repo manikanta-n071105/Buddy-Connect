@@ -6,6 +6,40 @@ import subprocess
 import shutil
 import tempfile
 
+PRESERVED_ACRONYMS = {
+    'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
+    'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+    'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
+    'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
+    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+    'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
+}
+
+def format_fixed_caps(text):
+    if text is None:
+        return ""
+    text = str(text)
+    if not text.strip():
+        return text
+
+    def repl(m):
+        tok = m.group(1)
+        up = tok.upper()
+        if up in PRESERVED_ACRONYMS:
+            return up
+        if re.match(r'^[A-Za-z]\.?$', tok):
+            return tok.upper()
+        if re.match(r'^DR\.?$', tok, re.I): return 'Dr.'
+        if re.match(r'^MR\.?$', tok, re.I): return 'Mr.'
+        if re.match(r'^MS\.?$', tok, re.I): return 'Ms.'
+        if re.match(r'^MRS\.?$', tok, re.I): return 'Mrs.'
+        if re.match(r'^PROF\.?$', tok, re.I): return 'Prof.'
+        if tok == tok.upper() and any(c.isalpha() for c in tok) and len(tok) > 1:
+            return tok[0].upper() + tok[1:].lower()
+        return tok
+
+    return re.sub(r'([A-Za-z0-9&.\-\/]+)', repl, text)
+
 def escape_latex(text):
     """Escapes special LaTeX characters and handles superscripts, subscripts, power values, and math expressions."""
     if text is None:
@@ -13,6 +47,7 @@ def escape_latex(text):
     text = str(text)
     if not text.strip():
         return ""
+    text = format_fixed_caps(text)
 
     # Clean errant patterns and unicode characters
     text = (text
@@ -210,16 +245,20 @@ def get_tectonic_bin():
 def get_logo_path():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     candidates = [
+        os.path.join(root, 'backend', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'frontend', 'public', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'public', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'backend', 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'frontend', 'public', 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'assets', 'sse-header-logo.png'),
     ]
     for c in candidates:
         if os.path.exists(c):
-            return c.replace('\\', '/')
+            return os.path.abspath(c)
     return None
 
-def generate_department_latex_document(data):
+def generate_department_latex_document(data, has_logo=True):
     dept = data.get('department', 'Civil Engineering')
     period = data.get('period', 'September 2026')
     hod_name = data.get('hodName', 'Head of the Department')
@@ -232,7 +271,6 @@ def generate_department_latex_document(data):
     escaped_hod = escape_latex(hod_name)
     escaped_sub_date = escape_latex(submission_date)
     escaped_college = escape_latex(college_name)
-    logo_path = get_logo_path()
 
     # Calculate summary metrics
     journals_list = [it for it in sections.get('journals', []) if is_meaningful(it)]
@@ -346,7 +384,7 @@ def generate_department_latex_document(data):
 ''')
 
     # 1. Official Header matching HODProfessionalPDFView.tsx without wasted top margin
-    logo_element = r'\includegraphics[height=1.2cm]{' + logo_path + r'}' if logo_path else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
+    logo_element = r'\includegraphics[height=1.2cm]{sse-header-logo.png}' if has_logo else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
     
     tex.append(r'''
 \thispagestyle{empty}
@@ -605,18 +643,24 @@ def generate_department_latex_document(data):
 \noindent{\color{brandborder}\rule{\textwidth}{1.2pt}}\vspace{18pt}
 
 \begin{table*}[b]
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr@{}}
-  \parbox{6.5cm}{\centering
-    \rule{5.0cm}{1.2pt}\\[4pt]
-    \textbf{\fontsize{10}{12}\selectfont \textcolor{branddark}{''' + escaped_hod + r'''}}\\[2pt]
-    {\fontsize{8.5}{10.5}\selectfont \textbf{\textcolor{slatedark}{Head of Department (HOD)}}}\\[1pt]
-    {\fontsize{7.5}{9.5}\selectfont \textcolor{slatelight}{Department of ''' + escaped_dept + r'''}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lcr@{}}
+  \parbox{5.5cm}{\centering
+    \rule{4.5cm}{1.2pt}\\[4pt]
+    \textbf{\fontsize{9.5}{11.5}\selectfont \textcolor{branddark}{''' + escaped_hod + r'''}}\\[2pt]
+    {\fontsize{8}{10}\selectfont \textbf{\textcolor{slatedark}{Head of Department (HOD)}}}\\[1pt]
+    {\fontsize{7}{9}\selectfont \textcolor{slatelight}{Department of ''' + escaped_dept + r'''}}
   } &
-  \parbox{6.5cm}{\centering
-    \rule{5.0cm}{1.2pt}\\[4pt]
-    \textbf{\fontsize{10}{12}\selectfont \textcolor{branddark}{S. Hemachandra}}\\[2pt]
-    {\fontsize{8.5}{10.5}\selectfont \textbf{\textcolor{slatedark}{Principal}}}\\[1pt]
-    {\fontsize{7.5}{9.5}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
+  \parbox{5.5cm}{\centering
+    \rule{4.5cm}{1.2pt}\\[4pt]
+    \textbf{\fontsize{9.5}{11.5}\selectfont \textcolor{branddark}{S. HariKrishnan}}\\[2pt]
+    {\fontsize{8}{10}\selectfont \textbf{\textcolor{slatedark}{IQAC Coordinator}}}\\[1pt]
+    {\fontsize{7}{9}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
+  } &
+  \parbox{5.5cm}{\centering
+    \rule{4.5cm}{1.2pt}\\[4pt]
+    \textbf{\fontsize{9.5}{11.5}\selectfont \textcolor{branddark}{S. Hemachandra}}\\[2pt]
+    {\fontsize{8}{10}\selectfont \textbf{\textcolor{slatedark}{Principal}}}\\[1pt]
+    {\fontsize{7}{9}\selectfont \textcolor{slatelight}{Sanskrithi School of Engineering}}
   }
 \end{tabular*}
 \end{table*}
@@ -630,9 +674,17 @@ def compile_department_latex_pdf(json_input_path, output_pdf_path):
     with open(json_input_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    latex_code = generate_department_latex_document(data)
-
     temp_dir = tempfile.mkdtemp(prefix="dept_latex_")
+    logo_src = get_logo_path()
+    has_logo = False
+    if logo_src and os.path.exists(logo_src):
+        try:
+            shutil.copyfile(logo_src, os.path.join(temp_dir, "sse-header-logo.png"))
+            has_logo = True
+        except Exception as e:
+            print(f"Warning: could not copy logo to temp dir: {e}")
+
+    latex_code = generate_department_latex_document(data, has_logo=has_logo)
     tex_file = os.path.join(temp_dir, "report.tex")
     
     with open(tex_file, 'w', encoding='utf-8') as f:

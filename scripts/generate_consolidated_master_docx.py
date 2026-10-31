@@ -26,6 +26,40 @@ DEPARTMENT_CODE_MAP = {
     'Disciplinary Committee': 'DISCIP'
 }
 
+PRESERVED_ACRONYMS = {
+    'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
+    'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+    'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
+    'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
+    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+    'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
+}
+
+def format_fixed_caps(text):
+    if text is None:
+        return ""
+    text = str(text)
+    if not text.strip():
+        return text
+
+    def repl(m):
+        tok = m.group(1)
+        up = tok.upper()
+        if up in PRESERVED_ACRONYMS:
+            return up
+        if re.match(r'^[A-Za-z]\.?$', tok):
+            return tok.upper()
+        if re.match(r'^DR\.?$', tok, re.I): return 'Dr.'
+        if re.match(r'^MR\.?$', tok, re.I): return 'Mr.'
+        if re.match(r'^MS\.?$', tok, re.I): return 'Ms.'
+        if re.match(r'^MRS\.?$', tok, re.I): return 'Mrs.'
+        if re.match(r'^PROF\.?$', tok, re.I): return 'Prof.'
+        if tok == tok.upper() and any(c.isalpha() for c in tok) and len(tok) > 1:
+            return tok[0].upper() + tok[1:].lower()
+        return tok
+
+    return re.sub(r'([A-Za-z0-9&.\-\/]+)', repl, text)
+
 def get_dept_code(dept_name):
     return DEPARTMENT_CODE_MAP.get(dept_name, dept_name[:6].upper())
 
@@ -264,7 +298,7 @@ def add_styled_cell_text(cell, lines, font_size=8.5, align=WD_ALIGN_PARAGRAPH.LE
             r_pre.font.color.rgb = RGBColor(30, 58, 138)
         
         if text:
-            r = p.add_run(str(text))
+            r = p.add_run(format_fixed_caps(str(text)))
             r.bold = bool(is_bold)
             r.font.size = Pt(font_size)
             if color_hex:
@@ -276,6 +310,22 @@ def add_styled_cell_text(cell, lines, font_size=8.5, align=WD_ALIGN_PARAGRAPH.LE
             else:
                 r.font.color.rgb = RGBColor(15, 23, 42)
 
+def get_logo_path():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    candidates = [
+        os.path.join(root, 'backend', 'assets', 'sse-header-logo.png'),
+        os.path.join(root, 'frontend', 'public', 'assets', 'sse-header-logo.png'),
+        os.path.join(root, 'public', 'assets', 'sse-header-logo.png'),
+        os.path.join(root, 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'backend', 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'frontend', 'public', 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'assets', 'sse-header-logo.png'),
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return os.path.abspath(c)
+    return None
+
 def generate_consolidated_master_docx(all_dept_data, period, output_path, college_name="SANSKRITHI SCHOOL OF ENGINEERING"):
     doc = docx.Document()
 
@@ -286,7 +336,18 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
         section.left_margin = Inches(0.65)
         section.right_margin = Inches(0.65)
 
-    # 1. Master Header Banner
+    # 1. Master Header Banner with Institutional Logo
+    logo_file = get_logo_path()
+    if logo_file and os.path.exists(logo_file):
+        try:
+            p_logo = doc.add_paragraph()
+            p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p_logo.paragraph_format.space_before = Pt(0)
+            p_logo.paragraph_format.space_after = Pt(2)
+            p_logo.add_run().add_picture(logo_file, height=Inches(0.60))
+        except Exception:
+            pass
+
     p_title = doc.add_paragraph()
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_title.paragraph_format.space_before = Pt(0)
@@ -855,10 +916,10 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 8. Syllabus Coverage Report (Exact 8 columns as PDF)
+    # 8. Syllabus Coverage Report (Exact 7 columns as PDF)
     # -------------------------------------------------------------
     add_major_heading("8. SYLLABUS COVERAGE REPORT", "Branch-wise academic syllabus delivery status across theory courses and laboratories.")
-    syl_headers = ['S.No', 'Branch', 'Course / Subject Title', 'Year/Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing', 'Remarks / Status']
+    syl_headers = ['S.No', 'Branch', 'Course / Subject Title', 'Year/Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing']
     syl_table = doc.add_table(rows=1, cols=len(syl_headers))
     for i, h in enumerate(syl_headers): syl_table.rows[0].cells[i].text = h
 
@@ -874,11 +935,10 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
             add_styled_cell_text(row[4], [(it.get('faculty', '-'), True, "1E3A8A")], font_size=8)
             add_styled_cell_text(row[5], [(normalize_syllabus_completed(it.get('completed'), it.get('pending')), True, "047857")], font_size=8, align=WD_ALIGN_PARAGRAPH.CENTER)
             add_styled_cell_text(row[6], [(normalize_syllabus_pending(it.get('completed'), it.get('pending')), True, "B45309")], font_size=8, align=WD_ALIGN_PARAGRAPH.CENTER)
-            add_styled_cell_text(row[7], [normalize_syllabus_remarks(it.get('remarks'), it.get('completed'))], font_size=7.5)
     else:
         nil = syl_table.add_row().cells
         for c in nil: c.text = "NIL"; c.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    apply_table_styling(syl_table, [Inches(0.35), Inches(0.55), Inches(1.8), Inches(0.7), Inches(1.2), Inches(0.95), Inches(0.95), Inches(0.7)])
+    apply_table_styling(syl_table, [Inches(0.40), Inches(0.60), Inches(2.20), Inches(0.75), Inches(1.35), Inches(0.95), Inches(0.95)])
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
@@ -958,6 +1018,74 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
         for c in nil: c.text = "NIL"; c.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
     apply_table_styling(add_table, [Inches(0.4), Inches(0.65), Inches(2.4), Inches(1.35), Inches(2.4)])
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
+
+    # -------------------------------------------------------------
+    # 12. Minutes of the Meeting (MOM)
+    # -------------------------------------------------------------
+    mom_items = gather_items('deptMeetings')
+    if mom_items:
+        add_major_heading("12. MINUTES OF THE MEETING (MOM)", "Executive proceedings, administrative directives, and operational resolutions.")
+        has_atr = any(bool((it.get('actionTaken') or it.get('actionTakenReport') or '').strip()) for it in mom_items)
+        has_ap = any(bool((it.get('actionPoints') or '').strip()) for it in mom_items)
+
+        mom_headers = ['S.No', 'Branch']
+        if has_atr:
+            mom_headers.append('Action Taken Report')
+        mom_headers.extend(['Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'])
+        if has_ap:
+            mom_headers.append('Action Points')
+
+        mom_table = doc.add_table(rows=1, cols=len(mom_headers))
+        for i, h in enumerate(mom_headers): mom_table.rows[0].cells[i].text = h
+
+        for idx, it in enumerate(mom_items):
+            row = mom_table.add_row().cells
+            col_ptr = 0
+            row[col_ptr].text = str(idx + 1); row[col_ptr].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            col_ptr += 1
+            row[col_ptr].text = it['deptCode']; row[col_ptr].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER; row[col_ptr].paragraphs[0].runs[0].bold = True
+            col_ptr += 1
+
+            if has_atr:
+                atr_txt = (it.get('actionTaken') or it.get('actionTakenReport') or '-').strip()
+                add_styled_cell_text(row[col_ptr], [(atr_txt, False, "0369A1")], font_size=8)
+                col_ptr += 1
+
+            mtg_lines = [(it.get('title') or "HoD's Meeting", True, "1E3A8A"), (f"Date: {it.get('date', '-')}", False, "334155")]
+            if it.get('time'): mtg_lines.append((f"Time: {it['time']}", False, "64748B"))
+            if it.get('venue'): mtg_lines.append((f"Venue: {it['venue']}", False, "64748B"))
+            add_styled_cell_text(row[col_ptr], mtg_lines, font_size=8)
+            col_ptr += 1
+
+            disc_lines = []
+            discussions = it.get('discussions', [])
+            if isinstance(discussions, list) and len(discussions) > 0:
+                for d_idx, d in enumerate(discussions):
+                    h = d.get('heading', f'Topic {d_idx+1}')
+                    det = d.get('details', '')
+                    disc_lines.append((f"{h}: ", det or "Discussed & recorded.", False, "0F172A"))
+            else:
+                disc_lines.append((it.get('decisions', '-'), False, "334155"))
+            add_styled_cell_text(row[col_ptr], disc_lines, font_size=8)
+            col_ptr += 1
+
+            pol_lines = [(it.get('policyChanges', 'Standard operations confirmed.'), False, "334155")]
+            if it.get('link'): pol_lines.append(("Proof Link: ", it['link'], False, "1D4ED8"))
+            add_styled_cell_text(row[col_ptr], pol_lines, font_size=8)
+            col_ptr += 1
+
+            if has_ap:
+                ap_txt = (it.get('actionPoints') or '-').strip()
+                add_styled_cell_text(row[col_ptr], [(ap_txt, False, "B45309")], font_size=8)
+                col_ptr += 1
+
+        if has_atr and has_ap:
+            apply_table_styling(mom_table, [Inches(0.35), Inches(0.55), Inches(1.1), Inches(1.2), Inches(2.1), Inches(1.0), Inches(0.9)])
+        elif has_atr or has_ap:
+            apply_table_styling(mom_table, [Inches(0.35), Inches(0.55), Inches(1.2), Inches(1.3), Inches(2.6), Inches(1.2)])
+        else:
+            apply_table_styling(mom_table, [Inches(0.4), Inches(0.65), Inches(1.5), Inches(3.2), Inches(1.45)])
+        doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     doc.save(output_path)

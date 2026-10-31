@@ -25,6 +25,40 @@ DEPARTMENT_CODE_MAP = {
 def get_dept_code(dept_name):
     return DEPARTMENT_CODE_MAP.get(dept_name, (dept_name[:6].upper() if dept_name else 'DEPT'))
 
+PRESERVED_ACRONYMS = {
+    'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
+    'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+    'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
+    'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
+    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+    'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
+}
+
+def format_fixed_caps(text):
+    if text is None:
+        return ""
+    text = str(text)
+    if not text.strip():
+        return text
+
+    def repl(m):
+        tok = m.group(1)
+        up = tok.upper()
+        if up in PRESERVED_ACRONYMS:
+            return up
+        if re.match(r'^[A-Za-z]\.?$', tok):
+            return tok.upper()
+        if re.match(r'^DR\.?$', tok, re.I): return 'Dr.'
+        if re.match(r'^MR\.?$', tok, re.I): return 'Mr.'
+        if re.match(r'^MS\.?$', tok, re.I): return 'Ms.'
+        if re.match(r'^MRS\.?$', tok, re.I): return 'Mrs.'
+        if re.match(r'^PROF\.?$', tok, re.I): return 'Prof.'
+        if tok == tok.upper() and any(c.isalpha() for c in tok) and len(tok) > 1:
+            return tok[0].upper() + tok[1:].lower()
+        return tok
+
+    return re.sub(r'([A-Za-z0-9&.\-\/]+)', repl, text)
+
 def escape_latex(text):
     """Escapes special LaTeX characters and handles superscripts, subscripts, power values, and math expressions."""
     if text is None:
@@ -32,6 +66,7 @@ def escape_latex(text):
     text = str(text)
     if not text.strip():
         return ""
+    text = format_fixed_caps(text)
 
     # Clean errant patterns and unicode characters
     text = (text
@@ -332,16 +367,18 @@ def get_logo_path():
         os.path.join(root, 'frontend', 'public', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'public', 'assets', 'sse-header-logo.png'),
         os.path.join(root, 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'backend', 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'frontend', 'public', 'assets', 'sse-header-logo.png'),
+        os.path.join(os.getcwd(), 'assets', 'sse-header-logo.png'),
     ]
     for c in candidates:
         if os.path.exists(c):
-            return c.replace('\\', '/')
+            return os.path.abspath(c)
     return None
 
-def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL OF ENGINEERING"):
+def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL OF ENGINEERING", has_logo=True):
     escaped_period = escape_latex(period)
     escaped_college = escape_latex(college_name)
-    logo_path = get_logo_path()
 
     def gather_items(sec_key, alt_key=None):
         res = []
@@ -402,7 +439,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     linkcolor=brandnavy,
     filecolor=brandnavy,
     urlcolor=linkblue,
-    pdftitle={Institutional HOD Progress Report - ''' + escaped_period + r'''},
+    pdftitle={Institutional Progress Report - ''' + escaped_period + r'''},
     pdfauthor={Sanskrithi School of Engineering}
 }
 
@@ -421,7 +458,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\fontsize{6.5}{8}\selectfont\textbf{\textcolor{slatemed}{SANSKRITHI SCHOOL OF ENGINEERING (AUTONOMOUS)}}}
-\fancyhead[R]{\fontsize{6.5}{8}\selectfont\textbf{\textcolor{slatemed}{INSTITUTIONAL HOD PROGRESS REPORT \textbullet\ ''' + escaped_period.upper() + r'''}}}
+\fancyhead[R]{\fontsize{6.5}{8}\selectfont\textbf{\textcolor{slatemed}{INSTITUTIONAL PROGRESS REPORT \textbullet\ ''' + escaped_period.upper() + r'''}}}
 \fancyfoot[L]{}
 \fancyfoot[R]{\fontsize{7}{8.5}\selectfont\textbf{\textcolor{slatemed}{Page \thepage\ of \pageref{LastPage}}}}
 \renewcommand{\headrulewidth}{0.6pt}
@@ -440,7 +477,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 ''')
 
     # 1. Page Header (Top)
-    logo_element = r'\includegraphics[height=1.2cm]{' + logo_path + r'}' if logo_path else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
+    logo_element = r'\includegraphics[height=1.2cm]{sse-header-logo.png}' if has_logo else r'{\Large\textbf{\textcolor{brandnavy}{SSE}}}'
     
     tex.append(r'''
 \thispagestyle{empty}
@@ -460,7 +497,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 \vspace{6pt}
 
 {\centering
-  {\fontsize{14}{16}\selectfont \textbf{\textcolor{brandnavy}{INSTITUTIONAL HOD PROGRESS REPORT}}}\\[3pt]
+  {\fontsize{14}{16}\selectfont \textbf{\textcolor{brandnavy}{INSTITUTIONAL PROGRESS REPORT}}}\\[3pt]
   {\fontsize{9}{11}\selectfont \textbf{\textcolor{slatemed}{Comprehensive Performance Dossier \& Departmental Analytics}}}\\[2pt]
   {\fontsize{8}{10}\selectfont \textcolor{slatelight}{Reporting Period: \textbf{\textcolor{branddark}{''' + escaped_period + r'''}}}}\\[6pt]
 \par}
@@ -823,14 +860,12 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         pend_clean = escape_latex(normalize_syllabus_pending(it.get('completed', ''), it.get('pending', '')))
         pend = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{brandamber}}{{{pend_clean}}}}}}}"
         
-        rem_clean = escape_latex(normalize_syllabus_remarks(it.get('remarks', '')))
-        rem = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textit{{{rem_clean}}}}}"
-        return [sno, branch, sub, yr, fac, comp, pend, rem]
+        return [sno, branch, sub, yr, fac, comp, pend]
 
     tex.append(render_section(
         '8. SYLLABUS COVERAGE REPORT',
-        ['0.70cm', '1.05cm', '4.40cm', '1.15cm', '2.60cm', '2.15cm', '2.15cm', '2.30cm'],
-        ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing', 'Remarks / Status'],
+        ['0.75cm', '1.20cm', '5.50cm', '1.60cm', '3.65cm', '2.50cm', '2.50cm'],
+        ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing'],
         gen_syl_row,
         syl_items
     ))
@@ -912,9 +947,16 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
             seen_moms.add(key)
             mom_items.append(m)
 
+    has_atr = any(bool((it.get('actionTaken') or it.get('actionTakenReport') or '').strip()) for it in mom_items)
+    has_ap = any(bool((it.get('actionPoints') or '').strip()) for it in mom_items)
+
     def gen_mom_rows(it, idx):
         sno = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {idx + 1}}}"
         branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{{escape_latex(it.get('deptCode', 'MOM'))}}}}}"
+        
+        atr_text = (it.get('actionTaken') or it.get('actionTakenReport') or '').strip()
+        atr_cell = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(atr_text)}}}" if atr_text else r"{\fontsize{6.5}{8}\selectfont --}"
+        
         m_title = escape_latex(it.get('title') or "HoD's Meeting")
         m_date = escape_latex(it.get('date', '-'))
         mtg_lines = [
@@ -928,6 +970,9 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         mtg_first = r" \newline ".join(mtg_lines)
         
         pol = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(it.get('policyChanges', 'Standard operations and administrative resolutions confirmed.'))}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
+
+        ap_text = (it.get('actionPoints') or '').strip()
+        ap_cell = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{brandamber}}{{{escape_latex(ap_text)}}}}}}}" if ap_text else r"{\fontsize{6.5}{8}\selectfont --}"
 
         discussions = it.get('discussions', [])
         if isinstance(discussions, list) and len(discussions) > 0:
@@ -958,20 +1003,49 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 
                 disc_cell = (att_prefix if d_idx == 0 else "") + f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{d_head}}}}}: \\newline {det_formatted}"
                 
-                if d_idx == 0:
-                    rows.append([sno, branch, mtg_first, disc_cell, pol])
-                else:
-                    rows.append(["", "", r"{\fontsize{6.5}{8}\selectfont (Cont.)}", disc_cell, ""])
+                row_items = [sno if d_idx == 0 else "", branch if d_idx == 0 else ""]
+                if has_atr:
+                    row_items.append(atr_cell if d_idx == 0 else "")
+                row_items.append(mtg_first if d_idx == 0 else r"{\fontsize{6.5}{8}\selectfont (Cont.)}")
+                row_items.append(disc_cell)
+                row_items.append(pol if d_idx == 0 else "")
+                if has_ap:
+                    row_items.append(ap_cell if d_idx == 0 else "")
+                rows.append(row_items)
             return rows
         else:
             disc_str = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(it.get('decisions', '-'))}}}"
-            return [[sno, branch, mtg_first, disc_str, pol]]
+            row_items = [sno, branch]
+            if has_atr:
+                row_items.append(atr_cell)
+            row_items.append(mtg_first)
+            row_items.append(disc_str)
+            row_items.append(pol)
+            if has_ap:
+                row_items.append(ap_cell)
+            return [row_items]
 
     if mom_items:
+        mom_cols = ['0.80cm', '1.20cm']
+        mom_headers = ['#', 'Branch']
+        if has_atr:
+            mom_headers.append('Action Taken Report')
+            mom_cols.append('2.80cm')
+        if has_atr and has_ap:
+            mom_cols.extend(['2.80cm', '5.20cm', '2.50cm'])
+        elif has_atr or has_ap:
+            mom_cols.extend(['3.10cm', '6.30cm', '3.10cm'])
+        else:
+            mom_cols.extend(['3.60cm', '8.00cm', '4.10cm'])
+        mom_headers.extend(['Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'])
+        if has_ap:
+            mom_headers.append('Action Points')
+            mom_cols.append('2.50cm' if has_atr else '3.10cm')
+
         tex.append(render_section(
             '12. MINUTES OF THE MEETING (MOM)',
-            ['0.80cm', '1.20cm', '3.60cm', '8.00cm', '4.10cm'],
-            ['#', 'Branch', 'Meeting & Venue', 'Key Decisions & Topics Discussed', 'Policy Directives & Action Plan'],
+            mom_cols,
+            mom_headers,
             gen_mom_rows,
             mom_items
         ))
@@ -1013,9 +1087,17 @@ def compile_master_latex_pdf(json_input_path, output_pdf_path):
     period = data.get('period', 'September 2026')
     college_name = data.get('collegeName', 'SANSKRITHI SCHOOL OF ENGINEERING')
 
-    latex_code = build_latex_document(departments_data, period, college_name)
-
     temp_dir = tempfile.mkdtemp(prefix="consolidated_latex_")
+    logo_src = get_logo_path()
+    has_logo = False
+    if logo_src and os.path.exists(logo_src):
+        try:
+            shutil.copyfile(logo_src, os.path.join(temp_dir, "sse-header-logo.png"))
+            has_logo = True
+        except Exception as e:
+            print(f"Warning: could not copy logo to temp dir: {e}")
+
+    latex_code = build_latex_document(departments_data, period, college_name, has_logo=has_logo)
     tex_file = os.path.join(temp_dir, "report.tex")
     
     with open(tex_file, 'w', encoding='utf-8') as f:

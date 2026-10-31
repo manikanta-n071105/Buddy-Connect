@@ -62,11 +62,13 @@ export interface DeptMeetingItem {
   venue?: string;
   title?: string;
   meetingNo?: string;
+  actionTaken?: string;
   attendees?: MomAttendee[];
   agenda?: string;
   discussions?: MomDiscussionItem[];
   decisions?: string;
   policyChanges?: string;
+  actionPoints?: string;
   link?: string;
 }
 
@@ -429,7 +431,7 @@ export interface ReportSectionsData {
     faculty: string;
     completed: string;
     pending: string;
-    remarks: string;
+    remarks?: string;
   }>;
   studentEngagement?: Array<{
     title: string;
@@ -776,6 +778,7 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
         venue: m.venue || '',
         title: m.title || '',
         meetingNo: m.meetingNo || '',
+        actionTaken: (m.actionTaken || m.actionTakenReport || '').replace(/[\uF000-\uF0FF]/g, '•'),
         attendees: Array.isArray(m.attendees) ? m.attendees : [],
         agenda: (m.agenda || '').replace(/[\uF000-\uF0FF]/g, '•'),
         discussions: Array.isArray(m.discussions)
@@ -790,6 +793,7 @@ export const normalizeSections = (raw: any): ReportSectionsData => {
           : [],
         decisions: (m.decisions || '').replace(/[\uF000-\uF0FF]/g, '•'),
         policyChanges: (m.policyChanges || '').replace(/[\uF000-\uF0FF]/g, '•'),
+        actionPoints: (m.actionPoints || '').replace(/[\uF000-\uF0FF]/g, '•'),
         link: m.link || ''
       }))
       : [],
@@ -1280,9 +1284,9 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const payload = {
         department: currentDept,
         period: currentPeriod,
-        hodName: currentHod,
+        hodName: formatFixedCaps(currentHod),
         submissionDate: currentSubDate,
-        sections: currentSections,
+        sections: formatSectionsFixedCaps(currentSections),
         status: 'SUBMITTED'
       };
 
@@ -1501,7 +1505,9 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
               agenda: '',
               discussions: [],
               decisions: '',
+              actionTaken: '',
               policyChanges: '',
+              actionPoints: '',
               link: ''
             }
           ];
@@ -1519,7 +1525,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.iicCell = [...(copy.iicCell || []), { activity: '', date: '', description: '', partner: '', beneficiaries: '', outcomes: '', link: '' }];
           break;
         case 'syllabus':
-          copy.syllabus = [...(copy.syllabus || []), { subject: '', yearSem: '', faculty: '', completed: '', pending: '', remarks: '' }];
+          copy.syllabus = [...(copy.syllabus || []), { subject: '', yearSem: '', faculty: '', completed: '', pending: '' }];
           break;
         case 'studentEngagement':
           copy.studentEngagement = [
@@ -3121,6 +3127,25 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                         </div>
                       </div>
 
+                      {/* Action Taken Report (ATR) - Optional First Column */}
+                      <div className="p-3.5 bg-blue-50/50 border border-blue-200/80 rounded-2xl space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-blue-900 block">
+                            Action Taken Report (ATR) <span className="text-[10px] font-normal text-blue-600">(Optional — Displays as 1st table column if entered)</span>
+                          </label>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                            Previous Meeting Follow-up
+                          </span>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={item.actionTaken || ''}
+                          placeholder="e.g. Previous resolution on ERP class substitution implemented successfully; 100% compliance achieved across all engineering branches."
+                          onChange={(e) => handleUpdateField('deptMeetings', mIdx, 'actionTaken', e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-blue-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 leading-relaxed"
+                        />
+                      </div>
+
                       {/* Section 1: Attendees */}
                       <div className="p-4 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-3">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
@@ -3504,6 +3529,25 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                             onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'link', v)}
                           />
                         </div>
+                      </div>
+
+                      {/* Action Points / Next Deliverables - Optional Last Column */}
+                      <div className="p-3.5 bg-amber-50/50 border border-amber-200/80 rounded-2xl space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-amber-900 block">
+                            Action Points <span className="text-[10px] font-normal text-amber-600">(Optional — Displays as last table column if entered)</span>
+                          </label>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
+                            Upcoming Deliverables & Targets
+                          </span>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={item.actionPoints || ''}
+                          placeholder="e.g. 1. All HODs to submit lab maintenance records by Friday. 2. Project coordinators to conduct first internal review."
+                          onChange={(e) => handleUpdateField('deptMeetings', mIdx, 'actionPoints', e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-amber-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/15 transition-all placeholder:text-slate-400 leading-relaxed"
+                        />
                       </div>
 
                     </div>
@@ -3895,16 +3939,6 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                             <p className="text-[10px] text-slate-400">
                               Automatically computed as ({isLab ? 'Total - Done' : '5 - Completed Units'}). You can also edit if needed.
                             </p>
-                          </div>
-
-                          {/* Remarks */}
-                          <div className="md:col-span-3">
-                            <FieldInput
-                              label="Remarks / Action Plan"
-                              value={item.remarks}
-                              placeholder="e.g. Extra classes scheduled / Revision sessions underway"
-                              onChange={(v) => handleUpdateField('syllabus', idx, 'remarks', v)}
-                            />
                           </div>
                         </div>
                       </div>
@@ -4504,6 +4538,61 @@ interface FieldInputProps {
   required?: boolean;
 }
 
+export const PRESERVED_ACRONYMS = new Set([
+  'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
+  'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+  'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
+  'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
+  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+  'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
+]);
+
+export const formatFixedCaps = (text: any): string => {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  if (!str.trim()) return str;
+
+  return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
+    const upperToken = token.toUpperCase();
+    if (PRESERVED_ACRONYMS.has(upperToken)) {
+      return upperToken;
+    }
+
+    if (/^[A-Za-z]\.?$/.test(token)) {
+      return token.toUpperCase();
+    }
+
+    if (/^DR\.?$/i.test(token)) return 'Dr.';
+    if (/^MR\.?$/i.test(token)) return 'Mr.';
+    if (/^MS\.?$/i.test(token)) return 'Ms.';
+    if (/^MRS\.?$/i.test(token)) return 'Mrs.';
+    if (/^PROF\.?$/i.test(token)) return 'Prof.';
+
+    if (token === token.toUpperCase() && /[A-Z]/.test(token) && token.length > 1) {
+      return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+    }
+
+    return token;
+  });
+};
+
+export const formatSectionsFixedCaps = (data: any): any => {
+  if (typeof data === 'string') {
+    return formatFixedCaps(data);
+  }
+  if (Array.isArray(data)) {
+    return data.map(formatSectionsFixedCaps);
+  }
+  if (data !== null && typeof data === 'object') {
+    const copy: Record<string, any> = {};
+    for (const [k, v] of Object.entries(data)) {
+      copy[k] = formatSectionsFixedCaps(v);
+    }
+    return copy;
+  }
+  return data;
+};
+
 const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeholder, type = 'text', required = false }) => (
   <div className="space-y-1">
     <label className="text-[11px] font-bold text-slate-700 block">
@@ -4514,6 +4603,14 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeho
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
+      onBlur={() => {
+        if (type === 'text' && typeof value === 'string' && value.trim()) {
+          const formatted = formatFixedCaps(value);
+          if (formatted !== value) {
+            onChange(formatted);
+          }
+        }
+      }}
       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400"
     />
   </div>
@@ -4668,6 +4765,15 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
             value={name}
             placeholder={placeholder}
             onChange={(e) => updateCombined(title, initial, e.target.value)}
+            onBlur={() => {
+              if (name && name.trim()) {
+                const formattedName = formatFixedCaps(name);
+                if (formattedName !== name) {
+                  setName(formattedName);
+                  updateCombined(title, initial, formattedName);
+                }
+              }
+            }}
             className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 placeholder:text-slate-400 shadow-2xs"
           />
         </div>
@@ -5072,12 +5178,14 @@ const FieldSelect: React.FC<FieldSelectProps> = ({
 
 
 interface BulletTextareaProps {
-  label: string;
+  label?: string;
   value: string;
   onChange: (v: string) => void;
   onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   rows?: number;
+  className?: string;
+  hideHeader?: boolean;
 }
 
 const BulletTextarea: React.FC<BulletTextareaProps> = ({
@@ -5086,7 +5194,9 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
   onChange,
   onPaste,
   placeholder = '• Enter key decisions...',
-  rows = 4
+  rows = 4,
+  className,
+  hideHeader = false
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') {
@@ -5169,17 +5279,22 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
     // In place of  or Word bullets, replace with bullet point •
     let sanitized = newVal.replace(/[\uF000-\uF0FF]/g, '•');
     sanitized = sanitized.replace(/(^|\n)•\s*•\s*/g, '$1• ');
+    if (sanitized.trim() && !sanitized.startsWith('• ') && !sanitized.startsWith('•')) {
+      sanitized = '• ' + sanitized;
+    }
     onChange(sanitized);
   };
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold text-slate-700 block">{label}</label>
-        <span className="text-[10px] text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-          Press Enter for auto-bullet (•)
-        </span>
-      </div>
+      {!hideHeader && label && (
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-bold text-slate-700 block">{label}</label>
+          <span className="text-[10px] text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+            Press Enter for auto-bullet (•)
+          </span>
+        </div>
+      )}
       <textarea
         rows={rows}
         value={value}
@@ -5188,7 +5303,7 @@ const BulletTextarea: React.FC<BulletTextareaProps> = ({
         onPaste={handlePaste}
         onChange={(e) => handleChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 font-sans"
+        className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 transition-all placeholder:text-slate-400 font-sans leading-relaxed ${className || 'border-slate-200 focus:border-blue-600 focus:ring-blue-600/15'}`}
       />
     </div>
   );

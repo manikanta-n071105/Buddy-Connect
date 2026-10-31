@@ -598,6 +598,18 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                       </div>
                     )}
 
+                    {/* Action Taken Report (ATR) */}
+                    {(item.actionTaken || (item as any).actionTakenReport) && (
+                      <div style={{ backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '4px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#0369a1', marginBottom: '4px' }}>
+                          Action Taken Report (ATR)
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: '#0c4a6e', lineHeight: 1.5, textAlign: 'justify' }}>
+                          {item.actionTaken || (item as any).actionTakenReport}
+                        </div>
+                      </div>
+                    )}
+
                     {/* 2. Agenda Box */}
                     {item.agenda && (
                       <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '8px 12px' }}>
@@ -723,6 +735,18 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                       </div>
                     )}
 
+                    {/* Action Points */}
+                    {item.actionPoints && (
+                      <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '4px', padding: '8px 12px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#b45309', marginBottom: '4px' }}>
+                          Action Points / Deliverables
+                        </div>
+                        <div style={{ fontSize: '10.5px', color: '#92400e', lineHeight: 1.5, textAlign: 'justify' }}>
+                          {item.actionPoints}
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 </div>
               );
@@ -778,12 +802,11 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                 <th style={{ width: '38px', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>S.No</th>
-                <th style={{ width: '20%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Subject / Course</th>
-                <th style={{ width: '13%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
-                <th style={{ width: '17%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Faculty</th>
-                <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Done (5 Units)</th>
-                <th style={{ width: '10%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Pending</th>
-                <th style={{ width: '26%', padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Remarks</th>
+                <th style={{ width: '32%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Subject / Course</th>
+                <th style={{ width: '15%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Year/Sem</th>
+                <th style={{ width: '25%', padding: '6px 8px', borderRight: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', color: '#1a365d' }}>Faculty</th>
+                <th style={{ width: '14%', padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Done (5 Units)</th>
+                <th style={{ width: '14%', padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', color: '#1a365d' }}>Pending</th>
               </tr>
             </thead>
             <tbody>
@@ -794,8 +817,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
                   <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'center' }}>{item.yearSem || '-'}</td>
                   <td style={{ padding: '6px 8px', borderRight: '1px solid #cbd5e1', color: '#334155', textAlign: 'justify', textJustify: 'inter-word' }}>{item.faculty || '-'}</td>
                   <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#047857' }}>{item.completed || '-'}</td>
-                  <td style={{ padding: '6px 4px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 'bold', color: '#b45309' }}>{item.pending || '-'}</td>
-                  <td style={{ padding: '6px 8px', color: '#475569', fontStyle: 'italic', fontSize: '10px', textAlign: 'justify', textJustify: 'inter-word' }}>{item.remarks || '-'}</td>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: 'bold', color: '#b45309' }}>{item.pending || '-'}</td>
                 </tr>
               ))}
             </tbody>
