@@ -41,6 +41,10 @@ def format_fixed_caps(text):
     if not text.strip():
         return text
 
+    # Clean errant math/dollar superscript patterns such as $ {-}$, $^{ - }$, etc. into clean Unicode superscript
+    text = re.sub(r'([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*-\s*\\?\}?\s*\\?\$', r'\1⁻', text)
+    text = text.replace('$ {-}$', '⁻').replace('$^{-}$', '⁻').replace('$ - $', '⁻')
+
     def repl(m):
         tok = m.group(1)
         up = tok.upper()
@@ -95,10 +99,12 @@ def escape_latex(text):
         return key
 
     # 1. User LaTeX math superscript attempts: $^{...}$, $^{-}$, $^{5}$, $ ^{-} $, $ {-}$, $ - $, $ + $
-    text = re.sub(r'\$\s*\^\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
-    text = re.sub(r'\$\s*\^\s*([^\s\$]+)\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
-    text = re.sub(r'\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
-    text = re.sub(r'\$\s*([-+])\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'\$\s*\^\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    text = re.sub(r'\$\s*\^\s*([^\s\$]+)\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    text = re.sub(r'\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    text = re.sub(r'\$\s*([-+])\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    # Errant literal dollar/brace superscript attempts like CO$ {-}$, CO$^{-}$, CO^{-}, CO$ - $
+    text = re.sub(r'([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*([+-])\s*\\?\}?\s*\\?\$', lambda m: m.group(1) + add_token(r'\textsuperscript{' + ('$-$' if m.group(2) == '-' else m.group(2)) + r'}'), text)
 
     # 2. User LaTeX math subscript attempts: $_{...}$, $_2$, $ _2 $
     text = re.sub(r'\$\s*_\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsubscript{' + m.group(1).strip() + r'}'), text)
@@ -124,7 +130,7 @@ def escape_latex(text):
     sup_map = {
         '\u2070': '0', '\u00B9': '1', '\u00B2': '2', '\u00B3': '3', '\u2074': '4',
         '\u2075': '5', '\u2076': '6', '\u2077': '7', '\u2078': '8', '\u2079': '9',
-        '\u207A': '+', '\u207B': '-', '\u207C': '=', '\u207D': '(', '\u207E': ')',
+        '\u207A': '+', '\u207B': '$-$', '\u207C': '=', '\u207D': '(', '\u207E': ')',
         '\u207F': 'n', '\u2071': 'i'
     }
     sup_chars = ''.join(sup_map.keys())
@@ -157,8 +163,9 @@ def escape_latex(text):
     def caret_replace(m):
         base = m.group(1)
         braced = m.group(3)
-        val = braced if braced is not None else m.group(2)
-        return base + add_token(r'\textsuperscript{' + val.strip() + r'}')
+        val = (braced if braced is not None else m.group(2)).strip()
+        val = '$-$' if val == '-' else val
+        return base + add_token(r'\textsuperscript{' + val + r'}')
     text = re.sub(r'([A-Za-z0-9]+)\s*\^\s*(\{([^}]+)\}|[-+]?[0-9a-zA-Z]+|[-+])', caret_replace, text)
 
     # 9. Subscript notation: CO_{2}, N_2, H_2O, etc.
@@ -955,7 +962,15 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{{escape_latex(it.get('deptCode', 'MOM'))}}}}}"
         
         atr_text = (it.get('actionTaken') or it.get('actionTakenReport') or '').strip()
-        atr_cell = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(atr_text)}}}" if atr_text else r"{\fontsize{6.5}{8}\selectfont --}"
+        if atr_text:
+            atr_lines = [re.sub(r'^[•*\-\uf000-\uf0ff\s]+', '', l).strip() for l in atr_text.split('\n') if l.strip()]
+            if atr_lines:
+                atr_formatted = r" \newline ".join([r"\textcolor{brandnavy}{\textbf{\textbullet}} {\fontsize{7}{8.5}\selectfont " + escape_latex(l) + "}" for l in atr_lines])
+            else:
+                atr_formatted = escape_latex(atr_text)
+            atr_cell = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {atr_formatted}}}"
+        else:
+            atr_cell = r"{\fontsize{6.5}{8}\selectfont --}"
         
         m_title = escape_latex(it.get('title') or "HoD's Meeting")
         m_date = escape_latex(it.get('date', '-'))
@@ -972,7 +987,15 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
         pol = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(it.get('policyChanges', 'Standard operations and administrative resolutions confirmed.'))}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
 
         ap_text = (it.get('actionPoints') or '').strip()
-        ap_cell = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{\\textcolor{{brandamber}}{{{escape_latex(ap_text)}}}}}}}" if ap_text else r"{\fontsize{6.5}{8}\selectfont --}"
+        if ap_text:
+            ap_lines = [re.sub(r'^[•*\-\uf000-\uf0ff\s]+', '', l).strip() for l in ap_text.split('\n') if l.strip()]
+            if ap_lines:
+                ap_formatted = r" \newline ".join([r"\textcolor{brandamber}{\textbf{\textbullet}} {\fontsize{7}{8.5}\selectfont\textbf{" + escape_latex(l) + "}}" for l in ap_lines])
+            else:
+                ap_formatted = f"\\textbf{{{escape_latex(ap_text)}}}"
+            ap_cell = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {ap_formatted}}}"
+        else:
+            ap_cell = r"{\fontsize{6.5}{8}\selectfont --}"
 
         discussions = it.get('discussions', [])
         if isinstance(discussions, list) and len(discussions) > 0:

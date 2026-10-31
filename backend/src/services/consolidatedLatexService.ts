@@ -35,8 +35,12 @@ export const PRESERVED_ACRONYMS = new Set([
 
 export const formatFixedCaps = (text: any): string => {
   if (text === null || text === undefined) return '';
-  const str = String(text);
+  let str = String(text);
   if (!str.trim()) return str;
+
+  // Clean errant math/dollar superscript patterns such as $ {-}$, $^{ - }$, etc. into clean Unicode superscript
+  str = str.replace(/([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*-\s*\\?\}?\s*\\?\$/g, '$1⁻');
+  str = str.replace(/\$\s*\{\s*-\s*\}\s*\$/g, '⁻').replace(/\$\s*-\s*\$/g, '⁻');
 
   return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
     const upperToken = token.toUpperCase();
@@ -92,10 +96,17 @@ export const escapeLatex = (text?: any): string => {
   };
 
   // 1. User LaTeX math superscript attempts: $^{...}$, $^{-}$, $^{5}$, $ ^{-} $, $ {-}$, $ - $, $ + $
-  str = str.replace(/\$\s*\^\s*\{([^}]+)\}\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
-  str = str.replace(/\$\s*\^\s*([^\s\$]+)\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
-  str = str.replace(/\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
-  str = str.replace(/\$\s*([-+])\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim()}}`));
+  str = str.replace(/\$\s*\^\s*\{([^}]+)\}\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim() === '-' ? '$-$' : val.trim()}}`));
+  str = str.replace(/\$\s*\^\s*([^\s\$]+)\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim() === '-' ? '$-$' : val.trim()}}`));
+  str = str.replace(/\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim() === '-' ? '$-$' : val.trim()}}`));
+  str = str.replace(/\$\s*([-+])\s*\$/g, (_, val) => addToken(`\\textsuperscript{${val.trim() === '-' ? '$-$' : val.trim()}}`));
+  // Errant literal dollar/brace superscript attempts like CO$ {-}$, CO$^{-}$, CO^{-}, CO$ - $
+  str = str.replace(/([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*([+-])\s*\\?\}?\s*\\?\$ /g, (_, base, sign) => {
+    return base + addToken(`\\textsuperscript{${sign === '-' ? '$-$' : sign}} `);
+  });
+  str = str.replace(/([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*([+-])\s*\\?\}?\s*\\?\$/g, (_, base, sign) => {
+    return base + addToken(`\\textsuperscript{${sign === '-' ? '$-$' : sign}}`);
+  });
 
   // 2. User LaTeX math subscript attempts: $_{...}$, $_2$, $ _2 $
   str = str.replace(/\$\s*_\s*\{([^}]+)\}\s*\$/g, (_, val) => addToken(`\\textsubscript{${val.trim()}}`));
@@ -123,7 +134,7 @@ export const escapeLatex = (text?: any): string => {
   const supMap: Record<string, string> = {
     '\u2070': '0', '\u00B9': '1', '\u00B2': '2', '\u00B3': '3', '\u2074': '4',
     '\u2075': '5', '\u2076': '6', '\u2077': '7', '\u2078': '8', '\u2079': '9',
-    '\u207A': '+', '\u207B': '-', '\u207C': '=', '\u207D': '(', '\u207E': ')',
+    '\u207A': '+', '\u207B': '$-$', '\u207C': '=', '\u207D': '(', '\u207E': ')',
     '\u207F': 'n', '\u2071': 'i'
   };
   str = str.replace(/[\u2070\u00B9\u00B2\u00B3\u2074-\u2079\u207A-\u207E\u207F\u2071]+/g, (match) => {
@@ -152,8 +163,8 @@ export const escapeLatex = (text?: any): string => {
 
   // 8. Caret power notation: e.g. 10^5, 10^-5, 10^{-5}, CO^-, CO^+, CO^{2+}, x^2, m^3, km^2
   str = str.replace(/([A-Za-z0-9]+)\s*\^\s*(\{([^}]+)\}|[-+]?[0-9a-zA-Z]+|[-+])/g, (_, base, _all, braced) => {
-    const val = braced !== undefined ? braced : _all;
-    return base + addToken(`\\textsuperscript{${val.trim()}}`);
+    const val = (braced !== undefined ? braced : _all).trim();
+    return base + addToken(`\\textsuperscript{${val === '-' ? '$-$' : val}}`);
   });
 
   // 9. Subscript notation: CO_{2}, N_2, H_2O, etc.
@@ -857,7 +868,14 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
         const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode || 'MOM')}}}`;
         
         const atrText = (it.actionTaken || it.actionTakenReport || '').trim();
-        const atrCell = atrText ? `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(atrText)}}` : '{\\fontsize{6.5}{8}\\selectfont --}';
+        let atrCell = '{\\fontsize{6.5}{8}\\selectfont --}';
+        if (atrText) {
+          const atrLines = atrText.split('\n').map((l: string) => l.replace(/^[•*\-\uF000-\uF0FF\s]+/, '').trim()).filter(Boolean);
+          const atrFormatted = atrLines.length > 0
+            ? atrLines.map((l: string) => `\\textcolor{brandnavy}{\\textbf{\\textbullet}} {\\fontsize{7}{8.5}\\selectfont ${escapeLatex(l)}}`).join(' \\newline ')
+            : escapeLatex(atrText);
+          atrCell = `{\\fontsize{7}{8.5}\\selectfont ${atrFormatted}}`;
+        }
 
         const mTitle = escapeLatex(it.title || "HoD's Meeting");
         const mDate = escapeLatex(it.date || '-');
@@ -872,7 +890,14 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
           (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
 
         const apText = (it.actionPoints || '').trim();
-        const apCell = apText ? `{\\fontsize{7}{8.5}\\selectfont\\textbf{\\textcolor{brandamber}{${escapeLatex(apText)}}}}` : '{\\fontsize{6.5}{8}\\selectfont --}';
+        let apCell = '{\\fontsize{6.5}{8}\\selectfont --}';
+        if (apText) {
+          const apLines = apText.split('\n').map((l: string) => l.replace(/^[•*\-\uF000-\uF0FF\s]+/, '').trim()).filter(Boolean);
+          const apFormatted = apLines.length > 0
+            ? apLines.map((l: string) => `\\textcolor{brandamber}{\\textbf{\\textbullet}} {\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(l)}}}`).join(' \\newline ')
+            : `\\textbf{${escapeLatex(apText)}}`;
+          apCell = `{\\fontsize{7}{8.5}\\selectfont ${apFormatted}}`;
+        }
 
         const discussions = it.discussions;
         if (Array.isArray(discussions) && discussions.length > 0) {

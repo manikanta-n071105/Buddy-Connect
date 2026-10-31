@@ -3137,12 +3137,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                             Previous Meeting Follow-up
                           </span>
                         </div>
-                        <textarea
-                          rows={2}
+                        <BulletTextarea
+                          hideHeader={true}
+                          rows={3}
                           value={item.actionTaken || ''}
-                          placeholder="e.g. Previous resolution on ERP class substitution implemented successfully; 100% compliance achieved across all engineering branches."
-                          onChange={(e) => handleUpdateField('deptMeetings', mIdx, 'actionTaken', e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-blue-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400 leading-relaxed"
+                          placeholder="• Previous resolution on ERP class substitution implemented successfully&#10;• Remedial classes conducted for students with backlog subjects"
+                          onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'actionTaken', v)}
+                          className="border-blue-200 focus:border-blue-600 focus:ring-blue-600/15"
                         />
                       </div>
 
@@ -3541,12 +3542,13 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                             Upcoming Deliverables & Targets
                           </span>
                         </div>
-                        <textarea
-                          rows={2}
+                        <BulletTextarea
+                          hideHeader={true}
+                          rows={3}
                           value={item.actionPoints || ''}
-                          placeholder="e.g. 1. All HODs to submit lab maintenance records by Friday. 2. Project coordinators to conduct first internal review."
-                          onChange={(e) => handleUpdateField('deptMeetings', mIdx, 'actionPoints', e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-amber-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-600/15 transition-all placeholder:text-slate-400 leading-relaxed"
+                          placeholder="• All HODs to submit lab maintenance records by Friday&#10;• Project coordinators to conduct first internal review between 18th and 22nd"
+                          onChange={(v) => handleUpdateField('deptMeetings', mIdx, 'actionPoints', v)}
+                          className="border-amber-200 focus:border-amber-600 focus:ring-amber-600/15"
                         />
                       </div>
 

@@ -257,8 +257,12 @@ export const PRESERVED_ACRONYMS = new Set([
 
 export const formatFixedCaps = (text: any): string => {
   if (text === null || text === undefined) return '';
-  const str = String(text);
+  let str = String(text);
   if (!str.trim()) return str;
+
+  // Clean errant math/dollar superscript patterns such as $ {-}$, $^{ - }$, etc. into clean Unicode superscript
+  str = str.replace(/([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*-\s*\\?\}?\s*\\?\$/g, '$1⁻');
+  str = str.replace(/\$\s*\{\s*-\s*\}\s*\$/g, '⁻').replace(/\$\s*-\s*\$/g, '⁻');
 
   return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
     const upperToken = token.toUpperCase();
@@ -851,12 +855,31 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           header: 'Action Taken Report',
           width: '16%',
           align: 'justify',
-          render: (it: any) => (
-            <div style={{ color: '#0369a1', fontSize: '8px', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word' }}>
-              <div style={{ fontWeight: 700, color: '#0c4a6e', marginBottom: '2px' }}>ATR / Review:</div>
-              {it.actionTaken || it.actionTakenReport || '-'}
-            </div>
-          )
+          render: (it: any) => {
+            const raw = (it.actionTaken || it.actionTakenReport || '').trim();
+            if (!raw) return <span>-</span>;
+            const lines = raw.split('\n').map((l: string) => l.trim()).filter(Boolean);
+            return (
+              <div style={{ color: '#0369a1', fontSize: '8px', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+                <div style={{ fontWeight: 700, color: '#0c4a6e', marginBottom: '2px' }}>ATR / Review:</div>
+                {lines.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {lines.map((l: string, idx: number) => {
+                      const cleanL = l.replace(/^[•*\-\s\uF000-\uF0FF]+/, '').trim();
+                      return (
+                        <div key={idx} style={{ display: 'flex', gap: '3px', alignItems: 'flex-start' }}>
+                          <span style={{ color: '#0284c7', fontWeight: 'bold', lineHeight: 1.2 }}>•</span>
+                          <span style={{ flex: 1 }}>{cleanL}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  raw
+                )}
+              </div>
+            );
+          }
         });
       }
 
@@ -922,12 +945,31 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           header: 'Action Points',
           width: hasAtr ? '13%' : '16%',
           align: 'justify',
-          render: (it: any) => (
-            <div style={{ color: '#b45309', fontSize: '8px', lineHeight: 1.3, textAlign: 'justify', textJustify: 'inter-word' }}>
-              <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '2px' }}>Next Targets:</div>
-              {it.actionPoints || '-'}
-            </div>
-          )
+          render: (it: any) => {
+            const raw = (it.actionPoints || '').trim();
+            if (!raw) return <span>-</span>;
+            const lines = raw.split('\n').map((l: string) => l.trim()).filter(Boolean);
+            return (
+              <div style={{ color: '#b45309', fontSize: '8px', lineHeight: 1.35, textAlign: 'justify', textJustify: 'inter-word' }}>
+                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '2px' }}>Next Targets:</div>
+                {lines.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {lines.map((l: string, idx: number) => {
+                      const cleanL = l.replace(/^[•*\-\s\uF000-\uF0FF]+/, '').trim();
+                      return (
+                        <div key={idx} style={{ display: 'flex', gap: '3px', alignItems: 'flex-start' }}>
+                          <span style={{ color: '#d97706', fontWeight: 'bold', lineHeight: 1.2 }}>•</span>
+                          <span style={{ flex: 1 }}>{cleanL}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  raw
+                )}
+              </div>
+            );
+          }
         });
       }
 

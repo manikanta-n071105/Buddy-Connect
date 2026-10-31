@@ -76,10 +76,12 @@ def escape_latex(text):
         return key
 
     # 1. User LaTeX math superscript attempts: $^{...}$, $^{-}$, $^{5}$, $ ^{-} $, $ {-}$, $ - $, $ + $
-    text = re.sub(r'\$\s*\^\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
-    text = re.sub(r'\$\s*\^\s*([^\s\$]+)\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
-    text = re.sub(r'\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
-    text = re.sub(r'\$\s*([-+])\s*\$', lambda m: add_token(r'\textsuperscript{' + m.group(1).strip() + r'}'), text)
+    text = re.sub(r'\$\s*\^\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    text = re.sub(r'\$\s*\^\s*([^\s\$]+)\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    text = re.sub(r'\$\s*\{([-+0-9a-zA-Z]+)\}\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    text = re.sub(r'\$\s*([-+])\s*\$', lambda m: add_token(r'\textsuperscript{' + ('$-$' if m.group(1).strip() == '-' else m.group(1).strip()) + r'}'), text)
+    # Errant literal dollar/brace superscript attempts like CO$ {-}$, CO$^{-}$, CO^{-}, CO$ - $
+    text = re.sub(r'([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*([+-])\s*\\?\}?\s*\\?\$', lambda m: m.group(1) + add_token(r'\textsuperscript{' + ('$-$' if m.group(2) == '-' else m.group(2)) + r'}'), text)
 
     # 2. User LaTeX math subscript attempts: $_{...}$, $_2$, $ _2 $
     text = re.sub(r'\$\s*_\s*\{([^}]+)\}\s*\$', lambda m: add_token(r'\textsubscript{' + m.group(1).strip() + r'}'), text)
@@ -105,7 +107,7 @@ def escape_latex(text):
     sup_map = {
         '\u2070': '0', '\u00B9': '1', '\u00B2': '2', '\u00B3': '3', '\u2074': '4',
         '\u2075': '5', '\u2076': '6', '\u2077': '7', '\u2078': '8', '\u2079': '9',
-        '\u207A': '+', '\u207B': '-', '\u207C': '=', '\u207D': '(', '\u207E': ')',
+        '\u207A': '+', '\u207B': '$-$', '\u207C': '=', '\u207D': '(', '\u207E': ')',
         '\u207F': 'n', '\u2071': 'i'
     }
     sup_chars = ''.join(sup_map.keys())
@@ -138,8 +140,9 @@ def escape_latex(text):
     def caret_replace(m):
         base = m.group(1)
         braced = m.group(3)
-        val = braced if braced is not None else m.group(2)
-        return base + add_token(r'\textsuperscript{' + val.strip() + r'}')
+        val = (braced if braced is not None else m.group(2)).strip()
+        val = '$-$' if val == '-' else val
+        return base + add_token(r'\textsuperscript{' + val + r'}')
     text = re.sub(r'([A-Za-z0-9]+)\s*\^\s*(\{([^}]+)\}|[-+]?[0-9a-zA-Z]+|[-+])', caret_replace, text)
 
     # 9. Subscript notation: CO_{2}, N_2, H_2O, etc.

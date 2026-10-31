@@ -298,7 +298,10 @@ def add_styled_cell_text(cell, lines, font_size=8.5, align=WD_ALIGN_PARAGRAPH.LE
             r_pre.font.color.rgb = RGBColor(30, 58, 138)
         
         if text:
-            r = p.add_run(format_fixed_caps(str(text)))
+            cleaned_text = str(text)
+            cleaned_text = re.sub(r'([A-Za-z0-9]+)\s*\\?\$\s*\\?\{?\s*-\s*\\?\}?\s*\\?\$', r'\1⁻', cleaned_text)
+            cleaned_text = cleaned_text.replace('$ {-}$', '⁻').replace('$^{-}$', '⁻').replace('$ - $', '⁻')
+            r = p.add_run(format_fixed_caps(cleaned_text))
             r.bold = bool(is_bold)
             r.font.size = Pt(font_size)
             if color_hex:
@@ -1047,8 +1050,13 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
             col_ptr += 1
 
             if has_atr:
-                atr_txt = (it.get('actionTaken') or it.get('actionTakenReport') or '-').strip()
-                add_styled_cell_text(row[col_ptr], [(atr_txt, False, "0369A1")], font_size=8)
+                atr_raw = (it.get('actionTaken') or it.get('actionTakenReport') or '-').strip()
+                atr_lines = []
+                for l in atr_raw.split('\n'):
+                    clean_l = re.sub(r'^[•*\-\uf000-\uf0ff\s]+', '', l).strip()
+                    if clean_l:
+                        atr_lines.append((("• ", clean_l, False, "0369A1") if len(atr_raw.split('\n')) > 1 or atr_raw.startswith('•') else (clean_l, False, "0369A1")))
+                add_styled_cell_text(row[col_ptr], atr_lines or [(atr_raw, False, "0369A1")], font_size=8)
                 col_ptr += 1
 
             mtg_lines = [(it.get('title') or "HoD's Meeting", True, "1E3A8A"), (f"Date: {it.get('date', '-')}", False, "334155")]
@@ -1075,8 +1083,13 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
             col_ptr += 1
 
             if has_ap:
-                ap_txt = (it.get('actionPoints') or '-').strip()
-                add_styled_cell_text(row[col_ptr], [(ap_txt, False, "B45309")], font_size=8)
+                ap_raw = (it.get('actionPoints') or '-').strip()
+                ap_lines = []
+                for l in ap_raw.split('\n'):
+                    clean_l = re.sub(r'^[•*\-\uf000-\uf0ff\s]+', '', l).strip()
+                    if clean_l:
+                        ap_lines.append((("• ", clean_l, False, "B45309") if len(ap_raw.split('\n')) > 1 or ap_raw.startswith('•') else (clean_l, False, "B45309")))
+                add_styled_cell_text(row[col_ptr], ap_lines or [(ap_raw, False, "B45309")], font_size=8)
                 col_ptr += 1
 
         if has_atr and has_ap:
