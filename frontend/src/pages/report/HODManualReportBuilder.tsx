@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { HODProfessionalPDFView } from './HODProfessionalPDFView';
+import { SSE_HEADER_LOGO_BASE64 } from '../../assets/logoData';
 
 export interface MomAttendee {
   name: string;
@@ -2017,6 +2018,29 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
 
       {/* Exact Header Metadata Block */}
       <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 space-y-6 shadow-2xs">
+        {/* Official College Header Logo Block */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3.5">
+            <img
+              src={SSE_HEADER_LOGO_BASE64}
+              alt="Sanskrithi School of Engineering Logo"
+              className="h-12 sm:h-14 w-auto object-contain shrink-0"
+            />
+            <div className="space-y-0.5">
+              <div className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wide">
+                Sanskrithi School of Engineering
+              </div>
+              <div className="text-[10px] sm:text-[11px] font-bold text-orange-600 uppercase tracking-wider">
+                Autonomous • NAAC &amp; NBA Accredited • Affiliated to JNTUA
+              </div>
+            </div>
+          </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold self-start sm:self-auto">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Monthly Reporting Dossier</span>
+          </div>
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
           <div className="space-y-1">
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">

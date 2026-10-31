@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { ReportSectionsData, normalizeSections } from './HODManualReportBuilder';
+import { SSE_HEADER_LOGO_BASE64 } from '../../assets/logoData';
 
 interface ConsolidatedInstitutionalPDFViewProps {
   id?: string;
@@ -298,26 +299,29 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   period,
   customData
 }) => {
-  const [logoBase64, setLogoBase64] = useState<string>('/assets/sse-header-logo.png');
+  const [logoBase64, setLogoBase64] = useState<string>(SSE_HEADER_LOGO_BASE64);
 
   useEffect(() => {
-    const fetchLogo = async () => {
-      try {
-        const response = await fetch('/assets/sse-header-logo.png');
-        const blob = await response.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            setLogoBase64(reader.result);
-          }
-        };
-        reader.readAsDataURL(blob);
-      } catch (err) {
-        // Fallback to static path
-      }
-    };
-    fetchLogo();
-  }, []);
+    // If SSE_HEADER_LOGO_BASE64 is already loaded, it serves immediately without network latency
+    if (!logoBase64 || logoBase64.startsWith('/')) {
+      const fetchLogo = async () => {
+        try {
+          const response = await fetch('/assets/sse-header-logo.png');
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              setLogoBase64(reader.result);
+            }
+          };
+          reader.readAsDataURL(blob);
+        } catch (err) {
+          setLogoBase64(SSE_HEADER_LOGO_BASE64);
+        }
+      };
+      fetchLogo();
+    }
+  }, [logoBase64]);
 
   // Standard 6 Academic Departments
   const academicDepartments = [
@@ -1356,7 +1360,14 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
         letterSpacing: '0.04em'
       }}
     >
-      <span>Sanskrithi School of Engineering (Autonomous)</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img
+          src={logoBase64}
+          alt="SSE Logo"
+          style={{ height: '18px', width: 'auto', objectFit: 'contain' }}
+        />
+        <span>Sanskrithi School of Engineering (Autonomous)</span>
+      </div>
       <span>INSTITUTIONAL PROGRESS REPORT &bull; {period}</span>
     </div>
   );

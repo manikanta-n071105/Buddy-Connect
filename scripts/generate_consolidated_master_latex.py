@@ -1120,6 +1120,23 @@ def compile_master_latex_pdf(json_input_path, output_pdf_path):
         except Exception as e:
             print(f"Warning: could not copy logo to temp dir: {e}")
 
+    if not has_logo:
+        try:
+            from logo_data import SSE_HEADER_LOGO_RAW
+            import base64
+            with open(os.path.join(temp_dir, "sse-header-logo.png"), "wb") as f:
+                f.write(base64.b64decode(SSE_HEADER_LOGO_RAW))
+            has_logo = True
+        except Exception:
+            try:
+                from scripts.logo_data import SSE_HEADER_LOGO_RAW
+                import base64
+                with open(os.path.join(temp_dir, "sse-header-logo.png"), "wb") as f:
+                    f.write(base64.b64decode(SSE_HEADER_LOGO_RAW))
+                has_logo = True
+            except Exception:
+                pass
+
     latex_code = build_latex_document(departments_data, period, college_name, has_logo=has_logo)
     tex_file = os.path.join(temp_dir, "report.tex")
     

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { execFile } from 'child_process';
+import { SSE_HEADER_LOGO_RAW } from '../assets/logoData';
 
 const DEPARTMENT_CODE_MAP: Record<string, string> = {
   'Civil Engineering': 'CIVIL',
@@ -1009,6 +1010,14 @@ export const compileMasterLatexDocument = async (
         break;
       } catch (_) { }
     }
+  }
+
+  // Fallback to embedded Base64 logo if file is not found on disk (ensures logo always appears after deployment)
+  if (!hasLogo && SSE_HEADER_LOGO_RAW) {
+    try {
+      fs.writeFileSync(path.join(tempDir, 'sse-header-logo.png'), Buffer.from(SSE_HEADER_LOGO_RAW, 'base64'));
+      hasLogo = true;
+    } catch (_) { }
   }
 
   const latexCode = buildConsolidatedLatexCode(departmentsData, period, hasLogo);

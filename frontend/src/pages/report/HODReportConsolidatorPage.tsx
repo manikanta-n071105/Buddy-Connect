@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 import api from '../../services/api';
 import { HODManualReportBuilder } from './HODManualReportBuilder';
 import { ConsolidatedInstitutionalPDFView, exportPagesToPdf } from './ConsolidatedInstitutionalPDFView';
+import { SSE_HEADER_LOGO_BASE64 } from '../../assets/logoData';
 
 interface DepartmentStatus {
   code: string;
@@ -666,17 +667,24 @@ export const HODReportConsolidatorPage: React.FC = () => {
         {/* Executive Hero Banner */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-8 md:p-10 shadow-xl">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2.5 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-extrabold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                Sanskrithi School of Engineering • Office of Principal & HODs
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+              <img
+                src={SSE_HEADER_LOGO_BASE64}
+                alt="Sanskrithi School of Engineering Logo"
+                className="h-16 sm:h-20 w-auto object-contain bg-white rounded-2xl p-2.5 shadow-lg shrink-0 self-start sm:self-auto"
+              />
+              <div className="space-y-2.5 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-extrabold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Sanskrithi School of Engineering • Office of Principal & HODs
+                </div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+                  Monthly Institutional Report Consolidation Hub
+                </h1>
+                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                  Centralized system for departmental submissions. Each HOD submits their monthly Word report (.docx), and Super Admin synthesizes a single, complete master institutional document with executive matrix.
+                </p>
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
-                Monthly Institutional Report Consolidation Hub
-              </h1>
-              <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                Centralized system for departmental submissions. Each HOD submits their monthly Word report (.docx), and Super Admin synthesizes a single, complete master institutional document with executive matrix.
-              </p>
             </div>
 
             {/* Quick Actions */}
