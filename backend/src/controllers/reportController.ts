@@ -489,6 +489,7 @@ export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
 
     const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const pdfPath = path.join(projectRoot, `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`);
+    const hashFilePath = path.join(projectRoot, `.cache_pdf_hash_${cleanPeriod}.txt`);
 
     const departmentsData: Record<string, any> = {};
     for (const sub of submissionsRes.rows) {
@@ -496,19 +497,36 @@ export const generateConsolidatedLatexPDF = async (req: any, res: Response) => {
       departmentsData[sub.department] = sec;
     }
 
-    const { compileMasterLatexDocument } = await import('../services/consolidatedLatexService');
-    const fileBuffer = await compileMasterLatexDocument(projectRoot, departmentsData, period, pdfPath);
+    const crypto = await import('crypto');
+    const dataHash = crypto.createHash('md5').update(JSON.stringify(departmentsData)).digest('hex');
+    const forceRecompile = req.body?.force === true || req.query?.force === 'true';
+
+    let fileBuffer: Buffer;
+    let isCached = false;
+
+    if (!forceRecompile && fs.existsSync(pdfPath) && fs.existsSync(hashFilePath) && fs.readFileSync(hashFilePath, 'utf-8').trim() === dataHash) {
+      fileBuffer = fs.readFileSync(pdfPath);
+      isCached = true;
+    } else {
+      const { compileMasterLatexDocument } = await import('../services/consolidatedLatexService');
+      fileBuffer = await compileMasterLatexDocument(projectRoot, departmentsData, period, pdfPath);
+      try { fs.writeFileSync(hashFilePath, dataHash, 'utf-8'); } catch (_) {}
+    }
+
     const fileStat = fs.statSync(pdfPath);
     const fileBase64 = fileBuffer.toString('base64');
     const fileName = `Consolidated_Institutional_HOD_Report_${cleanPeriod}.pdf`;
 
     return res.json({
       success: true,
-      message: `Master Consolidated Institutional PDF generated via LaTeX for ${period}!`,
+      message: isCached
+        ? `Consolidated Institutional PDF retrieved instantly from cache for ${period}!`
+        : `Master Consolidated Institutional PDF generated via LaTeX for ${period}!`,
       data: {
         period,
         fileName,
         pdfPath,
+        isCached,
         fileSizeBytes: fileStat.size,
         fileSizeFormatted: `${(fileStat.size / 1024).toFixed(1)} KB`,
         departmentsCount: Object.keys(departmentsData).length,
@@ -547,6 +565,8 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
       );
     }
 
+    const hashFilePath = path.join(projectRoot, `.cache_pdf_hash_${cleanPeriod}.txt`);
+
     if (submissionsRes.rows.length > 0) {
       const departmentsData: Record<string, any> = {};
       for (const sub of submissionsRes.rows) {
@@ -554,8 +574,15 @@ export const downloadConsolidatedPDF = async (req: any, res: Response) => {
         departmentsData[sub.department] = sec;
       }
 
-      const { compileMasterLatexDocument } = await import('../services/consolidatedLatexService');
-      await compileMasterLatexDocument(projectRoot, departmentsData, period, pdfPath);
+      const crypto = await import('crypto');
+      const dataHash = crypto.createHash('md5').update(JSON.stringify(departmentsData)).digest('hex');
+      const forceRecompile = req.query?.force === 'true';
+
+      if (forceRecompile || !fs.existsSync(pdfPath) || !fs.existsSync(hashFilePath) || fs.readFileSync(hashFilePath, 'utf-8').trim() !== dataHash) {
+        const { compileMasterLatexDocument } = await import('../services/consolidatedLatexService');
+        await compileMasterLatexDocument(projectRoot, departmentsData, period, pdfPath);
+        try { fs.writeFileSync(hashFilePath, dataHash, 'utf-8'); } catch (_) {}
+      }
     }
 
     if (!fs.existsSync(pdfPath)) {

@@ -1301,7 +1301,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           status: 'SUBMITTED'
         });
         setLastAutoSavedAt(new Date().toLocaleTimeString());
-        if (onReportGenerated) onReportGenerated();
+        if (!silent && onReportGenerated) onReportGenerated();
       }
       return res.data;
     } catch (err) {
