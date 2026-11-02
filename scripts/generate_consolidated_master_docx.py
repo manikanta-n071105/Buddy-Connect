@@ -28,10 +28,10 @@ DEPARTMENT_CODE_MAP = {
 
 PRESERVED_ACRONYMS = {
     'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
-    'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+    'IQAC', 'NSS', 'EDC', 'IIC', 'IIC/EDC', 'EDC/IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
     'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
     'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
-    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL', 'ID',
     'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
 }
 
@@ -45,7 +45,7 @@ def format_fixed_caps(text):
     def repl(m):
         tok = m.group(1)
         up = tok.upper()
-        if up in PRESERVED_ACRONYMS:
+        if up in PRESERVED_ACRONYMS or ('/' in up and all(p in PRESERVED_ACRONYMS for p in up.split('/'))):
             return up
         if re.match(r'^[A-Za-z]\.?$', tok):
             return tok.upper()
@@ -62,6 +62,35 @@ def format_fixed_caps(text):
 
 def get_dept_code(dept_name):
     return DEPARTMENT_CODE_MAP.get(dept_name, dept_name[:6].upper())
+
+def split_student_name_and_id(name_roll, explicit_name='', explicit_id=''):
+    if explicit_name and explicit_id:
+        return explicit_name, explicit_id
+    raw = (name_roll or '').strip()
+    if not raw:
+        return explicit_name or '-', explicit_id or '-'
+
+    # Multiple students: e.g. "1. Name (ID) 2. Name (ID)"
+    multi_matches = re.findall(r'(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]', raw)
+    if len(multi_matches) > 1:
+        names = ', '.join([m[0].strip() for m in multi_matches])
+        ids = ', '.join([m[1].strip() for m in multi_matches])
+        return explicit_name or names, explicit_id or ids
+
+    m = re.match(r'^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$', raw)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+
+    m = re.match(r'^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$', raw, re.I)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+
+    m = re.match(r'^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$', raw)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+
+    return explicit_name or raw, explicit_id or '-'
+
 
 def apply_table_styling(table, col_widths=None):
     tbl_elem = table._element
@@ -777,10 +806,10 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------
-    # 5. Achievements & Recognitions — b) Student Achievements (Exact 5 columns as PDF)
+    # 5. Achievements & Recognitions — b) Student Achievements (Exact 6 columns as PDF)
     # -------------------------------------------------------------
     add_major_heading("5. ACHIEVEMENTS & RECOGNITIONS — b) STUDENT ACHIEVEMENTS", "Prizes in competitions, hackathons, symposiums, and sports.")
-    stu_headers = ['S.No', 'Branch', 'Student Name & ID', 'Prize / Accomplishment', 'Event & Host Institution']
+    stu_headers = ['S.No', 'Branch', 'Student Name', 'Student ID', 'Prize / Accomplishment', 'Event & Host Institution']
     stu_table = doc.add_table(rows=1, cols=len(stu_headers))
     for i, h in enumerate(stu_headers): stu_table.rows[0].cells[i].text = h
 
@@ -791,13 +820,15 @@ def generate_consolidated_master_docx(all_dept_data, period, output_path, colleg
             row[0].text = str(idx + 1); row[0].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
             row[1].text = it['deptCode']; row[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER; row[1].paragraphs[0].runs[0].bold = True
 
-            add_styled_cell_text(row[2], [(it.get('nameRoll', '-'), True, "0F172A")], font_size=8.5)
-            add_styled_cell_text(row[3], [(it.get('award', '-'), True, "0F172A")], font_size=8.5)
-            add_styled_cell_text(row[4], [f"{it.get('event', '-')} ({it.get('organization', '-')})"], font_size=8)
+            st_name, st_id = split_student_name_and_id(it.get('nameRoll', ''), it.get('studentName', ''), it.get('studentId', ''))
+            add_styled_cell_text(row[2], [(st_name, True, "0F172A")], font_size=8.5)
+            add_styled_cell_text(row[3], [(st_id, True, "1A365D")], font_size=8.5)
+            add_styled_cell_text(row[4], [(it.get('award', '-'), True, "0F172A")], font_size=8.5)
+            add_styled_cell_text(row[5], [f"{it.get('event', '-')} ({it.get('organization', '-')})"], font_size=8)
     else:
         nil = stu_table.add_row().cells
         for c in nil: c.text = "NIL"; c.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    apply_table_styling(stu_table, [Inches(0.4), Inches(0.65), Inches(2.1), Inches(2.2), Inches(1.85)])
+    apply_table_styling(stu_table, [Inches(0.4), Inches(0.65), Inches(1.6), Inches(1.1), Inches(1.8), Inches(1.65)])
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
     # -------------------------------------------------------------

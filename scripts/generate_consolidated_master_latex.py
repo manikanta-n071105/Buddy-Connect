@@ -27,10 +27,10 @@ def get_dept_code(dept_name):
 
 PRESERVED_ACRONYMS = {
     'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
-    'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+    'IQAC', 'NSS', 'EDC', 'IIC', 'IIC/EDC', 'EDC/IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
     'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
     'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
-    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL', 'ID',
     'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
 }
 
@@ -48,7 +48,7 @@ def format_fixed_caps(text):
     def repl(m):
         tok = m.group(1)
         up = tok.upper()
-        if up in PRESERVED_ACRONYMS:
+        if up in PRESERVED_ACRONYMS or ('/' in up and all(p in PRESERVED_ACRONYMS for p in up.split('/'))):
             return up
         if re.match(r'^[A-Za-z]\.?$', tok):
             return tok.upper()
@@ -62,6 +62,35 @@ def format_fixed_caps(text):
         return tok
 
     return re.sub(r'([A-Za-z0-9&.\-\/]+)', repl, text)
+
+def split_student_name_and_id(name_roll, explicit_name='', explicit_id=''):
+    if explicit_name and explicit_id:
+        return explicit_name, explicit_id
+    raw = (name_roll or '').strip()
+    if not raw:
+        return explicit_name or '-', explicit_id or '-'
+
+    # Multiple students: e.g. "1. Name (ID) 2. Name (ID)"
+    multi_matches = re.findall(r'(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]', raw)
+    if len(multi_matches) > 1:
+        names = ', '.join([m[0].strip() for m in multi_matches])
+        ids = ', '.join([m[1].strip() for m in multi_matches])
+        return explicit_name or names, explicit_id or ids
+
+    m = re.match(r'^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$', raw)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+
+    m = re.match(r'^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$', raw, re.I)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+
+    m = re.match(r'^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$', raw)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+
+    return explicit_name or raw, explicit_id or '-'
+
 
 def escape_latex(text):
     """Escapes special LaTeX characters and handles superscripts, subscripts, power values, and math expressions."""
@@ -588,7 +617,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '1. RESEARCH — a) JOURNAL PUBLICATIONS',
         ['0.80cm', '1.20cm', '6.70cm', '5.30cm', '3.70cm'],
-        ['#', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification'],
+        ['S.No', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification'],
         gen_j_row,
         j_items
     ))
@@ -630,7 +659,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '1. RESEARCH — b) CONFERENCE PRESENTATIONS',
         ['0.80cm', '1.20cm', '6.00cm', '5.60cm', '4.10cm'],
-        ['#', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing'],
+        ['S.No', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing'],
         gen_c_row,
         c_items
     ))
@@ -657,7 +686,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '2. INNOVATION & ENTREPRENEURSHIP — a) PATENTS',
         ['0.80cm', '1.20cm', '7.50cm', '5.00cm', '3.20cm'],
-        ['#', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date'],
+        ['S.No', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date'],
         gen_pat_row,
         pat_items
     ))
@@ -678,7 +707,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '2. INNOVATION & ENTREPRENEURSHIP — b) ACTIVITIES AND INITIATIVES',
         ['0.80cm', '1.20cm', '5.20cm', '3.40cm', '2.85cm', '4.00cm'],
-        ['#', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof'],
+        ['S.No', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof'],
         gen_act_row,
         act_items
     ))
@@ -698,7 +727,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — a) ATTENDED',
         ['0.80cm', '1.20cm', '6.20cm', '4.70cm', '4.80cm'],
-        ['#', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof'],
+        ['S.No', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof'],
         gen_fdpa_row,
         fdpa_items
     ))
@@ -718,7 +747,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — b) ORGANIZED',
         ['0.80cm', '1.20cm', '5.60cm', '5.40cm', '4.70cm'],
-        ['#', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof'],
+        ['S.No', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof'],
         gen_fdpo_row,
         fdpo_items
     ))
@@ -739,7 +768,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '4. STUDENT DEVELOPMENT PROGRAMS (SDPs)',
         ['0.80cm', '1.20cm', '8.00cm', '4.50cm', '3.00cm'],
-        ['#', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants'],
+        ['S.No', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants'],
         gen_sdp_row,
         sdp_items
     ))
@@ -761,7 +790,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS',
         ['0.80cm', '1.20cm', '3.50cm', '4.50cm', '3.70cm', '4.00cm'],
-        ['#', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date'],
+        ['S.No', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date'],
         gen_fa_row,
         fa_items
     ))
@@ -773,16 +802,18 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     def gen_sa_row(it, idx):
         sno = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {idx + 1}}}"
         branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{{escape_latex(it.get('deptCode', ''))}}}}}"
-        st = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{escape_latex(it.get('nameRoll', '-'))}}}}}"
+        st_name, st_id = split_student_name_and_id(it.get('nameRoll', ''), it.get('studentName', ''), it.get('studentId', ''))
+        st_name_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{escape_latex(st_name)}}}}}"
+        st_id_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\texttt{{{escape_latex(st_id)}}}}}"
         awd = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{escape_latex(it.get('award', '-'))}}}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
         ev_org = f" ({escape_latex(it['organization'])})" if it.get('organization') else ""
         ev = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(it.get('event', '-'))}{ev_org}}}"
-        return [sno, branch, st, awd, ev]
+        return [sno, branch, st_name_cell, st_id_cell, awd, ev]
 
     tex.append(render_section(
         '5. ACHIEVEMENTS & RECOGNITIONS — b) STUDENT ACHIEVEMENTS',
-        ['0.80cm', '1.20cm', '5.20cm', '5.50cm', '5.00cm'],
-        ['#', 'Branch', 'Student Name & ID', 'Prize / Accomplishment', 'Event & Host Institution'],
+        ['0.80cm', '1.20cm', '3.80cm', '2.50cm', '4.70cm', '4.70cm'],
+        ['S.No', 'Branch', 'Student Name', 'Student ID', 'Prize / Accomplishment', 'Event & Host Institution'],
         gen_sa_row,
         sa_items
     ))
@@ -803,7 +834,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '5. ACHIEVEMENTS & RECOGNITIONS — c) CERTIFICATIONS',
         ['0.80cm', '1.20cm', '5.80cm', '3.50cm', '2.65cm', '3.50cm'],
-        ['#', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status'],
+        ['S.No', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status'],
         gen_cert_row,
         cert_items
     ))
@@ -824,7 +855,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '6. COLLABORATIONS & MOUS',
         ['0.80cm', '1.20cm', '5.40cm', '2.80cm', '2.80cm', '4.45cm'],
-        ['#', 'Branch', 'Partner Entity / Industry', 'Date of Signing', 'Faculty SPOC', 'Scope & Focus Area'],
+        ['S.No', 'Branch', 'Partner Entity / Industry', 'Date of Signing', 'Faculty SPOC', 'Scope & Focus Area'],
         gen_mou_row,
         mou_items
     ))
@@ -844,7 +875,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '7. TECHNICAL ASSOCIATION ACTIVITIES',
         ['0.80cm', '1.20cm', '5.70cm', '3.50cm', '6.50cm'],
-        ['#', 'Branch', 'Association Event & Type', 'Date & Coordinator', 'Participants & Outcomes'],
+        ['S.No', 'Branch', 'Association Event & Type', 'Date & Coordinator', 'Participants & Outcomes'],
         gen_ta_row,
         ta_items
     ))
@@ -872,7 +903,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '8. SYLLABUS COVERAGE REPORT',
         ['0.75cm', '1.20cm', '5.50cm', '1.60cm', '3.65cm', '2.50cm', '2.50cm'],
-        ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing'],
+        ['S.No', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing'],
         gen_syl_row,
         syl_items
     ))
@@ -894,7 +925,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '9. STUDENT ENGAGEMENT & CLUBS',
         ['0.75cm', '1.15cm', '4.50cm', '3.20cm', '1.80cm', '2.60cm', '3.20cm'],
-        ['#', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes'],
+        ['S.No', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes'],
         gen_clb_row,
         clb_items
     ))
@@ -915,7 +946,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '10. NSS & COMMUNITY ENGAGEMENT',
         ['0.80cm', '1.20cm', '4.40cm', '3.10cm', '3.00cm', '4.95cm'],
-        ['#', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.'],
+        ['S.No', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.'],
         gen_nss_row,
         nss_items
     ))
@@ -935,7 +966,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     tex.append(render_section(
         '11. ADDITIONAL/OTHER RELEVANT INITIATIVES',
         ['0.80cm', '1.20cm', '5.50cm', '3.20cm', '7.00cm'],
-        ['#', 'Branch', 'Initiative / Activity', 'Date & Coordinator', 'Description & Key Outcomes'],
+        ['S.No', 'Branch', 'Initiative / Activity', 'Date & Coordinator', 'Description & Key Outcomes'],
         gen_add_row,
         add_items
     ))
@@ -1050,7 +1081,7 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
 
     if mom_items:
         mom_cols = ['0.80cm', '1.20cm']
-        mom_headers = ['#', 'Branch']
+        mom_headers = ['S.No', 'Branch']
         if has_atr:
             mom_headers.append('Action Taken Report')
             mom_cols.append('2.80cm')

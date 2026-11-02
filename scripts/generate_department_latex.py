@@ -8,10 +8,10 @@ import tempfile
 
 PRESERVED_ACRONYMS = {
     'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
-    'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+    'IQAC', 'NSS', 'EDC', 'IIC', 'IIC/EDC', 'EDC/IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
     'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
     'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
-    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+    'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL', 'ID',
     'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
 }
 
@@ -25,7 +25,7 @@ def format_fixed_caps(text):
     def repl(m):
         tok = m.group(1)
         up = tok.upper()
-        if up in PRESERVED_ACRONYMS:
+        if up in PRESERVED_ACRONYMS or ('/' in up and all(p in PRESERVED_ACRONYMS for p in up.split('/'))):
             return up
         if re.match(r'^[A-Za-z]\.?$', tok):
             return tok.upper()

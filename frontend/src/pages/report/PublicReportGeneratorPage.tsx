@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { UN_SDGS, UN_SDG_Item, SdgWheelSvg } from '../approvals/ApprovalWorkflowPage';
+import { SSE_HEADER_LOGO_BASE64 } from '../../assets/logoData';
 
 export const PublicReportGeneratorPage: React.FC = () => {
   // Form States
@@ -981,7 +982,7 @@ export const PublicReportGeneratorPage: React.FC = () => {
                 <div className="space-y-3">
                   {/* Page 1 Header */}
                   <div className="flex items-center justify-between pb-2 border-b-2 border-slate-800">
-                    <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                    <img src={SSE_HEADER_LOGO_BASE64} alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
                     <span className="text-slate-800 font-extrabold text-xs uppercase tracking-wide">
                       Department of {department || 'Humanities & Sciences'}
                     </span>
@@ -1083,7 +1084,7 @@ export const PublicReportGeneratorPage: React.FC = () => {
                 <div className="space-y-3 flex-1 flex flex-col justify-start">
                   {/* Page 2 Header */}
                   <div className="flex items-center justify-between pb-2 border-b-2 border-slate-800">
-                    <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                    <img src={SSE_HEADER_LOGO_BASE64} alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
                     <span className="text-slate-800 font-extrabold text-xs uppercase tracking-wide">
                       Department of {department || 'Humanities & Sciences'}
                     </span>

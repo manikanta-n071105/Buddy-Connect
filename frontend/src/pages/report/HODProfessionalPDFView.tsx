@@ -19,28 +19,7 @@ export const HODProfessionalPDFView: React.FC<HODProfessionalPDFViewProps> = ({
   sections: rawSections
 }) => {
   const sections = normalizeSections(rawSections);
-  const [logoBase64, setLogoBase64] = useState<string>(SSE_HEADER_LOGO_BASE64);
-
-  useEffect(() => {
-    if (!logoBase64 || logoBase64.startsWith('/')) {
-      const fetchLogo = async () => {
-        try {
-          const response = await fetch('/assets/sse-header-logo.png');
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              setLogoBase64(reader.result);
-            }
-          };
-          reader.readAsDataURL(blob);
-        } catch (err) {
-          setLogoBase64(SSE_HEADER_LOGO_BASE64);
-        }
-      };
-      fetchLogo();
-    }
-  }, [logoBase64]);
+  const logoBase64 = SSE_HEADER_LOGO_BASE64;
 
   const totalActivities = Object.values(sections).reduce((acc, curr) => acc + (Array.isArray(curr) ? curr.length : 0), 0);
 

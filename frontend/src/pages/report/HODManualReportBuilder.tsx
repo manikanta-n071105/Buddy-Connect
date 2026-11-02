@@ -376,6 +376,8 @@ export interface ReportSectionsData {
   }>;
   studentAchievements: Array<{
     nameRoll: string;
+    studentName?: string;
+    studentId?: string;
     award: string;
     event: string;
     organization: string;
@@ -1488,7 +1490,7 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
           copy.facultyAchievements = [...(copy.facultyAchievements || []), { name: '', award: '', event: '', organization: '', date: '', link: '' }];
           break;
         case 'studentAchievements':
-          copy.studentAchievements = [...(copy.studentAchievements || []), { nameRoll: '', award: '', event: '', organization: '', durationDate: '', link: '' }];
+          copy.studentAchievements = [...(copy.studentAchievements || []), { nameRoll: '', studentName: '', studentId: '', award: '', event: '', organization: '', durationDate: '', link: '' }];
           break;
         case 'certifications':
           copy.certifications = [...(copy.certifications || []), { title: '', type: 'Online Certification Course', duration: '4 Weeks', platform: 'NPTEL / SWAYAM', enrolled: '', certified: '', keyOutcomes: '', link: '' }];
@@ -1564,6 +1566,16 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const copy = normalizeSections(prev);
       const arr = [...(copy[sectionKey] as any[] || [])];
       arr[index] = { ...arr[index], [field]: value };
+      (copy[sectionKey] as any) = arr;
+      return copy;
+    });
+  };
+
+  const handleUpdateMultipleFields = (sectionKey: keyof ReportSectionsData, index: number, fields: Record<string, any>) => {
+    setSections(prev => {
+      const copy = normalizeSections(prev);
+      const arr = [...(copy[sectionKey] as any[] || [])];
+      arr[index] = { ...arr[index], ...fields };
       (copy[sectionKey] as any) = arr;
       return copy;
     });
@@ -2979,30 +2991,59 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
                 count={safeSections.studentAchievements.length}
                 onAdd={() => handleAddRow('studentAchievements')}
               >
-                {safeSections.studentAchievements.map((item, idx) => (
-                  <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentAchievements', idx)}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <div>
-                        <FieldInput label="Name & Roll No *" value={item.nameRoll} placeholder="e.g. K. Rahul (23SSE0501)" onChange={(v) => handleUpdateField('studentAchievements', idx, 'nameRoll', v)} />
+                {safeSections.studentAchievements.map((item, idx) => {
+                  const parsed = splitStudentNameAndId(item.nameRoll, item.studentName, item.studentId);
+                  const currentName = item.studentName !== undefined ? item.studentName : parsed.name;
+                  const currentId = item.studentId !== undefined ? item.studentId : (parsed.id === '-' ? '' : parsed.id);
+
+                  return (
+                    <EntryCard key={idx} index={idx} onDelete={() => handleRemoveRow('studentAchievements', idx)}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <div>
+                          <FieldInput
+                            label="Student Name *"
+                            value={currentName}
+                            placeholder="e.g. K. Rahul"
+                            onChange={(v) => {
+                              handleUpdateMultipleFields('studentAchievements', idx, {
+                                studentName: v,
+                                nameRoll: currentId ? `${v} (${currentId})` : v
+                              });
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput
+                            label="Student ID / Roll No *"
+                            value={currentId}
+                            placeholder="e.g. 23SSE0501"
+                            onChange={(v) => {
+                              handleUpdateMultipleFields('studentAchievements', idx, {
+                                studentId: v,
+                                nameRoll: v ? `${currentName} (${v})` : currentName
+                              });
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <FieldInput label="Award / Prize / Recognition *" value={item.award} placeholder="e.g. 1st Prize in National Hackathon" onChange={(v) => handleUpdateField('studentAchievements', idx, 'award', v)} />
+                        </div>
+                        <div>
+                          <FieldInput label="Event / Competition *" value={item.event} placeholder="e.g. Smart India Hackathon 2026" onChange={(v) => handleUpdateField('studentAchievements', idx, 'event', v)} />
+                        </div>
+                        <div>
+                          <FieldInput label="Organization / Host Institution *" value={item.organization} placeholder="e.g. AICTE / IIT Bombay" onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
+                        </div>
+                        <div>
+                          <DateFieldInput label="Duration & Date *" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} placeholder="DD/MM/YYYY" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('studentAchievements', idx, 'link', v)} />
+                        </div>
                       </div>
-                      <div>
-                        <FieldInput label="Award / Prize / Recognition *" value={item.award} placeholder="e.g. 1st Prize in National Hackathon" onChange={(v) => handleUpdateField('studentAchievements', idx, 'award', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Event / Competition *" value={item.event} placeholder="e.g. Smart India Hackathon 2026" onChange={(v) => handleUpdateField('studentAchievements', idx, 'event', v)} />
-                      </div>
-                      <div>
-                        <FieldInput label="Organization / Host Institution *" value={item.organization} placeholder="e.g. AICTE / IIT Bombay" onChange={(v) => handleUpdateField('studentAchievements', idx, 'organization', v)} />
-                      </div>
-                      <div>
-                        <DateFieldInput label="Duration & Date *" value={item.durationDate} onChange={(v) => handleUpdateField('studentAchievements', idx, 'durationDate', v)} placeholder="DD/MM/YYYY" />
-                      </div>
-                      <div>
-                        <FieldInput label="Proof/Certificate Link" value={item.link} onChange={(v) => handleUpdateField('studentAchievements', idx, 'link', v)} />
-                      </div>
-                    </div>
-                  </EntryCard>
-                ))}
+                    </EntryCard>
+                  );
+                })}
               </SectionContainer>
             )}
 
@@ -4566,10 +4607,10 @@ interface FieldInputProps {
 
 export const PRESERVED_ACRONYMS = new Set([
   'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
-  'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+  'IQAC', 'NSS', 'EDC', 'IIC', 'IIC/EDC', 'EDC/IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
   'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
   'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
-  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL', 'ID',
   'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
 ]);
 
@@ -4580,7 +4621,7 @@ export const formatFixedCaps = (text: any): string => {
 
   return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
     const upperToken = token.toUpperCase();
-    if (PRESERVED_ACRONYMS.has(upperToken)) {
+    if (PRESERVED_ACRONYMS.has(upperToken) || (upperToken.includes('/') && upperToken.split('/').every(p => PRESERVED_ACRONYMS.has(p)))) {
       return upperToken;
     }
 
@@ -4600,6 +4641,39 @@ export const formatFixedCaps = (text: any): string => {
 
     return token;
   });
+};
+
+export const splitStudentNameAndId = (nameRoll?: string, explicitName?: string, explicitId?: string): { name: string; id: string } => {
+  if (explicitName && explicitId) {
+    return { name: explicitName, id: explicitId };
+  }
+  const str = (nameRoll || '').trim();
+  if (!str) return { name: explicitName || '', id: explicitId || '' };
+
+  const multiRegex = /(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]/g;
+  const matches = [...str.matchAll(multiRegex)];
+  if (matches.length > 1) {
+    const names = matches.map(m => m[1].trim()).join(', ');
+    const ids = matches.map(m => m[2].trim()).join(', ');
+    return { name: explicitName || names, id: explicitId || ids };
+  }
+
+  const parenMatch = str.match(/^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$/);
+  if (parenMatch) {
+    return { name: parenMatch[1].trim(), id: parenMatch[2].trim() };
+  }
+
+  const sepMatch = str.match(/^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$/i);
+  if (sepMatch) {
+    return { name: sepMatch[1].trim(), id: sepMatch[2].trim() };
+  }
+
+  const rollMatch = str.match(/^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$/);
+  if (rollMatch) {
+    return { name: rollMatch[1].trim(), id: rollMatch[2].trim() };
+  }
+
+  return { name: explicitName || str, id: explicitId || '' };
 };
 
 export const formatSectionsFixedCaps = (data: any): any => {

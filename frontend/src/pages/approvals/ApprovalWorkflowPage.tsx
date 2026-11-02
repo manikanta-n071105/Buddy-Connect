@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { LoadingState } from '../../components/common/LoadingState';
+import { SSE_HEADER_LOGO_BASE64 } from '../../assets/logoData';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import {
@@ -436,7 +437,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
     toast.info('Preparing Word document export...');
 
     // Convert uploaded college header logo & S-logo to Base64 so Word displays them offline & reliably
-    const logoBase64 = await fetchAsBase64('/assets/sse-header-logo.png');
+    const logoBase64 = (await fetchAsBase64('/assets/sse-header-logo.png')) || SSE_HEADER_LOGO_BASE64;
     const sLogoBase64 = await fetchAsBase64('/assets/sse-s-logo.jpg');
 
     let photos = [];
@@ -730,7 +731,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
   const exportApplicationToWord = async (req: any) => {
     if (!req) return;
     toast.info('Preparing Word document export...');
-    const logoBase64 = await fetchAsBase64('/assets/sse-header-logo.png');
+    const logoBase64 = (await fetchAsBase64('/assets/sse-header-logo.png')) || SSE_HEADER_LOGO_BASE64;
 
     const wordHtml = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -2400,7 +2401,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
               {/* Header with College Logo */}
               {pdfShowHeader && (
                 <div className="flex flex-col items-center justify-center text-center pb-4 border-b-2 border-slate-900 space-y-2 relative z-10">
-                  <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
+                  <img src={SSE_HEADER_LOGO_BASE64} alt="Sanskrithi School of Engineering Logo" className="h-14 sm:h-16 w-auto object-contain max-w-full" />
                   <p className="text-[11px] sm:text-xs text-slate-700 font-semibold">Behind SSSS Hospital, Beedupalli Knowledge Park, Prasanthigram, Puttaparthi - 515134</p>
                   <p className="text-[10px] sm:text-[11px] text-slate-600 italic">Affiliated to JNTUA & Approved by AICTE | Accredited by NAAC | www.sseptp.org</p>
                 </div>
@@ -3007,7 +3008,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
                       <div className="space-y-3 relative z-10">
                         {/* Page 1 Header Bar */}
                         <div className="flex items-center justify-between pb-2 border-b border-slate-200 text-xs">
-                          <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                          <img src={SSE_HEADER_LOGO_BASE64} alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
                           <span className="text-slate-700 font-bold text-xs uppercase tracking-wide">Department of {selectedRequest.department || 'Humanities & Sciences'}</span>
                         </div>
 
@@ -3109,7 +3110,7 @@ export const ApprovalWorkflowPage: React.FC = () => {
                       <div className="space-y-3 relative z-10 flex-1 flex flex-col justify-start">
                         {/* Page 2 Header Bar */}
                         <div className="flex items-center justify-between pb-2 border-b-2 border-slate-800 text-xs">
-                          <img src="/assets/sse-header-logo.png" alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
+                          <img src={SSE_HEADER_LOGO_BASE64} alt="Sanskrithi School of Engineering Logo" className="h-8 sm:h-10 w-auto object-contain" />
                           <span className="text-slate-800 font-extrabold text-xs uppercase tracking-wide">Department of {selectedRequest.department || 'Humanities & Sciences'}</span>
                         </div>
 

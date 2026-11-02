@@ -10,9 +10,24 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
+        navigateFallbackDenylist: [/^\/api/]
       },
-      includeAssets: ['favicon.svg', 'favicon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'apple-touch-icon.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
+        'apple-touch-icon.png',
+        'sse-header-logo.png',
+        'sse-reveal.png',
+        'sse-s-logo.jpg',
+        'sse-mark.jpg',
+        'assets/sse-header-logo.png',
+        'assets/sse-reveal.png',
+        'assets/sse-s-logo.jpg',
+        'assets/sse-mark.jpg'
+      ],
       manifest: {
         name: 'JuniorConnect — Student Mentorship & Campus Portal',
         short_name: 'JuniorConnect',

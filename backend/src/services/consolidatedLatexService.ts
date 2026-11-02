@@ -27,10 +27,10 @@ export const getDeptCode = (deptName?: string): string => {
 
 export const PRESERVED_ACRONYMS = new Set([
   'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
-  'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+  'IQAC', 'NSS', 'EDC', 'IIC', 'IIC/EDC', 'EDC/IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
   'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
   'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
-  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL', 'ID',
   'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
 ]);
 
@@ -45,7 +45,7 @@ export const formatFixedCaps = (text: any): string => {
 
   return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
     const upperToken = token.toUpperCase();
-    if (PRESERVED_ACRONYMS.has(upperToken)) {
+    if (PRESERVED_ACRONYMS.has(upperToken) || (upperToken.includes('/') && upperToken.split('/').every(p => PRESERVED_ACRONYMS.has(p)))) {
       return upperToken;
     }
 
@@ -65,6 +65,43 @@ export const formatFixedCaps = (text: any): string => {
 
     return token;
   });
+};
+
+export const splitStudentNameAndId = (nameRoll?: string, explicitName?: string, explicitId?: string): { name: string; id: string } => {
+  if (explicitName && explicitId) {
+    return { name: explicitName, id: explicitId };
+  }
+  const str = (nameRoll || '').trim();
+  if (!str) return { name: explicitName || '-', id: explicitId || '-' };
+
+  // Match multiple students: e.g. "1. Name(ID) 2. Name(ID)"
+  const multiRegex = /(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]/g;
+  const matches = [...str.matchAll(multiRegex)];
+  if (matches.length > 1) {
+    const names = matches.map(m => m[1].trim()).join(', ');
+    const ids = matches.map(m => m[2].trim()).join(', ');
+    return { name: explicitName || names, id: explicitId || ids };
+  }
+
+  // Single student: Name (ID) or Name [ID]
+  const parenMatch = str.match(/^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$/);
+  if (parenMatch) {
+    return { name: parenMatch[1].trim(), id: parenMatch[2].trim() };
+  }
+
+  // Name - ID or Name / ID or Name & ID
+  const sepMatch = str.match(/^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$/i);
+  if (sepMatch) {
+    return { name: sepMatch[1].trim(), id: sepMatch[2].trim() };
+  }
+
+  // Name followed by roll number
+  const rollMatch = str.match(/^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$/);
+  if (rollMatch) {
+    return { name: rollMatch[1].trim(), id: rollMatch[2].trim() };
+  }
+
+  return { name: explicitName || str, id: explicitId || '-' };
 };
 
 export const escapeLatex = (text?: any): string => {
@@ -515,7 +552,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '1. RESEARCH — a) JOURNAL PUBLICATIONS',
     ['0.80cm', '1.20cm', '6.70cm', '5.30cm', '3.70cm'],
-    ['#', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification'],
+    ['S.No', 'Branch', 'Paper Title', 'Authors & Publication Details', 'Indexing & Verification'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -547,7 +584,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '1. RESEARCH — b) CONFERENCE PRESENTATIONS',
     ['0.80cm', '1.20cm', '6.00cm', '5.60cm', '4.10cm'],
-    ['#', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing'],
+    ['S.No', 'Branch', 'Presentation Title', 'Authors & Conference Details', 'Date, Venue & Indexing'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -580,7 +617,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '2. INNOVATION & ENTREPRENEURSHIP — a) PATENTS',
     ['0.80cm', '1.20cm', '7.50cm', '5.00cm', '3.20cm'],
-    ['#', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date'],
+    ['S.No', 'Branch', 'Patent / Innovation Title', 'Inventor/s, Applicant/s & Registration', 'Status & Date'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -601,7 +638,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '2. INNOVATION & ENTREPRENEURSHIP — b) ACTIVITIES AND INITIATIVES',
     ['0.80cm', '1.20cm', '5.20cm', '3.40cm', '2.85cm', '4.00cm'],
-    ['#', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof'],
+    ['S.No', 'Branch', 'Program / Activity Title', 'Date & Organizer', 'Participants', 'Coordinator, Status & Proof'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -619,7 +656,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — a) ATTENDED',
     ['0.80cm', '1.20cm', '6.20cm', '4.70cm', '4.80cm'],
-    ['#', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof'],
+    ['S.No', 'Branch', 'Program Title & Type', 'Organizing Body & Dates', 'Faculty Attended & Proof'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -635,7 +672,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '3. FACULTY DEVELOPMENT PROGRAMS (FDPs) — b) ORGANIZED',
     ['0.80cm', '1.20cm', '5.60cm', '5.40cm', '4.70cm'],
-    ['#', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof'],
+    ['S.No', 'Branch', 'Program Title & Type', 'Resource Person Details', 'Coordinators & Proof'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -651,7 +688,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '4. STUDENT DEVELOPMENT PROGRAMS (SDPs)',
     ['0.80cm', '1.20cm', '8.00cm', '4.50cm', '3.00cm'],
-    ['#', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants'],
+    ['S.No', 'Branch', 'Event Title & Type', 'Date & Resource Person', 'Participants'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -668,7 +705,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '5. ACHIEVEMENTS & RECOGNITIONS — a) FACULTY ACHIEVEMENTS',
     ['0.80cm', '1.20cm', '3.50cm', '4.50cm', '3.70cm', '4.00cm'],
-    ['#', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date'],
+    ['S.No', 'Branch', 'Faculty Member', 'Award / Recognition', 'Event / Competition', 'Conferring Body & Date'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -685,16 +722,18 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   // 5B. Student Achievements
   tex.push(renderSection(
     '5. ACHIEVEMENTS & RECOGNITIONS — b) STUDENT ACHIEVEMENTS',
-    ['0.80cm', '1.20cm', '5.20cm', '5.50cm', '5.00cm'],
-    ['#', 'Branch', 'Student Name & ID', 'Prize / Accomplishment', 'Event & Host Institution'],
+    ['0.80cm', '1.20cm', '3.80cm', '2.50cm', '4.70cm', '4.70cm'],
+    ['S.No', 'Branch', 'Student Name', 'Student ID', 'Prize / Accomplishment', 'Event & Host Institution'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
-      const st = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.nameRoll || '-')}}}`;
+      const { name, id } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+      const stName = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(name || '-')}}}`;
+      const stId = `{\\fontsize{7.5}{9}\\selectfont\\texttt{${escapeLatex(id || '-')}}}`;
       const awd = `{\\fontsize{7.5}{9}\\selectfont\\textbf{${escapeLatex(it.award || '-')}}}` + (it.link ? ` \\newline ${formatLatexLink(it.link, '[Proof Link]')}` : '');
       const evOrg = it.organization ? ` (${escapeLatex(it.organization)})` : '';
       const ev = `{\\fontsize{7}{8.5}\\selectfont ${escapeLatex(it.event || '-')}${evOrg}}`;
-      return [sno, branch, st, awd, ev];
+      return [sno, branch, stName, stId, awd, ev];
     },
     gatherItems('studentAchievements')
   ));
@@ -703,7 +742,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '5. ACHIEVEMENTS & RECOGNITIONS — c) CERTIFICATIONS',
     ['0.80cm', '1.20cm', '5.80cm', '3.50cm', '2.65cm', '3.50cm'],
-    ['#', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status'],
+    ['S.No', 'Branch', 'Course / Certification Title', 'Platform & Type', 'Duration & Enrolled', 'Certified & Status'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -721,7 +760,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '6. COLLABORATIONS & MOUS',
     ['0.80cm', '1.20cm', '5.40cm', '2.80cm', '2.80cm', '4.45cm'],
-    ['#', 'Branch', 'Partner Entity / Industry', 'Date of Signing', 'Faculty SPOC', 'Scope & Focus Area'],
+    ['S.No', 'Branch', 'Partner Entity / Industry', 'Date of Signing', 'Faculty SPOC', 'Scope & Focus Area'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -738,7 +777,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '7. TECHNICAL ASSOCIATION ACTIVITIES',
     ['0.80cm', '1.20cm', '5.70cm', '3.50cm', '6.50cm'],
-    ['#', 'Branch', 'Association Event & Type', 'Date & Coordinator', 'Participants & Outcomes'],
+    ['S.No', 'Branch', 'Association Event & Type', 'Date & Coordinator', 'Participants & Outcomes'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -755,7 +794,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '8. SYLLABUS COVERAGE REPORT',
     ['0.75cm', '1.20cm', '5.50cm', '1.60cm', '3.65cm', '2.50cm', '2.50cm'],
-    ['#', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing'],
+    ['S.No', 'Branch', 'Course / Subject Title', 'Year / Sem', 'Faculty In-Charge', 'Done (5 Units)', 'Pending / Ongoing'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -773,7 +812,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '9. STUDENT ENGAGEMENT & CLUBS',
     ['0.75cm', '1.15cm', '4.50cm', '3.20cm', '1.80cm', '2.60cm', '3.20cm'],
-    ['#', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes'],
+    ['S.No', 'Branch', 'Activity / Event Title', 'Type & Duration', 'Participants', 'Coordinator', 'Remarks / Outcomes'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -791,7 +830,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '10. NSS & COMMUNITY ENGAGEMENT',
     ['0.80cm', '1.20cm', '4.40cm', '3.10cm', '3.00cm', '4.95cm'],
-    ['#', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.'],
+    ['S.No', 'Branch', 'Event / Activity Name', 'Date & Venue', 'Participants & Target', 'Outcomes & Coord.'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -809,7 +848,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
   tex.push(renderSection(
     '11. ADDITIONAL/OTHER RELEVANT INITIATIVES',
     ['0.80cm', '1.20cm', '5.50cm', '3.20cm', '7.00cm'],
-    ['#', 'Branch', 'Initiative / Activity', 'Date & Coordinator', 'Description & Key Outcomes'],
+    ['S.No', 'Branch', 'Initiative / Activity', 'Date & Coordinator', 'Description & Key Outcomes'],
     (it, idx) => {
       const sno = `{\\fontsize{7}{8.5}\\selectfont ${idx + 1}}`;
       const branch = `{\\fontsize{7}{8.5}\\selectfont\\textbf{${escapeLatex(it.deptCode)}}}`;
@@ -842,7 +881,7 @@ export const buildConsolidatedLatexCode = (departmentsData: Record<string, any>,
     const hasAp = momItems.some(it => Boolean((it.actionPoints || '').trim()));
 
     const momCols = ['0.80cm', '1.20cm'];
-    const momHeaders = ['#', 'Branch'];
+    const momHeaders = ['S.No', 'Branch'];
     if (hasAtr) {
       momHeaders.push('Action Taken Report');
       momCols.push('2.80cm');

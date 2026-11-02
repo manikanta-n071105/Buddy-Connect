@@ -249,10 +249,10 @@ export const normalizeSyllabusRemarks = (remarks?: string, _completed?: string):
 
 export const PRESERVED_ACRONYMS = new Set([
   'CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'H&S', 'AI', 'ML', 'DS', 'IOT', 'IT',
-  'IQAC', 'NSS', 'EDC', 'IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
+  'IQAC', 'NSS', 'EDC', 'IIC', 'IIC/EDC', 'EDC/IIC', 'FDP', 'SDP', 'MOU', 'MOUS', 'IEEE', 'UGC',
   'AICTE', 'NBA', 'NAAC', 'HOD', 'CO', 'PO', 'PEO', 'PSO', 'IV', 'III', 'II', 'I',
   'B.TECH', 'M.TECH', 'PH.D', 'R&D', 'T&P', 'DISCIP', 'MOM', 'ATR', 'PDF', 'DOCX',
-  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL',
+  'API', 'URL', 'CAD', 'CAM', 'GIS', 'VLSI', 'MATLAB', 'HTML', 'CSS', 'JS', 'SQL', 'ID',
   'II-I', 'II-II', 'III-I', 'III-II', 'IV-I', 'IV-II'
 ]);
 
@@ -267,7 +267,7 @@ export const formatFixedCaps = (text: any): string => {
 
   return str.replace(/([A-Za-z0-9&.\-\/]+)/g, (token) => {
     const upperToken = token.toUpperCase();
-    if (PRESERVED_ACRONYMS.has(upperToken)) {
+    if (PRESERVED_ACRONYMS.has(upperToken) || (upperToken.includes('/') && upperToken.split('/').every(p => PRESERVED_ACRONYMS.has(p)))) {
       return upperToken;
     }
 
@@ -289,6 +289,43 @@ export const formatFixedCaps = (text: any): string => {
   });
 };
 
+export const splitStudentNameAndId = (nameRoll?: string, explicitName?: string, explicitId?: string): { name: string; id: string } => {
+  if (explicitName && explicitId) {
+    return { name: explicitName, id: explicitId };
+  }
+  const str = (nameRoll || '').trim();
+  if (!str) return { name: explicitName || '-', id: explicitId || '-' };
+
+  // Multiple students: e.g. "1. Name(ID) 2. Name(ID)"
+  const multiRegex = /(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]/g;
+  const matches = [...str.matchAll(multiRegex)];
+  if (matches.length > 1) {
+    const names = matches.map(m => m[1].trim()).join(', ');
+    const ids = matches.map(m => m[2].trim()).join(', ');
+    return { name: explicitName || names, id: explicitId || ids };
+  }
+
+  // Single student: Name (ID) or Name [ID]
+  const parenMatch = str.match(/^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$/);
+  if (parenMatch) {
+    return { name: parenMatch[1].trim(), id: parenMatch[2].trim() };
+  }
+
+  // Name - ID or Name / ID or Name & ID
+  const sepMatch = str.match(/^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$/i);
+  if (sepMatch) {
+    return { name: sepMatch[1].trim(), id: sepMatch[2].trim() };
+  }
+
+  // Name followed by roll number
+  const rollMatch = str.match(/^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$/);
+  if (rollMatch) {
+    return { name: rollMatch[1].trim(), id: rollMatch[2].trim() };
+  }
+
+  return { name: explicitName || str, id: explicitId || '-' };
+};
+
 export const hasAnyMeaningfulData = (sec: ReportSectionsData | undefined): boolean => {
   if (!sec || typeof sec !== 'object') return false;
   return Object.values(sec).some(arr => Array.isArray(arr) && arr.some(isMeaningfulItem));
@@ -299,29 +336,7 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
   period,
   customData
 }) => {
-  const [logoBase64, setLogoBase64] = useState<string>(SSE_HEADER_LOGO_BASE64);
-
-  useEffect(() => {
-    // If SSE_HEADER_LOGO_BASE64 is already loaded, it serves immediately without network latency
-    if (!logoBase64 || logoBase64.startsWith('/')) {
-      const fetchLogo = async () => {
-        try {
-          const response = await fetch('/assets/sse-header-logo.png');
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              setLogoBase64(reader.result);
-            }
-          };
-          reader.readAsDataURL(blob);
-        } catch (err) {
-          setLogoBase64(SSE_HEADER_LOGO_BASE64);
-        }
-      };
-      fetchLogo();
-    }
-  }, [logoBase64]);
+  const logoBase64 = SSE_HEADER_LOGO_BASE64;
 
   // Standard 6 Academic Departments
   const academicDepartments = [
@@ -787,10 +802,27 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
       getItems: (data, depts) => depts.flatMap(d => (data[d.code]?.studentAchievements || []).filter(isMeaningfulItem).map(it => ({ ...it, deptCode: d.code }))),
       columns: [
         { header: 'S.No', width: '5%', align: 'center', render: (_it, idx) => idx + 1 },
-        { header: 'Branch', width: '9%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
-        { header: 'Student Name & ID', width: '30%', align: 'justify', render: (it) => <span style={{ fontWeight: 700, color: '#0f172a' }}>{it.nameRoll}</span> },
-        { header: 'Prize / Accomplishment', width: '32%', align: 'justify', render: (it) => <span style={{ fontWeight: 600, color: '#0f172a' }}>{it.award}</span> },
-        { header: 'Event & Host Institution', width: '24%', align: 'justify', render: (it) => <span style={{ color: '#475569' }}>{it.event} {it.organization ? `(${it.organization})` : ''}</span> }
+        { header: 'Branch', width: '7%', align: 'center', render: (it) => <span style={{ fontWeight: 800, color: '#1a365d' }}>{it.deptCode}</span> },
+        {
+          header: 'Student Name',
+          width: '18%',
+          align: 'justify',
+          render: (it) => {
+            const { name } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+            return <span style={{ fontWeight: 700, color: '#0f172a' }}>{name}</span>;
+          }
+        },
+        {
+          header: 'Student ID',
+          width: '14%',
+          align: 'center',
+          render: (it) => {
+            const { id } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+            return <span style={{ fontWeight: 700, color: '#1a365d', fontFamily: 'monospace' }}>{id || '-'}</span>;
+          }
+        },
+        { header: 'Prize / Accomplishment', width: '30%', align: 'justify', render: (it) => <span style={{ fontWeight: 600, color: '#0f172a' }}>{it.award}</span> },
+        { header: 'Event & Host Institution', width: '26%', align: 'justify', render: (it) => <span style={{ color: '#475569' }}>{it.event} {it.organization ? `(${it.organization})` : ''}</span> }
       ]
     },
     // 5C. Certifications
