@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { query, executeTransaction } from '../config/db';
 import { logger } from '../utils/logger';
+import { pLimit } from '../utils/concurrency';
 
 // ============================================================================
 // JNTUA ALPHANUMERIC ROLL NUMBER GENERATOR & PARSER
@@ -692,17 +693,31 @@ export const getMySeat = async (req: AuthenticatedRequest, res: Response) => {
     const seatingRes = await query(sql, [rollNoQuery, username, userId, userRegNo]);
 
     // Attach full seating grid of each matched hall for visual seat location preview
-    const seatsWithHallGrid = await Promise.all(
-      seatingRes.rows.map(async (seat: any) => {
-        let hallSeatings: any[] = [];
-        if (seat.exam_id && (seat.hall_id || seat.hall_name)) {
+    // Using pLimit concurrency limiter and key caching to avoid redundant queries to identical halls
+    const limit = pLimit(4);
+    const hallCache = new Map<string, Promise<any[]>>();
+
+    const getHallGrid = (examId: any, hallId: any, hallName: any) => {
+      const key = `${examId}_${hallId || hallName}`;
+      if (!hallCache.has(key)) {
+        hallCache.set(key, limit(async () => {
           const gridRes = await query(
             `SELECT id, roll_number, student_name, branch, grid_row, grid_col, seat_number, hall_name
              FROM exam_seatings
              WHERE exam_id = $1 AND ((hall_id IS NOT NULL AND hall_id = $2) OR (LOWER(hall_name) = LOWER($3)))`,
-            [seat.exam_id, seat.hall_id, seat.hall_name]
+            [examId, hallId, hallName]
           );
-          hallSeatings = gridRes.rows;
+          return gridRes.rows;
+        }));
+      }
+      return hallCache.get(key)!;
+    };
+
+    const seatsWithHallGrid = await Promise.all(
+      seatingRes.rows.map(async (seat: any) => {
+        let hallSeatings: any[] = [];
+        if (seat.exam_id && (seat.hall_id || seat.hall_name)) {
+          hallSeatings = await getHallGrid(seat.exam_id, seat.hall_id, seat.hall_name);
         }
         return {
           ...seat,

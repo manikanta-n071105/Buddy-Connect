@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { pLimit } from '../../utils/concurrency';
 import {
   Printer,
   FileDown,
@@ -285,23 +286,26 @@ export const PublicReportGeneratorPage: React.FC = () => {
   const handleExportToWord = async () => {
     toast.info('Preparing Microsoft Word (.doc) export...');
 
-    // Convert local/data photos to base64 if needed
+    // Convert local/data photos to base64 with controlled concurrency limit (max 3 parallel)
+    const limit = pLimit(3);
     const processedPhotos = await Promise.all(
-      photos.map(async (p) => {
-        if (p.url.startsWith('data:')) return p;
-        try {
-          const resp = await fetch(p.url, { mode: 'cors' });
-          const blob = await resp.blob();
-          const reader = new FileReader();
-          const b64 = await new Promise<string>((resolve) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-          return { ...p, url: b64 };
-        } catch (e) {
-          return p;
-        }
-      })
+      photos.map((p) =>
+        limit(async () => {
+          if (p.url.startsWith('data:')) return p;
+          try {
+            const resp = await fetch(p.url, { mode: 'cors' });
+            const blob = await resp.blob();
+            const reader = new FileReader();
+            const b64 = await new Promise<string>((resolve) => {
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+            return { ...p, url: b64 };
+          } catch (e) {
+            return p;
+          }
+        })
+      )
     );
 
     let photosHTML = '';

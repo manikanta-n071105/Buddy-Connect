@@ -2,7 +2,19 @@ import { Response } from 'express';
 import { query } from '../config/db';
 import { reportQuery } from '../config/reportDb';
 import { AuthenticatedRequest } from '../types';
-import { cache } from '../utils/cache';
+import { cache, memoryCache } from '../utils/cache';
+import { dedupeRequest } from '../utils/concurrency';
+
+export const invalidateDepartmentReportCaches = (period?: string) => {
+  if (period) {
+    const clean = period.toLowerCase().trim();
+    memoryCache.del(`dept_submissions_${clean}`);
+    memoryCache.del(`all_dept_data_${clean}`);
+  } else {
+    memoryCache.deleteByPrefix('dept_submissions_');
+    memoryCache.deleteByPrefix('all_dept_data_');
+  }
+};
 
 export const getDashboardStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -774,6 +786,7 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
     const projectRoot = getProjectRoot();
 
     await reportQuery('DELETE FROM departmental_monthly_reports WHERE period = $1', [period]);
+    invalidateDepartmentReportCaches(period);
 
     const cleanPeriodDir = period.replace(/[^a-zA-Z0-9_-]/g, '_');
     const hodReportsFolder = path.join(projectRoot, 'uploads', 'hod_reports', cleanPeriodDir);
@@ -798,66 +811,85 @@ export const clearDepartmentSubmissions = async (req: any, res: Response) => {
 export const getDepartmentSubmissions = async (req: any, res: Response) => {
   try {
     const period = (req.query.period as string) || 'September 2026';
+    const cacheKey = `dept_submissions_${period.toLowerCase().trim()}`;
 
-    const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1)) ORDER BY department ASC', [period]);
-    const submittedMap = new Map();
-    rowsRes.rows.forEach((r: any) => submittedMap.set(r.department.toLowerCase().trim(), r));
+    // Fast-path In-Memory Cache (0ms response for repeated queries / tab switches)
+    if (req.query?.fresh !== 'true') {
+      const cached = memoryCache.get<any>(cacheKey);
+      if (cached) {
+        res.setHeader('X-Cache', 'HIT');
+        res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=30');
+        return res.json(cached);
+      }
+    }
 
-    const mapStatus = (entity: StandardEntityConfig) => {
-      const sub = submittedMap.get(entity.name.toLowerCase().trim()) ||
-        submittedMap.get(entity.code.toLowerCase().trim());
+    // Request Coalescing: Ensure only 1 active database query runs even under simultaneous traffic
+    const responseData = await dedupeRequest(cacheKey, async () => {
+      const rowsRes = await reportQuery('SELECT * FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1)) ORDER BY department ASC', [period]);
+      const submittedMap = new Map();
+      rowsRes.rows.forEach((r: any) => submittedMap.set(r.department.toLowerCase().trim(), r));
 
-      const hasBuilderData = !!sub && (
-        (sub.items_count > 0) ||
-        (sub.sections_data && (typeof sub.sections_data === 'object' ? Object.keys(sub.sections_data).length > 0 : String(sub.sections_data).length > 2))
-      );
-      const isSubmitted = !!sub && (sub.status === 'SUBMITTED' || hasBuilderData);
+      const mapStatus = (entity: StandardEntityConfig) => {
+        const sub = submittedMap.get(entity.name.toLowerCase().trim()) ||
+          submittedMap.get(entity.code.toLowerCase().trim());
+
+        const hasBuilderData = !!sub && (
+          (sub.items_count > 0) ||
+          (sub.sections_data && (typeof sub.sections_data === 'object' ? Object.keys(sub.sections_data).length > 0 : String(sub.sections_data).length > 2))
+        );
+        const isSubmitted = !!sub && (sub.status === 'SUBMITTED' || hasBuilderData);
+
+        return {
+          code: entity.code,
+          name: entity.name,
+          type: entity.type,
+          isSubmitted,
+          hasDraft: !!sub && sub.status === 'DRAFT' && !hasBuilderData,
+          id: sub?.id || null,
+          hodName: sub?.hod_name || entity.defaultHod,
+          submissionDate: sub?.submission_date || null,
+          fileName: sub?.file_name || `${entity.code}_Manual_Report.docx`,
+          fileSizeBytes: sub?.file_size_bytes ? parseInt(sub.file_size_bytes) : 0,
+          fileSizeFormatted: (sub?.file_size_bytes && parseInt(sub.file_size_bytes) > 0)
+            ? `${(parseInt(sub.file_size_bytes) / 1024).toFixed(1)} KB`
+            : (hasBuilderData ? 'Live Builder Sync' : null),
+          itemsCount: sub?.items_count || 0,
+          uploadedAt: sub?.uploaded_at || sub?.updated_at || null,
+          updatedAt: sub?.updated_at || null,
+          status: isSubmitted ? 'SUBMITTED' : (sub?.status || 'PENDING')
+        };
+      };
+
+      const departmentsStatus = STANDARD_DEPARTMENTS.map(mapStatus);
+      const committeesStatus = STANDARD_COMMITTEES.map(mapStatus);
+
+      const allEntities = [...departmentsStatus, ...committeesStatus];
+      const submittedCount = allEntities.filter(e => e.isSubmitted).length;
+      const submittedDeptsCount = departmentsStatus.filter(d => d.isSubmitted).length;
+      const submittedCommsCount = committeesStatus.filter(c => c.isSubmitted).length;
 
       return {
-        code: entity.code,
-        name: entity.name,
-        type: entity.type,
-        isSubmitted,
-        hasDraft: !!sub && sub.status === 'DRAFT' && !hasBuilderData,
-        id: sub?.id || null,
-        hodName: sub?.hod_name || entity.defaultHod,
-        submissionDate: sub?.submission_date || null,
-        fileName: sub?.file_name || `${entity.code}_Manual_Report.docx`,
-        fileSizeBytes: sub?.file_size_bytes ? parseInt(sub.file_size_bytes) : 0,
-        fileSizeFormatted: (sub?.file_size_bytes && parseInt(sub.file_size_bytes) > 0)
-          ? `${(parseInt(sub.file_size_bytes) / 1024).toFixed(1)} KB`
-          : (hasBuilderData ? 'Live Builder Sync' : null),
-        itemsCount: sub?.items_count || 0,
-        uploadedAt: sub?.uploaded_at || sub?.updated_at || null,
-        updatedAt: sub?.updated_at || null,
-        status: isSubmitted ? 'SUBMITTED' : (sub?.status || 'PENDING')
+        success: true,
+        data: {
+          period,
+          submittedCount,
+          submittedDeptsCount,
+          submittedCommsCount,
+          totalDepartments: departmentsStatus.length,
+          totalCommittees: committeesStatus.length,
+          totalEntities: allEntities.length,
+          isComplete: submittedDeptsCount === departmentsStatus.length,
+          departments: departmentsStatus,
+          committees: committeesStatus,
+          allEntities
+        }
       };
-    };
-
-    const departmentsStatus = STANDARD_DEPARTMENTS.map(mapStatus);
-    const committeesStatus = STANDARD_COMMITTEES.map(mapStatus);
-
-    const allEntities = [...departmentsStatus, ...committeesStatus];
-    const submittedCount = allEntities.filter(e => e.isSubmitted).length;
-    const submittedDeptsCount = departmentsStatus.filter(d => d.isSubmitted).length;
-    const submittedCommsCount = committeesStatus.filter(c => c.isSubmitted).length;
-
-    return res.json({
-      success: true,
-      data: {
-        period,
-        submittedCount,
-        submittedDeptsCount,
-        submittedCommsCount,
-        totalDepartments: departmentsStatus.length,
-        totalCommittees: committeesStatus.length,
-        totalEntities: allEntities.length,
-        isComplete: submittedDeptsCount === departmentsStatus.length,
-        departments: departmentsStatus,
-        committees: committeesStatus,
-        allEntities
-      }
     });
+
+    memoryCache.set(cacheKey, responseData, 20000); // 20s TTL
+    res.setHeader('X-Cache', 'MISS');
+    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=30');
+    return res.json(responseData);
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -909,6 +941,8 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
           file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, status = 'SUBMITTED', updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `, [department, period, hodName || 'Convener / HOD', fileName, targetFilePath, fileSizeBytes, itemsCount]);
+
+    invalidateDepartmentReportCaches(period);
 
     return res.json({
       success: true,
@@ -1024,6 +1058,8 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
           file_size_bytes = EXCLUDED.file_size_bytes, items_count = EXCLUDED.items_count, status = 'SUBMITTED', updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `, [detectedName, detectedPeriod, detectedHod || 'Convener / HOD', fileName, targetFilePath, fileSizeBytes, detectedItems]);
+
+    invalidateDepartmentReportCaches(detectedPeriod);
 
     return res.json({
       success: true,
@@ -1401,6 +1437,8 @@ export const saveDepartmentDraft = async (req: any, res: Response) => {
       defaultDocxName
     ]);
 
+    invalidateDepartmentReportCaches(period);
+
     return res.json({
       success: true,
       message: `Changes for ${department} synced directly to Master Consolidator (${period})!`,
@@ -1472,23 +1510,42 @@ export const getDepartmentReportData = async (req: any, res: Response) => {
 export const getAllDepartmentReportData = async (req: any, res: Response) => {
   try {
     const period = (req.query.period as string) || 'September 2026';
-    const rowsRes = await reportQuery(
-      'SELECT department, sections_data, hod_name, status, updated_at FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
-      [period]
-    );
+    const cacheKey = `all_dept_data_${period.toLowerCase().trim()}`;
 
-    const result: Record<string, any> = {};
-    rowsRes.rows.forEach((r: any) => {
-      const sec = typeof r.sections_data === 'string' ? JSON.parse(r.sections_data) : (r.sections_data || {});
-      result[r.department] = sec;
+    // Fast-path In-Memory Cache (0ms response for repeat queries)
+    if (req.query?.fresh !== 'true') {
+      const cached = memoryCache.get<any>(cacheKey);
+      if (cached) {
+        res.setHeader('X-Cache', 'HIT');
+        res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=30');
+        return res.json(cached);
+      }
+    }
+
+    const responseData = await dedupeRequest(cacheKey, async () => {
+      const rowsRes = await reportQuery(
+        'SELECT department, sections_data, hod_name, status, updated_at FROM departmental_monthly_reports WHERE LOWER(TRIM(period)) = LOWER(TRIM($1))',
+        [period]
+      );
+
+      const result: Record<string, any> = {};
+      rowsRes.rows.forEach((r: any) => {
+        const sec = typeof r.sections_data === 'string' ? JSON.parse(r.sections_data) : (r.sections_data || {});
+        result[r.department] = sec;
+      });
+
+      return {
+        success: true,
+        period,
+        count: rowsRes.rows.length,
+        data: result
+      };
     });
 
-    return res.json({
-      success: true,
-      period,
-      count: rowsRes.rows.length,
-      data: result
-    });
+    memoryCache.set(cacheKey, responseData, 20000); // 20s TTL
+    res.setHeader('X-Cache', 'MISS');
+    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=30');
+    return res.json(responseData);
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
   }

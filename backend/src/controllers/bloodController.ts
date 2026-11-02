@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { query, executeTransaction } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 import { logAudit } from '../utils/audit';
+import { chunkArray } from '../utils/concurrency';
 
 export const VALID_BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
@@ -165,24 +166,34 @@ export const createBloodRequest = async (req: AuthenticatedRequest, res: Respons
         const notifTitle = `${urgencyEmoji} ${normalizedBloodGroup} Blood Donation Needed`;
         const notifMessage = `${req.user!.name} posted a blood request for ${patient_name} needing ${parsedUnits} unit(s) of ${normalizedBloodGroup} blood at ${hospital_name || 'Hospital'}. Your blood group matches!`;
 
-        for (const targetUser of matchingUsersRes.rows) {
-          await client.query(
-            `INSERT INTO notifications (recipient_id, title, message, type, metadata)
-             VALUES ($1, $2, $3, 'BLOOD_REQUEST_MATCH', $4)`,
-            [
-              targetUser.id,
-              notifTitle,
-              notifMessage,
-              JSON.stringify({
-                requestId: newRequest.id,
-                bloodGroup: normalizedBloodGroup,
-                patientName: patient_name,
-                hospitalName: hospital_name,
-                unitsNeeded: parsedUnits,
-                urgency: normalizedUrgency
-              })
-            ]
-          );
+        const notifMeta = JSON.stringify({
+          requestId: newRequest.id,
+          bloodGroup: normalizedBloodGroup,
+          patientName: patient_name,
+          hospitalName: hospital_name,
+          unitsNeeded: parsedUnits,
+          urgency: normalizedUrgency
+        });
+
+        // Batch insert notifications in chunks of 50 to prevent connection exhaustion and request timeouts
+        const chunks = chunkArray(matchingUsersRes.rows, 50);
+        for (const chunk of chunks) {
+          const valuePlaceholders: string[] = [];
+          const queryParams: any[] = [];
+          let paramIdx = 1;
+
+          for (const targetUser of chunk) {
+            valuePlaceholders.push(`($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, 'BLOOD_REQUEST_MATCH', $${paramIdx++})`);
+            queryParams.push(targetUser.id, notifTitle, notifMessage, notifMeta);
+          }
+
+          if (valuePlaceholders.length > 0) {
+            await client.query(
+              `INSERT INTO notifications (recipient_id, title, message, type, metadata)
+               VALUES ${valuePlaceholders.join(', ')}`,
+              queryParams
+            );
+          }
         }
       }
 

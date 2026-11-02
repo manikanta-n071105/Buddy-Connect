@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { dedupeRequest } from '../../utils/concurrency';
 import {
   FileCheck,
   Download,
@@ -233,23 +234,25 @@ export const HODReportConsolidatorPage: React.FC = () => {
   };
 
   const fetchSubmissions = async (reportingPeriod = period) => {
-    try {
-      setLoading(true);
-      const [res, customDataRes] = await Promise.all([
-        api.get(`/reports/department-submissions?period=${encodeURIComponent(reportingPeriod)}`),
-        api.get(`/reports/all-department-report-data?period=${encodeURIComponent(reportingPeriod)}`).catch(() => ({ data: { data: {} } }))
-      ]);
-      if (res.data.success) {
-        setSubmissions(res.data.data);
+    return dedupeRequest(`fetch_submissions_${reportingPeriod}`, async () => {
+      try {
+        setLoading(true);
+        const [res, customDataRes] = await Promise.all([
+          api.get(`/reports/department-submissions?period=${encodeURIComponent(reportingPeriod)}`),
+          api.get(`/reports/all-department-report-data?period=${encodeURIComponent(reportingPeriod)}`).catch(() => ({ data: { data: {} } }))
+        ]);
+        if (res.data.success) {
+          setSubmissions(res.data.data);
+        }
+        if (customDataRes.data?.data) {
+          setAllDeptCustomData(customDataRes.data.data);
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch departmental submissions:', err);
+      } finally {
+        setLoading(false);
       }
-      if (customDataRes.data?.data) {
-        setAllDeptCustomData(customDataRes.data.data);
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch departmental submissions:', err);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   useEffect(() => {

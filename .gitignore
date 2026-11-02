@@ -44,5 +44,6 @@ bin/
 test_*.pdf
 test_*.tex
 * (*).pdf
+.cache_pdf_hash_*.txt
 
 
