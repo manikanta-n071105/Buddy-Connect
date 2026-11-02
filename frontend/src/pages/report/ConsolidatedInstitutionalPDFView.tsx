@@ -289,41 +289,80 @@ export const formatFixedCaps = (text: any): string => {
   });
 };
 
-export const splitStudentNameAndId = (nameRoll?: string, explicitName?: string, explicitId?: string): { name: string; id: string } => {
-  if (explicitName && explicitId) {
-    return { name: explicitName, id: explicitId };
-  }
+export interface StudentEntry {
+  name: string;
+  id: string;
+}
+
+export const splitStudentNameAndId = (nameRoll?: string, explicitName?: string, explicitId?: string): { name: string; id: string; students: StudentEntry[] } => {
   const str = (nameRoll || '').trim();
-  if (!str) return { name: explicitName || '-', id: explicitId || '-' };
 
-  // Multiple students: e.g. "1. Name(ID) 2. Name(ID)"
-  const multiRegex = /(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]/g;
-  const matches = [...str.matchAll(multiRegex)];
-  if (matches.length > 1) {
-    const names = matches.map(m => m[1].trim()).join(', ');
-    const ids = matches.map(m => m[2].trim()).join(', ');
-    return { name: explicitName || names, id: explicitId || ids };
+  // 1. Multiple students in nameRoll: e.g. "1. Name (ID) 2. Name (ID)" or "Name (ID), Name (ID)"
+  if (str) {
+    const multiRegex = /(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s'-]+?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]/g;
+    const matches = [...str.matchAll(multiRegex)];
+    if (matches.length > 1) {
+      const students: StudentEntry[] = matches.map(m => ({
+        name: m[1].trim(),
+        id: m[2].trim()
+      }));
+      return {
+        name: explicitName || students.map(s => s.name).join(', '),
+        id: explicitId || students.map(s => s.id).join(', '),
+        students
+      };
+    }
   }
 
-  // Single student: Name (ID) or Name [ID]
+  // 2. Check if explicitName or explicitId has multiple comma or newline separated entries
+  const rawNames = (explicitName || '').split(/\r?\n|,/).map(s => s.trim()).filter(Boolean);
+  const rawIds = (explicitId || '').split(/\r?\n|,/).map(s => s.trim()).filter(Boolean);
+  if (rawNames.length > 1 || rawIds.length > 1) {
+    const maxLen = Math.max(rawNames.length, rawIds.length);
+    const students: StudentEntry[] = [];
+    for (let i = 0; i < maxLen; i++) {
+      students.push({
+        name: rawNames[i] || '-',
+        id: rawIds[i] || '-'
+      });
+    }
+    return {
+      name: explicitName || students.map(s => s.name).join(', '),
+      id: explicitId || students.map(s => s.id).join(', '),
+      students
+    };
+  }
+
+  // 3. Single student: explicit name & id
+  if (explicitName && explicitId) {
+    return { name: explicitName, id: explicitId, students: [{ name: explicitName, id: explicitId }] };
+  }
+
+  if (!str) return { name: explicitName || '-', id: explicitId || '-', students: [] };
+
+  // 4. Single student: Name (ID) or Name [ID]
   const parenMatch = str.match(/^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$/);
   if (parenMatch) {
-    return { name: parenMatch[1].trim(), id: parenMatch[2].trim() };
+    const s = { name: parenMatch[1].trim(), id: parenMatch[2].trim() };
+    return { name: s.name, id: s.id, students: [s] };
   }
 
-  // Name - ID or Name / ID or Name & ID
+  // 5. Name - ID or Name / ID or Name & ID
   const sepMatch = str.match(/^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$/i);
   if (sepMatch) {
-    return { name: sepMatch[1].trim(), id: sepMatch[2].trim() };
+    const s = { name: sepMatch[1].trim(), id: sepMatch[2].trim() };
+    return { name: s.name, id: s.id, students: [s] };
   }
 
-  // Name followed by roll number
+  // 6. Name followed by roll number
   const rollMatch = str.match(/^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$/);
   if (rollMatch) {
-    return { name: rollMatch[1].trim(), id: rollMatch[2].trim() };
+    const s = { name: rollMatch[1].trim(), id: rollMatch[2].trim() };
+    return { name: s.name, id: s.id, students: [s] };
   }
 
-  return { name: explicitName || str, id: explicitId || '-' };
+  const fallback = { name: explicitName || str, id: explicitId || '-' };
+  return { ...fallback, students: [fallback] };
 };
 
 export const hasAnyMeaningfulData = (sec: ReportSectionsData | undefined): boolean => {
@@ -808,7 +847,18 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           width: '18%',
           align: 'justify',
           render: (it) => {
-            const { name } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+            const { name, students } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+            if (students && students.length > 1) {
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5px' }}>
+                  {students.map((s, sIdx) => (
+                    <div key={sIdx} style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.25 }}>
+                      {s.name}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
             return <span style={{ fontWeight: 700, color: '#0f172a' }}>{name}</span>;
           }
         },
@@ -817,7 +867,18 @@ export const ConsolidatedInstitutionalPDFView: React.FC<ConsolidatedInstitutiona
           width: '14%',
           align: 'center',
           render: (it) => {
-            const { id } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+            const { id, students } = splitStudentNameAndId(it.nameRoll, it.studentName, it.studentId);
+            if (students && students.length > 1) {
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5px' }}>
+                  {students.map((s, sIdx) => (
+                    <div key={sIdx} style={{ fontWeight: 700, color: '#1a365d', fontFamily: 'monospace', lineHeight: 1.25 }}>
+                      {s.id || '-'}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
             return <span style={{ fontWeight: 700, color: '#1a365d', fontFamily: 'monospace' }}>{id || '-'}</span>;
           }
         },

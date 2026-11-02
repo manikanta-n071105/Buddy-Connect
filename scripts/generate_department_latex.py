@@ -47,7 +47,7 @@ def escape_latex(text):
     text = str(text)
     if not text.strip():
         return ""
-    text = format_fixed_caps(text)
+    # Department reports preserve original casing as filled by users without forcing title case
 
     # Clean errant patterns and unicode characters
     text = (text

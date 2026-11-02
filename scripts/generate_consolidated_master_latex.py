@@ -64,32 +64,58 @@ def format_fixed_caps(text):
     return re.sub(r'([A-Za-z0-9&.\-\/]+)', repl, text)
 
 def split_student_name_and_id(name_roll, explicit_name='', explicit_id=''):
-    if explicit_name and explicit_id:
-        return explicit_name, explicit_id
     raw = (name_roll or '').strip()
+
+    # 1. Multiple students in name_roll: e.g. "1. Name (ID) 2. Name (ID)" or "Name (ID), Name (ID)"
+    if raw:
+        multi_matches = re.findall(r'(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s\'-]+?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]', raw)
+        if len(multi_matches) > 1:
+            students = [{'name': m[0].strip(), 'id': m[1].strip()} for m in multi_matches]
+            names = explicit_name or ', '.join([s['name'] for s in students])
+            ids = explicit_id or ', '.join([s['id'] for s in students])
+            return names, ids, students
+
+    # 2. Check if explicit_name or explicit_id has multiple comma or newline separated entries
+    raw_names = [s.strip() for s in re.split(r'[\r\n,]+', explicit_name or '') if s.strip()]
+    raw_ids = [s.strip() for s in re.split(r'[\r\n,]+', explicit_id or '') if s.strip()]
+    if len(raw_names) > 1 or len(raw_ids) > 1:
+        max_len = max(len(raw_names), len(raw_ids))
+        students = []
+        for i in range(max_len):
+            students.append({
+                'name': raw_names[i] if i < len(raw_names) else '-',
+                'id': raw_ids[i] if i < len(raw_ids) else '-'
+            })
+        return explicit_name or ', '.join(s['name'] for s in students), explicit_id or ', '.join(s['id'] for s in students), students
+
+    # 3. Single student: explicit name & id
+    if explicit_name and explicit_id:
+        s = {'name': explicit_name, 'id': explicit_id}
+        return explicit_name, explicit_id, [s]
+
     if not raw:
-        return explicit_name or '-', explicit_id or '-'
+        return explicit_name or '-', explicit_id or '-', []
 
-    # Multiple students: e.g. "1. Name (ID) 2. Name (ID)"
-    multi_matches = re.findall(r'(?:[0-9]+[\.\)]\s*)?([A-Za-z\.\s]+)\s*[\(\[]([A-Za-z0-9]+)[\)\]]', raw)
-    if len(multi_matches) > 1:
-        names = ', '.join([m[0].strip() for m in multi_matches])
-        ids = ', '.join([m[1].strip() for m in multi_matches])
-        return explicit_name or names, explicit_id or ids
-
+    # 4. Single student: Name (ID) or Name [ID]
     m = re.match(r'^(.*?)\s*[\(\[]([A-Za-z0-9]+)[\)\]]\s*$', raw)
     if m:
-        return m.group(1).strip(), m.group(2).strip()
+        s = {'name': m.group(1).strip(), 'id': m.group(2).strip()}
+        return s['name'], s['id'], [s]
 
+    # 5. Name - ID or Name / ID or Name & ID
     m = re.match(r'^(.*?)\s*(?:[-–—\/&]|ID:?)\s*([0-9][0-9][A-Za-z0-9]{6,10})\s*$', raw, re.I)
     if m:
-        return m.group(1).strip(), m.group(2).strip()
+        s = {'name': m.group(1).strip(), 'id': m.group(2).strip()}
+        return s['name'], s['id'], [s]
 
+    # 6. Name followed by roll number
     m = re.match(r'^(.*?)\s+([0-9]{2}[A-Za-z0-9]{8,10})\s*$', raw)
     if m:
-        return m.group(1).strip(), m.group(2).strip()
+        s = {'name': m.group(1).strip(), 'id': m.group(2).strip()}
+        return s['name'], s['id'], [s]
 
-    return explicit_name or raw, explicit_id or '-'
+    s = {'name': explicit_name or raw, 'id': explicit_id or '-'}
+    return s['name'], s['id'], [s]
 
 
 def escape_latex(text):
@@ -99,7 +125,7 @@ def escape_latex(text):
     text = str(text)
     if not text.strip():
         return ""
-    text = format_fixed_caps(text)
+    # Consolidated reports preserve original casing as filled by users without forcing title case
 
     # Clean errant patterns and unicode characters
     text = (text
@@ -802,9 +828,13 @@ def build_latex_document(all_dept_data, period, college_name="SANSKRITHI SCHOOL 
     def gen_sa_row(it, idx):
         sno = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {idx + 1}}}"
         branch = f"{{\\fontsize{{7}}{{8.5}}\\selectfont\\textbf{{{escape_latex(it.get('deptCode', ''))}}}}}"
-        st_name, st_id = split_student_name_and_id(it.get('nameRoll', ''), it.get('studentName', ''), it.get('studentId', ''))
-        st_name_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{escape_latex(st_name)}}}}}"
-        st_id_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\texttt{{{escape_latex(st_id)}}}}}"
+        st_name, st_id, students = split_student_name_and_id(it.get('nameRoll', ''), it.get('studentName', ''), it.get('studentId', ''))
+        if len(students) > 1:
+            st_name_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont { ' \\newline '.join([f'\\textbf{{{escape_latex(s[\"name\"])}}}' for s in students]) }}}"
+            st_id_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont { ' \\newline '.join([f'\\texttt{{{escape_latex(s[\"id\"])}}}' for s in students]) }}}"
+        else:
+            st_name_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{escape_latex(st_name or '-')}}}}}"
+            st_id_cell = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\texttt{{{escape_latex(st_id or '-')}}}}}"
         awd = f"{{\\fontsize{{7.5}}{{9}}\\selectfont\\textbf{{{escape_latex(it.get('award', '-'))}}}}}" + (f" \\newline {format_latex_link(it['link'], '[Proof Link]')}" if it.get('link') else "")
         ev_org = f" ({escape_latex(it['organization'])})" if it.get('organization') else ""
         ev = f"{{\\fontsize{{7}}{{8.5}}\\selectfont {escape_latex(it.get('event', '-'))}{ev_org}}}"

@@ -1287,9 +1287,9 @@ export const HODManualReportBuilder: React.FC<HODManualReportBuilderProps> = ({
       const payload = {
         department: currentDept,
         period: currentPeriod,
-        hodName: formatFixedCaps(currentHod),
+        hodName: currentHod,
         submissionDate: currentSubDate,
-        sections: formatSectionsFixedCaps(currentSections),
+        sections: currentSections,
         status: 'SUBMITTED'
       };
 
@@ -4703,14 +4703,6 @@ const FieldInput: React.FC<FieldInputProps> = ({ label, value, onChange, placeho
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      onBlur={() => {
-        if (type === 'text' && typeof value === 'string' && value.trim()) {
-          const formatted = formatFixedCaps(value);
-          if (formatted !== value) {
-            onChange(formatted);
-          }
-        }
-      }}
       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 transition-all placeholder:text-slate-400"
     />
   </div>
@@ -4865,15 +4857,6 @@ const FacultyNameInput: React.FC<FacultyNameInputProps> = ({
             value={name}
             placeholder={placeholder}
             onChange={(e) => updateCombined(title, initial, e.target.value)}
-            onBlur={() => {
-              if (name && name.trim()) {
-                const formattedName = formatFixedCaps(name);
-                if (formattedName !== name) {
-                  setName(formattedName);
-                  updateCombined(title, initial, formattedName);
-                }
-              }
-            }}
             className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-medium focus:outline-none focus:border-blue-600 placeholder:text-slate-400 shadow-2xs"
           />
         </div>
