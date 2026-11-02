@@ -33,7 +33,6 @@ import { toast } from 'sonner';
 import api from '../../services/api';
 import { HODManualReportBuilder } from './HODManualReportBuilder';
 import { ConsolidatedInstitutionalPDFView, exportPagesToPdf } from './ConsolidatedInstitutionalPDFView';
-import { SSE_HEADER_LOGO_BASE64 } from '../../assets/logoData';
 
 interface DepartmentStatus {
   code: string;
@@ -671,25 +670,14 @@ export const HODReportConsolidatorPage: React.FC = () => {
           <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 space-y-6">
-            {/* Top Bar: Official College Header & Institutional Identity */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/10">
-              <div className="flex items-center gap-3.5 sm:gap-4">
-                <div className="bg-white rounded-2xl p-2 sm:p-2.5 shadow-md shrink-0 flex items-center justify-center">
-                  <img
-                    src={SSE_HEADER_LOGO_BASE64}
-                    alt="Sanskrithi School of Engineering Logo"
-                    className="h-10 sm:h-12 w-auto object-contain"
-                  />
+            {/* Top Bar: Official Institutional Identity & Reporting Cycle */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-xs font-extrabold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Sanskrithi School of Engineering • Office of Principal &amp; HODs
                 </div>
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] sm:text-xs font-black uppercase tracking-wider">
-                    <Sparkles className="w-3 h-3" />
-                    Office of Principal &amp; HODs
-                  </div>
-                  <div className="text-xs sm:text-sm font-black text-slate-100 tracking-wide">
-                    Sanskrithi School of Engineering (Autonomous)
-                  </div>
-                </div>
+                <span className="hidden sm:inline-block text-xs font-semibold text-slate-400">• Autonomous</span>
               </div>
 
               {/* Cycle / Status Badge */}
