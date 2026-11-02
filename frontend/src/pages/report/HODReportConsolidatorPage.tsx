@@ -665,19 +665,47 @@ export const HODReportConsolidatorPage: React.FC = () => {
         </header>
 
         {/* Executive Hero Banner */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-8 md:p-10 shadow-xl">
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-              <img
-                src={SSE_HEADER_LOGO_BASE64}
-                alt="Sanskrithi School of Engineering Logo"
-                className="h-16 sm:h-20 w-auto object-contain bg-white rounded-2xl p-2.5 shadow-lg shrink-0 self-start sm:self-auto"
-              />
-              <div className="space-y-2.5 max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-extrabold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Sanskrithi School of Engineering • Office of Principal & HODs
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-[#0b1329] to-indigo-950 text-white p-6 sm:p-8 md:p-9 shadow-xl border border-slate-800/80">
+          {/* Subtle Ambient Decorative Glow */}
+          <div className="absolute -top-20 -right-20 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 space-y-6">
+            {/* Top Bar: Official College Header & Institutional Identity */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/10">
+              <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="bg-white rounded-2xl p-2 sm:p-2.5 shadow-md shrink-0 flex items-center justify-center">
+                  <img
+                    src={SSE_HEADER_LOGO_BASE64}
+                    alt="Sanskrithi School of Engineering Logo"
+                    className="h-10 sm:h-12 w-auto object-contain"
+                  />
                 </div>
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                    <Sparkles className="w-3 h-3" />
+                    Office of Principal &amp; HODs
+                  </div>
+                  <div className="text-xs sm:text-sm font-black text-slate-100 tracking-wide">
+                    Sanskrithi School of Engineering (Autonomous)
+                  </div>
+                </div>
+              </div>
+
+              {/* Cycle / Status Badge */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold backdrop-blur-xs">
+                  <Calendar className="w-3.5 h-3.5 text-orange-400" />
+                  <span className="text-slate-400 font-semibold">Reporting Cycle:</span>
+                  <span className="text-white font-black">{period}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Title & Action Row */}
+            <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+              {/* Heading & Subtitle */}
+              <div className="space-y-2 max-w-2xl min-w-0">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
                   Monthly Institutional Report Consolidation Hub
                 </h1>
@@ -685,34 +713,34 @@ export const HODReportConsolidatorPage: React.FC = () => {
                   Centralized system for departmental submissions. Each HOD submits their monthly Word report (.docx), and Super Admin synthesizes a single, complete master institutional document with executive matrix.
                 </p>
               </div>
-            </div>
 
-            {/* Quick Actions */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <button
-                onClick={() => setActiveTab('manual_entry')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/30 hover:bg-orange-500/40 border border-orange-400/50 text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
-              >
-                <Sparkles className="w-4 h-4 text-orange-300" />
-                Manual HOD Entry Form
-              </button>
+              {/* Quick Actions - Spacious, neatly aligned, zero overlapping */}
+              <div className="flex flex-wrap items-center gap-3 shrink-0 pt-2 xl:pt-0">
+                <button
+                  onClick={() => setActiveTab('manual_entry')}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/40 text-orange-200 hover:text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4 text-orange-400" />
+                  Manual HOD Entry Form
+                </button>
 
-              <button
-                onClick={() => setActiveTab('hod_upload')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer"
-              >
-                <FileUp className="w-4 h-4 text-slate-300" />
-                HOD Upload Portal
-              </button>
+                <button
+                  onClick={() => setActiveTab('hod_upload')}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-slate-200 hover:text-white text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer"
+                >
+                  <FileUp className="w-4 h-4 text-slate-300" />
+                  HOD Upload Portal
+                </button>
 
-              <button
-                onClick={handleGenerateConsolidated}
-                disabled={consolidating || submittedCount === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs sm:text-sm font-extrabold transition-all shadow-lg shadow-orange-600/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 ${consolidating ? 'animate-spin' : ''}`} />
-                {consolidating ? 'Synthesizing...' : 'Synthesize Master Report'}
-              </button>
+                <button
+                  onClick={handleGenerateConsolidated}
+                  disabled={consolidating || submittedCount === 0}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs sm:text-sm font-extrabold transition-all shadow-lg shadow-orange-600/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <RefreshCw className={`w-4 h-4 ${consolidating ? 'animate-spin' : ''}`} />
+                  {consolidating ? 'Synthesizing...' : 'Synthesize Master Report'}
+                </button>
+              </div>
             </div>
           </div>
         </section>
