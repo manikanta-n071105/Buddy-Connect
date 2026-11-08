@@ -41,29 +41,29 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
       params.push(req.user!.juniorId);
     }
 
-    // Execute basic count & issue queries in parallel using Promise.all
+    // Execute basic count & aggregated issue queries in parallel using Promise.all
     const [
       directorsCountRes,
       seniorsCountRes,
       juniorsCountRes,
-      issuesTotalRes,
-      openIssuesRes,
-      resolvedIssuesRes,
-      escalatedIssuesRes,
-      reopenedIssuesRes,
-      votingIssuesRes,
+      issueStatsRes,
       categoryChartRes,
       votesRes
     ] = await Promise.all([
       query(`SELECT COUNT(*) FROM mentors`),
       query(`SELECT COUNT(*) FROM seniors`),
       query(`SELECT COUNT(*) FROM juniors`),
-      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql}`, params),
-      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS')`, params),
-      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status IN ('RESOLVED', 'CLOSED')`, params),
-      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status = 'ESCALATED'`, params),
-      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status = 'REOPENED'`, params),
-      query(`SELECT COUNT(*) FROM issues i ${issueScopeSql} AND i.status = 'VOTING'`, params),
+      query(
+        `SELECT
+           COUNT(*)::int as total_count,
+           COUNT(CASE WHEN i.status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS') THEN 1 END)::int as open_count,
+           COUNT(CASE WHEN i.status IN ('RESOLVED', 'CLOSED') THEN 1 END)::int as resolved_count,
+           COUNT(CASE WHEN i.status = 'ESCALATED' THEN 1 END)::int as escalated_count,
+           COUNT(CASE WHEN i.status = 'REOPENED' THEN 1 END)::int as reopened_count,
+           COUNT(CASE WHEN i.status = 'VOTING' THEN 1 END)::int as voting_count
+         FROM issues i ${issueScopeSql}`,
+        params
+      ),
       query(
         `SELECT c.name as category, COUNT(i.id)::int as count
          FROM issue_categories c
@@ -81,12 +81,13 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
       )
     ]);
 
-    const totalIssuesCount = parseInt(issuesTotalRes.rows[0].count || '0');
-    const openCount = parseInt(openIssuesRes.rows[0].count || '0');
-    const resolvedCount = parseInt(resolvedIssuesRes.rows[0].count || '0');
-    const escalatedCount = parseInt(escalatedIssuesRes.rows[0].count || '0');
-    const reopenedCount = parseInt(reopenedIssuesRes.rows[0].count || '0');
-    const votingCount = parseInt(votingIssuesRes.rows[0].count || '0');
+    const statsRow = issueStatsRes.rows[0] || {};
+    const totalIssuesCount = parseInt(statsRow.total_count || '0');
+    const openCount = parseInt(statsRow.open_count || '0');
+    const resolvedCount = parseInt(statsRow.resolved_count || '0');
+    const escalatedCount = parseInt(statsRow.escalated_count || '0');
+    const reopenedCount = parseInt(statsRow.reopened_count || '0');
+    const votingCount = parseInt(statsRow.voting_count || '0');
 
     let satisfied = 0, partiallySatisfied = 0, notSatisfied = 0;
     votesRes.rows.forEach(r => {
@@ -121,9 +122,8 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
         deptParams.push(req.user!.seniorId);
       }
 
-      // Department Overall Onboarding %
-      const deptOnbRes = await query(
-        `SELECT COALESCE(ROUND(AVG(
+      // Run Department Overall Onboarding % and Questions Response Rate % in parallel
+      const deptOnbSql = `SELECT COALESCE(ROUND(AVG(
            CASE WHEN sub.total_items > 0 THEN (sub.completed_items::decimal / sub.total_items::decimal) * 100 ELSE 0 END
          )), 0) as avg_pct
          FROM (
@@ -135,14 +135,9 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
            LEFT JOIN onboarding_progress op ON j.id = op.junior_id
            ${deptScopeSql}
            GROUP BY j.id
-         ) sub`,
-        deptParams
-      );
-      overallOnboardingRate = parseInt(deptOnbRes.rows[0]?.avg_pct || '0');
+         ) sub`;
 
-      // Department Overall Questions Response Rate %
-      const deptQRes = await query(
-        `SELECT COALESCE(ROUND(AVG(
+      const deptQSql = `SELECT COALESCE(ROUND(AVG(
            CASE WHEN sub.total_q > 0 THEN (sub.answered_q::decimal / sub.total_q::decimal) * 100 ELSE 0 END
          )), 0) as avg_pct
          FROM (
@@ -154,9 +149,14 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
            LEFT JOIN question_responses qr ON j.id = qr.junior_id
            ${deptScopeSql}
            GROUP BY j.id
-         ) sub`,
-        deptParams
-      );
+         ) sub`;
+
+      const [deptOnbRes, deptQRes] = await Promise.all([
+        query(deptOnbSql, deptParams),
+        query(deptQSql, deptParams)
+      ]);
+
+      overallOnboardingRate = parseInt(deptOnbRes.rows[0]?.avg_pct || '0');
       overallQuestionsRate = parseInt(deptQRes.rows[0]?.avg_pct || '0');
     }
 
@@ -165,10 +165,10 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     if (['SUPER_ADMIN', 'ADMIN', 'MENTOR'].includes(req.user!.role)) {
       let senPerfSql = `
         SELECT s.id as senior_id, s.senior_code, u.name as senior_name,
-               (SELECT COUNT(*) FROM juniors WHERE senior_id = s.id) as junior_count,
-               (SELECT COUNT(*) FROM issues WHERE senior_id = s.id) as total_issues,
-               (SELECT COUNT(*) FROM issues WHERE senior_id = s.id AND status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS')) as open_issues,
-               (SELECT COUNT(*) FROM issues WHERE senior_id = s.id AND status IN ('RESOLVED', 'CLOSED')) as resolved_issues,
+               COALESCE(j_agg.junior_count, 0) as junior_count,
+               COALESCE(i_agg.total_issues, 0) as total_issues,
+               COALESCE(i_agg.open_issues, 0) as open_issues,
+               COALESCE(i_agg.resolved_issues, 0) as resolved_issues,
                COALESCE((
                  SELECT ROUND(AVG(
                    CASE WHEN sub.total_items > 0 THEN (sub.completed_items::decimal / sub.total_items::decimal) * 100 ELSE 0 END
@@ -199,13 +199,28 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
                ), 0) as avg_junior_questions_pct
         FROM seniors s
         JOIN users u ON s.user_id = u.id
+        LEFT JOIN (
+          SELECT senior_id, COUNT(*)::int as junior_count
+          FROM juniors
+          WHERE senior_id IS NOT NULL
+          GROUP BY senior_id
+        ) j_agg ON s.id = j_agg.senior_id
+        LEFT JOIN (
+          SELECT senior_id,
+                 COUNT(*)::int as total_issues,
+                 COUNT(CASE WHEN status IN ('OPEN', 'UNDER_REVIEW', 'IN_PROGRESS') THEN 1 END)::int as open_issues,
+                 COUNT(CASE WHEN status IN ('RESOLVED', 'CLOSED') THEN 1 END)::int as resolved_issues
+          FROM issues
+          WHERE senior_id IS NOT NULL
+          GROUP BY senior_id
+        ) i_agg ON s.id = i_agg.senior_id
       `;
       const senParams: any[] = [];
       if (req.user!.role === 'MENTOR') {
         senPerfSql += ` WHERE s.mentor_id = $1`;
         senParams.push(req.user!.mentorId);
       }
-      senPerfSql += ` ORDER BY total_issues DESC`;
+      senPerfSql += ` ORDER BY total_issues DESC LIMIT 50`;
       const perfRes = await query(senPerfSql, senParams);
       seniorPerformance = perfRes.rows;
     }
@@ -214,12 +229,12 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
       totalMentors: parseInt(directorsCountRes.rows[0].count),
       totalSeniors: parseInt(seniorsCountRes.rows[0].count),
       totalJuniors: parseInt(juniorsCountRes.rows[0].count),
-      totalIssues: parseInt(issuesTotalRes.rows[0].count),
-      openIssues: parseInt(openIssuesRes.rows[0].count),
-      resolvedIssues: parseInt(resolvedIssuesRes.rows[0].count),
-      escalatedIssues: parseInt(escalatedIssuesRes.rows[0].count),
-      reopenedIssues: parseInt(reopenedIssuesRes.rows[0].count),
-      votingIssues: parseInt(votingIssuesRes.rows[0].count),
+      totalIssues: totalIssuesCount,
+      openIssues: openCount,
+      resolvedIssues: resolvedCount,
+      escalatedIssues: escalatedCount,
+      reopenedIssues: reopenedCount,
+      votingIssues: votingCount,
       satisfactionRate,
       overallOnboardingRate,
       overallQuestionsRate,
@@ -911,7 +926,8 @@ export const uploadDepartmentReport = async (req: any, res: Response) => {
     fs.mkdirSync(targetFolder, { recursive: true });
 
     const cleanDept = department.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeFileName = `${cleanDept}_${Date.now()}_${fileName}`;
+    const sanitizedBaseName = path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeFileName = `${cleanDept}_${Date.now()}_${sanitizedBaseName}`;
     const targetFilePath = path.join(targetFolder, safeFileName);
 
     const cleanBase64 = fileBase64.replace(/^data:.*,/, '');
@@ -979,7 +995,8 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
 
     const cleanBase64 = fileBase64.replace(/^data:.*,/, '');
     const buffer = Buffer.from(cleanBase64, 'base64');
-    const tempFilePath = path.join(scratchFolder, `inspect_${Date.now()}_${fileName}`);
+    const sanitizedBaseName = path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const tempFilePath = path.join(scratchFolder, `inspect_${Date.now()}_${sanitizedBaseName}`);
     fs.writeFileSync(tempFilePath, buffer);
 
     let detectedName: string = (department && department !== 'auto') ? department : '';
@@ -1042,8 +1059,8 @@ export const uploadAutoMapReport = async (req: any, res: Response) => {
 
     // Move to permanent uploads path
     const cleanDept = detectedName.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeFileName = `${cleanDept}_${Date.now()}_${fileName}`;
-    const targetFilePath = path.join(targetFolder, safeFileName);
+    const safeTargetName = `${cleanDept}_${Date.now()}_${sanitizedBaseName}`;
+    const targetFilePath = path.join(targetFolder, safeTargetName);
     fs.copyFileSync(tempFilePath, targetFilePath);
     try { fs.unlinkSync(tempFilePath); } catch (_) { }
 
@@ -1215,6 +1232,11 @@ export const downloadDepartmentReport = async (req: any, res: Response) => {
           resolve();
         });
       });
+    }
+
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(path.resolve(projectRoot))) {
+      return res.status(403).json({ success: false, message: 'Access denied: Invalid file path.' });
     }
 
     if (!fs.existsSync(filePath)) {

@@ -2,7 +2,9 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { query, executeTransaction } from '../config/db';
 
+let quizTablesInitialized = false;
 export const ensureQuizTables = async () => {
+  if (quizTablesInitialized) return;
   try {
     await query(`
       CREATE TABLE IF NOT EXISTS quizzes (
@@ -50,6 +52,7 @@ export const ensureQuizTables = async () => {
       ALTER TABLE quiz_submissions ADD COLUMN IF NOT EXISTS tab_switches INT DEFAULT 0;
       ALTER TABLE quiz_submissions ADD COLUMN IF NOT EXISTS violation_reason TEXT;
     `);
+    quizTablesInitialized = true;
   } catch (err) {
     console.error('Quiz tables migration notice:', err);
   }

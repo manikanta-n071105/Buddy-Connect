@@ -3,7 +3,9 @@ import { query } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 
 // Ensure table exists on initialization
+let eventsTableInitialized = false;
 const ensureEventsTable = async () => {
+  if (eventsTableInitialized) return;
   await query(`
     CREATE TABLE IF NOT EXISTS events (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -17,6 +19,7 @@ const ensureEventsTable = async () => {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  eventsTableInitialized = true;
 };
 
 // Get All Events (Visible to all authenticated users)

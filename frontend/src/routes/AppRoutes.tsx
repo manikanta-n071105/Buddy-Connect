@@ -44,6 +44,7 @@ import { ExamSeatingPage } from '../pages/exam-seating/ExamSeatingPage';
 import { SeatingAllocatorPage } from '../pages/exam-seating/SeatingAllocatorPage';
 import { PublicReportGeneratorPage } from '../pages/report/PublicReportGeneratorPage';
 import { HODReportConsolidatorPage } from '../pages/report/HODReportConsolidatorPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
 import { DashboardBackgroundLanyard } from '../components/Lanyard/DashboardBackgroundLanyard';
 
 const DashboardDispatcher: React.FC = () => {
@@ -86,6 +87,7 @@ const DashboardDispatcher: React.FC = () => {
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      {/* Public Routes (Accessible without login, Fully End-to-End Encrypted) */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/report-generator" element={<PublicReportGeneratorPage />} />
       <Route path="/generate-report" element={<PublicReportGeneratorPage />} />
@@ -96,6 +98,7 @@ export const AppRoutes: React.FC = () => {
       <Route path="/hod-report-consolidator" element={<HODReportConsolidatorPage />} />
       <Route path="/monthly-report" element={<HODReportConsolidatorPage />} />
 
+      {/* Protected Routes (Authentication Required) */}
       <Route element={<ProtectedRoute />}>
         <Route path="/exam-seating/allocator" element={<SeatingAllocatorPage />} />
 
@@ -137,7 +140,9 @@ export const AppRoutes: React.FC = () => {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* 404 Not Found Page */}
+      <Route path="/404" element={<NotFoundPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 };

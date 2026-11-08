@@ -26,7 +26,7 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-// Public / Standalone routes for HODs and Super Admin (NO LOGIN REQUIRED)
+// Monthly Institutional & Departmental Report Routes (Accessible without login, fully End-to-End Encrypted)
 router.get('/consolidated-status', getConsolidatedReportStatus);
 router.get('/download-consolidated', downloadConsolidatedReport);
 router.get('/download-consolidated-pdf', downloadConsolidatedPDF);
@@ -37,7 +37,7 @@ router.post('/upload-and-consolidate', uploadAndConsolidateZip);
 router.get('/sync-seed', syncSeptemberSeed);
 router.post('/sync-seed', syncSeptemberSeed);
 
-// HOD & Committee Submission & Live Super Admin Consolidation Routes (Dedicated Report Database)
+// HOD & Committee Submission & Live Super Admin Consolidation Routes (Dedicated Report Database, E2EE Encrypted)
 router.get('/department-submissions', getDepartmentSubmissions);
 router.delete('/department-submissions', clearDepartmentSubmissions);
 router.post('/clear-department-submissions', clearDepartmentSubmissions);
@@ -51,10 +51,9 @@ router.get('/all-department-report-data', getAllDepartmentReportData);
 router.post('/generate-from-submissions', generateConsolidatedReportFromSubmissions);
 router.get('/download-department/:id', downloadDepartmentReport);
 
-router.use(authenticate);
-
-router.get('/dashboard-stats', getDashboardStats);
-router.get('/issues-report', getDetailedIssuesReport);
+// Internal administrative analytics (Authentication Required)
+router.get('/dashboard-stats', authenticate, getDashboardStats);
+router.get('/issues-report', authenticate, getDetailedIssuesReport);
 
 export default router;
 

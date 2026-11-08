@@ -14,12 +14,12 @@ export const apiLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500, // 500 login attempts per 15 mins for development testing
+  max: 20, // Strictly protect against brute-force / credential stuffing
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Too many login attempts, please try again later.',
+    message: 'Too many login attempts, please try again after 15 minutes.',
     code: 'TOO_MANY_ATTEMPTS'
   }
 });

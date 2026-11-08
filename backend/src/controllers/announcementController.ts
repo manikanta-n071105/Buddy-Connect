@@ -3,7 +3,9 @@ import { query } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 
 // Helper to guarantee table existence and schema columns
+let announcementsTableInitialized = false;
 const ensureAnnouncementsTable = async () => {
+  if (announcementsTableInitialized) return;
   await query(`
     CREATE TABLE IF NOT EXISTS announcements (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -23,6 +25,7 @@ const ensureAnnouncementsTable = async () => {
   await query(`ALTER TABLE announcements ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`);
   await query(`ALTER TABLE announcements ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'NORMAL';`);
   await query(`ALTER TABLE announcements ADD COLUMN IF NOT EXISTS target_audience VARCHAR(50) DEFAULT 'ALL';`);
+  announcementsTableInitialized = true;
 };
 
 // Get All Announcements (Visible to all authenticated users with target audience filtering)

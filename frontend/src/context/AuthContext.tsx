@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import api from '../services/api';
+import { secureGetItem, secureSetItem, secureRemoveItem } from '../utils/secureStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCurrentUser = async () => {
-    const token = localStorage.getItem('accessToken');
+    const token = secureGetItem('accessToken') || localStorage.getItem('accessToken');
     if (!token) {
       setIsLoading(false);
       return;
@@ -27,6 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await api.get('/auth/me');
       setUser(res.data.data.user);
     } catch (err) {
+      secureRemoveItem('accessToken');
+      secureRemoveItem('refreshToken');
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       setUser(null);
@@ -42,12 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: { usernameOrEmail: string; password: string }) => {
     const res = await api.post('/auth/login', credentials);
     const { user: loggedInUser, tokens } = res.data.data;
-    localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
+    secureSetItem('accessToken', tokens.accessToken);
+    secureSetItem('refreshToken', tokens.refreshToken);
     setUser(loggedInUser);
   };
 
   const logout = () => {
+    secureRemoveItem('accessToken');
+    secureRemoveItem('refreshToken');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);

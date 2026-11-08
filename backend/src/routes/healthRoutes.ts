@@ -17,14 +17,14 @@ const router = Router();
 router.get('/ping', getHealth);
 router.get('/health', getHealth);
 
-// Diagnosis Telemetry Endpoints (Support both /diagnosis and root /)
+// Diagnosis Telemetry Endpoints (Requires authentication)
 router.get('/', (req, res, next) => {
   if (req.baseUrl.includes('diagnosis')) {
-    return getPortalDiagnosis(req, res);
+    return authenticate(req as any, res, () => getPortalDiagnosis(req, res));
   }
   return getHealth(req, res);
 });
-router.get('/diagnosis', getPortalDiagnosis);
+router.get('/diagnosis', authenticate, getPortalDiagnosis);
 
 // Benchmark Endpoints
 router.post('/benchmark', authenticate, runBenchmarkTest);

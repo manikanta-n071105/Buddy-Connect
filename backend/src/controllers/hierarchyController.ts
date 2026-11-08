@@ -125,16 +125,18 @@ export const transferJunior = async (req: AuthenticatedRequest, res: Response) =
   }
 
   try {
-    // Check capacity of new Senior
-    const maxJuniorsRes = await query(`SELECT value FROM system_settings WHERE key = 'MAX_JUNIORS_PER_SENIOR'`);
-    const maxJuniors = parseInt(maxJuniorsRes.rows[0]?.value || '8');
+    // Check capacity of new Senior and fetch Junior details concurrently in parallel
+    const [maxJuniorsRes, countRes, juniorRes] = await Promise.all([
+      query(`SELECT value FROM system_settings WHERE key = 'MAX_JUNIORS_PER_SENIOR'`),
+      query(`SELECT COUNT(*) FROM juniors WHERE senior_id = $1`, [newSeniorId]),
+      query(`SELECT senior_id FROM juniors WHERE id = $1`, [juniorId])
+    ]);
 
-    const countRes = await query(`SELECT COUNT(*) FROM juniors WHERE senior_id = $1`, [newSeniorId]);
+    const maxJuniors = parseInt(maxJuniorsRes.rows[0]?.value || '8');
     if (parseInt(countRes.rows[0].count) >= maxJuniors) {
       return res.status(400).json({ success: false, message: `Target Senior has reached maximum capacity of ${maxJuniors} juniors`, code: 'CAPACITY_EXCEEDED' });
     }
 
-    const juniorRes = await query(`SELECT senior_id FROM juniors WHERE id = $1`, [juniorId]);
     if (juniorRes.rowCount === 0) return res.status(404).json({ success: false, message: 'Junior not found', code: 'NOT_FOUND' });
 
     const previousSeniorId = juniorRes.rows[0].senior_id;

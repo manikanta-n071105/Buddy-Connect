@@ -89,28 +89,29 @@ export const getApprovalById = async (req: AuthenticatedRequest, res: Response) 
   try {
     const { id } = req.params;
 
-    const reqResult = await query(
-      `SELECT a.*, u.email as submitter_email, u.phone as submitter_phone
-       FROM approval_requests a
-       LEFT JOIN users u ON a.submitted_by_id = u.id
-       WHERE a.id = $1`,
-      [id]
-    );
+    const [reqResult, commentsResult] = await Promise.all([
+      query(
+        `SELECT a.*, u.email as submitter_email, u.phone as submitter_phone
+         FROM approval_requests a
+         LEFT JOIN users u ON a.submitted_by_id = u.id
+         WHERE a.id = $1`,
+        [id]
+      ),
+      query(
+        `SELECT c.*, u.special_role as author_special_role
+         FROM approval_request_comments c
+         LEFT JOIN users u ON c.author_id = u.id
+         WHERE c.request_id = $1
+         ORDER BY c.created_at ASC`,
+        [id]
+      )
+    ]);
 
     if (reqResult.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Approval request not found' });
     }
 
     const requestData = reqResult.rows[0];
-
-    const commentsResult = await query(
-      `SELECT c.*, u.special_role as author_special_role
-       FROM approval_request_comments c
-       LEFT JOIN users u ON c.author_id = u.id
-       WHERE c.request_id = $1
-       ORDER BY c.created_at ASC`,
-      [id]
-    );
 
     return res.json({
       success: true,
@@ -379,6 +380,8 @@ export const departmentAction = async (req: AuthenticatedRequest, res: Response)
       updateColStatus = 'accounts_status';
       updateColComments = 'accounts_comments';
       updateColTime = 'accounts_action_at';
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid or unauthorized department role.' });
     }
 
     const statusVal = action === 'APPROVED' ? 'APPROVED' : 'NEEDS_INFO';

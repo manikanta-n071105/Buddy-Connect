@@ -2,7 +2,9 @@ import { Response } from 'express';
 import { query } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 
+let chatTablesInitialized = false;
 const ensureChatTables = async () => {
+  if (chatTablesInitialized) return;
   await query(`
     CREATE TABLE IF NOT EXISTS mentor_conversations (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -68,6 +70,7 @@ const ensureChatTables = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  chatTablesInitialized = true;
 };
 
 // Get List of Conversations / Contacts for Chat Page

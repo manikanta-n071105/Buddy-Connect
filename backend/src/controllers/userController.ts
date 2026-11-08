@@ -69,10 +69,7 @@ const verifySuperAdminAuth = async (superAdminId: string, passwordVal?: string) 
   if (superAdminId) {
     const reqRes = await query(`SELECT password_hash, role FROM users WHERE id = $1`, [superAdminId]);
     if (reqRes.rowCount! > 0) {
-      let isMatch = await bcrypt.compare(cleanPass, reqRes.rows[0].password_hash);
-      if (!isMatch && cleanPass === 'Password123!') {
-        isMatch = true;
-      }
+      const isMatch = await bcrypt.compare(cleanPass, reqRes.rows[0].password_hash);
       if (isMatch) {
         return true;
       }
@@ -82,10 +79,7 @@ const verifySuperAdminAuth = async (superAdminId: string, passwordVal?: string) 
   // 2. Check all active Super Admin passwords in DB
   const saRes = await query(`SELECT password_hash FROM users WHERE role = 'SUPER_ADMIN' AND is_active = true`);
   for (const row of saRes.rows) {
-    let isMatch = await bcrypt.compare(cleanPass, row.password_hash);
-    if (!isMatch && cleanPass === 'Password123!') {
-      isMatch = true;
-    }
+    const isMatch = await bcrypt.compare(cleanPass, row.password_hash);
     if (isMatch) {
       return true;
     }
@@ -94,7 +88,9 @@ const verifySuperAdminAuth = async (superAdminId: string, passwordVal?: string) 
   throw new Error('Invalid Super Administrator authorization password.');
 };
 
+let userColumnsInitialized = false;
 const ensureUserColumns = async () => {
+  if (userColumnsInitialized) return;
   try {
     await query(`
       DO $$
@@ -121,8 +117,9 @@ const ensureUserColumns = async () => {
     await query(`ALTER TABLE seniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
     await query(`ALTER TABLE juniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
     await query(`ALTER TABLE juniors ALTER COLUMN senior_id DROP NOT NULL`);
+    userColumnsInitialized = true;
   } catch (err) {
-    console.error('User columns check notice:', err);
+    console.error('User columns migration notice:', err);
   }
 };
 
@@ -204,7 +201,9 @@ export const createWarden = async (req: AuthenticatedRequest, res: Response) => 
   }
 };
 
+let facultyTablesInitialized = false;
 const ensureFacultyTables = async () => {
+  if (facultyTablesInitialized) return;
   try {
     // 1. Safely update users_role_check constraint to include FACULTY
     await query(`
@@ -242,6 +241,7 @@ const ensureFacultyTables = async () => {
     // 3. Sync faculty table max_juniors default with system_settings
     const currentFacultyMaxSetting = await getSettingValue('MAX_JUNIORS_PER_FACULTY', 5);
     await query(`UPDATE faculty SET max_juniors = $1 WHERE max_juniors = 5 OR max_juniors IS NULL`, [currentFacultyMaxSetting]);
+    facultyTablesInitialized = true;
   } catch (err) {
     console.error('Faculty table migration notice:', err);
   }
@@ -467,6 +467,11 @@ export const updateFacultyCapacity = async (req: AuthenticatedRequest, res: Resp
 // Get Faculty Members List
 export const getFacultyList = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const cached = await cache.get<any[]>('faculty_list_all');
+    if (cached) {
+      return res.json({ success: true, data: cached });
+    }
+
     await ensureFacultyTables();
     const result = await query(`
       SELECT f.id as faculty_id, f.faculty_code, f.department, f.year, f.max_juniors, f.status, COALESCE(f.special_role, u.special_role) as special_role,
@@ -476,6 +481,8 @@ export const getFacultyList = async (req: AuthenticatedRequest, res: Response) =
       JOIN users u ON f.user_id = u.id
       ORDER BY u.name ASC
     `);
+
+    await cache.set('faculty_list_all', result.rows, 15000); // 15s TTL Cache
     res.json({ success: true, data: result.rows });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });
@@ -528,12 +535,13 @@ export const assignJuniorToFaculty = async (req: AuthenticatedRequest, res: Resp
   try {
     await ensureFacultyTables();
 
-    // Check Faculty Capacity
-    const fRes = await query(`SELECT max_juniors FROM faculty WHERE id = $1`, [targetFacultyId]);
+    // Check Faculty Capacity concurrently in parallel
+    const [fRes, countRes] = await Promise.all([
+      query(`SELECT max_juniors FROM faculty WHERE id = $1`, [targetFacultyId]),
+      query(`SELECT COUNT(*) FROM juniors WHERE faculty_id = $1`, [targetFacultyId])
+    ]);
     if (fRes.rowCount === 0) return res.status(404).json({ success: false, message: 'Faculty record not found', code: 'NOT_FOUND' });
     const maxJuniors = fRes.rows[0].max_juniors;
-
-    const countRes = await query(`SELECT COUNT(*) FROM juniors WHERE faculty_id = $1`, [targetFacultyId]);
     const currentCount = parseInt(countRes.rows[0].count);
 
     if (currentCount >= maxJuniors) {
@@ -583,13 +591,14 @@ export const updateUserFacultyAssignment = async (req: AuthenticatedRequest, res
     const juniorId = jRes.rows[0].id;
 
     if (facultyId) {
-      const fRes = await query(`SELECT max_juniors FROM faculty WHERE id = $1`, [facultyId]);
+      const [fRes, countRes] = await Promise.all([
+        query(`SELECT max_juniors FROM faculty WHERE id = $1`, [facultyId]),
+        query(`SELECT COUNT(*) FROM juniors WHERE faculty_id = $1 AND id != $2`, [facultyId, juniorId])
+      ]);
       if (fRes.rowCount === 0) {
         return res.status(404).json({ success: false, message: 'Faculty record not found', code: 'NOT_FOUND' });
       }
       const maxJuniors = fRes.rows[0].max_juniors;
-
-      const countRes = await query(`SELECT COUNT(*) FROM juniors WHERE faculty_id = $1 AND id != $2`, [facultyId, juniorId]);
       const currentCount = parseInt(countRes.rows[0].count);
 
       if (currentCount >= maxJuniors) {
@@ -614,10 +623,13 @@ export const updateUserFacultyAssignment = async (req: AuthenticatedRequest, res
   }
 };
 
+let residenceStatusColumnInitialized = false;
 const ensureResidenceStatusColumn = async () => {
+  if (residenceStatusColumnInitialized) return;
   try {
     await query(`ALTER TABLE seniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
     await query(`ALTER TABLE juniors ADD COLUMN IF NOT EXISTS residence_status VARCHAR(20) DEFAULT 'DAY_SCHOLAR'`);
+    residenceStatusColumnInitialized = true;
   } catch (err) {
     console.error('Residence status column check notice:', err);
   }
@@ -1200,23 +1212,24 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     let sql = `
-      SELECT u.id, u.name, u.email, u.username, u.phone, u.role, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
+      SELECT u.id, u.name, u.email, u.username, u.phone, u.role, 
+             COALESCE(u.gender, 'MALE') as gender, 
+             COALESCE(u.is_cr, false) as is_cr, 
+             COALESCE(u.is_counselor, false) as is_counselor, 
+             COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, 
+             u.is_active, u.created_at,
              COALESCE(u.special_role, f.special_role) as special_role,
              COALESCE(d.department, f.department, s.department, j.department) as department,
              COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
-             d.id as mentor_id, d.mentor_code,
-             f.id as faculty_id, f.faculty_code, f.max_juniors,
-             (SELECT COUNT(*) FROM juniors fj WHERE fj.faculty_id = f.id) as assigned_juniors_count,
-             s.id as senior_id, s.senior_code, s.mentor_id as senior_mentor_id, s.residence_status as senior_residence_status,
-             j.id as junior_id, j.register_number, j.senior_id as junior_senior_id, j.faculty_id as junior_faculty_id, j.batch, j.year, j.residence_status as junior_residence_status,
-             uf.name as faculty_name
+             d.id as mentor_id,
+             f.id as faculty_id,
+             s.id as senior_id,
+             j.id as junior_id, j.batch, j.year
       FROM users u
       LEFT JOIN mentors d ON u.id = d.user_id
       LEFT JOIN faculty f ON u.id = f.user_id
       LEFT JOIN seniors s ON u.id = s.user_id
       LEFT JOIN juniors j ON u.id = j.user_id
-      LEFT JOIN faculty jf ON j.faculty_id = jf.id
-      LEFT JOIN users uf ON jf.user_id = uf.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -1273,81 +1286,72 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
       return res.json({ success: true, data: cachedProfile });
     }
 
-    const uRes = await query(
-      `SELECT u.id, u.name, u.email, u.username, u.phone, u.role, u.blood_group, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
-              COALESCE(u.special_role, f.special_role) as special_role,
-              COALESCE(d.department, f.department, s.department, j.department) as department,
-              COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
-              dcm.designation as committee_designation,
-              d.id as mentor_id, d.mentor_code,
-              f.id as faculty_id, f.faculty_code,
-              s.id as senior_id, s.senior_code, s.mentor_id as senior_mentor_id, s.residence_status as senior_residence_status,
-              j.id as junior_id, j.register_number, j.senior_id as junior_senior_id, j.faculty_id as junior_faculty_id, j.batch, j.year, j.joining_date, j.residence_status as junior_residence_status
-       FROM users u
-       LEFT JOIN mentors d ON u.id = d.user_id
-       LEFT JOIN faculty f ON u.id = f.user_id
-       LEFT JOIN seniors s ON u.id = s.user_id
-       LEFT JOIN juniors j ON u.id = j.user_id
-       LEFT JOIN disciplinary_committee_members dcm ON u.id = dcm.user_id
-       WHERE u.id = $1`,
-      [userId]
-    );
+    const profileSql = `
+      SELECT u.id, u.name, u.email, u.username, u.phone, u.role, u.blood_group, COALESCE(u.gender, 'MALE') as gender, COALESCE(u.is_cr, false) as is_cr, COALESCE(u.is_counselor, false) as is_counselor, COALESCE(u.is_disciplinary_committee, false) as is_disciplinary_committee, u.is_active, u.created_at, u.last_login_at,
+             COALESCE(u.special_role, f.special_role) as special_role,
+             COALESCE(d.department, f.department, s.department, j.department) as department,
+             COALESCE(j.residence_status, s.residence_status, 'DAY_SCHOLAR') as residence_status,
+             dcm.designation as committee_designation,
+             d.id as mentor_id, d.mentor_code,
+             f.id as faculty_id, f.faculty_code,
+             s.id as senior_id, s.senior_code, s.mentor_id as senior_mentor_id, s.residence_status as senior_residence_status,
+             j.id as junior_id, j.register_number, j.senior_id as junior_senior_id, j.faculty_id as junior_faculty_id, j.batch, j.year, j.joining_date, j.residence_status as junior_residence_status,
+             jus.name as junior_senior_name,
+             COALESCE(sum.name, jusm.name) as dynamic_mentor_name,
+             juf.name as junior_faculty_name,
+             jf.faculty_code as junior_faculty_code
+      FROM users u
+      LEFT JOIN mentors d ON u.id = d.user_id
+      LEFT JOIN faculty f ON u.id = f.user_id
+      LEFT JOIN seniors s ON u.id = s.user_id
+      LEFT JOIN mentors sm ON s.mentor_id = sm.id
+      LEFT JOIN users sum ON sm.user_id = sum.id
+      LEFT JOIN juniors j ON u.id = j.user_id
+      LEFT JOIN seniors js ON j.senior_id = js.id
+      LEFT JOIN users jus ON js.user_id = jus.id
+      LEFT JOIN mentors jsm ON js.mentor_id = jsm.id
+      LEFT JOIN users jusm ON jsm.user_id = jusm.id
+      LEFT JOIN faculty jf ON j.faculty_id = jf.id
+      LEFT JOIN users juf ON jf.user_id = juf.id
+      LEFT JOIN disciplinary_committee_members dcm ON u.id = dcm.user_id
+      WHERE u.id = $1
+    `;
+
+    const [uRes, permRes] = await Promise.all([
+      query(profileSql, [userId]),
+      query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [userId])
+    ]);
 
     if (uRes.rowCount === 0) return res.status(404).json({ success: false, message: 'User not found', code: 'NOT_FOUND' });
 
     const userProfile = uRes.rows[0];
+
+    // Assign relation names directly from the pre-joined single query
+    if (userProfile.role === 'JUNIOR') {
+      if (userProfile.junior_senior_name) {
+        userProfile.senior_name = userProfile.junior_senior_name;
+      }
+      if (userProfile.dynamic_mentor_name) {
+        userProfile.mentor_name = userProfile.dynamic_mentor_name;
+      }
+      if (userProfile.junior_faculty_name) {
+        userProfile.faculty_name = userProfile.junior_faculty_name;
+        userProfile.faculty_code = userProfile.junior_faculty_code;
+      }
+    } else if (userProfile.role === 'SENIOR' && userProfile.dynamic_mentor_name) {
+      userProfile.mentor_name = userProfile.dynamic_mentor_name;
+    }
+    delete userProfile.junior_senior_name;
+    delete userProfile.dynamic_mentor_name;
+    delete userProfile.junior_faculty_name;
+    delete userProfile.junior_faculty_code;
 
     // Mask phone number for Senior mentors viewing Junior profile
     if (req.user!.role === 'SENIOR' && userProfile.role === 'JUNIOR') {
       userProfile.phone = 'Hidden for privacy';
     }
 
-    // Fetch custom granted permissions for user
-    const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [userId]);
     userProfile.permissions = permRes.rows.map(r => r.permission);
-
-    // Fetch related Senior, MENTOR & FACULTY names for Juniors
-    if (userProfile.role === 'JUNIOR') {
-      if (userProfile.junior_senior_id) {
-        const sInfo = await query(
-          `SELECT s.id as senior_id, us.name as senior_name, d.id as mentor_id, ud.name as mentor_name
-           FROM seniors s
-           JOIN users us ON s.user_id = us.id
-           JOIN mentors d ON s.mentor_id = d.id
-           JOIN users ud ON d.user_id = ud.id
-           WHERE s.id = $1`,
-          [userProfile.junior_senior_id]
-        );
-        if (sInfo.rowCount! > 0) {
-          userProfile.senior_name = sInfo.rows[0].senior_name;
-          userProfile.mentor_name = sInfo.rows[0].mentor_name;
-        }
-      }
-      if (userProfile.junior_faculty_id) {
-        const fInfo = await query(
-          `SELECT f.id as faculty_id, uf.name as faculty_name, f.faculty_code
-           FROM faculty f
-           JOIN users uf ON f.user_id = uf.id
-           WHERE f.id = $1`,
-          [userProfile.junior_faculty_id]
-        );
-        if (fInfo.rowCount! > 0) {
-          userProfile.faculty_name = fInfo.rows[0].faculty_name;
-          userProfile.faculty_code = fInfo.rows[0].faculty_code;
-        }
-      }
-    } else if (userProfile.role === 'SENIOR' && userProfile.senior_mentor_id) {
-      const dInfo = await query(
-        `SELECT d.id as mentor_id, ud.name as mentor_name
-         FROM mentors d
-         JOIN users ud ON d.user_id = ud.id
-         WHERE d.id = $1`,
-        [userProfile.senior_mentor_id]
-      );
-      if (dInfo.rowCount! > 0) {
-        userProfile.mentor_name = dInfo.rows[0].mentor_name;
-      }
-    }
 
     await cache.set(cacheKey, userProfile, 15000); // 15s TTL Cache
     res.json({ success: true, data: userProfile });
@@ -1712,9 +1716,6 @@ export const resetUserPassword = async (req: AuthenticatedRequest, res: Response
     if (adminUserRes.rowCount! > 0) {
       isPassValid = await bcrypt.compare(adminPassword, adminUserRes.rows[0].password_hash);
     }
-    if (!isPassValid && (adminPassword === 'Password123!' || req.user!.role === 'SUPER_ADMIN')) {
-      isPassValid = true;
-    }
     if (!isPassValid) {
       return res.status(401).json({ success: false, message: 'Invalid administrator authorization password. Password reset rejected.', code: 'UNAUTHORIZED' });
     }
@@ -1756,7 +1757,7 @@ export const getSeniorsList = async (req: AuthenticatedRequest, res: Response) =
     if (cached) return res.json({ success: true, data: cached });
 
     const result = await query(`
-      SELECT s.id as senior_id, s.senior_code, s.department, u.name as senior_name, u.email, u.id as user_id,
+      SELECT s.id as senior_id, s.senior_code, s.department, u.name as senior_name, u.id as user_id,
              d.id as mentor_id, ud.name as mentor_name
       FROM seniors s
       JOIN users u ON s.user_id = u.id

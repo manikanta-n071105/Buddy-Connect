@@ -5,10 +5,13 @@ import { query } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 
 // Ensure 2FA columns exist in database
+let twoFactorColumnsInitialized = false;
 export const ensure2FAColumns = async () => {
+  if (twoFactorColumnsInitialized) return;
   try {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(255)`);
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false`);
+    twoFactorColumnsInitialized = true;
   } catch (err) {
     console.error('2FA columns migration notice:', err);
   }

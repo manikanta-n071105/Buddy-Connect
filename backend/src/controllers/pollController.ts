@@ -3,7 +3,9 @@ import { query, executeTransaction } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 import { logAudit } from '../utils/audit';
 
+let pollTablesInitialized = false;
 const ensurePollTables = async () => {
+  if (pollTablesInitialized) return;
   await query(`
     CREATE TABLE IF NOT EXISTS polls (
         id VARCHAR(36) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
@@ -37,6 +39,7 @@ const ensurePollTables = async () => {
         UNIQUE(poll_id, voter_id)
     );
   `);
+  pollTablesInitialized = true;
 };
 
 // Fetch Polls (Only active non-expired polls for Juniors, or all for SuperAdmin/Director)

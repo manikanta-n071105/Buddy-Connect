@@ -15,8 +15,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
-    <div id="root"></div>
+  <body class="bg-[#07090e] text-slate-100 font-sans antialiased min-h-screen">
+    <div id="root">
+      <div style="min-height: 100vh; background-color: #07090e; display: flex; flex-direction: column; align-items: center; justify-content: center; user-select: none;">
+        <style>
+          @keyframes ssePreloadSpin {
+            0% { transform: perspective(800px) rotateY(0deg); }
+            100% { transform: perspective(800px) rotateY(360deg); }
+          }
+          @keyframes ssePreloadPulse {
+            0%, 100% { transform: scale(0.85); opacity: 0.35; }
+            50% { transform: scale(1.15); opacity: 0.7; }
+          }
+        </style>
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <div style="width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(251, 146, 60, 0.9); background: #ea580c; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 30px rgba(234, 88, 12, 0.3); overflow: hidden; animation: ssePreloadSpin 1.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite; transform-style: preserve-3d;">
+            <img src="/assets/sse-s-logo.jpg" alt="SSE" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+          </div>
+          <div style="width: 56px; height: 12px; margin-top: 10px; border-radius: 50%; background: #e25134; filter: blur(6px); animation: ssePreloadPulse 1.6s ease-in-out infinite;"></div>
+        </div>
+        <p style="margin-top: 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8;">
+          Loading JuniorConnect...
+        </p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

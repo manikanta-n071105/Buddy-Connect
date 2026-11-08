@@ -2,26 +2,35 @@ import { Response } from 'express';
 import { query, executeTransaction } from '../config/db';
 import { AuthenticatedRequest } from '../types';
 import { logAudit } from '../utils/audit';
+import { cache } from '../utils/cache';
 
 // List Categories
 export const getCategories = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const validCats = [
-      'Academics', 'Academic', 'Hostel', 'Safety', 'Transport', 'Technical',
-      'ID Card', 'Accommodation', 'Events', 'Examination', 'Faculty',
-      'Fees', 'Food', 'Infrastructure', 'Library', 'College Tour', 'Other'
-    ];
-    for (const cat of validCats) {
-      await query(
-        `INSERT INTO issue_categories (name, description, is_active)
-         VALUES ($1, $2, true)
-         ON CONFLICT (name) DO UPDATE SET is_active = true`,
-        [cat, `${cat} support and queries`]
-      );
+    const cached = await cache.get<any[]>('issue_categories_active');
+    if (cached) {
+      return res.json({ success: true, data: cached });
     }
-    await query(`UPDATE issue_categories SET is_active = true`);
 
-    const result = await query(`SELECT * FROM issue_categories WHERE is_active = true ORDER BY name ASC`);
+    let result = await query(`SELECT * FROM issue_categories WHERE is_active = true ORDER BY name ASC`);
+    if (result.rowCount === 0) {
+      const validCats = [
+        'Academics', 'Academic', 'Hostel', 'Safety', 'Transport', 'Technical',
+        'ID Card', 'Accommodation', 'Events', 'Examination', 'Faculty',
+        'Fees', 'Food', 'Infrastructure', 'Library', 'College Tour', 'Other'
+      ];
+      for (const cat of validCats) {
+        await query(
+          `INSERT INTO issue_categories (name, description, is_active)
+           VALUES ($1, $2, true)
+           ON CONFLICT (name) DO UPDATE SET is_active = true`,
+          [cat, `${cat} support and queries`]
+        );
+      }
+      result = await query(`SELECT * FROM issue_categories WHERE is_active = true ORDER BY name ASC`);
+    }
+
+    await cache.set('issue_categories_active', result.rows, 3600000); // 1 hour TTL Cache
     res.json({ success: true, data: result.rows });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message, code: 'SERVER_ERROR' });
@@ -187,25 +196,33 @@ export const getIssueById = async (req: AuthenticatedRequest, res: Response) => 
   const { id } = req.params;
 
   try {
-    const issueRes = await query(
-      `SELECT i.*,
-              ic.name as category_name,
-              uj.name as junior_name, uj.email as junior_email,
-              us.name as senior_name,
-              ud.name as mentor_name,
-              ua.name as assigned_to_name
-       FROM issues i
-       JOIN issue_categories ic ON i.category_id = ic.id
-       JOIN juniors j ON i.junior_id = j.id
-       JOIN users uj ON j.user_id = uj.id
-       JOIN seniors s ON i.senior_id = s.id
-       JOIN users us ON s.user_id = us.id
-       JOIN mentors d ON i.mentor_id = d.id
-       JOIN users ud ON d.user_id = ud.id
-       LEFT JOIN users ua ON i.assigned_to_id = ua.id
-       WHERE i.id = $1`,
-      [id]
-    );
+    const [issueRes, commentsRes] = await Promise.all([
+      query(
+        `SELECT i.*,
+                ic.name as category_name,
+                uj.name as junior_name, uj.email as junior_email,
+                us.name as senior_name,
+                ud.name as mentor_name,
+                ua.name as assigned_to_name
+         FROM issues i
+         JOIN issue_categories ic ON i.category_id = ic.id
+         JOIN juniors j ON i.junior_id = j.id
+         JOIN users uj ON j.user_id = uj.id
+         JOIN seniors s ON i.senior_id = s.id
+         JOIN users us ON s.user_id = us.id
+         JOIN mentors d ON i.mentor_id = d.id
+         JOIN users ud ON d.user_id = ud.id
+         LEFT JOIN users ua ON i.assigned_to_id = ua.id
+         WHERE i.id = $1`,
+        [id]
+      ),
+      query(
+        `SELECT c.*, u.name as author_name, u.role as author_role
+         FROM issue_comments c JOIN users u ON c.author_id = u.id
+         WHERE c.issue_id = $1 ORDER BY c.created_at ASC`,
+        [id]
+      )
+    ]);
 
     if (issueRes.rowCount === 0) return res.status(404).json({ success: false, message: 'Issue not found', code: 'NOT_FOUND' });
 
@@ -215,13 +232,6 @@ export const getIssueById = async (req: AuthenticatedRequest, res: Response) => 
     if (req.user!.role === 'JUNIOR' && !isReporter) {
       return res.status(403).json({ success: false, message: 'Access to this issue ticket is restricted to the reporting student.', code: 'FORBIDDEN' });
     }
-
-    const commentsRes = await query(
-      `SELECT c.*, u.name as author_name, u.role as author_role
-       FROM issue_comments c JOIN users u ON c.author_id = u.id
-       WHERE c.issue_id = $1 ORDER BY c.created_at ASC`,
-      [id]
-    );
 
     res.json({
       success: true,

@@ -7,6 +7,7 @@ import fs from 'fs';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/error';
 import { apiLimiter } from './middleware/rateLimit';
+import { e2eeMiddleware } from './middleware/encryption';
 import { startSlaCronJob } from './jobs/slaCron';
 import { 
   initDatabasePerformance, 
@@ -77,11 +78,14 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
       callback(null, true);
+    } else if (process.env.NODE_ENV === 'development') {
+      callback(null, true);
     } else {
-      callback(null, true); // Allow for production flexibility
+      callback(new Error('Blocked by CORS policy: Origin not allowed.'));
     }
   },
   credentials: true,
+  exposedHeaders: ['X-Payload-Encrypted', 'Content-Disposition'],
   maxAge: 86400 // Cache CORS pre-flight for 24 hours in browser
 }));
 
@@ -90,6 +94,8 @@ app.options('*', cors());
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// End-to-End Application-Layer Payload Encryption Middleware
+app.use(e2eeMiddleware);
 app.use('/api', apiLimiter);
 
 // Health and Portal Diagnosis

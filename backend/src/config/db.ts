@@ -12,8 +12,8 @@ export const pool = new Pool(
         connectionString,
         ssl: isProduction || process.env.DB_SSL === 'true' || connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
         max: parseInt(process.env.PG_MAX_CONNECTIONS || '20'),
-        min: 0, // min: 0 prevents stale socket errors on Neon serverless pooler
-        idleTimeoutMillis: 10000, // 10s idle timeout to close connections before Neon proxy
+        min: 1, // Keep at least 1 warm connection to avoid cold-start TLS negotiation delay
+        idleTimeoutMillis: 30000, // 30s idle timeout to keep connection warm during navigation
         connectionTimeoutMillis: 10000,
         keepAlive: true,
       }
@@ -62,9 +62,13 @@ export const initDatabasePerformance = async () => {
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(LOWER(email));
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(LOWER(username));
 
+      CREATE INDEX IF NOT EXISTS idx_admin_permissions_user_id ON admin_permissions(user_id);
+
       CREATE INDEX IF NOT EXISTS idx_juniors_user_id ON juniors(user_id);
       CREATE INDEX IF NOT EXISTS idx_juniors_senior_id ON juniors(senior_id);
       CREATE INDEX IF NOT EXISTS idx_juniors_faculty_id ON juniors(faculty_id);
+      CREATE INDEX IF NOT EXISTS idx_juniors_batch_year ON juniors(batch, year);
+      CREATE INDEX IF NOT EXISTS idx_juniors_department ON juniors(department);
 
       CREATE INDEX IF NOT EXISTS idx_seniors_user_id ON seniors(user_id);
       CREATE INDEX IF NOT EXISTS idx_seniors_mentor_id ON seniors(mentor_id);
@@ -75,6 +79,15 @@ export const initDatabasePerformance = async () => {
       CREATE INDEX IF NOT EXISTS idx_issues_reported_by ON issues(reported_by_id);
       CREATE INDEX IF NOT EXISTS idx_issues_assigned_to ON issues(assigned_to_id);
       CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
+      CREATE INDEX IF NOT EXISTS idx_issues_category ON issues(category_id);
+      CREATE INDEX IF NOT EXISTS idx_issues_junior_id ON issues(junior_id);
+      CREATE INDEX IF NOT EXISTS idx_issues_senior_id ON issues(senior_id);
+      CREATE INDEX IF NOT EXISTS idx_issues_mentor_id ON issues(mentor_id);
+      CREATE INDEX IF NOT EXISTS idx_issue_comments_issue_id ON issue_comments(issue_id, created_at ASC);
+
+      CREATE INDEX IF NOT EXISTS idx_approval_req_status_category ON approval_requests(status, category);
+      CREATE INDEX IF NOT EXISTS idx_approval_req_submitter ON approval_requests(submitted_by_id);
+      CREATE INDEX IF NOT EXISTS idx_approval_comments_req_id ON approval_request_comments(request_id, created_at ASC);
 
       CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_date ON audit_logs(actor_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_notifications_recipient_unread ON notifications(recipient_id, is_read);

