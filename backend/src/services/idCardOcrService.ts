@@ -120,32 +120,28 @@ export async function extractStudentFromIdCardImage(imageBuffer: Buffer): Promis
     h = Math.floor(h * ratio);
   }
 
-  // PASS 1: Preprocess Bottom Banner (Targeted for College ID cards with colored footer banner)
+  // PASS 1: Preprocess Bottom Banner (Targeted for College ID cards with Register No at the bottom)
   try {
-    const bottomY = Math.floor(h * 0.65);
+    const bottomY = Math.floor(h * 0.58);
     const bottomHeight = h - bottomY;
 
     const canvas = createCanvas(w, bottomHeight);
     const ctx = canvas.getContext('2d');
 
-    ctx.drawImage(
-      img,
-      0,
-      Math.floor(img.height * 0.65),
-      img.width,
-      img.height - Math.floor(img.height * 0.65),
-      0,
-      0,
-      w,
-      bottomHeight
-    );
+    const srcBottomY = Math.floor(img.height * 0.58);
+    const srcBottomH = img.height - srcBottomY;
+
+    ctx.drawImage(img, 0, srcBottomY, img.width, srcBottomH, 0, 0, w, bottomHeight);
 
     const imgData = ctx.getImageData(0, 0, w, bottomHeight);
     const data = imgData.data;
 
-    // Filter white text on colored/red background
+    // Save copy of original pixels
+    const origData = new Uint8ClampedArray(data);
+
+    // Pass 1A: Filter white text on colored/red background
     for (let i = 0; i < data.length; i += 4) {
-      const isWhiteText = data[i + 1] > 120 && data[i + 2] > 120 && data[i] > 120;
+      const isWhiteText = data[i + 1] > 115 && data[i + 2] > 115 && data[i] > 115;
       const val = isWhiteText ? 0 : 255;
       data[i] = val;
       data[i + 1] = val;
@@ -153,22 +149,46 @@ export async function extractStudentFromIdCardImage(imageBuffer: Buffer): Promis
     }
 
     ctx.putImageData(imgData, 0, 0);
-    const bottomBuffer = canvas.toBuffer('image/png');
+    const bottomBufferA = canvas.toBuffer('image/png');
 
-    const bottomResult = await worker.recognize(bottomBuffer);
-    const bottomDetails = parseStudentDetailsFromText(bottomResult.data.text);
+    const bottomResultA = await worker.recognize(bottomBufferA);
+    const bottomDetailsA = parseStudentDetailsFromText(bottomResultA.data.text);
 
-    // If Pass 1 finds roll number, return immediately in ~280ms!
-    if (bottomDetails.registerNumber) {
+    // If Pass 1A finds roll number, return immediately in ~200ms!
+    if (bottomDetailsA.registerNumber) {
       return {
-        registerNumber: bottomDetails.registerNumber,
-        name: bottomDetails.name,
-        department: bottomDetails.department,
-        rawText: bottomResult.data.text
+        registerNumber: bottomDetailsA.registerNumber,
+        name: bottomDetailsA.name,
+        department: bottomDetailsA.department,
+        rawText: bottomResultA.data.text
+      };
+    }
+
+    // Pass 1B: Filter dark text on light/white background for the bottom region
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = 0.299 * origData[i] + 0.587 * origData[i + 1] + 0.114 * origData[i + 2];
+      const val = gray < 130 ? 0 : 255;
+      data[i] = val;
+      data[i + 1] = val;
+      data[i + 2] = val;
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    const bottomBufferB = canvas.toBuffer('image/png');
+
+    const bottomResultB = await worker.recognize(bottomBufferB);
+    const bottomDetailsB = parseStudentDetailsFromText(bottomResultB.data.text);
+
+    if (bottomDetailsB.registerNumber) {
+      return {
+        registerNumber: bottomDetailsB.registerNumber,
+        name: bottomDetailsB.name,
+        department: bottomDetailsB.department,
+        rawText: bottomResultB.data.text
       };
     }
   } catch (err) {
-    console.warn('[OCR] Pass 1 bottom banner OCR warning:', err);
+    console.warn('[OCR] Bottom banner OCR warning:', err);
   }
 
   // PASS 2: Full Image Grayscale with High Contrast (For ID cards where roll is in header/body)

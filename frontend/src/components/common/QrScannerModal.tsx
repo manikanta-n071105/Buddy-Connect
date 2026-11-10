@@ -31,7 +31,6 @@ const downscaleImageForOcr = async (fileOrDataUrl: File | string, maxDim = 850):
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
-      // Fast, lightweight JPEG (under 40-50KB)
       resolve(canvas.toDataURL('image/jpeg', 0.82));
     };
     img.onerror = reject;
@@ -58,8 +57,10 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
   const [matchingCandidates, setMatchingCandidates] = useState<any[] | null>(null);
   const [lastExtracted, setLastExtracted] = useState<{ registerNumber?: string | null; name?: string | null; department?: string | null } | null>(null);
 
-  // Synchronous ref locks to absolutely prevent duplicate multiple scans
+  // Synchronous ref locks to prevent duplicate multiple scans & coordinate auto-scanning
   const isProcessingRef = useRef(false);
+  const isAutoScanningRef = useRef(false);
+  const autoScanTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastScannedPayloadRef = useRef<{ text: string; time: number } | null>(null);
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'student-qr-reader';
@@ -113,23 +114,90 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const processIdCardImage = async (dataUrl: string) => {
-    if (isProcessingRef.current) return;
+  // Automatic Background Frame Grabber: grabs frame every 900ms and scans ID Card Register No automatically
+  const runAutoIdCardScanTick = async () => {
+    if (isProcessingRef.current || isAutoScanningRef.current) return;
+    if (activeMode !== 'CAMERA') return;
+
+    const container = document.getElementById(scannerContainerId);
+    const video = container?.querySelector('video');
+    if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+      return;
+    }
 
     try {
-      isProcessingRef.current = true;
-      setIsProcessing(true);
+      isAutoScanningRef.current = true;
 
-      // 1. Client-side downscaling for sub-second network transfer
-      const optimizedImage = await downscaleImageForOcr(dataUrl);
+      const canvas = document.createElement('canvas');
+      // Downscale to 640px for ultra-fast snapshot
+      const scale = Math.min(640 / video.videoWidth, 1);
+      canvas.width = Math.floor(video.videoWidth * scale);
+      canvas.height = Math.floor(video.videoHeight * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-      // 2. Pause camera preview while analyzing
-      try {
-        html5QrcodeRef.current?.pause(true);
-      } catch (e) {}
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.80);
 
       const res = await api.post('/users/scan-id-card', {
-        image: optimizedImage
+        image: dataUrl,
+        auto: true
+      });
+
+      // If student is automatically identified:
+      if (res.data.success && res.data.data && res.data.data.id) {
+        isProcessingRef.current = true;
+        setIsProcessing(true);
+        if (res.data.extracted) {
+          setLastExtracted(res.data.extracted);
+        }
+        toast.success(
+          `Auto-grabbed Register No: ${res.data.extracted?.registerNumber || ''} (${res.data.data.name})!`
+        );
+        stopCamera();
+        onClose();
+        onStudentFound(res.data.data.id);
+      } else if (res.data.isMultiple && Array.isArray(res.data.matches)) {
+        isProcessingRef.current = true;
+        setIsProcessing(true);
+        setMatchingCandidates(res.data.matches);
+        toast.info(
+          `Auto-detected Roll: ${res.data.extracted?.registerNumber || 'N/A'}. Select student below:`
+        );
+        resetProcessingState(2000);
+      }
+      // If notFound, silently ignore and wait for next tick without bothering the user!
+    } catch (e) {
+      // Silently ignore background ticks
+    } finally {
+      isAutoScanningRef.current = false;
+    }
+  };
+
+  const processFile = async (file: File) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    setIsProcessing(true);
+
+    try {
+      // First try QR scanning
+      const html5Qrcode = new Html5Qrcode('file-scanner-temp');
+      try {
+        const decodedText = await html5Qrcode.scanFile(file, true);
+        html5Qrcode.clear();
+        await processQrPayload(decodedText);
+        return;
+      } catch (qrErr) {
+        // QR not found in file -> auto fallback to ID Card OCR
+        html5Qrcode.clear();
+      }
+
+      // Read & downscale for lightning-fast ID card OCR
+      const optimizedDataUrl = await downscaleImageForOcr(file);
+
+      const res = await api.post('/users/scan-id-card', {
+        image: optimizedDataUrl,
+        auto: false
       });
 
       if (res.data.extracted) {
@@ -160,65 +228,9 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
         setLastExtracted(extractedInfo);
       }
       toast.error(
-        err.response?.data?.message || 'Could not extract student details from ID card. Ensure card is clear & well-lit.'
+        err.response?.data?.message || 'Could not extract student details from image.'
       );
       resetProcessingState(1500);
-    }
-  };
-
-  const captureCameraFrameAndScanIdCard = async () => {
-    if (isProcessingRef.current) return;
-
-    try {
-      const container = document.getElementById(scannerContainerId);
-      const video = container?.querySelector('video');
-      if (!video) {
-        toast.error('Camera preview is not ready. Please make sure camera is active.');
-        return;
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const rawDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-      await processIdCardImage(rawDataUrl);
-    } catch (err: any) {
-      toast.error('Failed to capture camera frame: ' + err.message);
-      isProcessingRef.current = false;
-      setIsProcessing(false);
-    }
-  };
-
-  const processFile = async (file: File) => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
-    setIsProcessing(true);
-
-    try {
-      // First try QR scanning
-      const html5Qrcode = new Html5Qrcode('file-scanner-temp');
-      try {
-        const decodedText = await html5Qrcode.scanFile(file, true);
-        html5Qrcode.clear();
-        await processQrPayload(decodedText);
-        return;
-      } catch (qrErr) {
-        // QR not found in file -> auto fallback to ID Card OCR
-        html5Qrcode.clear();
-      }
-
-      // Read & downscale for lightning-fast ID card OCR
-      const optimizedDataUrl = await downscaleImageForOcr(file);
-      isProcessingRef.current = false; // Release for processIdCardImage
-      await processIdCardImage(optimizedDataUrl);
-    } catch (err: any) {
-      toast.error('Could not read or process image file: ' + err.message);
-      resetProcessingState(1200);
     }
   };
 
@@ -234,11 +246,10 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
       await html5QrcodeRef.current.start(
         { facingMode: 'environment' },
         {
-          fps: 8, // Optimized 8 FPS reduces CPU heat on mobile
+          fps: 8,
           qrbox: { width: Math.floor(qrboxSize), height: Math.floor(qrboxSize) }
         },
         (decodedText) => {
-          // Strictly prevent duplicate callbacks while processing
           if (isProcessingRef.current) return;
 
           const now = Date.now();
@@ -247,13 +258,12 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
             lastScannedPayloadRef.current.text === decodedText &&
             now - lastScannedPayloadRef.current.time < 3500
           ) {
-            return; // Ignore duplicate scans of same code within 3.5s
+            return;
           }
 
           isProcessingRef.current = true;
           lastScannedPayloadRef.current = { text: decodedText, time: now };
 
-          // Immediately pause video scanner to prevent duplicate frames
           try {
             html5QrcodeRef.current?.pause(true);
           } catch (e) {}
@@ -274,6 +284,11 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
   };
 
   const stopCamera = async () => {
+    if (autoScanTimerRef.current) {
+      clearInterval(autoScanTimerRef.current);
+      autoScanTimerRef.current = null;
+    }
+
     if (html5QrcodeRef.current && isCameraActive) {
       try {
         await html5QrcodeRef.current.stop();
@@ -327,6 +342,24 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
     };
   }, [isOpen, activeMode]);
 
+  // Automatic real-time ID card scanning loop when camera is active
+  useEffect(() => {
+    if (isOpen && activeMode === 'CAMERA' && isCameraActive) {
+      // Automatically grab and analyze video frame every 900ms
+      autoScanTimerRef.current = setInterval(runAutoIdCardScanTick, 900);
+    } else if (autoScanTimerRef.current) {
+      clearInterval(autoScanTimerRef.current);
+      autoScanTimerRef.current = null;
+    }
+
+    return () => {
+      if (autoScanTimerRef.current) {
+        clearInterval(autoScanTimerRef.current);
+        autoScanTimerRef.current = null;
+      }
+    };
+  }, [isOpen, activeMode, isCameraActive]);
+
   if (!isOpen) return null;
 
   return createPortal(
@@ -336,7 +369,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
       {/* Main Responsive Container: Bottom sheet on mobile, rounded card on desktop */}
       <div className="bg-white rounded-t-3xl sm:rounded-3xl border border-slate-200/90 shadow-2xl max-w-md w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col relative overflow-hidden transition-all pb-safe">
         
-        {/* Mobile Swipe / Pull Handle */}
+        {/* Mobile Pull Handle */}
         <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-2.5 sm:hidden shrink-0" />
 
         {/* Modal Header */}
@@ -348,14 +381,14 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider truncate">
-                  Student Scanner
+                  Auto Student Scanner
                 </h3>
                 <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black rounded-md flex items-center gap-0.5">
-                  <Zap className="w-2.5 h-2.5 text-emerald-600" /> 0 Tokens
+                  <Zap className="w-2.5 h-2.5 text-emerald-600" /> Realtime
                 </span>
               </div>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate">
-                Scan QR Code or Physical ID Card (Roll No)
+                Hold ID Card or QR in front of camera — grabs automatically
               </p>
             </div>
           </div>
@@ -380,7 +413,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
                 activeMode === 'CAMERA' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Camera className="w-3.5 h-3.5" /> <span>Camera</span>
+              <Camera className="w-3.5 h-3.5" /> <span>Camera Scanner</span>
             </button>
             <button
               onClick={() => setActiveMode('FILE')}
@@ -388,7 +421,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
                 activeMode === 'FILE' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Upload className="w-3.5 h-3.5" /> <span>Upload</span>
+              <Upload className="w-3.5 h-3.5" /> <span>Upload Photo</span>
             </button>
             <button
               onClick={() => setActiveMode('MANUAL')}
@@ -400,15 +433,24 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
             </button>
           </div>
 
-          {/* MODE 1: CAMERA SCANNER (QR + INSTANT ID CARD SNAPSHOT) */}
+          {/* MODE 1: CAMERA SCANNER (100% AUTOMATIC FOR QR & PHYSICAL ID CARDS) */}
           {activeMode === 'CAMERA' && (
             <div className="space-y-3">
               {/* Responsive Camera Viewport */}
-              <div className="relative bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center aspect-[4/3] max-h-[36vh] sm:max-h-[280px] w-full">
+              <div className="relative bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center aspect-[4/3] max-h-[36vh] sm:max-h-[300px] w-full shadow-inner">
                 <div id={scannerContainerId} className="w-full h-full text-white [&_video]:object-cover" />
 
-                {/* Card Viewfinder Overlay with Tech Corners */}
-                <div className="absolute inset-3 sm:inset-4 pointer-events-none border border-white/20 rounded-xl flex items-center justify-center">
+                {/* Status Pill: Live Auto-Scanning */}
+                <div className="absolute top-2.5 inset-x-0 flex justify-center pointer-events-none z-10">
+                  <div className="bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-500/40 shadow-sm flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-emerald-400 font-black">Auto-Grabbing Active:</span>
+                    <span>Hold ID Card or QR</span>
+                  </div>
+                </div>
+
+                {/* Viewfinder Overlay with Bottom Register Number Focus */}
+                <div className="absolute inset-3 sm:inset-4 pointer-events-none border border-white/20 rounded-xl flex flex-col justify-between">
                   {/* Top-Left Corner */}
                   <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-orange-500 rounded-tl-md" />
                   {/* Top-Right Corner */}
@@ -418,24 +460,26 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
                   {/* Bottom-Right Corner */}
                   <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-orange-500 rounded-br-md" />
 
-                  {/* Active Laser Scan Line (shows camera is live) */}
+                  {/* Laser Scan Line (Sweeps vertically) */}
                   {!isProcessing && isCameraActive && (
-                    <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent shadow-[0_0_8px_rgba(249,115,22,0.8)] animate-pulse" />
+                    <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-orange-400 to-transparent shadow-[0_0_10px_rgba(249,115,22,0.9)] animate-pulse" />
                   )}
 
-                  {/* Framing badge */}
-                  <div className="bg-black/65 backdrop-blur-xs text-white/90 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
-                    <CreditCard className="w-3 h-3 text-orange-400" /> Align ID Card or QR inside
+                  {/* BOTTOM ZONE: Dedicated Target for Register Number */}
+                  <div className="mt-auto w-full h-[40%] bg-gradient-to-t from-orange-500/20 to-transparent border-t-2 border-dashed border-orange-500/80 rounded-b-xl flex flex-col items-center justify-center p-1.5">
+                    <div className="bg-black/75 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-orange-500/40 text-[9px] font-extrabold text-orange-200 flex items-center gap-1">
+                      <CreditCard className="w-3 h-3 text-orange-400" /> Align Bottom of ID Card Here (Register No)
+                    </div>
                   </div>
                 </div>
 
-                {/* In-Flight Processing Overlay (Prevents clicking or scanning again) */}
+                {/* Processing Overlay when student is detected */}
                 {isProcessing && (
                   <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center gap-2 p-4 z-20 animate-in fade-in">
-                    <Loader2 className="w-7 h-7 text-orange-500 animate-spin" />
-                    <p className="text-xs text-white font-extrabold tracking-wide text-center">Reading Student Record...</p>
+                    <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                    <p className="text-xs text-white font-extrabold tracking-wide text-center">Student Record Found!</p>
                     <p className="text-[10px] text-slate-400 font-medium text-center">
-                      Extracting Roll Number with fast local OCR
+                      Opening student profile...
                     </p>
                   </div>
                 )}
@@ -448,28 +492,16 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
                 )}
               </div>
 
-              {/* Main Action Button (Mobile Thumb Friendly) */}
-              <button
-                type="button"
-                disabled={isProcessing || !isCameraActive}
-                onClick={captureCameraFrameAndScanIdCard}
-                className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 active:scale-98 disabled:opacity-50 text-white font-black text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Scanning Card...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4" /> 📸 Capture & Scan ID Card
-                  </>
-                )}
-              </button>
-
-              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium text-center flex items-center justify-center gap-1">
-                <Sparkles className="w-3 h-3 text-orange-500 shrink-0" />
-                QR codes scan automatically. For ID cards, align and tap button.
-              </p>
+              {/* Informational Guidance (No capture button needed!) */}
+              <div className="p-3 bg-orange-50/80 border border-orange-200/80 rounded-xl text-center space-y-1">
+                <p className="text-xs font-bold text-orange-950 flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                  Hands-Free Automatic Detection
+                </p>
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Just hold the student's ID card or QR code in front of the camera. The register number at the bottom is grabbed automatically!
+                </p>
+              </div>
             </div>
           )}
 
@@ -487,9 +519,9 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-xs sm:text-sm text-slate-900">Upload ID Card or QR Code Image</h4>
+                  <h4 className="font-bold text-xs sm:text-sm text-slate-900">Upload ID Card or QR Image</h4>
                   <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
-                    Auto-resizes & detects QR codes or extracts Roll No from ID Card photo
+                    Reads Sanskriti / College ID cards and automatically extracts Roll No from the bottom
                   </p>
                 </div>
 
@@ -526,7 +558,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
               {isProcessing && (
                 <div className="p-2.5 bg-orange-50 border border-orange-200 rounded-xl flex items-center justify-center gap-2 text-orange-800 text-xs font-bold animate-pulse">
                   <Loader2 className="w-4 h-4 animate-spin text-orange-600" />
-                  Processing card image with local OCR...
+                  Processing ID card & extracting Register Number...
                 </div>
               )}
             </div>
@@ -536,7 +568,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
           {lastExtracted && (lastExtracted.registerNumber || lastExtracted.name) && (
             <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
               <div className="space-y-0.5 min-w-0 pr-2">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Detected Roll / Student:</span>
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Auto-Grabbed Register No:</span>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {lastExtracted.registerNumber && (
                     <span className="font-mono font-black text-slate-900 bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-[11px]">

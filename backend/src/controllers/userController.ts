@@ -1984,7 +1984,7 @@ export const lookupUserByQr = async (req: AuthenticatedRequest, res: Response) =
 
 // Scan Student Physical ID Card (Token-Free On-Device / Local OCR with @napi-rs/canvas and Tesseract)
 export const scanIdCard = async (req: AuthenticatedRequest, res: Response) => {
-  const { image } = req.body;
+  const { image, auto = false } = req.body;
 
   if (!image || typeof image !== 'string' || !image.trim()) {
     return res.status(400).json({
@@ -2010,6 +2010,14 @@ export const scanIdCard = async (req: AuthenticatedRequest, res: Response) => {
     const { registerNumber, name, department, rawText } = extracted;
 
     if (!registerNumber && !name) {
+      if (auto) {
+        return res.json({
+          success: false,
+          notFound: true,
+          message: 'Scanning card frame...',
+          extracted
+        });
+      }
       return res.status(404).json({
         success: false,
         message: 'Could not extract student roll number or name from ID card image. Please ensure the ID card is well-lit, clearly legible, and shows the Roll/Register Number.',
@@ -2082,6 +2090,14 @@ export const scanIdCard = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     if (!uRes || uRes.rowCount === 0) {
+      if (auto) {
+        return res.json({
+          success: false,
+          notFound: true,
+          message: `Extracted Roll No: "${registerNumber || 'N/A'}"${name ? ` (${name})` : ''}, matching student in progress...`,
+          extracted
+        });
+      }
       return res.status(404).json({
         success: false,
         message: `Extracted Roll No: "${registerNumber || 'N/A'}"${name ? ` (${name})` : ''}, but no matching student record was found in the database.`,
