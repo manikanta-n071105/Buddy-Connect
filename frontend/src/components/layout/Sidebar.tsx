@@ -377,7 +377,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
 
         </div>
 
-        {/* Scan Student QR Code Button for Admins, mentors & Faculty */}
+        {/* Scan Student QR / ID Card Button for Admins, mentors & Faculty */}
         {['SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'].includes(user.role) && (
           <div className="px-3.5 pt-2 pb-1">
             <button
@@ -388,7 +388,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onReplay3DInt
               className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer active:scale-98"
             >
               <QrCode className="w-4 h-4" />
-              <span>Scan Student QR Code</span>
+              <span>Scan QR / Student ID Card</span>
             </button>
           </div>
         )}

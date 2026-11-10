@@ -41,6 +41,7 @@ uploads/
 # Binaries & local testing artifacts
 bin/
 *.exe
+*.traineddata
 test_*.pdf
 test_*.tex
 * (*).pdf
