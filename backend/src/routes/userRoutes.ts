@@ -3,7 +3,7 @@ import {
   createAdmin, createMentor, createFaculty, createSenior, createJunior, createStudent, createWarden, bulkCreateJuniors,
   getUsers, getMentorsList, getSeniorsList, getFacultyList, getFacultyAssignedJuniors,
   assignJuniorToFaculty, unassignJuniorFromFaculty, updateFacultyCapacity, updateUserFacultyAssignment,
-  getUserProfile, lookupUserByQr, scanIdCard, updateUserProfile, deleteUser, toggleUserStatus, resetUserPassword, updateUserPermissions,
+  getUserProfile, lookupUserByQr, updateUserProfile, deleteUser, toggleUserStatus, resetUserPassword, updateUserPermissions,
   getDisciplinaryCommitteeMembers, appointDisciplinaryCommitteeMember, removeDisciplinaryCommitteeMember,
   createDisciplinaryComplaint, getStudentDisciplinaryComplaints, getAllDisciplinaryComplaints, updateDisciplinaryComplaintStatus
 } from '../controllers/userController';
@@ -33,7 +33,6 @@ router.patch('/disciplinary-complaints/:id/status', authorizeRole('SUPER_ADMIN',
 
 router.post('/bulk-juniors', authorizeRole('SUPER_ADMIN', 'ADMIN'), bulkCreateJuniors);
 router.get('/scan-qr', authorizeRole('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'), lookupUserByQr);
-router.post('/scan-id-card', authorizeRole('SUPER_ADMIN', 'ADMIN', 'MENTOR', 'FACULTY'), scanIdCard);
 router.get('/:userId/profile', getUserProfile);
 router.put('/:userId', updateUserProfile);
 router.delete('/:userId', deleteUser);

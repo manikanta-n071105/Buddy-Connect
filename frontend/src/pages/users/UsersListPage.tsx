@@ -624,9 +624,9 @@ export const UsersListPage: React.FC = () => {
               <button
                 onClick={() => setShowScannerModal(true)}
                 className="px-3.5 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-98"
-                title="Scan Student QR Code or physical ID Card to view details"
+                title="Scan Student QR Code to view details"
               >
-                <QrCode className="w-4 h-4" /> Scan QR / ID Card
+                <QrCode className="w-4 h-4" /> Scan Student QR Code
               </button>
             )}
 
