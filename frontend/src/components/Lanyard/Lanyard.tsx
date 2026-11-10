@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
+import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { Canvas, extend, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei';
 import {
@@ -107,27 +107,141 @@ export interface LanyardProps {
   className?: string;
 }
 
-export default function Lanyard({
-  position = [0, -1.35, 9.2],
-  gravity = [0, -40, 0],
-  fov = 22,
-  transparent = true,
-  frontImage = null,
-  backImage = null,
-  imageFit = 'cover',
-  lanyardImage = null,
-  lanyardWidth = 1.1,
-  bandColor = '#c84724',
-  userName,
-  department,
-  registerNo,
-  userRole,
-  residenceStatus,
-  bloodGroup,
-  academicYear,
-  validUpto,
+class LanyardErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any) {
+    console.warn('[Lanyard] 3D Canvas error caught, activating fallback ID card:', error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+const LanyardFallbackCard: React.FC<LanyardProps> = ({
+  userName = 'N MANIKANTA',
+  department = 'CSE - B',
+  registerNo = '23KF1A0591',
+  userRole = 'SENIOR',
+  residenceStatus = 'DAY SCHOLAR',
+  bloodGroup = 'O +VE',
+  academicYear = '2025 - 2026',
+  validUpto = 'MAY 2027',
   className = 'relative z-0 w-full h-full flex justify-center items-center'
-}: LanyardProps) {
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const logo = new Image();
+    logo.src = '/assets/sse-s-logo.jpg';
+    logo.onload = () => {
+      drawSSEIdCard(canvas, {
+        name: userName,
+        department,
+        registerNo,
+        userRole,
+        residenceStatus,
+        bloodGroup,
+        academicYear,
+        validUpto,
+        sLogoImage: logo
+      });
+    };
+    drawSSEIdCard(canvas, {
+      name: userName,
+      department,
+      registerNo,
+      userRole,
+      residenceStatus,
+      bloodGroup,
+      academicYear,
+      validUpto,
+      sLogoImage: null
+    });
+  }, [userName, department, registerNo, userRole, residenceStatus, bloodGroup, academicYear, validUpto]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setRotate({ x: -y * 18, y: x * 18 });
+  };
+
+  const handleMouseLeave = () => {
+    setRotate({ x: 0, y: 0 });
+  };
+
+  return (
+    <div
+      className={className}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ perspective: 1000 }}
+    >
+      <div className="flex flex-col items-center select-none">
+        {/* Top Lanyard Strap */}
+        <div className="w-9 h-24 bg-gradient-to-b from-orange-700 via-orange-500 to-orange-700 shadow-md border-x-2 border-white/25 rounded-t-sm flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:6px_6px] opacity-25" />
+          <span className="text-[9px] font-black tracking-widest text-white/90 rotate-90 select-none uppercase">SSE</span>
+        </div>
+        {/* Metallic Clip & Ring */}
+        <div className="w-5 h-4 bg-gradient-to-b from-slate-400 via-slate-200 to-slate-400 rounded-sm shadow-md border border-slate-400/80 -mt-0.5 z-10" />
+        <div className="w-7 h-2 bg-gradient-to-r from-slate-600 via-slate-300 to-slate-600 rounded-full shadow-inner z-10" />
+
+        {/* 3D-Tiltable Realistic ID Card Badge */}
+        <div
+          className="w-[270px] sm:w-[310px] aspect-square rounded-2xl shadow-2xl overflow-hidden border border-slate-700/60 transition-transform duration-150 ease-out bg-slate-900 mt-0.5"
+          style={{
+            transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
+            transformStyle: 'preserve-3d'
+          }}
+        >
+          <canvas ref={canvasRef} className="w-full h-full object-contain pointer-events-none" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function Lanyard(props: LanyardProps) {
+  const {
+    position = [0, -1.35, 9.2],
+    gravity = [0, -40, 0],
+    fov = 22,
+    transparent = true,
+    frontImage = null,
+    backImage = null,
+    imageFit = 'cover',
+    lanyardImage = null,
+    lanyardWidth = 1.1,
+    bandColor = '#c84724',
+    userName,
+    department,
+    registerNo,
+    userRole,
+    residenceStatus,
+    bloodGroup,
+    academicYear,
+    validUpto,
+    className = 'relative z-0 w-full h-full flex justify-center items-center'
+  } = props;
+
   const [isMobile, setIsMobile] = useState<boolean>(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   );
@@ -139,66 +253,72 @@ export default function Lanyard({
   }, []);
 
   return (
-    <div className={className}>
-      <Canvas
-        camera={{ position, fov }}
-        dpr={[1, isMobile ? 1.5 : 2]}
-        gl={{ alpha: transparent, antialias: true, powerPreference: 'high-performance' }}
-        onCreated={({ gl }) =>
-          gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
-        }
-      >
-        {/* Crystal-clear studio lighting so text and colors are sharp and vibrant */}
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[0, -1, 6]} intensity={0.9} color="#ffffff" />
-        <directionalLight position={[3, 5, 4]} intensity={0.7} color="#ffffff" />
-        <pointLight position={[-3, 2, 4]} intensity={0.3} color="#ea580c" />
-        <Suspense fallback={null}>
-          <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-            <Band
-              isMobile={isMobile}
-              frontImage={frontImage}
-              backImage={backImage}
-              imageFit={imageFit}
-              lanyardImage={lanyardImage}
-              lanyardWidth={lanyardWidth}
-              bandColor={bandColor}
-              userName={userName}
-              department={department}
-              registerNo={registerNo}
-              userRole={userRole}
-              residenceStatus={residenceStatus}
-              bloodGroup={bloodGroup}
-              academicYear={academicYear}
-              validUpto={validUpto}
-            />
-          </Physics>
-          <Environment blur={0.75}>
-            <Lightformer
-              intensity={1.2}
-              color="#ffffff"
-              position={[0, -1, 5]}
-              rotation={[0, 0, Math.PI / 3]}
-              scale={[100, 0.1, 1]}
-            />
-            <Lightformer
-              intensity={1.5}
-              color="#ea580c"
-              position={[-1, -1, 1]}
-              rotation={[0, 0, Math.PI / 3]}
-              scale={[100, 0.1, 1]}
-            />
-            <Lightformer
-              intensity={1.5}
-              color="white"
-              position={[1, 1, 1]}
-              rotation={[0, 0, Math.PI / 3]}
-              scale={[100, 0.1, 1]}
-            />
-          </Environment>
-        </Suspense>
-      </Canvas>
-    </div>
+    <LanyardErrorBoundary fallback={<LanyardFallbackCard {...props} />}>
+      <div className={className}>
+        <Canvas
+          camera={{ position, fov }}
+          dpr={[1, isMobile ? 1.5 : 2]}
+          gl={{ alpha: transparent, antialias: true, powerPreference: 'high-performance' }}
+          onCreated={({ gl }) => {
+            gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1);
+            gl.domElement.addEventListener('webglcontextlost', (e) => {
+              e.preventDefault();
+              console.warn('[Lanyard] WebGL context lost handled gracefully');
+            }, false);
+          }}
+        >
+          {/* Crystal-clear studio lighting so text and colors are sharp and vibrant */}
+          <ambientLight intensity={1.2} />
+          <directionalLight position={[0, -1, 6]} intensity={0.9} color="#ffffff" />
+          <directionalLight position={[3, 5, 4]} intensity={0.7} color="#ffffff" />
+          <pointLight position={[-3, 2, 4]} intensity={0.3} color="#ea580c" />
+          <Suspense fallback={null}>
+            <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
+              <Band
+                isMobile={isMobile}
+                frontImage={frontImage}
+                backImage={backImage}
+                imageFit={imageFit}
+                lanyardImage={lanyardImage}
+                lanyardWidth={lanyardWidth}
+                bandColor={bandColor}
+                userName={userName}
+                department={department}
+                registerNo={registerNo}
+                userRole={userRole}
+                residenceStatus={residenceStatus}
+                bloodGroup={bloodGroup}
+                academicYear={academicYear}
+                validUpto={validUpto}
+              />
+            </Physics>
+            <Environment blur={0.75}>
+              <Lightformer
+                intensity={1.2}
+                color="#ffffff"
+                position={[0, -1, 5]}
+                rotation={[0, 0, Math.PI / 3]}
+                scale={[100, 0.1, 1]}
+              />
+              <Lightformer
+                intensity={1.5}
+                color="#ea580c"
+                position={[-1, -1, 1]}
+                rotation={[0, 0, Math.PI / 3]}
+                scale={[100, 0.1, 1]}
+              />
+              <Lightformer
+                intensity={1.5}
+                color="white"
+                position={[1, 1, 1]}
+                rotation={[0, 0, Math.PI / 3]}
+                scale={[100, 0.1, 1]}
+              />
+            </Environment>
+          </Suspense>
+        </Canvas>
+      </div>
+    </LanyardErrorBoundary>
   );
 }
 
@@ -544,4 +664,8 @@ function Band({
   );
 }
 
-useGLTF.preload(cardGLB);
+try {
+  useGLTF.preload(cardGLB);
+} catch (e) {
+  // Graceful fallback if preload fails
+}

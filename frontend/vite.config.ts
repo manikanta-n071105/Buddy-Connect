@@ -11,7 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/api/]
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,glb,gltf}'],
+        navigateFallbackDenylist: [/^\/api/, /\/assets\//, /\.glb$/]
       },
       includeAssets: [
         'favicon.svg',
@@ -23,6 +24,8 @@ export default defineConfig({
         'sse-reveal.png',
         'sse-s-logo.jpg',
         'sse-mark.jpg',
+        'card.glb',
+        'assets/card.glb',
         'assets/sse-header-logo.png',
         'assets/sse-reveal.png',
         'assets/sse-s-logo.jpg',

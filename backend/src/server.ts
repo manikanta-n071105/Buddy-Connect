@@ -130,9 +130,20 @@ app.use('/api/exam-seating', examSeatingRoutes);
 // Serve Frontend Static Build in Production if present
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
+  app.use(express.static(frontendDist, {
+    maxAge: '1d',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.glb')) {
+        res.setHeader('Content-Type', 'model/gltf-binary');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+    }
+  }));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
+    // Never rewrite API endpoints or static asset files to index.html
+    if (req.path.startsWith('/api') || req.path.match(/\.(glb|gltf|png|jpg|jpeg|svg|css|js|map|ico|webmanifest)$/i)) {
+      return next();
+    }
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
